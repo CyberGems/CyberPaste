@@ -51,6 +51,7 @@ export const ClipList: React.FC<ClipListProps> = ({
     LAYOUT.FULL_HEIGHT - LAYOUT.CONTROL_BAR_HEIGHT
   );
   const gridRef = useRef<GridImperativeAPI>(null);
+  const outerRef = useRef<HTMLDivElement>(null);
 
   const isVertical = scrollDirection === 'vertical';
 
@@ -112,6 +113,10 @@ export const ClipList: React.FC<ClipListProps> = ({
 
   // Reset scroll position on view change or data refresh
   useEffect(() => {
+    if (outerRef.current) {
+      outerRef.current.scrollTop = 0;
+      outerRef.current.scrollLeft = 0;
+    }
     if (gridRef.current?.element) {
       gridRef.current.element.scrollTop = 0;
       gridRef.current.element.scrollLeft = 0;
@@ -188,10 +193,18 @@ export const ClipList: React.FC<ClipListProps> = ({
     );
   }
 
+  const handleWheel = (e: React.WheelEvent) => {
+    if (!isVertical && outerRef.current) {
+      if (e.deltaY !== 0) {
+        outerRef.current.scrollLeft += e.deltaY;
+      }
+    }
+  };
+
   const gridHeight = containerHeight;
 
   return (
-    <div ref={containerRef} className="h-full w-full flex-1 overflow-hidden">
+    <div ref={containerRef} className="h-full w-full flex-1 overflow-hidden" onWheel={handleWheel}>
       <Grid
         data-el="clip-list"
         cellComponent={Cell}
@@ -206,6 +219,8 @@ export const ClipList: React.FC<ClipListProps> = ({
         defaultHeight={gridHeight}
         defaultWidth={containerWidth}
         gridRef={gridRef}
+        // @ts-ignore
+        outerRef={outerRef}
         rowCount={rowCount}
         rowHeight={isVertical ? 230 : 180}
         columnCount={columnCount}
