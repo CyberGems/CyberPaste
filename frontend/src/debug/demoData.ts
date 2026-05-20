@@ -134,8 +134,8 @@ export function generateDemoClips(): ClipboardItem[] {
       id: 'demo-12',
       clip_type: 'text',
       content:
-        'Hi team,\n\nPlease find the latest build of CyberPaste v1.3.3 attached. Key changes include refined UI layout, tighter card spacing, and a new dark-mode tray icon.\n\nBest,\nXueshi',
-      preview: 'Hi team, Please find the latest build of CyberPaste v1.3.3...',
+        'Hi,\n\nPlease find the latest build of CyberPaste attached.\n\nBest,\nCyberGems',
+      preview: 'Hi team, Please find the latest build of CyberPaste...',
       folder_id: null,
       created_at: ago(50),
       source_app: 'OUTLOOK.EXE',

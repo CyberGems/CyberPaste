@@ -48,7 +48,7 @@ Once GitHub Pages is enabled, use these URLs in App Store Connect:
 - [ ] Create Certificate Signing Request (CSR) in Keychain Access
 - [ ] Create **Apple Distribution** certificate
 - [ ] Create **Mac Installer Distribution** certificate
-- [ ] Create App ID: `me.xueshi.cyberpaste`
+- [ ] Create App ID: `me.cybergems.cyberpaste`
 - [ ] Create Mac App Store provisioning profile
 - [ ] Download and save provisioning profile to `src-tauri/`
 
