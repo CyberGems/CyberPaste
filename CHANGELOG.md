@@ -2,6 +2,34 @@
 
 All notable changes to CyberPaste will be documented in this file.
 
+## v1.2.2
+
+### Added
+- **Selected Folder Highlights**: Added vibrant glowing active states to folder selection buttons in Full view, utilizing each folder's custom colors with a sleek cyan fallback.
+- **Symmetrical Horizontal Layout**: Updated horizontal scroll grid cards to dynamically calculate widths, achieving uniform and symmetrical proportions identical to vertical scroll layout.
+- **Publisher Metadata**: Explicitly set publisher CompanyName metadata to "CyberGems" for Windows Task Manager startup visibility.
+
+### Fixed & Improved
+- **Horizontal Scroll Response**: Optimized scroll wheel capture logic to override CSS smooth scroll delays, providing lag-free horizontal navigation.
+- **Default Installation Configuration**: Updated default settings for fresh installations (Default View Mode: `compact`, Default Scroll Direction: `vertical`, Max Clips Saved: `300`).
+- **Reset Search & View**: Overhauled the cleanup setting to clear active search queries, reset selected folder, and scroll to top upon window focus (reopen) or clip paste.
+- **Tooltip Fixes**: Corrected view toggle tooltip in compact view to read "Full Mode".
+- **Marquee Separator**: Replaced the large diamond symbol (`◆`) with a smaller, more discreet standard bullet dot (`•`) in scrolling clip title marquees.
+- **HUD Status Strip Border**: Realigned top HUD strip borders in Full view to be symmetrical 1px light-gray lines on both top and bottom edges.
+
+### Añadido
+- **Resaltado de Carpetas Seleccionadas**: Añadidos estados activos brillantes con luces de neón en la selección de carpetas en vista Full, usando el color personalizado de cada carpeta.
+- **Diseño Horizontal Simétrico**: Se actualizó el ancho dinámico en modo de scroll horizontal para que mantenga proporciones idénticas y uniformes que en scroll vertical.
+- **Metadatos del Editor**: Configurado el nombre del publicador/empresa a "CyberGems" para su correcta visualización en la pestaña de Inicio del Administrador de Tareas de Windows.
+
+### Correcciones y Mejoras
+- **Respuesta de Scroll Horizontal**: Optimizada la captura de la rueda de desplazamiento horizontal para omitir demoras en la transición CSS y responder de forma instantánea.
+- **Configuración por Defecto**: Actualizados los valores por defecto en instalaciones limpias (Vista inicial: `compact`, Scroll por defecto: `vertical`, Máximo de clips: `300`).
+- **Restablecer Búsqueda y Vista**: Se rediseñó el limpiado automático para restablecer filtros, carpetas e ir al inicio al abrir/enfocar la ventana o al pegar clips.
+- **Correciones de Tooltips**: Corregido el tooltip del botón de cambio de vista en modo compacto a "Full Mode".
+- **Separador de Marquee**: Se cambió el rombo grande (`◆`) por un punto de viñeta discreto (`•`) en los títulos que se desplazan.
+- **Bordes de HUD Status Strip**: Se realinearon los bordes de la barra superior HUD en vista Full para ser líneas simétricas de 1px gris claro en los bordes superior e inferior.
+
 ## v1.2.1
 
 ### Fixed

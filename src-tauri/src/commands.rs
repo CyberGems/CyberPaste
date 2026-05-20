@@ -32,27 +32,36 @@ pub async fn ai_process_clip(
         .map_err(|e| e.to_string())?
         .ok_or("Clip not found")?;
 
-    let text_content =
-        if clip.clip_type == "text" || clip.clip_type == "url" {
-            String::from_utf8_lossy(&clip.content).to_string()
-        } else if clip.clip_type == "html" {
-            crate::clipboard::strip_html_tags(&String::from_utf8_lossy(&clip.content))
-        } else if clip.clip_type == "rtf" {
-            crate::clipboard::strip_rtf_tags(&String::from_utf8_lossy(&clip.content))
-        } else {
-            return Err("AI processing only supported for text content".to_string());
-        };
+    let text_content = if clip.clip_type == "text" || clip.clip_type == "url" {
+        String::from_utf8_lossy(&clip.content).to_string()
+    } else if clip.clip_type == "html" {
+        crate::clipboard::strip_html_tags(&String::from_utf8_lossy(&clip.content))
+    } else if clip.clip_type == "rtf" {
+        crate::clipboard::strip_rtf_tags(&String::from_utf8_lossy(&clip.content))
+    } else {
+        return Err("AI processing only supported for text content".to_string());
+    };
 
     // 2. Get AI Config
     let manager = app.state::<Arc<SettingsManager>>();
     let settings = manager.get();
 
     let key_preview = if settings.ai_api_key.len() > 8 {
-        format!("{}...{}", &settings.ai_api_key[..4], &settings.ai_api_key[settings.ai_api_key.len()-4..])
+        format!(
+            "{}...{}",
+            &settings.ai_api_key[..4],
+            &settings.ai_api_key[settings.ai_api_key.len() - 4..]
+        )
     } else {
         "too_short".to_string()
     };
-    log::info!("AI Process: provider={}, model={}, base_url={}, key_preview={}", settings.ai_provider, settings.ai_model, settings.ai_base_url, key_preview);
+    log::info!(
+        "AI Process: provider={}, model={}, base_url={}, key_preview={}",
+        settings.ai_provider,
+        settings.ai_model,
+        settings.ai_base_url,
+        key_preview
+    );
 
     if settings.ai_api_key.is_empty() {
         return Err("AI API Key is missing in settings".to_string());
@@ -748,7 +757,7 @@ pub async fn paste_clip(
                         SET created_at = CURRENT_TIMESTAMP, 
                             sort_order = (SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips) 
                         WHERE uuid = ?
-                        "#
+                        "#,
                     )
                     .bind(hist_uuid)
                     .execute(pool)
@@ -1399,11 +1408,12 @@ pub async fn get_clipboard_history_size(
 ) -> Result<i64, String> {
     let pool = &db.pool;
 
-    let count: i64 =
-        sqlx::query_scalar::<_, i64>(r#"SELECT COUNT(*) FROM clips WHERE is_deleted = 0 AND folder_id IS NULL"#)
-            .fetch_one(pool)
-            .await
-            .map_err(|e| e.to_string())?;
+    let count: i64 = sqlx::query_scalar::<_, i64>(
+        r#"SELECT COUNT(*) FROM clips WHERE is_deleted = 0 AND folder_id IS NULL"#,
+    )
+    .fetch_one(pool)
+    .await
+    .map_err(|e| e.to_string())?;
     Ok(count)
 }
 

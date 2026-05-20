@@ -659,9 +659,14 @@ function App() {
     }
   }, [clipListResetToken]);
 
-  // Auto-select first clip when window gains focus (reopened via hotkey)
+  // Auto-select first clip and reset view (if enabled) when window gains focus (reopened via hotkey)
   useEffect(() => {
     const unlisten = listen('tauri://focus', () => {
+      if (settingsRef.current?.reset_view_on_paste) {
+        setSearchQuery('');
+        setShowSearch(false);
+        setSelectedFolder(null);
+      }
       setClipListResetToken((prev) => prev + 1);
       if (clipsRef.current.length > 0) {
         setSelectedClipId(clipsRef.current[0].id);
@@ -749,7 +754,9 @@ function App() {
       await invoke('paste_clip', { id: clipId });
       // Force immediate refresh
       if (settings?.reset_view_on_paste) {
-        setSelectedFolder(null);
+        setSearchQuery('');
+        setShowSearch(false);
+        handleSelectFolder(null);
       } else {
         refreshCurrentFolder();
       }
@@ -1182,7 +1189,7 @@ function App() {
               theme={effectiveTheme}
               // Add toggle button to ControlBar
               onToggleMode={toggleViewMode}
-              viewMode={settings?.view_mode || 'full'}
+              viewMode={settings?.view_mode || 'compact'}
               isPinned={settings?.pinned ?? false}
               onTogglePin={handleTogglePin}
               onResetSize={handleResetSize}
@@ -1204,7 +1211,7 @@ function App() {
                 onLoadMore={loadMore}
                 onDragStart={startDrag}
                 onCardContextMenu={(e, clipId) => handleContextMenu(e, 'card', clipId)}
-                scrollDirection={settings?.scroll_direction || 'horizontal'}
+                scrollDirection={settings?.scroll_direction || 'vertical'}
                 reorderTargetClipId={reorderTargetClipId}
                 reorderTargetPosition={reorderTargetPosition}
                 reorderEnabled={!!selectedFolder}

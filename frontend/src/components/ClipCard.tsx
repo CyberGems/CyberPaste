@@ -276,9 +276,13 @@ export const ClipCard = memo(
                 }}
               >
                 {title}
-                <span className="mx-3 opacity-30">◆</span>
-                {title}
-                <span className="mx-3 opacity-30">◆</span>
+                {isLatest && (
+                  <>
+                    <span className="mx-3 opacity-30">•</span>
+                    {title}
+                    <span className="mx-3 opacity-30">•</span>
+                  </>
+                )}
               </span>
             </div>
             <div className="relative flex h-full min-w-[40px] items-center justify-end">

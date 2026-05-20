@@ -79,8 +79,11 @@ pub async fn process_text(
     if !res.status().is_success() {
         let status = res.status();
         let error_text = res.text().await?;
-        eprintln!("AI Request Failed. Status: {}, Body: {}", status, error_text);
-        
+        eprintln!(
+            "AI Request Failed. Status: {}, Body: {}",
+            status, error_text
+        );
+
         // Try to parse error message from JSON: {"error": {"message": "..."}} or {"error": "..."}
         if let Ok(json_err) = serde_json::from_str::<serde_json::Value>(&error_text) {
             if let Some(err_obj) = json_err.get("error") {

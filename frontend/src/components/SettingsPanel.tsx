@@ -732,12 +732,12 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           min="50"
                           max="1000"
                           step="50"
-                          value={settings.max_items || 200}
+                          value={settings.max_items || 300}
                           onChange={(e) => updateSetting('max_items', parseInt(e.target.value))}
                           className="h-1.5 flex-1 cursor-pointer appearance-none rounded-lg bg-accent accent-primary"
                         />
                         <span className="min-w-[3rem] rounded-lg border border-primary/20 bg-primary/10 px-2 py-1 text-center font-mono text-sm font-bold text-primary shadow-sm">
-                          {settings.max_items || 200}
+                          {settings.max_items || 300}
                         </span>
                       </div>
                     </div>

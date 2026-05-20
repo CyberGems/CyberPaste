@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Grid, GridImperativeAPI, CellComponentProps } from 'react-window';
 import { ClipCard } from './ClipCard';
 import { ClipboardItem } from '../types';
-import { LAYOUT, COLUMN_WIDTH } from '../constants';
+import { LAYOUT } from '../constants';
 import { clsx } from 'clsx';
 import { useTranslation } from 'react-i18next';
 
@@ -38,7 +38,7 @@ export const ClipList: React.FC<ClipListProps> = ({
   selectedFolder,
   onCardContextMenu,
   resetToken = 0,
-  scrollDirection = 'horizontal',
+  scrollDirection = 'vertical',
   reorderTargetClipId,
   reorderTargetPosition,
   reorderEnabled,
@@ -51,7 +51,6 @@ export const ClipList: React.FC<ClipListProps> = ({
     LAYOUT.FULL_HEIGHT - LAYOUT.CONTROL_BAR_HEIGHT
   );
   const gridRef = useRef<GridImperativeAPI>(null);
-  const outerRef = useRef<HTMLDivElement>(null);
 
   const isVertical = scrollDirection === 'vertical';
 
@@ -113,9 +112,12 @@ export const ClipList: React.FC<ClipListProps> = ({
 
   // Reset scroll position on view change or data refresh
   useEffect(() => {
-    if (outerRef.current) {
-      outerRef.current.scrollTop = 0;
-      outerRef.current.scrollLeft = 0;
+    if (containerRef.current) {
+      const scrollable = containerRef.current.querySelector('.no-scrollbar');
+      if (scrollable) {
+        scrollable.scrollTop = 0;
+        scrollable.scrollLeft = 0;
+      }
     }
     if (gridRef.current?.element) {
       gridRef.current.element.scrollTop = 0;
@@ -194,9 +196,14 @@ export const ClipList: React.FC<ClipListProps> = ({
   }
 
   const handleWheel = (e: React.WheelEvent) => {
-    if (!isVertical && outerRef.current) {
-      if (e.deltaY !== 0) {
-        outerRef.current.scrollLeft += e.deltaY;
+    if (!isVertical && containerRef.current) {
+      const scrollable = containerRef.current.querySelector('.no-scrollbar');
+      if (scrollable && e.deltaY !== 0) {
+        if (typeof scrollable.scrollBy === 'function') {
+          scrollable.scrollBy({ left: e.deltaY, behavior: 'auto' });
+        } else {
+          scrollable.scrollLeft += e.deltaY;
+        }
       }
     }
   };
@@ -219,12 +226,10 @@ export const ClipList: React.FC<ClipListProps> = ({
         defaultHeight={gridHeight}
         defaultWidth={containerWidth}
         gridRef={gridRef}
-        // @ts-ignore
-        outerRef={outerRef}
         rowCount={rowCount}
         rowHeight={isVertical ? 230 : 180}
         columnCount={columnCount}
-        columnWidth={isVertical ? (containerWidth - SIDE_PADDING) / columnCount : COLUMN_WIDTH}
+        columnWidth={isVertical ? (containerWidth - SIDE_PADDING) / columnCount : (containerWidth - SIDE_PADDING) / 6}
         overscanCount={4}
         onCellsRendered={handleCellsRendered}
       />

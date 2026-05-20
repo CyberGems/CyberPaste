@@ -241,7 +241,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
     >
       {/* ═══ HUD Status Strip — matches compact header style ═══ */}
       <div
-        className="relative flex shrink-0 select-none items-center justify-between overflow-hidden border-b-[4px] border-[#0A0A0B] bg-white/5 px-3 backdrop-blur-md"
+        className="relative flex shrink-0 select-none items-center justify-between overflow-hidden border-t border-white/10 border-b border-white/10 bg-white/5 px-3 backdrop-blur-md"
         style={{ height: '34px' }}
       >
         <HudKeyframes />
@@ -522,6 +522,14 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               const isSelected = selectedFolder === folder.id;
               const isDragTarget = dragTargetFolderId === folder.id;
               const Icon = IconMap[folder.icon || 'FolderIcon'] || FolderIcon;
+              const folderColor = folder.color || '#22d3ee';
+
+              const activeStyle = isSelected && !isDragTarget ? {
+                borderColor: `${folderColor}80`,
+                backgroundColor: `${folderColor}20`,
+                boxShadow: `0 0 20px ${folderColor}40, inset 0 0 10px ${folderColor}15`,
+                color: folderColor,
+              } : undefined;
 
               return (
                 <button
@@ -531,34 +539,35 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                   onMouseEnter={() => isDragging && onDragHover(folder.id)}
                   onMouseLeave={onDragLeave}
                   data-selected={isSelected}
+                  style={activeStyle}
                   className={clsx(
                     'flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1 text-sm font-bold transition-all',
                     isSelected && !isDragTarget
-                      ? 'border border-primary/60 bg-white/5 text-white/40 shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] ring-1 ring-primary/40'
+                      ? 'border ring-1 ring-white/10'
                       : isDragTarget
-                        ? 'border-transparent bg-primary/40 ring-2 ring-primary'
+                        ? 'border-transparent bg-primary/40 ring-2 ring-primary text-white'
                         : 'border border-transparent bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60'
                   )}
                 >
                   <div
                     className={clsx(
                       'flex h-5 w-5 items-center justify-center rounded-lg transition-colors',
-                      isSelected ? 'bg-primary/20' : 'bg-white/5'
+                      isSelected ? 'bg-white/10' : 'bg-white/5'
                     )}
                   >
                     <Icon
                       size={14}
-                      style={{ color: folder.color || undefined }}
-                      className={isSelected ? 'text-primary' : 'text-white/30'}
+                      style={{ color: folderColor }}
+                      className={isSelected ? '' : 'text-white/30'}
                     />
                   </div>
-                  <span className={isSelected ? 'text-white/80' : 'text-white/50'}>
+                  <span className={isSelected ? 'text-white' : 'text-white/50'}>
                     {folder.name}
                   </span>
                   <span
                     className={clsx(
                       'ml-1 text-[10px] font-medium transition-opacity',
-                      isSelected ? 'opacity-80' : 'opacity-30'
+                      isSelected ? 'text-white/80' : 'opacity-30'
                     )}
                   >
                     {folder.item_count}
