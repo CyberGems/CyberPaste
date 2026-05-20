@@ -47,7 +47,7 @@ jobs:
         run: |
           if ([string]::IsNullOrEmpty($env:TAURI_PRIVATE_KEY)) {
             Write-Host "TAURI_PRIVATE_KEY is not set. Disabling updater config in tauri.conf.json..."
-            node -e "const fs = require('fs'); const config = JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json')); delete config.plugins.updater; delete config.bundle.createUpdaterArtifacts; fs.writeFileSync('src-tauri/tauri.conf.json', JSON.stringify(config, null, 2));"
+            node -e "const fs = require('fs'); const config = JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json')); config.plugins.updater = { active: false }; delete config.bundle.createUpdaterArtifacts; fs.writeFileSync('src-tauri/tauri.conf.json', JSON.stringify(config, null, 2));"
           } else {
             Write-Host "TAURI_PRIVATE_KEY is set. Keeping updater enabled."
           }
