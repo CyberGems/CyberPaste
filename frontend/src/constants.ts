@@ -1,14 +1,14 @@
 export const FOLDER_ICONS = {
   cyber: [
-    { id: 'Zap', color: '#f87171' },     // Red
-    { id: 'Flame', color: '#fb923c' },   // Orange
-    { id: 'Star', color: '#fbbf24' },    // Amber
-    { id: 'Leaf', color: '#4ade80' },    // Green
-    { id: 'Droplets', color: '#2dd4bf' },// Teal
-    { id: 'Cloud', color: '#22d3ee' },   // Cyan
-    { id: 'Moon', color: '#818cf8' },    // Indigo
-    { id: 'Music', color: '#f472b6' },   // Pink
-    { id: 'Shield', color: '#38bdf8' },  // Sky
+    { id: 'Zap', color: '#f87171' }, // Red
+    { id: 'Flame', color: '#fb923c' }, // Orange
+    { id: 'Star', color: '#fbbf24' }, // Amber
+    { id: 'Leaf', color: '#4ade80' }, // Green
+    { id: 'Droplets', color: '#2dd4bf' }, // Teal
+    { id: 'Cloud', color: '#22d3ee' }, // Cyan
+    { id: 'Moon', color: '#818cf8' }, // Indigo
+    { id: 'Music', color: '#f472b6' }, // Pink
+    { id: 'Shield', color: '#38bdf8' }, // Sky
     { id: 'Cpu', color: '#4ade80' },
     { id: 'Database', color: '#fb923c' },
     { id: 'Globe', color: '#60a5fa' },
@@ -19,14 +19,30 @@ export const FOLDER_ICONS = {
     { id: 'Compass', color: '#fbbf24' },
     { id: 'HardDrive', color: '#4ade80' },
     { id: 'Ghost', color: '#c084fc' },
-    { id: 'Activity', color: '#2dd4bf' }
+    { id: 'Activity', color: '#2dd4bf' },
   ],
   mono: [
-    'Folder', 'FolderHeart', 'FolderStar', 'FolderCode', 'FolderLock', 
-    'Archive', 'Briefcase', 'Bookmark', 'Tag', 'Inbox',
-    'Layers', 'Layout', 'Library', 'Package', 'Paperclip',
-    'Puzzle', 'Settings', 'Share2', 'Smile', 'Sun'
-  ]
+    'Folder',
+    'FolderHeart',
+    'FolderStar',
+    'FolderCode',
+    'FolderLock',
+    'Archive',
+    'Briefcase',
+    'Bookmark',
+    'Tag',
+    'Inbox',
+    'Layers',
+    'Layout',
+    'Library',
+    'Package',
+    'Paperclip',
+    'Puzzle',
+    'Settings',
+    'Share2',
+    'Smile',
+    'Sun',
+  ],
 };
 
 export const LAYOUT = {

@@ -11,6 +11,7 @@ export interface ClipboardItem {
   metadata: string | null;
   image_path: string | null;
   sort_order?: number;
+  is_pinned?: boolean;
 }
 
 export interface FolderItem {
@@ -44,6 +45,7 @@ export interface Settings {
   pinned?: boolean;
   auto_paste: boolean;
   ignore_ghost_clips: boolean;
+  reset_view_on_paste?: boolean;
   image_editor_path?: string;
   window_width?: number;
   window_height?: number;

@@ -102,9 +102,10 @@ pub fn init(app: &AppHandle, db: Arc<Database>) {
 
             // Capture source app info INSIDE the thread, but still early.
             // Using spawn_blocking because it involves Win32 API calls that might block.
-            let source_app_info = tauri::async_runtime::spawn_blocking(|| {
-                get_clipboard_owner_app_info()
-            }).await.unwrap_or((None, None, None, None, false));
+            let source_app_info =
+                tauri::async_runtime::spawn_blocking(|| get_clipboard_owner_app_info())
+                    .await
+                    .unwrap_or((None, None, None, None, false));
 
             process_clipboard_change(app, db, source_app_info).await;
         });
@@ -127,7 +128,6 @@ struct ClipboardImageRead {
     decode_ms: u128,
     source_type: &'static str,
 }
-
 
 fn read_clipboard_image_with_clipboard_rs(
     source_type: &'static str,
@@ -232,7 +232,8 @@ async fn process_clipboard_change(
                         clip_type = "file";
                         clip_content = content;
                         let first = std::path::Path::new(&files[0]);
-                        let name = first.file_name()
+                        let name = first
+                            .file_name()
                             .map(|n| n.to_string_lossy().to_string())
                             .unwrap_or_default();
                         clip_preview = if files.len() > 1 {
@@ -243,7 +244,8 @@ async fn process_clipboard_change(
                         metadata = serde_json::json!({
                             "file_count": files.len(),
                             "paths": files
-                        }).to_string();
+                        })
+                        .to_string();
                         found_content = true;
                         log::debug!("CLIPBOARD: Found files: {}", clip_preview);
                     }
@@ -258,7 +260,10 @@ async fn process_clipboard_change(
                         clip_content = trimmed.as_bytes().to_vec();
                         clip_hash = calculate_hash(&clip_content);
                         clip_type = "html";
-                        clip_preview = strip_html_tags(trimmed).chars().take(200).collect::<String>();
+                        clip_preview = strip_html_tags(trimmed)
+                            .chars()
+                            .take(200)
+                            .collect::<String>();
                         metadata = serde_json::json!({"format": "html"}).to_string();
                         found_content = true;
                         log::debug!("CLIPBOARD: Found HTML: {}", clip_preview);
@@ -274,7 +279,10 @@ async fn process_clipboard_change(
                         clip_content = trimmed.as_bytes().to_vec();
                         clip_hash = calculate_hash(&clip_content);
                         clip_type = "rtf";
-                        clip_preview = strip_rtf_tags(trimmed).chars().take(200).collect::<String>();
+                        clip_preview = strip_rtf_tags(trimmed)
+                            .chars()
+                            .take(200)
+                            .collect::<String>();
                         metadata = serde_json::json!({"format": "rtf"}).to_string();
                         found_content = true;
                         log::debug!("CLIPBOARD: Found RTF: {}", clip_preview);
@@ -413,7 +421,7 @@ async fn process_clipboard_change(
             let _ = sqlx::query(
                 r#"
                 UPDATE clips
-                SET created_at = CURRENT_TIMESTAMP,
+                SET created_at = CASE WHEN is_pinned = 1 OR folder_id IS NOT NULL THEN created_at ELSE CURRENT_TIMESTAMP END,
                     is_deleted = 0,
                     source_app = ?,
                     source_icon = ?,
@@ -421,7 +429,7 @@ async fn process_clipboard_change(
                     text_preview = ?,
                     metadata = ?,
                     is_thumbnail = 0,
-                    sort_order = (SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips)
+                    sort_order = CASE WHEN is_pinned = 1 OR folder_id IS NOT NULL THEN sort_order ELSE (SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips) END
                 WHERE uuid = ?
                 "#,
             )
@@ -459,7 +467,15 @@ async fn process_clipboard_change(
                 }
             }
         } else {
-            let _ = sqlx::query(r#"UPDATE clips SET created_at = CURRENT_TIMESTAMP, sort_order = (SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips), is_deleted = 0, source_app = ?, source_icon = ? WHERE uuid = ?"#)
+            let _ = sqlx::query(r#"
+                UPDATE clips 
+                SET created_at = CASE WHEN is_pinned = 1 OR folder_id IS NOT NULL THEN created_at ELSE CURRENT_TIMESTAMP END, 
+                    sort_order = CASE WHEN is_pinned = 1 OR folder_id IS NOT NULL THEN sort_order ELSE (SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips) END, 
+                    is_deleted = 0, 
+                    source_app = ?, 
+                    source_icon = ? 
+                WHERE uuid = ?
+            "#)
                 .bind(&source_app)
                 .bind(&source_icon)
                 .bind(&existing_id)
@@ -525,14 +541,14 @@ async fn process_clipboard_change(
         }
         clip_uuid
     };
-    
+
     // Prune history in background to avoid blocking the clipboard loop
     let pool_clone = pool.clone();
     let max_items = settings.max_items;
     let _ = crate::models::get_runtime().unwrap().spawn(async move {
         let _ = crate::commands::prune_history(&pool_clone, max_items).await;
     });
-    
+
     let db_write_ms = db_write_started.elapsed().as_millis();
 
     let emit_started = std::time::Instant::now();
@@ -571,19 +587,28 @@ async fn process_clipboard_change(
                         let mut buf = Vec::new();
                         let encoder = image::codecs::png::PngEncoder::new(&mut buf);
                         use image::ImageEncoder;
-                        encoder.write_image(
-                            thumb.to_rgba8().as_raw(),
-                            thumb.width(),
-                            thumb.height(),
-                            image::ColorType::Rgba8,
-                        ).ok();
+                        encoder
+                            .write_image(
+                                thumb.to_rgba8().as_raw(),
+                                thumb.width(),
+                                thumb.height(),
+                                image::ColorType::Rgba8,
+                            )
+                            .ok();
                         BASE64.encode(&buf)
                     })
                 })
             } else {
                 None
             };
-            let _ = crate::commands::show_toast(app.clone(), msg, "info".to_string(), Some(clip_type.to_string()), image_b64).await;
+            let _ = crate::commands::show_toast(
+                app.clone(),
+                msg,
+                "info".to_string(),
+                Some(clip_type.to_string()),
+                image_b64,
+            )
+            .await;
         }
     }
 
@@ -1021,7 +1046,10 @@ pub fn strip_html_tags(html: &str) -> String {
         match ch {
             '<' => in_tag = true,
             '>' => in_tag = false,
-            '&' if !in_tag => { in_entity = true; entity.clear(); }
+            '&' if !in_tag => {
+                in_entity = true;
+                entity.clear();
+            }
             ';' if in_entity => {
                 in_entity = false;
                 let decoded = match entity.as_str() {
@@ -1052,37 +1080,78 @@ pub fn strip_rtf_tags(rtf: &str) -> String {
         match bytes[i] {
             b'\\' => {
                 i += 1;
-                if i >= bytes.len() { break; }
+                if i >= bytes.len() {
+                    break;
+                }
                 match bytes[i] {
                     b'\'' if i + 2 < bytes.len() => {
-                        let hex = std::str::from_utf8(&bytes[i+1..i+3]).unwrap_or("20");
+                        let hex = std::str::from_utf8(&bytes[i + 1..i + 3]).unwrap_or("20");
                         if let Ok(code) = u8::from_str_radix(hex, 16) {
-                            out.push(if code >= 32 && code != 127 { code as char } else { ' ' });
+                            out.push(if code >= 32 && code != 127 {
+                                code as char
+                            } else {
+                                ' '
+                            });
                         }
                         i += 3;
                     }
-                    b'\'' => { i += 1; }
-                    b'\\' => { out.push('\\'); i += 1; }
-                    b'{' => { out.push('{'); i += 1; }
-                    b'}' => { out.push('}'); i += 1; }
-                    b'~' => { out.push(' '); i += 1; }
-                    b'_' => { out.push('-'); i += 1; }
-                    b'*' => { i += 1; }
-                    b'\n' | b'\r' => { i += 1; }
+                    b'\'' => {
+                        i += 1;
+                    }
+                    b'\\' => {
+                        out.push('\\');
+                        i += 1;
+                    }
+                    b'{' => {
+                        out.push('{');
+                        i += 1;
+                    }
+                    b'}' => {
+                        out.push('}');
+                        i += 1;
+                    }
+                    b'~' => {
+                        out.push(' ');
+                        i += 1;
+                    }
+                    b'_' => {
+                        out.push('-');
+                        i += 1;
+                    }
+                    b'*' => {
+                        i += 1;
+                    }
+                    b'\n' | b'\r' => {
+                        i += 1;
+                    }
                     _ if bytes[i].is_ascii_alphabetic() => {
                         i += 1;
-                        while i < bytes.len() && bytes[i].is_ascii_alphabetic() { i += 1; }
-                        while i < bytes.len() && (bytes[i] == b'-' || bytes[i].is_ascii_digit()) { i += 1; }
-                        if i < bytes.len() && bytes[i] == b' ' { i += 1; }
+                        while i < bytes.len() && bytes[i].is_ascii_alphabetic() {
+                            i += 1;
+                        }
+                        while i < bytes.len() && (bytes[i] == b'-' || bytes[i].is_ascii_digit()) {
+                            i += 1;
+                        }
+                        if i < bytes.len() && bytes[i] == b' ' {
+                            i += 1;
+                        }
                     }
-                    _ => { i += 1; }
+                    _ => {
+                        i += 1;
+                    }
                 }
             }
-            b'{' | b'}' => { i += 1; }
-            b'\r' | b'\n' => { i += 1; }
-            _ => { out.push(bytes[i] as char); i += 1; }
+            b'{' | b'}' => {
+                i += 1;
+            }
+            b'\r' | b'\n' => {
+                i += 1;
+            }
+            _ => {
+                out.push(bytes[i] as char);
+                i += 1;
+            }
         }
     }
     out.trim().to_string()
 }
-

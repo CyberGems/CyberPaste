@@ -2,6 +2,22 @@
 
 All notable changes to CyberPaste will be documented in this file.
 
+## v1.2.0
+
+### Added
+- **Expanded AI Providers**: Added full support for Kimi (Moonshot) and Gemini (OpenAI-compatible) AI providers.
+- **Model Preset Dropdowns**: Introduced model selection presets for all AI providers alongside support for completely custom model strings.
+- **Text Input Shortcut Protection**: Added smart focus guards to disable global application hotkeys (like Delete, P, Enter, and Arrow keys) while editing clip contents or typing in settings forms, preventing unintended deletion of items.
+- **Escape Key Interception**: Configured modal overlays (Edit Clip, AI Result, Settings) to intercept Escape keys in the capture phase to gracefully close only the active modal instead of hiding the main application.
+- **HTML Tag Stripping**: Integrated automatic HTML tag removal for clipboard items sent to the AI, ensuring readable plain text results and optimized token usage.
+- **Premium Scrollbars**: Styled scrollable settings panes and dialog content with custom semi-transparent webkit scrollbars.
+- **Dialog Aesthetics**: Enhanced the AI result dialog with a glowing cyber neon header border and custom styling.
+
+### Fixed
+- **API Key Whitespace**: Automatically sanitizes whitespaces and newlines from API keys to prevent authentication errors.
+- **AI Window Title Localization**: Fixed localization keys to correctly render localized headers for grammar correction actions.
+- **Kimi URL Migration**: Automatically migrates old Moonshot AI URLs to the newer global platform endpoint (`https://api.moonshot.ai/v1`).
+
 ## v1.1.1
 
 ### Added

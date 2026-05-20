@@ -35,8 +35,6 @@ import { FlaskConical } from 'lucide-react';
 import { getCurrentWindow, availableMonitors } from '@tauri-apps/api/window';
 import { getVersion } from '@tauri-apps/api/app';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { check } from '@tauri-apps/plugin-updater';
-import { relaunch } from '@tauri-apps/plugin-process';
 import { systemToast as toast } from '../utils/toast';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Select } from './ui/Select';
@@ -48,7 +46,7 @@ interface SettingsPanelProps {
   onClose: () => void;
 }
 
-type Tab = 'general' | 'ai' | 'folders' | 'notifications' | 'about';
+type Tab = 'general' | 'ai' | 'notifications' | 'about';
 
 function PromptEditor({
   label,
@@ -112,23 +110,61 @@ function PromptEditor({
   );
 }
 
+const PROVIDER_MODELS: Record<string, { value: string; label: string }[]> = {
+  openai: [
+    { value: 'gpt-4o', label: 'gpt-4o (Most Capable)' },
+    { value: 'gpt-4o-mini', label: 'gpt-4o-mini (Fast & Cheap)' },
+    { value: 'o1', label: 'o1 (Reasoning)' },
+    { value: 'o1-mini', label: 'o1-mini (Reasoning)' },
+    { value: 'o3-mini', label: 'o3-mini (Recent Reasoning)' },
+    { value: 'custom', label: 'Custom Model...' }
+  ],
+  deepseek: [
+    { value: 'deepseek-chat', label: 'deepseek-chat (V3 / R1)' },
+    { value: 'deepseek-reasoner', label: 'deepseek-reasoner (R1)' },
+    { value: 'custom', label: 'Custom Model...' }
+  ],
+  kimi: [
+    { value: 'moonshot-v1-8k', label: 'moonshot-v1-8k' },
+    { value: 'moonshot-v1-32k', label: 'moonshot-v1-32k' },
+    { value: 'moonshot-v1-128k', label: 'moonshot-v1-128k' },
+    { value: 'custom', label: 'Custom Model...' }
+  ],
+  gemini: [
+    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+    { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
+    { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
+    { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
+    { value: 'custom', label: 'Custom Model...' }
+  ],
+  custom: [
+    { value: 'custom', label: 'Custom Model...' }
+  ]
+};
+
 export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>('general');
   const [settings, setSettings] = useState<Settings>(initialSettings);
   const [_historySize, setHistorySize] = useState<number>(0);
-  const [recordingTarget, setRecordingTarget] = useState<'hotkey' | 'view_mode_hotkey' | null>(null);
+  const [recordingTarget, setRecordingTarget] = useState<'hotkey' | 'view_mode_hotkey' | null>(
+    null
+  );
   const [showApiKey, setShowApiKey] = useState(false);
   const [appVersion, setAppVersion] = useState('');
   const [monitorList, setMonitorList] = useState<{ name: string; index: number }[]>([]);
 
   useEffect(() => {
     getVersion().then(setAppVersion);
-    availableMonitors().then((monitors: any[]) => {
-      setMonitorList(monitors.map((m: any, i: number) => ({
-        name: m.name || `Monitor ${i + 1}`,
-        index: i + 1,
-      })));
-    }).catch(console.error);
+    availableMonitors()
+      .then((monitors: any[]) => {
+        setMonitorList(
+          monitors.map((m: any, i: number) => ({
+            name: m.name || `Monitor ${i + 1}`,
+            index: i + 1,
+          }))
+        );
+      })
+      .catch(console.error);
   }, []);
 
   const openDataDir = async () => {
@@ -152,6 +188,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
   const [localApiKey, setLocalApiKey] = useState(initialSettings.ai_api_key || '');
   const [localBaseUrl, setLocalBaseUrl] = useState(initialSettings.ai_base_url || '');
   const [localModel, setLocalModel] = useState(initialSettings.ai_model || 'gpt-3.5-turbo');
+  const [isCustomModel, setIsCustomModel] = useState(() => {
+    const provider = initialSettings.ai_provider || 'openai';
+    const models = PROVIDER_MODELS[provider] || PROVIDER_MODELS.custom;
+    return !models.some((m) => m.value === initialSettings.ai_model);
+  });
   // Folder Management State
   const [folders, setFolders] = useState<FolderItem[]>([]);
   const [newFolderName, setNewFolderName] = useState('');
@@ -169,13 +210,13 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
   useEffect(() => {
     const win = getCurrentWindow();
     win.isMaximized().then(setIsMaximized);
-    
+
     const unlisten = win.onResized(() => {
       win.isMaximized().then(setIsMaximized);
     });
 
     return () => {
-      unlisten.then(f => f());
+      unlisten.then((f) => f());
     };
   }, []);
 
@@ -201,7 +242,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
           if (updates.hotkey) {
             await invoke('register_global_shortcut', { hotkey: updates.hotkey });
           }
-          if ('round_corners' in updates || 'mica_effect' in updates || 'float_above_taskbar' in updates) {
+          if (
+            'round_corners' in updates ||
+            'mica_effect' in updates ||
+            'float_above_taskbar' in updates
+          ) {
             await invoke('refresh_window');
           }
         } catch (error) {
@@ -280,14 +325,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
   const handleResetLayout = async () => {
     try {
       await emit('reset-window-layout', {});
-      toast.success("Layout restored to defaults!");
+      toast.success('Layout restored to defaults!');
       // Small delay to let user see success message
       setTimeout(() => {
         onClose();
       }, 800);
     } catch (e) {
       console.error(e);
-      toast.error("Failed to send reset command");
+      toast.error('Failed to send reset command');
     }
   };
 
@@ -305,6 +350,13 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     invoke<string[]>('get_ignored_apps').then(setIgnoredApps).catch(console.error);
     loadFolders();
 
+    // Auto-migrate Kimi legacy base URL from .cn to .ai if currently set
+    if (initialSettings.ai_provider === 'kimi' && initialSettings.ai_base_url === 'https://api.moonshot.cn/v1') {
+      updateSettings({
+        ai_base_url: 'https://api.moonshot.ai/v1'
+      });
+      setLocalBaseUrl('https://api.moonshot.ai/v1');
+    }
   }, []);
 
   const handleAddIgnoredApp = async () => {
@@ -434,38 +486,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     setRecordingTarget(null);
   };
 
-  const handleCheckUpdate = async () => {
-    try {
-      const loadingToast = toast.loading('Checking for updates...');
-      const update = await check();
-      toast.dismiss(loadingToast);
-
-      if (update && update.available) {
-        toast.info(`Update v${update.version} available!`, {
-          duration: 10000,
-          action: {
-            label: 'Download & Restart',
-            onClick: async () => {
-              try {
-                const dlToast = toast.loading(`Downloading v${update.version}...`);
-                await update.downloadAndInstall();
-                toast.dismiss(dlToast);
-                toast.success('Update installed. Restarting...');
-                await relaunch();
-              } catch (e) {
-                toast.error(`Update failed: ${e}`);
-              }
-            },
-          },
-        });
-      } else {
-        toast.success('You are on the latest version.');
-      }
-    } catch (e) {
-      toast.error(`Check failed: ${e}`);
-    }
-  };
-
   return (
     <>
       <ConfirmDialog
@@ -482,24 +502,28 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         {/* Header */}
         <div
           data-tauri-drag-region
-          className="flex items-center justify-between border-b border-border p-4 bg-card/30 cursor-default"
+          className="flex cursor-default items-center justify-between border-b border-border bg-card/30 p-4"
         >
-          <div data-tauri-drag-region className="flex items-center gap-3 pointer-events-none">
-            <SettingsIcon size={20} className="text-primary" />
-            <h2 className="text-xl font-bold tracking-tight">{t('settings.title')}</h2>
+          <div data-tauri-drag-region className="pointer-events-none flex items-center gap-3">
+            <img src="/logo.png" alt="CyberPaste" className="h-6 w-6 object-contain" />
+            <h2 className="text-xl font-bold tracking-tight text-foreground/90">CyberPaste</h2>
           </div>
           <div className="flex items-center gap-1">
             <button
               onClick={toggleMaximize}
-              className="icon-button w-8 h-8 flex items-center justify-center hover:bg-accent/50 rounded-md transition-colors"
+              className="icon-button flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-accent/50"
               onMouseDown={(e) => e.stopPropagation()}
               title={isMaximized ? t('common.restore') : t('common.maximize')}
             >
-              {isMaximized ? <Square size={14} className="opacity-70" /> : <Maximize2 size={14} className="opacity-70" />}
+              {isMaximized ? (
+                <Square size={14} className="opacity-70" />
+              ) : (
+                <Maximize2 size={14} className="opacity-70" />
+              )}
             </button>
             <button
               onClick={onClose}
-              className="icon-button w-8 h-8 flex items-center justify-center hover:bg-destructive/20 hover:text-destructive rounded-md transition-colors"
+              className="icon-button flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-destructive/20 hover:text-destructive"
               onMouseDown={(e) => e.stopPropagation()}
             >
               <X size={20} />
@@ -510,6 +534,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         <div className="flex flex-1 overflow-hidden">
           {/* Sidebar */}
           <div className="w-56 flex-shrink-0 border-r border-border bg-card/50 p-3">
+            <div className="px-4 py-2 mb-3">
+              <h1 className="text-xl font-bold tracking-tight text-foreground/90">{t('settings.title')}</h1>
+            </div>
             <div className="flex flex-col gap-1.5">
               <button
                 onClick={() => setActiveTab('general')}
@@ -536,18 +563,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 {t('settings.ai')}
               </button>
               <button
-                onClick={() => setActiveTab('folders')}
-                className={clsx(
-                  'flex items-center gap-3 rounded-md px-4 py-2.5 text-base font-medium transition-all duration-200',
-                  activeTab === 'folders'
-                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                    : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-                )}
-              >
-                <FolderIcon size={18} />
-                {t('settings.folders')}
-              </button>
-              <button
                 onClick={() => setActiveTab('notifications')}
                 className={clsx(
                   'flex items-center gap-3 rounded-md px-4 py-2.5 text-base font-medium transition-all duration-200',
@@ -559,7 +574,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 <Bell size={18} />
                 {t('settings.toasts')}
               </button>
-              <div className="mt-auto pt-4 border-t border-border/50">
+              <div className="mt-auto border-t border-border/50 pt-4">
                 <button
                   onClick={() => setActiveTab('about')}
                   className={clsx(
@@ -577,14 +592,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
             <div className="mx-auto max-w-2xl space-y-8">
               {/* --- GENERAL TAB --- */}
               {activeTab === 'general' && (
                 <>
                   {/* Appearance */}
                   <section className="space-y-4">
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-primary/80 flex items-center gap-2">
+                    <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-primary/80">
                       <SettingsIcon size={14} /> Appearance
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
@@ -636,53 +651,82 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     </div>
                     <div className="flex items-center justify-between rounded-lg border border-border bg-accent/20 p-3">
                       <div>
-                        <span className="text-sm font-medium">{t('settings.floatAboveTaskbar')}</span>
-                        <p className="text-xs text-muted-foreground">{t('settings.floatAboveTaskbarDesc')}</p>
+                        <span className="text-sm font-medium">
+                          {t('settings.floatAboveTaskbar')}
+                        </span>
+                        <p className="text-xs text-muted-foreground">
+                          {t('settings.floatAboveTaskbarDesc')}
+                        </p>
                       </div>
                       <button
-                        onClick={() => updateSetting('float_above_taskbar', !(settings.float_above_taskbar ?? true))}
+                        onClick={() =>
+                          updateSetting(
+                            'float_above_taskbar',
+                            !(settings.float_above_taskbar ?? true)
+                          )
+                        }
                         className={`h-6 w-11 rounded-full transition-colors ${(settings.float_above_taskbar ?? true) ? 'bg-primary' : 'bg-accent'}`}
                       >
-                        <span className={`block h-4 w-4 rounded-full bg-white transition-transform ${(settings.float_above_taskbar ?? true) ? 'translate-x-6' : 'translate-x-1'}`} />
+                        <span
+                          className={`block h-4 w-4 rounded-full bg-white transition-transform ${(settings.float_above_taskbar ?? true) ? 'translate-x-6' : 'translate-x-1'}`}
+                        />
                       </button>
                     </div>
                     <div className="flex items-center justify-between rounded-lg border border-border bg-accent/20 p-3">
                       <div>
                         <span className="text-sm font-medium">{t('settings.roundCorners')}</span>
-                        <p className="text-xs text-muted-foreground">{t('settings.roundCornersDesc')}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {t('settings.roundCornersDesc')}
+                        </p>
                       </div>
                       <button
-                        onClick={() => updateSetting('round_corners', !(settings.round_corners ?? false))}
+                        onClick={() =>
+                          updateSetting('round_corners', !(settings.round_corners ?? false))
+                        }
                         className={`h-6 w-11 rounded-full transition-colors ${(settings.round_corners ?? false) ? 'bg-primary' : 'bg-accent'}`}
                       >
-                        <span className={`block h-4 w-4 rounded-full bg-white transition-transform ${(settings.round_corners ?? false) ? 'translate-x-6' : 'translate-x-1'}`} />
+                        <span
+                          className={`block h-4 w-4 rounded-full bg-white transition-transform ${(settings.round_corners ?? false) ? 'translate-x-6' : 'translate-x-1'}`}
+                        />
                       </button>
                     </div>
                     <div className="flex items-center justify-between rounded-lg border border-border bg-accent/20 p-3">
                       <div>
-                        <span className="text-base font-semibold">{t('settings.startupWithWindows')}</span>
-                        <p className="text-sm text-muted-foreground/80">{t('settings.startupWithWindowsDesc')}</p>
+                        <span className="text-base font-semibold">
+                          {t('settings.startupWithWindows')}
+                        </span>
+                        <p className="text-sm text-muted-foreground/80">
+                          {t('settings.startupWithWindowsDesc')}
+                        </p>
                       </div>
                       <button
-                        onClick={() => updateSetting('startup_with_windows', !settings.startup_with_windows)}
+                        onClick={() =>
+                          updateSetting('startup_with_windows', !settings.startup_with_windows)
+                        }
                         className={`h-6 w-11 rounded-full transition-colors ${settings.startup_with_windows ? 'bg-primary' : 'bg-accent'}`}
                       >
-                        <div className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.startup_with_windows ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                        <div
+                          className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.startup_with_windows ? 'translate-x-5' : 'translate-x-0.5'}`}
+                        />
                       </button>
                     </div>
                   </section>
 
                   {/* Clipboard & Capture */}
                   <section className="space-y-4">
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-cyan-400/80 flex items-center gap-2">
+                    <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-cyan-400/80">
                       <Clipboard size={14} /> Clipboard & Capture
                     </h3>
                     <div className="space-y-3">
                       <label className="block">
-                        <span className="text-sm font-bold uppercase tracking-tight text-primary/70">{t('settings.historyLimit')}</span>
-                        <p className="text-xs text-muted-foreground">Maximum number of clips to keep in history (excludes folders).</p>
+                        <span className="text-sm font-bold uppercase tracking-tight text-primary/70">
+                          {t('settings.historyLimit')}
+                        </span>
+                        <p className="text-xs text-muted-foreground">
+                          Maximum number of clips to keep in history (excludes folders).
+                        </p>
                       </label>
-                      <div className="flex items-center gap-4 bg-accent/10 p-3 rounded-xl border border-border/40">
+                      <div className="flex items-center gap-4 rounded-xl border border-border/40 bg-accent/10 p-3">
                         <input
                           type="range"
                           min="50"
@@ -690,36 +734,55 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           step="50"
                           value={settings.max_items || 200}
                           onChange={(e) => updateSetting('max_items', parseInt(e.target.value))}
-                          className="flex-1 accent-primary cursor-pointer h-1.5 bg-accent rounded-lg appearance-none"
+                          className="h-1.5 flex-1 cursor-pointer appearance-none rounded-lg bg-accent accent-primary"
                         />
-                        <span className="font-mono text-sm font-bold text-primary min-w-[3rem] text-center bg-primary/10 border border-primary/20 rounded-lg px-2 py-1 shadow-sm">
+                        <span className="min-w-[3rem] rounded-lg border border-primary/20 bg-primary/10 px-2 py-1 text-center font-mono text-sm font-bold text-primary shadow-sm">
                           {settings.max_items || 200}
                         </span>
                       </div>
                     </div>
                     <div className="flex items-center justify-between rounded-lg border border-border bg-accent/20 p-3">
                       <div>
-                        <span className="text-base font-semibold">{t('settings.ignoreGhostClips')}</span>
-                        <p className="text-sm text-muted-foreground/80">{t('settings.ignoreGhostClipsDesc')}</p>
+                        <span className="text-base font-semibold">
+                          {t('settings.ignoreGhostClips')}
+                        </span>
+                        <p className="text-sm text-muted-foreground/80">
+                          {t('settings.ignoreGhostClipsDesc')}
+                        </p>
                       </div>
                       <button
-                        onClick={() => updateSetting('ignore_ghost_clips', !settings.ignore_ghost_clips)}
+                        onClick={() =>
+                          updateSetting('ignore_ghost_clips', !settings.ignore_ghost_clips)
+                        }
                         className={`h-6 w-11 rounded-full transition-colors ${settings.ignore_ghost_clips ? 'bg-primary' : 'bg-accent'}`}
                       >
-                        <div className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.ignore_ghost_clips ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                        <div
+                          className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.ignore_ghost_clips ? 'translate-x-5' : 'translate-x-0.5'}`}
+                        />
                       </button>
                     </div>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between rounded-lg border border-border bg-accent/20 p-3">
                         <div>
-                          <span className="text-sm font-medium">{t('settings.clipboardSound')}</span>
-                          <p className="text-xs text-muted-foreground">{t('settings.clipboardSoundDesc')}</p>
+                          <span className="text-sm font-medium">
+                            {t('settings.clipboardSound')}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.clipboardSoundDesc')}
+                          </p>
                         </div>
                         <button
-                          onClick={() => updateSetting('clipboard_sound_enabled', !(settings.clipboard_sound_enabled ?? false))}
+                          onClick={() =>
+                            updateSetting(
+                              'clipboard_sound_enabled',
+                              !(settings.clipboard_sound_enabled ?? false)
+                            )
+                          }
                           className={`h-6 w-11 rounded-full transition-colors ${(settings.clipboard_sound_enabled ?? false) ? 'bg-primary' : 'bg-accent'}`}
                         >
-                          <span className={`block h-4 w-4 rounded-full bg-white transition-transform ${(settings.clipboard_sound_enabled ?? false) ? 'translate-x-6' : 'translate-x-1'}`} />
+                          <span
+                            className={`block h-4 w-4 rounded-full bg-white transition-transform ${(settings.clipboard_sound_enabled ?? false) ? 'translate-x-6' : 'translate-x-1'}`}
+                          />
                         </button>
                       </div>
                       {(settings.clipboard_sound_enabled ?? false) && (
@@ -729,7 +792,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             value={settings.clipboard_sound_path || ''}
                             onChange={(e) => updateSetting('clipboard_sound_path', e.target.value)}
                             placeholder="C:\path\to\sound.wav"
-                            className="flex-1 bg-black/20 border border-white/5 rounded-lg py-1.5 px-3 text-xs focus:outline-none focus:border-cyan-500/50 transition-all"
+                            className="flex-1 rounded-lg border border-white/5 bg-black/20 px-3 py-1.5 text-xs transition-all focus:border-cyan-500/50 focus:outline-none"
                           />
                           <button
                             onClick={async () => {
@@ -743,7 +806,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                 if (e !== 'No file selected') console.error(e);
                               }
                             }}
-                            className="btn btn-secondary text-xs flex-shrink-0"
+                            className="btn btn-secondary flex-shrink-0 text-xs"
                           >
                             {t('common.browse')}
                           </button>
@@ -751,14 +814,16 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             onClick={async () => {
                               if (settings.clipboard_sound_path) {
                                 try {
-                                  await invoke('play_clipboard_sound', { soundPath: settings.clipboard_sound_path });
+                                  await invoke('play_clipboard_sound', {
+                                    soundPath: settings.clipboard_sound_path,
+                                  });
                                 } catch (e) {
                                   console.error('Sound preview failed:', e);
                                 }
                               }
                             }}
                             disabled={!settings.clipboard_sound_path}
-                            className="btn btn-secondary text-xs flex-shrink-0 disabled:opacity-50"
+                            className="btn btn-secondary flex-shrink-0 text-xs disabled:opacity-50"
                             title="Preview sound"
                           >
                             <Volume2 size={14} />
@@ -769,31 +834,64 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <div className="flex items-center justify-between rounded-lg border border-border bg-accent/20 p-3">
                       <div>
                         <span className="text-sm font-medium">{t('settings.autoPaste')}</span>
-                        <p className="text-sm text-muted-foreground/80">{t('settings.autoPasteDesc')}</p>
+                        <p className="text-sm text-muted-foreground/80">
+                          {t('settings.autoPasteDesc')}
+                        </p>
                       </div>
                       <button
                         onClick={() => updateSetting('auto_paste', !settings.auto_paste)}
                         className={`h-6 w-11 rounded-full transition-colors ${settings.auto_paste ? 'bg-primary' : 'bg-accent'}`}
                       >
-                        <div className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.auto_paste ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                        <div
+                          className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.auto_paste ? 'translate-x-5' : 'translate-x-0.5'}`}
+                        />
                       </button>
                     </div>
                     <div className="flex items-center justify-between rounded-lg border border-border bg-accent/20 p-3">
                       <div>
                         <span className="text-sm font-medium">{t('settings.autoInjectPaste')}</span>
-                        <p className="text-sm text-muted-foreground/80">{t('settings.autoInjectPasteDesc')}</p>
+                        <p className="text-sm text-muted-foreground/80">
+                          {t('settings.autoInjectPasteDesc')}
+                        </p>
                       </div>
                       <button
-                        onClick={() => updateSetting('auto_inject_paste', !settings.auto_inject_paste)}
+                        onClick={() =>
+                          updateSetting('auto_inject_paste', !settings.auto_inject_paste)
+                        }
                         className={`h-6 w-11 rounded-full transition-colors ${settings.auto_inject_paste ? 'bg-primary' : 'bg-accent'}`}
                       >
-                        <div className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.auto_inject_paste ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                        <div
+                          className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.auto_inject_paste ? 'translate-x-5' : 'translate-x-0.5'}`}
+                        />
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border border-border bg-accent/20 p-3">
+                      <div>
+                        <span className="text-sm font-medium">{t('settings.resetViewOnPaste')}</span>
+                        <p className="text-sm text-muted-foreground/80">
+                          {t('settings.resetViewOnPasteDesc')}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() =>
+                          updateSetting('reset_view_on_paste', !settings.reset_view_on_paste)
+                        }
+                        className={`h-6 w-11 rounded-full transition-colors ${settings.reset_view_on_paste ? 'bg-primary' : 'bg-accent'}`}
+                      >
+                        <div
+                          className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.reset_view_on_paste ? 'translate-x-5' : 'translate-x-0.5'}`}
+                        />
                       </button>
                     </div>
                     <div className="space-y-3">
                       <label className="block">
-                        <span className="text-sm font-bold uppercase tracking-tight text-primary/70">External Image Editor</span>
-                        <p className="text-xs text-muted-foreground">Path to your favorite editor (e.g., CyberViewer). Opens when editing image clips.</p>
+                        <span className="text-sm font-bold uppercase tracking-tight text-primary/70">
+                          External Image Editor
+                        </span>
+                        <p className="text-xs text-muted-foreground">
+                          Path to your favorite editor (e.g., CyberViewer). Opens when editing image
+                          clips.
+                        </p>
                       </label>
                       <div className="flex items-center gap-2">
                         <input
@@ -813,7 +911,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               if (path) updateSetting('image_editor_path', path);
                             } catch (e) {}
                           }}
-                          className="rounded-lg bg-accent px-3 py-2 text-sm font-medium hover:bg-accent/80 transition-all"
+                          className="rounded-lg bg-accent px-3 py-2 text-sm font-medium transition-all hover:bg-accent/80"
                         >
                           Browse
                         </button>
@@ -823,13 +921,17 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
                   {/* Layout & Navigation */}
                   <section className="space-y-4">
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-purple-400/80 flex items-center gap-2">
+                    <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-purple-400/80">
                       <Layout size={14} /> Layout & Navigation
                     </h3>
                     <div className="space-y-3">
                       <label className="block">
-                        <span className="text-base font-medium">{t('settings.scrollDirection')}</span>
-                        <p className="text-xs text-muted-foreground">{t('settings.scrollDirectionDesc')}</p>
+                        <span className="text-base font-medium">
+                          {t('settings.scrollDirection')}
+                        </span>
+                        <p className="text-xs text-muted-foreground">
+                          {t('settings.scrollDirectionDesc')}
+                        </p>
                       </label>
                       <Select
                         value={settings.scroll_direction || 'horizontal'}
@@ -842,8 +944,12 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     </div>
                     <div className="space-y-3">
                       <label className="block">
-                        <span className="text-base font-medium">{t('settings.compactFolderLayout')}</span>
-                        <p className="text-xs text-muted-foreground">{t('settings.compactFolderLayoutDesc')}</p>
+                        <span className="text-base font-medium">
+                          {t('settings.compactFolderLayout')}
+                        </span>
+                        <p className="text-xs text-muted-foreground">
+                          {t('settings.compactFolderLayoutDesc')}
+                        </p>
                       </label>
                       <Select
                         value={settings.compact_folder_layout || 'horizontal'}
@@ -856,22 +962,37 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       {(settings.compact_folder_layout || 'horizontal') === 'vertical' && (
                         <div className="flex items-center justify-between rounded-lg border border-border bg-accent/20 p-3">
                           <div>
-                            <span className="text-sm font-medium">{t('settings.compactSidebarCollapsed')}</span>
-                            <p className="text-xs text-muted-foreground">{t('settings.compactSidebarCollapsedDesc')}</p>
+                            <span className="text-sm font-medium">
+                              {t('settings.compactSidebarCollapsed')}
+                            </span>
+                            <p className="text-xs text-muted-foreground">
+                              {t('settings.compactSidebarCollapsedDesc')}
+                            </p>
                           </div>
                           <button
-                            onClick={() => updateSetting('compact_sidebar_collapsed', !(settings.compact_sidebar_collapsed ?? false))}
+                            onClick={() =>
+                              updateSetting(
+                                'compact_sidebar_collapsed',
+                                !(settings.compact_sidebar_collapsed ?? false)
+                              )
+                            }
                             className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_sidebar_collapsed ?? false) ? 'bg-primary' : 'bg-accent'}`}
                           >
-                            <span className={`block h-4 w-4 rounded-full bg-white transition-transform ${(settings.compact_sidebar_collapsed ?? false) ? 'translate-x-6' : 'translate-x-1'}`} />
+                            <span
+                              className={`block h-4 w-4 rounded-full bg-white transition-transform ${(settings.compact_sidebar_collapsed ?? false) ? 'translate-x-6' : 'translate-x-1'}`}
+                            />
                           </button>
                         </div>
                       )}
                     </div>
                     <div className="space-y-3">
                       <label className="block">
-                        <span className="text-base font-medium">{t('settings.compactViewPosition')}</span>
-                        <p className="text-xs text-muted-foreground">{t('settings.compactViewPositionDesc')}</p>
+                        <span className="text-base font-medium">
+                          {t('settings.compactViewPosition')}
+                        </span>
+                        <p className="text-xs text-muted-foreground">
+                          {t('settings.compactViewPositionDesc')}
+                        </p>
                       </label>
                       <Select
                         value={settings.compact_view_position_mode || 'auto'}
@@ -885,21 +1006,121 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     </div>
                   </section>
 
+                  {/* Folders Management */}
+                  <section className="space-y-4">
+                    <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-blue-400/80">
+                      <FolderIcon size={14} /> {t('settings.manageFolders')}
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newFolderName}
+                          onChange={(e) => setNewFolderName(e.target.value)}
+                          placeholder={t('settings.newFolderPlaceholder')}
+                          className="flex-1 rounded-lg border border-border bg-input px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                          onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
+                        />
+                        <button
+                          onClick={handleCreateFolder}
+                          disabled={!newFolderName.trim()}
+                          className="btn btn-secondary px-3 py-1.5 text-xs flex items-center gap-1"
+                        >
+                          <Plus size={14} />
+                          {t('settings.add')}
+                        </button>
+                      </div>
+
+                      <div className="max-h-40 space-y-1.5 overflow-y-auto pr-1 custom-scrollbar">
+                        {folders.filter((f) => !f.is_system).length === 0 ? (
+                          <p className="rounded-lg border border-dashed border-border py-3 text-center text-xs text-muted-foreground">
+                            {t('settings.noFolders')}
+                          </p>
+                        ) : (
+                          folders
+                            .filter((f) => !f.is_system)
+                            .map((folder) => (
+                              <div
+                                key={folder.id}
+                                className="flex items-center justify-between rounded-lg border border-border/40 bg-card/30 px-3 py-1.5 text-xs hover:border-border hover:bg-card/50 transition-colors"
+                              >
+                                {editingFolderId === folder.id ? (
+                                  <div className="flex flex-1 items-center gap-2">
+                                    <input
+                                      type="text"
+                                      value={renameValue}
+                                      onChange={(e) => setRenameValue(e.target.value)}
+                                      className="flex-1 rounded border border-input bg-background px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                                      autoFocus
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') saveRenameFolder();
+                                        if (e.key === 'Escape') setEditingFolderId(null);
+                                      }}
+                                    />
+                                    <button
+                                      onClick={saveRenameFolder}
+                                      className="text-xs text-primary hover:underline font-semibold"
+                                    >
+                                      {t('common.save')}
+                                    </button>
+                                    <button
+                                      onClick={() => setEditingFolderId(null)}
+                                      className="text-xs text-muted-foreground hover:underline"
+                                    >
+                                      {t('common.cancel')}
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                      <FolderIcon size={14} className="text-blue-400 flex-shrink-0" />
+                                      <span className="truncate font-medium">{folder.name}</span>
+                                      <span className="text-[10px] text-muted-foreground flex-shrink-0">
+                                        ({folder.item_count} items)
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                      <button
+                                        onClick={() => startRenameFolder(folder)}
+                                        className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                                        title="Rename"
+                                      >
+                                        <MoreHorizontal size={13} />
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteFolder(folder.id)}
+                                        className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                                        title="Delete"
+                                      >
+                                        <Trash2 size={13} />
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            ))
+                        )}
+                      </div>
+                    </div>
+                  </section>
+
                   {/* Shortcuts */}
                   <section className="space-y-4">
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-amber-400/80 flex items-center gap-2">
+                    <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-amber-400/80">
                       <Command size={14} /> Shortcuts
                     </h3>
                     <div className="space-y-6">
                       <div className="space-y-3">
                         <label className="block">
                           <span className="text-sm font-medium">{t('settings.hotkey')}</span>
-                          <p className="text-xs text-muted-foreground">{t('settings.hotkeyDesc')}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.hotkeyDesc')}
+                          </p>
                         </label>
                         {recordingTarget === 'hotkey' ? (
                           <div className="space-y-2">
                             <div className="flex w-full items-center gap-2 rounded-lg border border-primary bg-input px-3 py-2 text-sm ring-2 ring-primary">
-                              <span className="animate-pulse text-primary font-mono">
+                              <span className="animate-pulse font-mono text-primary">
                                 {shortcut.length > 0
                                   ? formatHotkey(shortcut)
                                   : savedShortcut.length > 0
@@ -926,12 +1147,12 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         ) : (
                           <button
                             onClick={() => handleStartRecording('hotkey')}
-                            className="flex w-full items-center gap-2 rounded-lg border border-border bg-input px-3 py-2 text-sm transition-colors hover:border-primary group"
+                            className="group flex w-full items-center gap-2 rounded-lg border border-border bg-input px-3 py-2 text-sm transition-colors hover:border-primary"
                           >
-                            <span className="rounded bg-accent px-2 py-0.5 font-mono text-xs font-medium group-hover:text-primary transition-colors">
+                            <span className="rounded bg-accent px-2 py-0.5 font-mono text-xs font-medium transition-colors group-hover:text-primary">
                               {settings.hotkey}
                             </span>
-                            <span className="text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-auto italic">
+                            <span className="ml-auto text-[10px] italic text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
                               {t('settings.hotkeyPlaceholder')}
                             </span>
                           </button>
@@ -939,13 +1160,17 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
                       <div className="space-y-3">
                         <label className="block">
-                          <span className="text-sm font-medium">{t('settings.viewModeHotkey')}</span>
-                          <p className="text-xs text-muted-foreground">{t('settings.viewModeHotkeyDesc')}</p>
+                          <span className="text-sm font-medium">
+                            {t('settings.viewModeHotkey')}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.viewModeHotkeyDesc')}
+                          </p>
                         </label>
                         {recordingTarget === 'view_mode_hotkey' ? (
                           <div className="space-y-2">
                             <div className="flex w-full items-center gap-2 rounded-lg border border-primary bg-input px-3 py-2 text-sm ring-2 ring-primary">
-                              <span className="animate-pulse text-primary font-mono">
+                              <span className="animate-pulse font-mono text-primary">
                                 {shortcut.length > 0
                                   ? formatHotkey(shortcut)
                                   : savedShortcut.length > 0
@@ -972,12 +1197,12 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         ) : (
                           <button
                             onClick={() => handleStartRecording('view_mode_hotkey')}
-                            className="flex w-full items-center gap-2 rounded-lg border border-border bg-input px-3 py-2 text-sm transition-colors hover:border-primary group"
+                            className="group flex w-full items-center gap-2 rounded-lg border border-border bg-input px-3 py-2 text-sm transition-colors hover:border-primary"
                           >
-                            <span className="rounded bg-accent px-2 py-0.5 font-mono text-xs font-medium group-hover:text-primary transition-colors">
+                            <span className="rounded bg-accent px-2 py-0.5 font-mono text-xs font-medium transition-colors group-hover:text-primary">
                               {settings.view_mode_hotkey || 'Ctrl+M'}
                             </span>
-                            <span className="text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-auto italic">
+                            <span className="ml-auto text-[10px] italic text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
                               {t('settings.hotkeyPlaceholder')}
                             </span>
                           </button>
@@ -988,13 +1213,15 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
                   {/* Privacy */}
                   <section className="space-y-4">
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-emerald-400/80 flex items-center gap-2">
+                    <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-emerald-400/80">
                       <Lock size={14} /> Privacy
                     </h3>
                     <div className="space-y-3">
                       <label className="block">
                         <span className="text-sm font-medium">{t('settings.ignoredApps')}</span>
-                        <p className="text-sm text-muted-foreground/80">{t('settings.ignoredAppsDesc')}</p>
+                        <p className="text-sm text-muted-foreground/80">
+                          {t('settings.ignoredAppsDesc')}
+                        </p>
                       </label>
 
                       <div className="flex gap-2">
@@ -1023,7 +1250,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         </button>
                       </div>
 
-                      <div className="max-h-40 space-y-1 overflow-y-auto pr-1">
+                      <div className="max-h-40 space-y-1 overflow-y-auto pr-1 custom-scrollbar">
                         {ignoredApps.length === 0 ? (
                           <div className="rounded-lg border border-dashed border-border p-4 text-center">
                             <p className="text-sm text-muted-foreground/80">
@@ -1052,7 +1279,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
                   {/* Data Management */}
                   <section className="space-y-4">
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-rose-400/80 flex items-center gap-2">
+                    <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-rose-400/80">
                       <Database size={14} /> Data Management
                     </h3>
                     <div className="grid grid-cols-2 gap-3">
@@ -1083,17 +1310,18 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   </section>
 
                   {/* Panic Room */}
-                  <section className="space-y-4 pt-4 border-t border-border/30">
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-rose-500/80 flex items-center gap-2">
+                  <section className="space-y-4 border-t border-border/30 pt-4">
+                    <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-rose-500/80">
                       <Flame size={14} /> Panic Room
                     </h3>
-                    <div className="flex flex-col gap-3 p-4 rounded-xl border border-rose-500/20 bg-rose-500/5">
+                    <div className="flex flex-col gap-3 rounded-xl border border-rose-500/20 bg-rose-500/5 p-4">
                       <p className="text-xs text-muted-foreground">
-                        If the window becomes deformed, off-screen, or behaves erratically, use this to restore all layout and visibility settings to factory defaults.
+                        If the window becomes deformed, off-screen, or behaves erratically, use this
+                        to restore all layout and visibility settings to factory defaults.
                       </p>
                       <button
                         onClick={handleResetLayout}
-                        className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-rose-500 text-white font-bold hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20"
+                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-rose-500 py-2.5 font-bold text-white shadow-lg shadow-rose-500/20 transition-all hover:bg-rose-600"
                       >
                         <RotateCcw size={16} />
                         Reset Layout & Visibility
@@ -1102,21 +1330,19 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   </section>
 
                   <section className="space-y-4">
-                    <h3 className="text-sm font-medium text-primary/80">
-                      Backup & Restore
-                    </h3>
+                    <h3 className="text-sm font-medium text-primary/80">Backup & Restore</h3>
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         onClick={async () => {
-                          const id = toast.loading("Generating backup...");
+                          const id = toast.loading('Generating backup...');
                           try {
                             await invoke('export_backup_to_file');
-                            toast.success("Backup saved successfully", { id });
+                            toast.success('Backup saved successfully', { id });
                           } catch (error) {
-                            if (error === "Export cancelled") {
-                                toast.dismiss(id);
+                            if (error === 'Export cancelled') {
+                              toast.dismiss(id);
                             } else {
-                                toast.error(`Export failed: ${error}`, { id });
+                              toast.error(`Export failed: ${error}`, { id });
                             }
                           }
                         }}
@@ -1130,20 +1356,23 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         onClick={() => {
                           setConfirmDialog({
                             isOpen: true,
-                            title: "Import Backup?",
-                             message: "This will REPLACE all current clips, folders, images, and settings with the backup data. Your current data will be lost. Export a backup first if you want to keep it.",
+                            title: 'Import Backup?',
+                            message:
+                              'This will REPLACE all current clips, folders, images, and settings with the backup data. Your current data will be lost. Export a backup first if you want to keep it.',
                             action: async () => {
-                              const id = toast.loading("Restoring backup...");
+                              const id = toast.loading('Restoring backup...');
                               try {
                                 await invoke('import_backup_from_file');
-                                toast.success("Restore complete! CyberPaste has been updated.", { id });
+                                toast.success('Restore complete! CyberPaste has been updated.', {
+                                  id,
+                                });
                                 // Force reload to see changes
                                 setTimeout(() => window.location.reload(), 1500);
                               } catch (error) {
-                                if (error === "Import cancelled") {
-                                    toast.dismiss(id);
+                                if (error === 'Import cancelled') {
+                                  toast.dismiss(id);
                                 } else {
-                                    toast.error(`Import failed: ${error}`, { id });
+                                  toast.error(`Import failed: ${error}`, { id });
                                 }
                               }
                             },
@@ -1155,250 +1384,198 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         Import Backup
                       </button>
                     </div>
-                    <p className="text-[10px] text-muted-foreground mt-1">
-                       * Export saves all clips, images, folders, and settings. Import replaces everything with the backup data.
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      * Export saves all clips, images, folders, and settings. Import replaces
+                      everything with the backup data.
                     </p>
                   </section>
                 </>
               )}
 
               {/* --- AI PROCESSING TAB --- */}
-              {activeTab === 'ai' && (
-                <>
-                  <section className="space-y-4">
-                    <h3 className="text-sm font-medium text-muted-foreground">
-                      {t('settings.aiConfiguration')}
-                    </h3>
+              {activeTab === 'ai' && (() => {
+                const currentProvider = settings.ai_provider || 'openai';
+                const modelsForProvider = PROVIDER_MODELS[currentProvider] || PROVIDER_MODELS.custom;
+                const isPredefinedModel = modelsForProvider.some((m) => m.value === settings.ai_model);
+                const selectedModelValue = isPredefinedModel ? (settings.ai_model || '') : 'custom';
 
-                    <div className="space-y-3">
-                      <label className="block">
-                        <span className="text-sm font-medium">{t('settings.provider')}</span>
-                      </label>
-                      <Select
-                        value={settings.ai_provider || 'openai'}
-                        onChange={(newProvider) => {
-                          const updates: Partial<Settings> = { ai_provider: newProvider };
+                return (
+                  <>
+                    <section className="space-y-4">
+                      <h3 className="text-sm font-medium text-muted-foreground">
+                        {t('settings.aiConfiguration')}
+                      </h3>
 
-                          // Auto-fill Base URL and Model based on provider
-                          if (newProvider === 'openai') {
-                            updates.ai_base_url = 'https://api.openai.com/v1';
-                            setLocalBaseUrl('https://api.openai.com/v1');
-                          } else if (newProvider === 'deepseek') {
-                            updates.ai_base_url = 'https://api.deepseek.com';
-                            updates.ai_model = 'deepseek-chat';
-                            setLocalBaseUrl('https://api.deepseek.com');
-                            setLocalModel('deepseek-chat');
-                          }
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-sm font-medium">{t('settings.provider')}</span>
+                        </label>
+                        <Select
+                          value={settings.ai_provider || 'openai'}
+                          onChange={(newProvider) => {
+                            const updates: Partial<Settings> = { ai_provider: newProvider };
 
-                          updateSettings(updates);
-                        }}
-                        options={[
-                          { value: 'openai', label: t('settings.providerOpenAI') },
-                          { value: 'deepseek', label: t('settings.providerDeepSeek') },
-                          { value: 'custom', label: t('settings.providerCustom') },
-                        ]}
-                      />
-                    </div>
+                            // Auto-fill Base URL and Model based on provider
+                            if (newProvider === 'openai') {
+                              updates.ai_base_url = 'https://api.openai.com/v1';
+                              updates.ai_model = 'gpt-4o-mini';
+                              setLocalBaseUrl('https://api.openai.com/v1');
+                              setLocalModel('gpt-4o-mini');
+                              setIsCustomModel(false);
+                            } else if (newProvider === 'deepseek') {
+                              updates.ai_base_url = 'https://api.deepseek.com';
+                              updates.ai_model = 'deepseek-chat';
+                              setLocalBaseUrl('https://api.deepseek.com');
+                              setLocalModel('deepseek-chat');
+                              setIsCustomModel(false);
+                            } else if (newProvider === 'kimi') {
+                              updates.ai_base_url = 'https://api.moonshot.ai/v1';
+                              updates.ai_model = 'moonshot-v1-8k';
+                              setLocalBaseUrl('https://api.moonshot.ai/v1');
+                              setLocalModel('moonshot-v1-8k');
+                              setIsCustomModel(false);
+                            } else if (newProvider === 'gemini') {
+                              updates.ai_base_url = 'https://generativelanguage.googleapis.com/v1beta/openai';
+                              updates.ai_model = 'gemini-2.5-flash';
+                              setLocalBaseUrl('https://generativelanguage.googleapis.com/v1beta/openai');
+                              setLocalModel('gemini-2.5-flash');
+                              setIsCustomModel(false);
+                            } else {
+                              setIsCustomModel(true);
+                            }
 
-                    <div className="space-y-3">
-                      <label className="block">
-                        <span className="text-sm font-medium">{t('settings.apiKey')}</span>
-                      </label>
-                      <div className="relative">
-                        <input
-                          type={showApiKey ? 'text' : 'password'}
-                          value={localApiKey}
-                          onChange={(e) => setLocalApiKey(e.target.value)}
-                          onBlur={() => updateSetting('ai_api_key', localApiKey)}
-                          placeholder="sk-..."
-                          className="w-full rounded-lg border border-border bg-input py-2 pl-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                            updateSettings(updates);
+                          }}
+                          options={[
+                            { value: 'openai', label: t('settings.providerOpenAI') },
+                            { value: 'deepseek', label: t('settings.providerDeepSeek') },
+                            { value: 'kimi', label: t('settings.providerKimi') },
+                            { value: 'gemini', label: t('settings.providerGemini') },
+                            { value: 'custom', label: t('settings.providerCustom') },
+                          ]}
                         />
-                        <button
-                          type="button"
-                          onClick={() => setShowApiKey(!showApiKey)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                          {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                        </button>
                       </div>
-                    </div>
 
-                    <div className="space-y-3">
-                      <label className="block">
-                        <span className="text-sm font-medium">{t('settings.model')}</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={localModel}
-                        onChange={(e) => setLocalModel(e.target.value)}
-                        onBlur={() => updateSetting('ai_model', localModel)}
-                        placeholder="gpt-4o, deepseek-chat, etc."
-                        className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                      />
-                    </div>
-
-                    <div className="space-y-3">
-                      <label className="block">
-                        <span className="text-sm font-medium">{t('settings.baseUrl')}</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={localBaseUrl}
-                        onChange={(e) => setLocalBaseUrl(e.target.value)}
-                        onBlur={() => updateSetting('ai_base_url', localBaseUrl)}
-                        placeholder="https://api.openai.com/v1"
-                        className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                      />
-                    </div>
-                  </section>
-
-                  <section className="space-y-4 border-t border-border/50 pt-4">
-                    <h3 className="text-sm font-medium text-muted-foreground">
-                      {t('settings.customPrompts')}
-                    </h3>
-                    <p className="text-xs italic text-muted-foreground">
-                      {t('settings.customPromptsDesc')}
-                    </p>
-
-                    <div className="space-y-4">
-                      <PromptEditor
-                        label={t('settings.aiSummarize')}
-                        value={settings.ai_prompt_summarize || ''}
-                        titleValue={settings.ai_title_summarize}
-                        onSave={(val) => updateSetting('ai_prompt_summarize', val)}
-                        onSaveTitle={(val) => updateSetting('ai_title_summarize', val)}
-                        placeholder={t('settings.aiSummarizePlaceholder')}
-                      />
-
-                      <PromptEditor
-                        label={t('settings.aiTranslate')}
-                        value={settings.ai_prompt_translate || ''}
-                        titleValue={settings.ai_title_translate}
-                        onSave={(val) => updateSetting('ai_prompt_translate', val)}
-                        onSaveTitle={(val) => updateSetting('ai_title_translate', val)}
-                        placeholder={t('settings.aiTranslatePlaceholder')}
-                      />
-
-                      <PromptEditor
-                        label={t('settings.aiExplainCode')}
-                        value={settings.ai_prompt_explain_code || ''}
-                        titleValue={settings.ai_title_explain_code}
-                        onSave={(val) => updateSetting('ai_prompt_explain_code', val)}
-                        onSaveTitle={(val) => updateSetting('ai_title_explain_code', val)}
-                        placeholder={t('settings.aiExplainCodePlaceholder')}
-                      />
-
-                      <PromptEditor
-                        label={t('settings.aiFixGrammar')}
-                        value={settings.ai_prompt_fix_grammar || ''}
-                        titleValue={settings.ai_title_fix_grammar}
-                        onSave={(val) => updateSetting('ai_prompt_fix_grammar', val)}
-                        onSaveTitle={(val) => updateSetting('ai_title_fix_grammar', val)}
-                        placeholder={t('settings.aiFixGrammarPlaceholder')}
-                      />
-                    </div>
-                  </section>
-                </>
-              )}
-
-              {/* --- FOLDERS TAB --- */}
-              {activeTab === 'folders' && (
-                <section className="space-y-4">
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    {t('settings.manageFolders')}
-                  </h3>
-
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={newFolderName}
-                      onChange={(e) => setNewFolderName(e.target.value)}
-                      placeholder={t('settings.newFolderPlaceholder')}
-                      className="flex-1 rounded-lg border border-border bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                      onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
-                    />
-                    <button
-                      onClick={handleCreateFolder}
-                      disabled={!newFolderName.trim()}
-                      className="btn btn-secondary px-3"
-                    >
-                      <Plus size={16} className="mr-1" />
-                      {t('settings.add')}
-                    </button>
-                  </div>
-
-                  <div className="mt-4 space-y-2">
-                    {folders.filter((f) => !f.is_system).length === 0 ? (
-                      <p className="rounded-lg border border-dashed border-border py-4 text-center text-xs text-muted-foreground">
-                        {t('settings.noFolders')}
-                      </p>
-                    ) : (
-                      folders
-                        .filter((f) => !f.is_system)
-                        .map((folder) => (
-                          <div
-                            key={folder.id}
-                            className="flex items-center justify-between rounded-lg border border-border bg-card p-3"
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-sm font-medium">{t('settings.apiKey')}</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showApiKey ? 'text' : 'password'}
+                            value={localApiKey}
+                            onChange={(e) => setLocalApiKey(e.target.value)}
+                            onBlur={() => {
+                              const trimmed = localApiKey.trim();
+                              setLocalApiKey(trimmed);
+                              updateSetting('ai_api_key', trimmed);
+                            }}
+                            placeholder="API Key"
+                            className="w-full rounded-lg border border-border bg-input py-2 pl-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowApiKey(!showApiKey)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
                           >
-                            {editingFolderId === folder.id ? (
-                              <div className="flex flex-1 items-center gap-2">
-                                <input
-                                  type="text"
-                                  value={renameValue}
-                                  onChange={(e) => setRenameValue(e.target.value)}
-                                  className="flex-1 rounded-md border border-input bg-background px-2 py-1 text-sm"
-                                  autoFocus
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') saveRenameFolder();
-                                    if (e.key === 'Escape') setEditingFolderId(null);
-                                  }}
-                                />
-                                <button
-                                  onClick={saveRenameFolder}
-                                  className="text-xs text-primary hover:underline"
-                                >
-                                  {t('common.save')}
-                                </button>
-                                <button
-                                  onClick={() => setEditingFolderId(null)}
-                                  className="text-xs text-muted-foreground hover:underline"
-                                >
-                                  {t('common.cancel')}
-                                </button>
-                              </div>
-                            ) : (
-                              <>
-                                <div className="flex items-center gap-3">
-                                  <FolderIcon size={16} className="text-blue-400" />
-                                  <span className="text-sm font-medium">{folder.name}</span>
-                                  <span className="text-xs text-muted-foreground">
-                                    ({folder.item_count} items)
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    onClick={() => startRenameFolder(folder)}
-                                    className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
-                                    title="Rename"
-                                  >
-                                    <MoreHorizontal size={14} />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteFolder(folder.id)}
-                                    className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                                    title="Delete"
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        ))
-                    )}
-                  </div>
-                </section>
-              )}
+                            {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-sm font-medium">{t('settings.model')}</span>
+                        </label>
+                        <Select
+                          value={isCustomModel ? 'custom' : selectedModelValue}
+                          onChange={(val) => {
+                            if (val === 'custom') {
+                              setIsCustomModel(true);
+                            } else {
+                              setIsCustomModel(false);
+                              updateSetting('ai_model', val);
+                              setLocalModel(val);
+                            }
+                          }}
+                          options={modelsForProvider}
+                        />
+                        {(isCustomModel || currentProvider === 'custom') && (
+                          <input
+                            type="text"
+                            value={localModel}
+                            onChange={(e) => setLocalModel(e.target.value)}
+                            onBlur={() => updateSetting('ai_model', localModel)}
+                            placeholder="gpt-4o, deepseek-chat, etc."
+                            className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring mt-2"
+                          />
+                        )}
+                      </div>
+
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-sm font-medium">{t('settings.baseUrl')}</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={localBaseUrl}
+                          onChange={(e) => setLocalBaseUrl(e.target.value)}
+                          onBlur={() => updateSetting('ai_base_url', localBaseUrl)}
+                          placeholder="https://api.openai.com/v1"
+                          className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                      </div>
+                    </section>
+
+                    <section className="space-y-4 border-t border-border/50 pt-4">
+                      <h3 className="text-sm font-medium text-muted-foreground">
+                        {t('settings.customPrompts')}
+                      </h3>
+                      <p className="text-xs italic text-muted-foreground">
+                        {t('settings.customPromptsDesc')}
+                      </p>
+
+                      <div className="space-y-4">
+                        <PromptEditor
+                          label={t('settings.aiSummarize')}
+                          value={settings.ai_prompt_summarize || ''}
+                          titleValue={settings.ai_title_summarize}
+                          onSave={(val) => updateSetting('ai_prompt_summarize', val)}
+                          onSaveTitle={(val) => updateSetting('ai_title_summarize', val)}
+                          placeholder={t('settings.aiSummarizePlaceholder')}
+                        />
+
+                        <PromptEditor
+                          label={t('settings.aiTranslate')}
+                          value={settings.ai_prompt_translate || ''}
+                          titleValue={settings.ai_title_translate}
+                          onSave={(val) => updateSetting('ai_prompt_translate', val)}
+                          onSaveTitle={(val) => updateSetting('ai_title_translate', val)}
+                          placeholder={t('settings.aiTranslatePlaceholder')}
+                        />
+
+                        <PromptEditor
+                          label={t('settings.aiExplainCode')}
+                          value={settings.ai_prompt_explain_code || ''}
+                          titleValue={settings.ai_title_explain_code}
+                          onSave={(val) => updateSetting('ai_prompt_explain_code', val)}
+                          onSaveTitle={(val) => updateSetting('ai_title_explain_code', val)}
+                          placeholder={t('settings.aiExplainCodePlaceholder')}
+                        />
+
+                        <PromptEditor
+                          label={t('settings.aiFixGrammar')}
+                          value={settings.ai_prompt_fix_grammar || ''}
+                          titleValue={settings.ai_title_fix_grammar}
+                          onSave={(val) => updateSetting('ai_prompt_fix_grammar', val)}
+                          onSaveTitle={(val) => updateSetting('ai_title_fix_grammar', val)}
+                          placeholder={t('settings.aiFixGrammarPlaceholder')}
+                        />
+                      </div>
+                    </section>
+                  </>
+                );
+              })()}
 
               {/* --- NOTIFICATIONS TAB --- */}
               {activeTab === 'notifications' && (
@@ -1406,30 +1583,44 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   <h3 className="text-sm font-medium text-muted-foreground">
                     {t('settings.toasts')}
                   </h3>
-                  
+
                   <div className="flex items-center justify-between rounded-lg border border-border bg-accent/20 p-3">
                     <div>
                       <span className="text-base font-semibold">{t('settings.enableToasts')}</span>
-                      <p className="text-sm text-muted-foreground/80">{t('settings.enableToastsDesc')}</p>
+                      <p className="text-sm text-muted-foreground/80">
+                        {t('settings.enableToastsDesc')}
+                      </p>
                     </div>
                     <button
-                      onClick={() => updateSetting('toast_enabled', !(settings.toast_enabled ?? true))}
+                      onClick={() =>
+                        updateSetting('toast_enabled', !(settings.toast_enabled ?? true))
+                      }
                       className={`h-6 w-11 rounded-full transition-colors ${(settings.toast_enabled ?? true) ? 'bg-primary' : 'bg-accent'}`}
                     >
-                      <div className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.toast_enabled ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                      <div
+                        className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.toast_enabled ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                      />
                     </button>
                   </div>
 
                   <div className="flex items-center justify-between rounded-lg border border-border bg-accent/20 p-3">
                     <div>
-                      <span className="text-base font-semibold">{t('settings.showActionMessages')}</span>
-                      <p className="text-sm text-muted-foreground/80">{t('settings.showActionMessagesDesc')}</p>
+                      <span className="text-base font-semibold">
+                        {t('settings.showActionMessages')}
+                      </span>
+                      <p className="text-sm text-muted-foreground/80">
+                        {t('settings.showActionMessagesDesc')}
+                      </p>
                     </div>
                     <button
-                      onClick={() => updateSetting('show_action_messages', !settings.show_action_messages)}
+                      onClick={() =>
+                        updateSetting('show_action_messages', !settings.show_action_messages)
+                      }
                       className={`h-6 w-11 rounded-full transition-colors ${settings.show_action_messages ? 'bg-primary' : 'bg-accent'}`}
                     >
-                      <div className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.show_action_messages ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                      <div
+                        className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.show_action_messages ? 'translate-x-5' : 'translate-x-0.5'}`}
+                      />
                     </button>
                   </div>
 
@@ -1443,7 +1634,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         onChange={(val) => updateSetting('toast_monitor', val)}
                         options={[
                           { value: 'primary', label: t('settings.toastMonitorPrimary') },
-                          ...monitorList.map(m => ({
+                          ...monitorList.map((m) => ({
                             value: m.index.toString(),
                             label: m.name,
                           })),
@@ -1486,26 +1677,28 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       />
                     </div>
                     <div className="space-y-3">
-                    <label className="block">
-                      <span className="text-base font-medium">{t('settings.toastDuration')}</span>
-                    </label>
-                    <Select
-                      value={(settings.toast_duration || 3000).toString()}
-                      onChange={(val) => updateSetting('toast_duration', parseInt(val))}
-                      options={[
-                        { value: '1500', label: t('settings.durationShort') },
-                        { value: '3000', label: t('settings.durationNormal') },
-                        { value: '5000', label: t('settings.durationLong') },
-                        { value: '8000', label: t('settings.durationVeryLong') },
-                      ]}
-                    />
+                      <label className="block">
+                        <span className="text-base font-medium">{t('settings.toastDuration')}</span>
+                      </label>
+                      <Select
+                        value={(settings.toast_duration || 3000).toString()}
+                        onChange={(val) => updateSetting('toast_duration', parseInt(val))}
+                        options={[
+                          { value: '1500', label: t('settings.durationShort') },
+                          { value: '3000', label: t('settings.durationNormal') },
+                          { value: '5000', label: t('settings.durationLong') },
+                          { value: '8000', label: t('settings.durationVeryLong') },
+                        ]}
+                      />
+                    </div>
                   </div>
-                </div>
 
                   <div className="pt-4">
-                    <button 
+                    <button
                       onClick={() => {
-                        import('../utils/toast').then(m => m.systemToast.success(t('settings.testToastMsg')));
+                        import('../utils/toast').then((m) =>
+                          m.systemToast.success(t('settings.testToastMsg'))
+                        );
                       }}
                       className="btn btn-primary w-full"
                     >
@@ -1517,10 +1710,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
               {/* --- ABOUT TAB --- */}
               {activeTab === 'about' && (
-                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <div className="flex flex-col items-center text-center space-y-4 py-6">
-                    <div className="w-32 h-32 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-[0_0_40px_rgba(var(--primary-rgb),0.15)] overflow-hidden">
-                      <img src="/logo.png" alt="CyberPaste Logo" className="w-28 h-28 object-contain animate-in fade-in zoom-in duration-1000" />
+                <div className="animate-in fade-in slide-in-from-bottom-4 space-y-8 duration-500">
+                  <div className="flex flex-col items-center space-y-4 py-6 text-center">
+                    <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-3xl border border-primary/20 bg-primary/10 shadow-[0_0_40px_rgba(var(--primary-rgb),0.15)]">
+                      <img
+                        src="/logo.png"
+                        alt="CyberPaste Logo"
+                        className="animate-in fade-in zoom-in h-28 w-28 object-contain duration-1000"
+                      />
                     </div>
                     <div>
                       <h3 className="text-2xl font-bold tracking-tight">CyberPaste</h3>
@@ -1529,13 +1726,16 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   </div>
 
                   <div className="grid grid-cols-1 gap-4">
-                    <div className="rounded-xl border border-border bg-card/30 p-6 space-y-4">
+                    <div className="space-y-4 rounded-xl border border-border bg-card/30 p-6">
                       <div className="flex items-center gap-3 text-primary">
                         <Terminal size={20} />
-                        <h4 className="font-semibold uppercase tracking-wider text-sm">System & Debug</h4>
+                        <h4 className="text-sm font-semibold uppercase tracking-wider">
+                          System & Debug
+                        </h4>
                       </div>
-                      <p className="text-sm text-muted-foreground/80 leading-relaxed">
-                        Access internal tools and data storage. Useful for advanced troubleshooting or manual backups.
+                      <p className="text-sm leading-relaxed text-muted-foreground/80">
+                        Access internal tools and data storage. Useful for advanced troubleshooting
+                        or manual backups.
                       </p>
                       <div className="flex flex-wrap gap-3 pt-2">
                         <button
@@ -1555,24 +1755,33 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
                     </div>
 
-                    <div className="rounded-xl border border-border bg-card/30 p-6 space-y-4">
+                    <div className="space-y-4 rounded-xl border border-border bg-card/30 p-6">
                       <div className="flex items-center gap-3 text-primary">
                         <Heart size={20} />
-                        <h4 className="font-semibold uppercase tracking-wider text-sm">Open Source</h4>
+                        <h4 className="text-sm font-semibold uppercase tracking-wider">
+                          Open Source
+                        </h4>
                       </div>
-                      <p className="text-sm text-muted-foreground/80 leading-relaxed">
-                        CyberPaste is built with passion and open-source technologies like Rust, Tauri, and React.
+                      <p className="text-sm leading-relaxed text-muted-foreground/80">
+                        CyberPaste is built with passion and open-source technologies like Rust,
+                        Tauri, and React.
                       </p>
                       <div className="flex flex-wrap gap-3 pt-2">
                         <button
-                          onClick={() => openUrl('https://github.com/Ciber-CR/CyberPaste').catch(console.error)}
+                          onClick={() =>
+                            openUrl('https://github.com/Ciber-CR/CyberPaste').catch(console.error)
+                          }
                           className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium transition-all hover:bg-accent"
                         >
                           <ExternalLink size={16} />
                           GitHub Repository
                         </button>
                         <button
-                          onClick={() => openUrl('https://github.com/Ciber-CR/CyberPaste/blob/main/LICENSE').catch(console.error)}
+                          onClick={() =>
+                            openUrl(
+                              'https://github.com/Ciber-CR/CyberPaste/blob/main/LICENSE'
+                            ).catch(console.error)
+                          }
                           className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium transition-all hover:bg-accent"
                         >
                           <Info size={16} />
@@ -1618,11 +1827,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
             CyberPaste {appVersion || '...'}
           </button>
           <div className="flex gap-2 text-xs text-muted-foreground">
-            <a href="https://cyberpaste.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">© 2026 CyberPaste</a>
-            <span>•</span>
-            <button onClick={handleCheckUpdate} className="underline hover:text-foreground">
-              {t('settings.checkForUpdates')}
-            </button>
+            <span>© 2026 CyberGems</span>
           </div>
         </div>
       </div>

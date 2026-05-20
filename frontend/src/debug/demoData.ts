@@ -205,8 +205,8 @@ export function generateDemoClips(): ClipboardItem[] {
       metadata: JSON.stringify({ size_bytes: 92160 }),
       image_path: null,
     },
-  ].map(clip => ({
+  ].map((clip) => ({
     ...clip,
-    content_length: clip.clip_type === 'image' ? 0 : clip.content.length
+    content_length: clip.clip_type === 'image' ? 0 : clip.content.length,
   })) as ClipboardItem[];
 }

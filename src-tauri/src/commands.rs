@@ -1,12 +1,14 @@
 use tauri::{AppHandle, Emitter, Manager};
-use tauri_plugin_clipboard_x::{start_listening, stop_listening, write_text, write_html, write_rtf, write_files};
+use tauri_plugin_clipboard_x::{
+    start_listening, stop_listening, write_files, write_html, write_rtf, write_text,
+};
 
 use crate::ai::{self, AiAction, AiConfig};
 use crate::database::Database;
 use crate::models::{Clip, ClipboardItem, Folder, FolderItem};
 use crate::settings_manager::SettingsManager;
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
-use sqlx::{SqlitePool, Row};
+use sqlx::{Row, SqlitePool};
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -31,8 +33,10 @@ pub async fn ai_process_clip(
         .ok_or("Clip not found")?;
 
     let text_content =
-        if clip.clip_type == "text" || clip.clip_type == "html" || clip.clip_type == "url" {
+        if clip.clip_type == "text" || clip.clip_type == "url" {
             String::from_utf8_lossy(&clip.content).to_string()
+        } else if clip.clip_type == "html" {
+            crate::clipboard::strip_html_tags(&String::from_utf8_lossy(&clip.content))
         } else if clip.clip_type == "rtf" {
             crate::clipboard::strip_rtf_tags(&String::from_utf8_lossy(&clip.content))
         } else {
@@ -42,6 +46,13 @@ pub async fn ai_process_clip(
     // 2. Get AI Config
     let manager = app.state::<Arc<SettingsManager>>();
     let settings = manager.get();
+
+    let key_preview = if settings.ai_api_key.len() > 8 {
+        format!("{}...{}", &settings.ai_api_key[..4], &settings.ai_api_key[settings.ai_api_key.len()-4..])
+    } else {
+        "too_short".to_string()
+    };
+    log::info!("AI Process: provider={}, model={}, base_url={}, key_preview={}", settings.ai_provider, settings.ai_model, settings.ai_base_url, key_preview);
 
     if settings.ai_api_key.is_empty() {
         return Err("AI API Key is missing in settings".to_string());
@@ -129,10 +140,15 @@ fn clip_to_list_item(clip: &Clip, image_path: Option<&str>, preview_only: bool) 
         source_icon: clip.source_icon.clone(),
         metadata: clip.metadata.clone(),
         image_path: image_path.map(|s| s.to_string()),
+        is_pinned: clip.is_pinned,
     }
 }
 
-fn clip_to_detail_item(clip: &Clip, full_image_content: Option<&[u8]>, image_path: Option<String>) -> ClipboardItem {
+fn clip_to_detail_item(
+    clip: &Clip,
+    full_image_content: Option<&[u8]>,
+    image_path: Option<String>,
+) -> ClipboardItem {
     let content_str = if clip.clip_type == "image" {
         BASE64.encode(full_image_content.unwrap_or(&clip.content))
     } else {
@@ -151,6 +167,7 @@ fn clip_to_detail_item(clip: &Clip, full_image_content: Option<&[u8]>, image_pat
         source_icon: clip.source_icon.clone(),
         metadata: clip.metadata.clone(),
         image_path,
+        is_pinned: clip.is_pinned,
     }
 }
 
@@ -198,24 +215,28 @@ async fn cleanup_orphan_clip_image_files(pool: &SqlitePool) -> Result<(), String
 }
 
 pub async fn prune_history(pool: &SqlitePool, max_items: i64) -> Result<(), String> {
-    // 1. Get count of clips NOT in folders
-    let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM clips WHERE folder_id IS NULL AND is_deleted = 0")
-        .fetch_one(pool)
-        .await
-        .map_err(|e| e.to_string())?;
+    // 1. Get count of clips NOT in folders and NOT pinned
+    let count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM clips WHERE folder_id IS NULL AND is_deleted = 0 AND is_pinned = 0",
+    )
+    .fetch_one(pool)
+    .await
+    .map_err(|e| e.to_string())?;
 
     if count > max_items {
         let to_delete = count - max_items;
-        // 2. Delete the oldest 'to_delete' clips that are NOT in folders
-        sqlx::query(r#"
+        // 2. Delete the oldest 'to_delete' clips that are NOT in folders and NOT pinned
+        sqlx::query(
+            r#"
             DELETE FROM clips 
             WHERE uuid IN (
                 SELECT uuid FROM clips 
-                WHERE folder_id IS NULL AND is_deleted = 0
+                WHERE folder_id IS NULL AND is_deleted = 0 AND is_pinned = 0
                 ORDER BY created_at ASC 
                 LIMIT ?
             )
-        "#)
+        "#,
+        )
         .bind(to_delete)
         .execute(pool)
         .await
@@ -243,14 +264,18 @@ pub async fn migrate_images_to_files(pool: &SqlitePool) -> Result<(), String> {
     log::info!("Checking for legacy images to migrate...");
 
     // 1. Migrate legacy clips (content in 'clips' table)
-    let legacy_clips: Vec<(String, Vec<u8>)> =
-        sqlx::query_as(r#"SELECT uuid, content FROM clips WHERE clip_type = 'image' AND length(content) > 0"#)
-            .fetch_all(pool)
-            .await
-            .map_err(|e| e.to_string())?;
+    let legacy_clips: Vec<(String, Vec<u8>)> = sqlx::query_as(
+        r#"SELECT uuid, content FROM clips WHERE clip_type = 'image' AND length(content) > 0"#,
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(|e| e.to_string())?;
 
     if !legacy_clips.is_empty() {
-        log::info!("Migrating {} legacy image clips to files...", legacy_clips.len());
+        log::info!(
+            "Migrating {} legacy image clips to files...",
+            legacy_clips.len()
+        );
         for (uuid, full_bytes) in legacy_clips {
             match crate::clipboard::persist_full_image_file(&uuid, &full_bytes) {
                 Ok(file_path) => {
@@ -407,7 +432,7 @@ pub async fn get_clips(
             log::info!("Querying for items, offset: {}, limit: {}", offset, limit);
             sqlx::query_as(
                 r#"
-                SELECT * FROM clips WHERE is_deleted = 0
+                SELECT * FROM clips WHERE is_deleted = 0 AND folder_id IS NULL
                 ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?
             "#,
             )
@@ -463,7 +488,11 @@ pub async fn get_clips(
         .iter()
         .enumerate()
         .map(|(idx, clip)| {
-            let item = clip_to_list_item(clip, image_path_map.get(&clip.uuid).map(|s| s.as_str()), preview_only);
+            let item = clip_to_list_item(
+                clip,
+                image_path_map.get(&clip.uuid).map(|s| s.as_str()),
+                preview_only,
+            );
             // Only log first 10 clips to reduce noise
             if idx < 10 {
                 log::trace!(
@@ -591,10 +620,17 @@ pub async fn paste_clip(
                 let mut last_err = String::new();
                 for i in 0..5 {
                     match write_files(paths.clone()).await {
-                        Ok(_) => { last_err.clear(); break; }
+                        Ok(_) => {
+                            last_err.clear();
+                            break;
+                        }
                         Err(e) => {
                             last_err = e.to_string();
-                            log::warn!("Clipboard write (files) attempt {} failed: {}. Retrying...", i + 1, last_err);
+                            log::warn!(
+                                "Clipboard write (files) attempt {} failed: {}. Retrying...",
+                                i + 1,
+                                last_err
+                            );
                             tokio::time::sleep(std::time::Duration::from_millis(100)).await;
                         }
                     }
@@ -610,10 +646,17 @@ pub async fn paste_clip(
                 let mut last_err = String::new();
                 for i in 0..5 {
                     match write_html(plain_text.clone(), html_content.clone()).await {
-                        Ok(_) => { last_err.clear(); break; }
+                        Ok(_) => {
+                            last_err.clear();
+                            break;
+                        }
                         Err(e) => {
                             last_err = e.to_string();
-                            log::warn!("Clipboard write (html) attempt {} failed: {}. Retrying...", i + 1, last_err);
+                            log::warn!(
+                                "Clipboard write (html) attempt {} failed: {}. Retrying...",
+                                i + 1,
+                                last_err
+                            );
                             tokio::time::sleep(std::time::Duration::from_millis(100)).await;
                         }
                     }
@@ -629,10 +672,17 @@ pub async fn paste_clip(
                 let mut last_err = String::new();
                 for i in 0..5 {
                     match write_rtf(plain_text.clone(), rtf_content.clone()).await {
-                        Ok(_) => { last_err.clear(); break; }
+                        Ok(_) => {
+                            last_err.clear();
+                            break;
+                        }
                         Err(e) => {
                             last_err = e.to_string();
-                            log::warn!("Clipboard write (rtf) attempt {} failed: {}. Retrying...", i + 1, last_err);
+                            log::warn!(
+                                "Clipboard write (rtf) attempt {} failed: {}. Retrying...",
+                                i + 1,
+                                last_err
+                            );
                             tokio::time::sleep(std::time::Duration::from_millis(100)).await;
                         }
                     }
@@ -667,17 +717,97 @@ pub async fn paste_clip(
                 }
             }
 
-            // Manually perform the LRU bump (update created_at and sort_order)
+            // Manually perform the LRU bump (update created_at and sort_order unless pinned or in folder)
             let _ =
                 sqlx::query(r#"
                     UPDATE clips 
-                    SET created_at = CURRENT_TIMESTAMP, 
-                        sort_order = (SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips) 
+                    SET created_at = CASE WHEN is_pinned = 1 OR folder_id IS NOT NULL THEN created_at ELSE CURRENT_TIMESTAMP END, 
+                        sort_order = CASE WHEN is_pinned = 1 OR folder_id IS NOT NULL THEN sort_order ELSE (SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips) END 
                     WHERE uuid = ?
                 "#)
                     .bind(&uuid)
                     .execute(pool)
                     .await;
+
+            // If reset_view_on_paste is enabled and the clip is in a folder, copy it to the main clipboard
+            let manager = app.state::<Arc<SettingsManager>>();
+            let settings = manager.get();
+            if settings.reset_view_on_paste && clip.folder_id.is_some() {
+                let existing_history_uuid: Option<String> = sqlx::query_scalar(
+                    "SELECT uuid FROM clips WHERE content_hash = ? AND folder_id IS NULL AND is_deleted = 0"
+                )
+                .bind(&content_hash)
+                .fetch_optional(pool)
+                .await
+                .unwrap_or(None);
+
+                if let Some(hist_uuid) = existing_history_uuid {
+                    let _ = sqlx::query(
+                        r#"
+                        UPDATE clips 
+                        SET created_at = CURRENT_TIMESTAMP, 
+                            sort_order = (SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips) 
+                        WHERE uuid = ?
+                        "#
+                    )
+                    .bind(hist_uuid)
+                    .execute(pool)
+                    .await;
+                } else {
+                    let new_uuid = uuid::Uuid::new_v4().to_string();
+                    let _ = sqlx::query(
+                        r#"
+                        INSERT INTO clips (
+                            uuid, clip_type, content, text_preview, content_hash, 
+                            folder_id, is_deleted, is_thumbnail, source_app, 
+                            source_icon, metadata, sort_order, created_at, last_accessed
+                        )
+                        VALUES (?, ?, ?, ?, ?, NULL, 0, ?, ?, ?, ?, (SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                        "#
+                    )
+                    .bind(&new_uuid)
+                    .bind(&clip.clip_type)
+                    .bind(&clip.content)
+                    .bind(&clip.text_preview)
+                    .bind(&clip.content_hash)
+                    .bind(clip.is_thumbnail)
+                    .bind(&clip.source_app)
+                    .bind(&clip.source_icon)
+                    .bind(&clip.metadata)
+                    .execute(pool)
+                    .await;
+
+                    if clip.clip_type == "image" {
+                        use sqlx::Row;
+                        if let Ok(Some(r)) = sqlx::query(
+                            "SELECT file_path, file_size, storage_kind, mime_type FROM clip_images WHERE clip_uuid = ?"
+                        )
+                        .bind(&uuid)
+                        .fetch_optional(pool)
+                        .await
+                        {
+                            let file_path: Option<String> = r.get(0);
+                            let file_size: i64 = r.get(1);
+                            let storage_kind: String = r.get(2);
+                            let mime_type: String = r.get(3);
+                            
+                            let _ = sqlx::query(
+                                r#"
+                                INSERT OR REPLACE INTO clip_images (clip_uuid, full_content, file_path, file_size, storage_kind, mime_type, created_at)
+                                VALUES (?, x'', ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                                "#
+                            )
+                            .bind(&new_uuid)
+                            .bind(file_path)
+                            .bind(file_size)
+                            .bind(storage_kind)
+                            .bind(mime_type)
+                            .execute(pool)
+                            .await;
+                        }
+                    }
+                }
+            }
 
             // Notify frontend to refresh list (standard trigger)
             let _ = app.emit("clipboard-change", ());
@@ -692,7 +822,10 @@ pub async fn paste_clip(
             if final_res.is_ok() {
                 let content = if clip.clip_type == "image" {
                     "[Image]".to_string()
-                } else if clip.clip_type == "file" || clip.clip_type == "html" || clip.clip_type == "rtf" {
+                } else if clip.clip_type == "file"
+                    || clip.clip_type == "html"
+                    || clip.clip_type == "rtf"
+                {
                     clip.text_preview.clone()
                 } else {
                     String::from_utf8_lossy(&clip.content).to_string()
@@ -704,14 +837,19 @@ pub async fn paste_clip(
                 let settings = manager.get();
                 let auto_paste = settings.auto_paste;
                 let auto_inject = settings.auto_inject_paste;
-                log::info!("paste_clip: auto_paste={}, auto_inject={}", auto_paste, auto_inject);
+                log::info!(
+                    "paste_clip: auto_paste={}, auto_inject={}",
+                    auto_paste,
+                    auto_inject
+                );
 
                 if settings.pinned {
                     if auto_paste || auto_inject {
                         // If pinned and auto-paste/auto-inject is on, paste without hiding
                         let target_hwnd = if auto_inject {
                             unsafe {
-                                let fg = windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow();
+                                let fg =
+                                    windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow();
                                 fg.0 as isize
                             }
                         } else {
@@ -729,7 +867,9 @@ pub async fn paste_clip(
                     // If pinned and not auto-pasting, just stay open (don't hide)
                 } else if auto_inject {
                     // Capture target window before hiding
-                    let target_hwnd = crate::TARGET_FOREGROUND_HND.load(std::sync::atomic::Ordering::Relaxed) as isize;
+                    let target_hwnd = crate::TARGET_FOREGROUND_HND
+                        .load(std::sync::atomic::Ordering::Relaxed)
+                        as isize;
                     crate::animate_window_hide(
                         &window,
                         Some(Box::new(move || {
@@ -790,6 +930,45 @@ pub async fn delete_clip(
 }
 
 #[tauri::command]
+pub async fn toggle_clip_pin(
+    uuid: String,
+    db: tauri::State<'_, Arc<Database>>,
+) -> Result<bool, String> {
+    let pool = &db.pool;
+
+    // Toggle the value of is_pinned in database
+    let result = sqlx::query(
+        r#"
+        UPDATE clips 
+        SET is_pinned = 1 - is_pinned,
+            pinned_at = CASE WHEN is_pinned = 0 THEN CURRENT_TIMESTAMP ELSE NULL END
+        WHERE uuid = ?
+    "#,
+    )
+    .bind(&uuid)
+    .execute(pool)
+    .await
+    .map_err(|e| e.to_string())?;
+
+    if result.rows_affected() == 0 {
+        return Err("Clip not found".to_string());
+    }
+
+    // Return the new state
+    let is_pinned: bool = sqlx::query_scalar(
+        r#"
+        SELECT is_pinned FROM clips WHERE uuid = ?
+    "#,
+    )
+    .bind(&uuid)
+    .fetch_one(pool)
+    .await
+    .map_err(|e| e.to_string())?;
+
+    Ok(is_pinned)
+}
+
+#[tauri::command]
 pub async fn move_to_folder(
     clip_id: String,
     folder_id: Option<String>,
@@ -798,17 +977,26 @@ pub async fn move_to_folder(
     let pool = &db.pool;
 
     // First check if clip exists and what type it is
-    let clip_info: Option<(String, String)> = sqlx::query_as("SELECT uuid, clip_type FROM clips WHERE uuid = ?")
-        .bind(&clip_id)
-        .fetch_optional(pool)
-        .await
-        .map_err(|e| e.to_string())?;
+    let clip_info: Option<(String, String)> =
+        sqlx::query_as("SELECT uuid, clip_type FROM clips WHERE uuid = ?")
+            .bind(&clip_id)
+            .fetch_optional(pool)
+            .await
+            .map_err(|e| e.to_string())?;
 
-    log::info!("move_to_folder: clip_id={}, folder_id={:?}, info={:?}", clip_id, folder_id, clip_info);
+    log::info!(
+        "move_to_folder: clip_id={}, folder_id={:?}, info={:?}",
+        clip_id,
+        folder_id,
+        clip_info
+    );
 
     let folder_id_parsed = match folder_id {
         Some(id) if id == "null" => None, // Handle edge case where "null" string is passed
-        Some(id) => Some(id.parse::<i64>().map_err(|e| format!("Invalid folder ID '{}': {}", id, e))?),
+        Some(id) => Some(
+            id.parse::<i64>()
+                .map_err(|e| format!("Invalid folder ID '{}': {}", id, e))?,
+        ),
         None => None,
     };
 
@@ -866,8 +1054,11 @@ pub async fn reorder_clip(
             ))
             .execute(&mut *tx).await.map_err(|e| e.to_string())?;
             sqlx::query("UPDATE clips SET sort_order = ? WHERE uuid = ?")
-                .bind(target_sort - 1).bind(&clip_uuid)
-                .execute(&mut *tx).await.map_err(|e| e.to_string())?;
+                .bind(target_sort - 1)
+                .bind(&clip_uuid)
+                .execute(&mut *tx)
+                .await
+                .map_err(|e| e.to_string())?;
         } else {
             // Moving clip backward: shift [target_sort, clip_sort) up by 1
             sqlx::query(&format!(
@@ -876,8 +1067,11 @@ pub async fn reorder_clip(
             ))
             .execute(&mut *tx).await.map_err(|e| e.to_string())?;
             sqlx::query("UPDATE clips SET sort_order = ? WHERE uuid = ?")
-                .bind(target_sort).bind(&clip_uuid)
-                .execute(&mut *tx).await.map_err(|e| e.to_string())?;
+                .bind(target_sort)
+                .bind(&clip_uuid)
+                .execute(&mut *tx)
+                .await
+                .map_err(|e| e.to_string())?;
         }
     } else {
         // position == "after"
@@ -889,8 +1083,11 @@ pub async fn reorder_clip(
             ))
             .execute(&mut *tx).await.map_err(|e| e.to_string())?;
             sqlx::query("UPDATE clips SET sort_order = ? WHERE uuid = ?")
-                .bind(target_sort + 1).bind(&clip_uuid)
-                .execute(&mut *tx).await.map_err(|e| e.to_string())?;
+                .bind(target_sort + 1)
+                .bind(&clip_uuid)
+                .execute(&mut *tx)
+                .await
+                .map_err(|e| e.to_string())?;
         } else {
             // Moving clip forward: shift (target_sort, clip_sort] down by 1, then shift (target_sort, ∞) up...
             // Actually: shift everything > target_sort up by 1, then set clip to target_sort + 1
@@ -900,10 +1097,15 @@ pub async fn reorder_clip(
                 "UPDATE clips SET sort_order = sort_order + 1 WHERE {} AND sort_order > {}",
                 folder_sub, target_sort
             ))
-            .execute(&mut *tx).await.map_err(|e| e.to_string())?;
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| e.to_string())?;
             sqlx::query("UPDATE clips SET sort_order = ? WHERE uuid = ?")
-                .bind(target_sort + 1).bind(&clip_uuid)
-                .execute(&mut *tx).await.map_err(|e| e.to_string())?;
+                .bind(target_sort + 1)
+                .bind(&clip_uuid)
+                .execute(&mut *tx)
+                .await
+                .map_err(|e| e.to_string())?;
         }
     }
 
@@ -1046,7 +1248,7 @@ pub async fn search_clips(
         }
         None => sqlx::query_as(
             r#"
-                SELECT * FROM clips WHERE is_deleted = 0 AND (text_preview LIKE ? OR content LIKE ?)
+                SELECT * FROM clips WHERE is_deleted = 0 AND folder_id IS NULL AND (text_preview LIKE ? OR content LIKE ?)
                 ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?
             "#,
         )
@@ -1098,7 +1300,13 @@ pub async fn search_clips(
     let map_started = Instant::now();
     let items: Vec<ClipboardItem> = clips
         .iter()
-        .map(|clip| clip_to_list_item(clip, image_path_map.get(&clip.uuid).map(|s| s.as_str()), true))
+        .map(|clip| {
+            clip_to_list_item(
+                clip,
+                image_path_map.get(&clip.uuid).map(|s| s.as_str()),
+                true,
+            )
+        })
         .collect();
     let map_ms = map_started.elapsed().as_millis();
     let total_ms = started.elapsed().as_millis();
@@ -1162,7 +1370,12 @@ pub async fn get_folders(db: tauri::State<'_, Arc<Database>>) -> Result<Vec<Fold
 
 #[tauri::command]
 pub fn hide_window(window: tauri::WebviewWindow) -> Result<(), String> {
-    window.hide().map_err(|e| e.to_string())
+    if window.label() == "main" {
+        crate::animate_window_hide(&window, None);
+        Ok(())
+    } else {
+        window.hide().map_err(|e| e.to_string())
+    }
 }
 
 #[tauri::command]
@@ -1187,7 +1400,7 @@ pub async fn get_clipboard_history_size(
     let pool = &db.pool;
 
     let count: i64 =
-        sqlx::query_scalar::<_, i64>(r#"SELECT COUNT(*) FROM clips WHERE is_deleted = 0"#)
+        sqlx::query_scalar::<_, i64>(r#"SELECT COUNT(*) FROM clips WHERE is_deleted = 0 AND folder_id IS NULL"#)
             .fetch_one(pool)
             .await
             .map_err(|e| e.to_string())?;
@@ -1195,14 +1408,16 @@ pub async fn get_clipboard_history_size(
 }
 
 #[tauri::command]
-pub async fn get_db_size(
-    db: tauri::State<'_, Arc<Database>>,
-) -> Result<i64, String> {
+pub async fn get_db_size(db: tauri::State<'_, Arc<Database>>) -> Result<i64, String> {
     let pool = &db.pool;
     let page_count: i64 = sqlx::query_scalar::<_, i64>("PRAGMA page_count")
-        .fetch_one(pool).await.map_err(|e| e.to_string())?;
+        .fetch_one(pool)
+        .await
+        .map_err(|e| e.to_string())?;
     let page_size: i64 = sqlx::query_scalar::<_, i64>("PRAGMA page_size")
-        .fetch_one(pool).await.map_err(|e| e.to_string())?;
+        .fetch_one(pool)
+        .await
+        .map_err(|e| e.to_string())?;
     Ok(page_count * page_size)
 }
 
@@ -1220,7 +1435,7 @@ pub async fn get_clip_stats(
             SUM(CASE WHEN clip_type = 'file' THEN 1 ELSE 0 END) as files,
             SUM(CASE WHEN clip_type = 'html' THEN 1 ELSE 0 END) as html,
             SUM(CASE WHEN clip_type = 'rtf' THEN 1 ELSE 0 END) as rtf
-         FROM clips WHERE is_deleted = 0"#
+         FROM clips WHERE is_deleted = 0 AND folder_id IS NULL"#,
     )
     .fetch_one(pool)
     .await
@@ -1260,12 +1475,11 @@ pub async fn clear_all_clips(db: tauri::State<'_, Arc<Database>>) -> Result<(), 
     let pool = &db.pool;
 
     // Only delete clips NOT in folders - folders are always safe
-    let orphan_uuids: Vec<String> = sqlx::query_scalar(
-        r#"SELECT uuid FROM clips WHERE folder_id IS NULL"#
-    )
-    .fetch_all(pool)
-    .await
-    .map_err(|e| e.to_string())?;
+    let orphan_uuids: Vec<String> =
+        sqlx::query_scalar(r#"SELECT uuid FROM clips WHERE folder_id IS NULL"#)
+            .fetch_all(pool)
+            .await
+            .map_err(|e| e.to_string())?;
 
     // Clean up image files for orphan clips
     for uuid in &orphan_uuids {
@@ -1340,13 +1554,16 @@ pub async fn register_global_shortcut(
         .global_shortcut()
         .on_shortcut(shortcut, move |_app, _shortcut, event| {
             if event.state() == ShortcutState::Pressed {
-                if win_clone.is_visible().unwrap_or(false) && win_clone.is_focused().unwrap_or(false) {
+                if win_clone.is_visible().unwrap_or(false)
+                    && win_clone.is_focused().unwrap_or(false)
+                {
                     crate::animate_window_hide(&win_clone, None);
                 } else {
                     // Capture the foreground window before showing CyberPaste
                     unsafe {
                         let fg = windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow();
-                        crate::TARGET_FOREGROUND_HND.store(fg.0 as *mut (), std::sync::atomic::Ordering::Relaxed);
+                        crate::TARGET_FOREGROUND_HND
+                            .store(fg.0 as *mut (), std::sync::atomic::Ordering::Relaxed);
                     }
                     crate::position_window_at_bottom(&win_clone);
                 }
@@ -1400,7 +1617,11 @@ pub fn show_window(window: tauri::WebviewWindow) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn pick_file(app: AppHandle, filter_name: Option<String>, extensions: Option<Vec<String>>) -> Result<String, String> {
+pub async fn pick_file(
+    app: AppHandle,
+    filter_name: Option<String>,
+    extensions: Option<Vec<String>>,
+) -> Result<String, String> {
     use tauri_plugin_dialog::DialogExt;
 
     let mut dialog = app.dialog().file();
@@ -1431,7 +1652,10 @@ pub fn get_layout_config() -> serde_json::Value {
 }
 
 #[tauri::command]
-pub async fn toggle_view_mode(app: AppHandle, window: tauri::WebviewWindow) -> Result<String, String> {
+pub async fn toggle_view_mode(
+    app: AppHandle,
+    window: tauri::WebviewWindow,
+) -> Result<String, String> {
     let manager = app.state::<Arc<SettingsManager>>();
     let mut settings = manager.get();
 
@@ -1442,20 +1666,48 @@ pub async fn toggle_view_mode(app: AppHandle, window: tauri::WebviewWindow) -> R
     let new_mode = if current_mode == "full" {
         // Save current size as full view size
         settings.full_window_width = if cur_w > 100.0 { cur_w } else { 550.0 };
-        settings.full_window_height = if cur_h > 100.0 { cur_h } else { crate::constants::FULL_HEIGHT };
+        settings.full_window_height = if cur_h > 100.0 {
+            cur_h
+        } else {
+            crate::constants::FULL_HEIGHT
+        };
 
         // Restore compact view size
-        settings.window_width = if settings.compact_window_width > 100.0 { settings.compact_window_width } else { crate::constants::COMPACT_WIDTH };
-        settings.window_height = if settings.compact_window_height > 100.0 { settings.compact_window_height } else { crate::constants::COMPACT_HEIGHT };
+        settings.window_width = if settings.compact_window_width > 100.0 {
+            settings.compact_window_width
+        } else {
+            crate::constants::COMPACT_WIDTH
+        };
+        settings.window_height = if settings.compact_window_height > 100.0 {
+            settings.compact_window_height
+        } else {
+            crate::constants::COMPACT_HEIGHT
+        };
         "compact".to_string()
     } else {
         // Save current size as compact view size
-        settings.compact_window_width = if cur_w > 100.0 { cur_w } else { crate::constants::COMPACT_WIDTH };
-        settings.compact_window_height = if cur_h > 100.0 { cur_h } else { crate::constants::COMPACT_HEIGHT };
+        settings.compact_window_width = if cur_w > 100.0 {
+            cur_w
+        } else {
+            crate::constants::COMPACT_WIDTH
+        };
+        settings.compact_window_height = if cur_h > 100.0 {
+            cur_h
+        } else {
+            crate::constants::COMPACT_HEIGHT
+        };
 
         // Restore full view size
-        settings.window_width = if settings.full_window_width > 100.0 { settings.full_window_width } else { 550.0 };
-        settings.window_height = if settings.full_window_height > 100.0 { settings.full_window_height } else { crate::constants::FULL_HEIGHT };
+        settings.window_width = if settings.full_window_width > 100.0 {
+            settings.full_window_width
+        } else {
+            550.0
+        };
+        settings.window_height = if settings.full_window_height > 100.0 {
+            settings.full_window_height
+        } else {
+            crate::constants::FULL_HEIGHT
+        };
         "full".to_string()
     };
 
@@ -1474,7 +1726,11 @@ pub async fn toggle_view_mode(app: AppHandle, window: tauri::WebviewWindow) -> R
 #[tauri::command]
 pub async fn reset_window_size(app: AppHandle, window: tauri::WebviewWindow) -> Result<(), String> {
     let manager = app.state::<Arc<SettingsManager>>();
-    let monitor = window.current_monitor().ok().flatten().ok_or("No monitor found")?;
+    let monitor = window
+        .current_monitor()
+        .ok()
+        .flatten()
+        .ok_or("No monitor found")?;
     let scale_factor = monitor.scale_factor();
     let monitor_pos = monitor.position();
     let monitor_size = monitor.size();
@@ -1484,28 +1740,44 @@ pub async fn reset_window_size(app: AppHandle, window: tauri::WebviewWindow) -> 
     let is_full = settings.view_mode == "full";
     let is_mica = settings.mica_effect != "clear";
     let no_corners = !settings.round_corners;
-    let side_margin = if is_mica && no_corners { 0.0 } else { crate::constants::WINDOW_MARGIN };
-    let bottom_margin = if is_mica && no_corners { 0.0 } else { crate::constants::WINDOW_MARGIN };
+    let side_margin = if is_mica && no_corners {
+        0.0
+    } else {
+        crate::constants::WINDOW_MARGIN
+    };
+    let bottom_margin = if is_mica && no_corners {
+        0.0
+    } else {
+        crate::constants::WINDOW_MARGIN
+    };
     let float_above_taskbar = settings.float_above_taskbar;
 
     let (default_w, default_h) = if is_full {
         let logical_wa_width = work_area.size.width as f64 / scale_factor;
-        (logical_wa_width - side_margin * 2.0, crate::constants::FULL_HEIGHT)
+        (
+            logical_wa_width - side_margin * 2.0,
+            crate::constants::FULL_HEIGHT,
+        )
     } else {
-        (crate::constants::COMPACT_WIDTH, crate::constants::COMPACT_HEIGHT)
+        (
+            crate::constants::COMPACT_WIDTH,
+            crate::constants::COMPACT_HEIGHT,
+        )
     };
 
-    manager.update(|s| {
-        s.window_width = default_w;
-        s.window_height = default_h;
-        if is_full {
-            s.full_window_width = default_w;
-            s.full_window_height = default_h;
-        } else {
-            s.compact_window_width = default_w;
-            s.compact_window_height = default_h;
-        }
-    }).await?;
+    manager
+        .update(|s| {
+            s.window_width = default_w;
+            s.window_height = default_h;
+            if is_full {
+                s.full_window_width = default_w;
+                s.full_window_height = default_h;
+            } else {
+                s.compact_window_width = default_w;
+                s.compact_window_height = default_h;
+            }
+        })
+        .await?;
 
     if is_full {
         let new_height_px = (default_h * scale_factor) as u32;
@@ -1542,9 +1814,15 @@ pub async fn reset_window_size(app: AppHandle, window: tauri::WebviewWindow) -> 
 
         // Center on monitor, clamped to monitor borders
         let target_x = (monitor_pos.x + (monitor_size.width as i32 - new_width_px as i32) / 2)
-            .clamp(monitor_pos.x, monitor_pos.x + monitor_size.width as i32 - new_width_px as i32);
+            .clamp(
+                monitor_pos.x,
+                monitor_pos.x + monitor_size.width as i32 - new_width_px as i32,
+            );
         let target_y = (monitor_pos.y + (monitor_size.height as i32 - new_height_px as i32) / 2)
-            .clamp(monitor_pos.y, monitor_pos.y + monitor_size.height as i32 - new_height_px as i32);
+            .clamp(
+                monitor_pos.y,
+                monitor_pos.y + monitor_size.height as i32 - new_height_px as i32,
+            );
 
         let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
             x: target_x,
@@ -1571,10 +1849,11 @@ pub async fn export_backup(
         .await
         .map_err(|e| e.to_string())?;
 
-    let mut clip_images: Vec<crate::models::ClipImage> = sqlx::query_as("SELECT * FROM clip_images")
-        .fetch_all(pool)
-        .await
-        .map_err(|e| e.to_string())?;
+    let mut clip_images: Vec<crate::models::ClipImage> =
+        sqlx::query_as("SELECT * FROM clip_images")
+            .fetch_all(pool)
+            .await
+            .map_err(|e| e.to_string())?;
 
     // Physically read image files to make the backup portable
     for img in &mut clip_images {
@@ -1611,9 +1890,18 @@ pub async fn import_backup(
     let mut tx = pool.begin().await.map_err(|e| e.to_string())?;
 
     // 1. Clear current data
-    sqlx::query("DELETE FROM clips").execute(&mut *tx).await.map_err(|e| e.to_string())?;
-    sqlx::query("DELETE FROM folders").execute(&mut *tx).await.map_err(|e| e.to_string())?;
-    sqlx::query("DELETE FROM clip_images").execute(&mut *tx).await.map_err(|e| e.to_string())?;
+    sqlx::query("DELETE FROM clips")
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| e.to_string())?;
+    sqlx::query("DELETE FROM folders")
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| e.to_string())?;
+    sqlx::query("DELETE FROM clip_images")
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| e.to_string())?;
 
     // 2. Restore Folders
     for folder in data.folders {
@@ -1657,11 +1945,13 @@ pub async fn import_backup(
         let mut final_file_path = img.file_path.clone();
 
         if !img.full_content.is_empty() {
-             // Re-persist to file if it was originally a file
-             if let Ok(path) = crate::clipboard::persist_full_image_file(&img.clip_uuid, &img.full_content) {
-                 final_file_path = Some(path);
-                 final_storage_kind = "file".to_string();
-             }
+            // Re-persist to file if it was originally a file
+            if let Ok(path) =
+                crate::clipboard::persist_full_image_file(&img.clip_uuid, &img.full_content)
+            {
+                final_file_path = Some(path);
+                final_storage_kind = "file".to_string();
+            }
         }
 
         sqlx::query("INSERT INTO clip_images (clip_uuid, full_content, file_path, file_size, storage_kind, mime_type, created_at) VALUES (?, x'', ?, ?, ?, ?, ?)")
@@ -1700,7 +1990,8 @@ pub async fn export_backup_to_file(
     let data = export_backup(db, app.clone()).await?;
 
     // 2. Open Save Dialog
-    let file_path = app.dialog()
+    let file_path = app
+        .dialog()
         .file()
         .set_title("Save CyberPaste Backup")
         .add_filter("CyberPaste Backup", &["json"])
@@ -1724,7 +2015,8 @@ pub async fn import_backup_from_file(
     use tauri_plugin_dialog::DialogExt;
 
     // 1. Open File Dialog
-    let file_path = app.dialog()
+    let file_path = app
+        .dialog()
         .file()
         .set_title("Select CyberPaste Backup")
         .add_filter("CyberPaste Backup", &["json"])
@@ -1732,8 +2024,9 @@ pub async fn import_backup_from_file(
 
     if let Some(path) = file_path {
         let json = std::fs::read_to_string(path.to_string()).map_err(|e| e.to_string())?;
-        let data: crate::models::BackupData = serde_json::from_str(&json).map_err(|e| e.to_string())?;
-        
+        let data: crate::models::BackupData =
+            serde_json::from_str(&json).map_err(|e| e.to_string())?;
+
         import_backup(data, db, app).await?;
         Ok(())
     } else {
@@ -1757,17 +2050,18 @@ pub fn get_data_dir_path() -> Result<String, String> {
 
 #[tauri::command]
 pub fn open_with(app_path: String, file_path: String) -> Result<(), String> {
-    log::info!("open_with called: editor='{}', file='{}'", app_path, file_path);
+    log::info!(
+        "open_with called: editor='{}', file='{}'",
+        app_path,
+        file_path
+    );
     #[cfg(target_os = "windows")]
     {
         use std::process::Command;
-        Command::new(app_path)
-            .arg(file_path)
-            .spawn()
-            .map_err(|e| {
-                log::error!("Failed to spawn editor: {}", e);
-                e.to_string()
-            })?;
+        Command::new(app_path).arg(file_path).spawn().map_err(|e| {
+            log::error!("Failed to spawn editor: {}", e);
+            e.to_string()
+        })?;
         Ok(())
     }
     #[cfg(not(target_os = "windows"))]
@@ -1794,7 +2088,6 @@ pub fn show_item_in_folder(path: String) -> Result<(), String> {
     }
 }
 
-
 #[tauri::command]
 pub async fn update_clip_content(
     db: tauri::State<'_, Arc<Database>>,
@@ -1802,7 +2095,7 @@ pub async fn update_clip_content(
     new_content: String,
 ) -> Result<(), String> {
     let pool = &db.pool;
-    
+
     // Update both content and text_preview
     sqlx::query("UPDATE clips SET content = ?, text_preview = ? WHERE uuid = ?")
         .bind(new_content.as_bytes())
@@ -1817,7 +2110,11 @@ pub async fn update_clip_content(
 
 #[tauri::command]
 pub async fn center_window(window: tauri::WebviewWindow) -> Result<(), String> {
-    let monitor = window.current_monitor().ok().flatten().ok_or("No monitor found")?;
+    let monitor = window
+        .current_monitor()
+        .ok()
+        .flatten()
+        .ok_or("No monitor found")?;
     let _scale_factor = monitor.scale_factor();
     let monitor_size = monitor.size();
     let monitor_pos = monitor.position();
@@ -1826,8 +2123,11 @@ pub async fn center_window(window: tauri::WebviewWindow) -> Result<(), String> {
     let x = monitor_pos.x + (monitor_size.width as i32 - window_size.width as i32) / 2;
     // Keep current y
     let current_pos = window.outer_position().map_err(|e| e.to_string())?;
-    
-    let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y: current_pos.y }));
+
+    let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
+        x,
+        y: current_pos.y,
+    }));
     Ok(())
 }
 
@@ -1858,20 +2158,14 @@ pub fn play_clipboard_sound(sound_path: String) -> Result<(), String> {
 
     // Open the file with mci
     let open_cmd = format!("open {} alias {}", escaped_path, alias);
-    let wide_open: Vec<u16> = OsStr::new(&open_cmd)
-        .encode_wide()
-        .chain(Some(0))
-        .collect();
+    let wide_open: Vec<u16> = OsStr::new(&open_cmd).encode_wide().chain(Some(0)).collect();
     unsafe {
         let _ = mciSendStringW(windows::core::PCWSTR(wide_open.as_ptr()), None, None);
     }
 
     // Play asynchronously
     let play_cmd = format!("play {} notify", alias);
-    let wide_play: Vec<u16> = OsStr::new(&play_cmd)
-        .encode_wide()
-        .chain(Some(0))
-        .collect();
+    let wide_play: Vec<u16> = OsStr::new(&play_cmd).encode_wide().chain(Some(0)).collect();
     unsafe {
         let _ = mciSendStringW(windows::core::PCWSTR(wide_play.as_ptr()), None, None);
     }
@@ -1890,12 +2184,14 @@ pub fn simulate_ctrl_v_with_target(target_hwnd: isize) {
 }
 
 fn simulate_ctrl_v_internal(target_hwnd: Option<isize>) {
-    use windows::Win32::UI::Input::KeyboardAndMouse::{
-        SendInput, INPUT, INPUT_0, KEYBDINPUT, INPUT_KEYBOARD, KEYEVENTF_KEYUP,
-        KEYBD_EVENT_FLAGS, VK_CONTROL, VK_V,
-    };
-    use windows::Win32::UI::WindowsAndMessaging::{SetForegroundWindow, ShowWindow, SW_RESTORE, SW_SHOWNA, IsIconic, IsWindowVisible};
     use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::Input::KeyboardAndMouse::{
+        SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYBD_EVENT_FLAGS, KEYEVENTF_KEYUP,
+        VK_CONTROL, VK_V,
+    };
+    use windows::Win32::UI::WindowsAndMessaging::{
+        IsIconic, IsWindowVisible, SetForegroundWindow, ShowWindow, SW_RESTORE, SW_SHOWNA,
+    };
 
     // Restore the target window to foreground
     if let Some(hwnd_val) = target_hwnd {
@@ -1977,8 +2273,8 @@ fn simulate_ctrl_v_internal(target_hwnd: Option<isize>) {
 pub async fn show_toast(
     app: AppHandle,
     message: String,
-    toast_type: String, // "success", "error", "info"
-    clip_type: Option<String>, // "text", "image", "html", "rtf", "file", "url"
+    toast_type: String,            // "success", "error", "info"
+    clip_type: Option<String>,     // "text", "image", "html", "rtf", "file", "url"
     image_preview: Option<String>, // base64 encoded tiny thumbnail for images
 ) -> Result<(), String> {
     use crate::settings_manager::SettingsManager;
@@ -1989,9 +2285,10 @@ pub async fn show_toast(
     }
 
     let window_label = "toast";
-    
+
     // Check if toast window exists, if not create it
     let toast_window = if let Some(win) = app.get_webview_window(window_label) {
+        let _ = win.set_focusable(false);
         win
     } else {
         tauri::WebviewWindowBuilder::new(
@@ -2007,6 +2304,8 @@ pub async fn show_toast(
         .skip_taskbar(true)
         .resizable(false)
         .shadow(false)
+        .focused(false)
+        .focusable(false)
         .visible(false) // hidden until positioned
         .build()
         .map_err(|e| format!("Failed to create toast window: {}", e))?
@@ -2045,23 +2344,25 @@ pub async fn hide_toast(app: AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn set_toast_position(
-    app: AppHandle,
-    width: f64,
-    height: f64,
-) -> Result<(), String> {
+pub async fn set_toast_position(app: AppHandle, width: f64, height: f64) -> Result<(), String> {
     if let Some(win) = app.get_webview_window("toast") {
         let manager = app.state::<Arc<SettingsManager>>();
         let position_setting = manager.get().toast_position;
         let monitor_setting = manager.get().toast_monitor;
-        
+
         let available_monitors = win.available_monitors().unwrap_or_default();
         let monitor = if monitor_setting == "primary" {
-            win.primary_monitor().ok().flatten().or_else(|| win.current_monitor().ok().flatten())
+            win.primary_monitor()
+                .ok()
+                .flatten()
+                .or_else(|| win.current_monitor().ok().flatten())
         } else if let Ok(idx) = monitor_setting.parse::<usize>() {
             // "1" -> index 0, "2" -> index 1, etc.
             let zero_idx = idx.saturating_sub(1);
-            available_monitors.get(zero_idx).cloned().or_else(|| win.primary_monitor().ok().flatten())
+            available_monitors
+                .get(zero_idx)
+                .cloned()
+                .or_else(|| win.primary_monitor().ok().flatten())
         } else {
             win.primary_monitor().ok().flatten()
         };
@@ -2069,22 +2370,22 @@ pub async fn set_toast_position(
         if let Some(monitor) = monitor {
             let scale_factor = monitor.scale_factor();
             let work_area = monitor.work_area();
-            
+
             let w_px = (width * scale_factor) as u32;
             let h_px = (height * scale_factor) as u32;
-            let _ = win.set_size(tauri::Size::Physical(tauri::PhysicalSize { width: w_px, height: h_px }));
-            
+            let _ = win.set_size(tauri::Size::Physical(tauri::PhysicalSize {
+                width: w_px,
+                height: h_px,
+            }));
+
             let margin = (24.0 * scale_factor) as i32;
-            
+
             let (target_x, target_y) = match position_setting.as_str() {
                 "top-right" => (
                     work_area.position.x + work_area.size.width as i32 - w_px as i32 - margin,
                     work_area.position.y + margin,
                 ),
-                "top-left" => (
-                    work_area.position.x + margin,
-                    work_area.position.y + margin,
-                ),
+                "top-left" => (work_area.position.x + margin, work_area.position.y + margin),
                 "bottom-center" => (
                     work_area.position.x + (work_area.size.width as i32 - w_px as i32) / 2,
                     work_area.position.y + work_area.size.height as i32 - h_px as i32 - margin,
@@ -2107,7 +2408,10 @@ pub async fn set_toast_position(
                     work_area.position.y + work_area.size.height as i32 - h_px as i32 - margin,
                 ),
             };
-            let _ = win.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x: target_x, y: target_y }));
+            let _ = win.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
+                x: target_x,
+                y: target_y,
+            }));
             let _ = win.show();
         }
     }
@@ -2168,7 +2472,7 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
     let round_corners = settings.round_corners;
     crate::apply_window_effect(&win, &mica_effect, &current_theme, round_corners);
 
-    // Fail-safe: Show window from Rust side after a small delay to ensure it appears 
+    // Fail-safe: Show window from Rust side after a small delay to ensure it appears
     // even if JS fails to call show() on the first boot.
     let win_clone = win.clone();
     tauri::async_runtime::spawn(async move {

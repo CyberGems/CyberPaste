@@ -1,6 +1,65 @@
 import React, { useRef, useEffect } from 'react';
 import { ClipboardItem as AppClip, FolderItem } from '../types';
-import { Search, Maximize2, Clock, Trash2, Folder as FolderIcon, X, Pin, PinOff, Zap, Flame, Star, Leaf, Droplets, Cloud, Moon, Music, Shield, Cpu, Database, Globe, Lock, Terminal, Code, Command, Compass, HardDrive, Ghost, Activity, FolderHeart, FolderSync, FolderOpen, FolderLock, Archive, Briefcase, Bookmark, Tag, Inbox, Layers, Layout, Library, Package, Paperclip, Puzzle, Settings, Share2, Smile, Sun, RotateCcw, MoveHorizontal, MoveVertical, PanelLeftClose, PanelLeftOpen, PanelTop, Plus, FileText, Link, File as LucideFile, Image as ImageIcon } from 'lucide-react';
+import {
+  Search,
+  Maximize2,
+  Clock,
+  Trash2,
+  Folder as FolderIcon,
+  X,
+  Pin,
+  PinOff,
+  Zap,
+  Flame,
+  Star,
+  Leaf,
+  Droplets,
+  Cloud,
+  Moon,
+  Music,
+  Shield,
+  Cpu,
+  Database,
+  Globe,
+  Lock,
+  Terminal,
+  Code,
+  Command,
+  Compass,
+  HardDrive,
+  Ghost,
+  Activity,
+  FolderHeart,
+  FolderSync,
+  FolderOpen,
+  FolderLock,
+  Archive,
+  Briefcase,
+  Bookmark,
+  Tag,
+  Inbox,
+  Layers,
+  Layout,
+  Library,
+  Package,
+  Paperclip,
+  Puzzle,
+  Settings,
+  Share2,
+  Smile,
+  Sun,
+  RotateCcw,
+  MoveHorizontal,
+  MoveVertical,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelTop,
+  Plus,
+  FileText,
+  Link,
+  File as LucideFile,
+  Image as ImageIcon,
+} from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
@@ -13,7 +72,46 @@ function cn(...inputs: ClassValue[]) {
 }
 
 const IconMap: Record<string, any> = {
-  Zap, Flame, Star, Leaf, Droplets, Cloud, Moon, Music, Shield, Cpu, Database, Globe, Lock, Terminal, Code, Command, Compass, HardDrive, Ghost, Activity, Folder: FolderIcon, FolderHeart, FolderSync, FolderOpen, FolderLock, Archive, Briefcase, Bookmark, Tag, Inbox, Layers, Layout, Library, Package, Paperclip, Puzzle, Settings, Share2, Smile, Sun
+  Zap,
+  Flame,
+  Star,
+  Leaf,
+  Droplets,
+  Cloud,
+  Moon,
+  Music,
+  Shield,
+  Cpu,
+  Database,
+  Globe,
+  Lock,
+  Terminal,
+  Code,
+  Command,
+  Compass,
+  HardDrive,
+  Ghost,
+  Activity,
+  Folder: FolderIcon,
+  FolderHeart,
+  FolderSync,
+  FolderOpen,
+  FolderLock,
+  Archive,
+  Briefcase,
+  Bookmark,
+  Tag,
+  Inbox,
+  Layers,
+  Layout,
+  Library,
+  Package,
+  Paperclip,
+  Puzzle,
+  Settings,
+  Share2,
+  Smile,
+  Sun,
 };
 
 interface CompactViewProps {
@@ -39,6 +137,7 @@ interface CompactViewProps {
   onDragHover: (folderId: string | null) => void;
   onDragLeave: () => void;
   isDragging: boolean;
+  draggingClipId?: string | null;
   reorderTargetClipId?: string | null;
   reorderTargetPosition?: 'before' | 'after' | null;
   reorderEnabled?: boolean;
@@ -74,6 +173,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   onDragHover,
   onDragLeave,
   isDragging,
+  draggingClipId,
   reorderTargetClipId,
   reorderTargetPosition,
   reorderEnabled,
@@ -89,15 +189,15 @@ export const CompactView: React.FC<CompactViewProps> = ({
   const folderScrollRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const isVertical = compactFolderLayout === 'vertical';
-  
+
   // Auto-scroll selected folder into view
   useEffect(() => {
     const selectedBtn = folderScrollRef.current?.querySelector('[data-selected="true"]');
     if (selectedBtn) {
-      selectedBtn.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: isVertical ? 'nearest' : 'center', 
-        inline: isVertical ? 'center' : 'center' 
+      selectedBtn.scrollIntoView({
+        behavior: 'smooth',
+        block: isVertical ? 'nearest' : 'center',
+        inline: isVertical ? 'center' : 'center',
       });
     }
   }, [selectedFolder, isVertical]);
@@ -128,7 +228,6 @@ export const CompactView: React.FC<CompactViewProps> = ({
     }
   };
 
-
   // Auto-scroll to selected clip
   useEffect(() => {
     if (selectedClipId && listRef.current) {
@@ -148,27 +247,29 @@ export const CompactView: React.FC<CompactViewProps> = ({
     }
   };
 
-
-
-
   const folderPillClass = (_folderId: string | null, isSelected: boolean, isDragTarget: boolean) =>
     cn(
-      "px-3 py-1 rounded-full text-[10px] font-medium transition-all whitespace-nowrap flex items-center gap-1.5 border",
+      'px-3 py-1 rounded-full text-[10px] font-medium transition-all whitespace-nowrap flex items-center gap-1.5 border',
       isSelected && !dragTargetFolderId
-        ? "bg-indigo-500/20 text-indigo-400 border-indigo-500/40 shadow-[0_0_12px_rgba(99,102,241,0.3)]"
+        ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/40 shadow-[0_0_12px_rgba(99,102,241,0.3)]'
         : isDragTarget && isDragging
-        ? "bg-cyan-500/30 border-cyan-400 text-white"
-        : "bg-white/5 hover:bg-white/10 border-transparent opacity-60 hover:opacity-100"
+          ? 'bg-cyan-500/30 border-cyan-400 text-white'
+          : 'bg-white/5 hover:bg-white/10 border-transparent opacity-60 hover:opacity-100'
     );
 
-  const folderPillClassNamed = (_folderId: string, isSelected: boolean, isDragTarget: boolean, _color?: string | null) =>
+  const folderPillClassNamed = (
+    _folderId: string,
+    isSelected: boolean,
+    isDragTarget: boolean,
+    _color?: string | null
+  ) =>
     cn(
-      "px-3 py-1 rounded-full text-[10px] font-medium transition-all whitespace-nowrap flex items-center gap-1.5 border",
+      'px-3 py-1 rounded-full text-[10px] font-medium transition-all whitespace-nowrap flex items-center gap-1.5 border',
       isSelected && !dragTargetFolderId
-        ? "bg-primary/10 text-white/80 border-primary/60 shadow-[0_0_12px_rgba(99,102,241,0.3)] ring-1 ring-primary/40"
+        ? 'bg-primary/10 text-white/80 border-primary/60 shadow-[0_0_12px_rgba(99,102,241,0.3)] ring-1 ring-primary/40'
         : isDragTarget && isDragging
-        ? "bg-cyan-500/30 border-cyan-400 text-white"
-        : "bg-white/5 hover:bg-white/10 border-transparent opacity-60 hover:opacity-100"
+          ? 'bg-cyan-500/30 border-cyan-400 text-white'
+          : 'bg-white/5 hover:bg-white/10 border-transparent opacity-60 hover:opacity-100'
     );
 
   const sidebarWidth = isVertical ? (compactSidebarCollapsed ? 0 : 140) : 0;
@@ -176,8 +277,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
   return (
     <div
       className={cn(
-        "relative flex flex-col h-full w-full font-['Segoe_UI',system-ui,sans-serif] select-none overflow-hidden",
-        theme === 'dark' ? "text-white/90" : "text-slate-800"
+        "relative flex h-full w-full select-none flex-col overflow-hidden font-['Segoe_UI',system-ui,sans-serif]",
+        theme === 'dark' ? 'text-white/90' : 'text-slate-800'
       )}
       style={{ border: '1px solid rgba(34, 211, 238, 0.1)' }}
     >
@@ -190,10 +291,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
       {/* Header */}
       <div
         data-tauri-drag-region
-        className="relative flex items-center justify-between p-3 border-b border-white/10 bg-white/5 backdrop-blur-md cursor-move flex-shrink-0 overflow-hidden"
+        className="relative flex flex-shrink-0 cursor-move items-center justify-between overflow-hidden border-b border-white/10 bg-white/5 p-3 backdrop-blur-md"
       >
         {/* Scan-line sweep (CSS-only, GPU-composited) - 50% opacity of full view */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div
             className="absolute inset-y-0 w-[25%]"
             style={{
@@ -206,18 +307,28 @@ export const CompactView: React.FC<CompactViewProps> = ({
           {isVertical && onToggleSidebar && (
             <button
               onClick={onToggleSidebar}
-              className="p-1.5 rounded-md hover:bg-white/10 transition-colors text-slate-400 hover:text-white"
-              title={compactSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+              className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+              title={compactSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
             >
               {compactSidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
             </button>
           )}
-          <div data-tauri-drag-region className="w-6 h-6 flex items-center justify-center overflow-hidden">
-            <img src="/logo.png" alt="Logo" className="w-5 h-5 object-contain" />
+          <div
+            data-tauri-drag-region
+            className="flex h-6 w-6 items-center justify-center overflow-hidden"
+          >
+            <img src="/logo.png" alt="Logo" className="h-5 w-5 object-contain" />
           </div>
           <div data-tauri-drag-region className="flex items-baseline gap-1.5">
-            <span data-tauri-drag-region className="font-bold text-sm tracking-tight">CyberPaste</span>
-            <span data-tauri-drag-region className="text-[10px] font-medium text-cyan-400/80 tracking-widest uppercase bg-cyan-400/10 px-1.5 rounded-sm border border-cyan-400/20">Compact</span>
+            <span data-tauri-drag-region className="text-sm font-bold tracking-tight">
+              CyberPaste
+            </span>
+            <span
+              data-tauri-drag-region
+              className="rounded-sm border border-cyan-400/20 bg-cyan-400/10 px-1.5 text-[10px] font-medium uppercase tracking-widest text-cyan-400/80"
+            >
+              Compact
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-0.5">
@@ -225,12 +336,12 @@ export const CompactView: React.FC<CompactViewProps> = ({
             <button
               onClick={onTogglePin}
               className={cn(
-                "h-7 w-7 flex items-center justify-center rounded-md transition-all",
+                'flex h-7 w-7 items-center justify-center rounded-md transition-all',
                 isPinned
-                  ? "text-indigo-400 bg-indigo-500/15 border border-indigo-500/30"
-                  : "text-white/30 hover:text-white/70 hover:bg-white/8"
+                  ? 'border border-indigo-500/30 bg-indigo-500/15 text-indigo-400'
+                  : 'hover:bg-white/8 text-white/30 hover:text-white/70'
               )}
-              title={isPinned ? "Unpin Window" : "Pin Window"}
+              title={isPinned ? 'Unpin Window' : 'Pin Window'}
             >
               {isPinned ? <PinOff size={14} /> : <Pin size={14} />}
             </button>
@@ -238,7 +349,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
           {onToggleLayout && (
             <button
               onClick={onToggleLayout}
-              className="h-7 w-7 flex items-center justify-center rounded-md text-white/30 hover:text-white/70 hover:bg-white/8 transition-all"
+              className="hover:bg-white/8 flex h-7 w-7 items-center justify-center rounded-md text-white/30 transition-all hover:text-white/70"
               title={isVertical ? t('compact.switchHorizontal') : t('compact.switchVertical')}
             >
               {isVertical ? <PanelTop size={14} /> : <PanelLeftOpen size={14} />}
@@ -246,14 +357,14 @@ export const CompactView: React.FC<CompactViewProps> = ({
           )}
           <button
             onClick={handleResetSize}
-            className="h-7 w-7 flex items-center justify-center rounded-md text-white/30 hover:text-white/70 hover:bg-white/8 transition-all"
+            className="hover:bg-white/8 flex h-7 w-7 items-center justify-center rounded-md text-white/30 transition-all hover:text-white/70"
             title="Reset Default Size"
           >
             <RotateCcw size={14} />
           </button>
           <button
             onClick={onOpenSettings}
-            className="h-7 w-7 flex items-center justify-center rounded-md text-white/30 hover:text-white/70 hover:bg-white/8 transition-all"
+            className="hover:bg-white/8 flex h-7 w-7 items-center justify-center rounded-md text-white/30 transition-all hover:text-white/70"
             title="Settings"
           >
             <Settings size={14} />
@@ -262,25 +373,17 @@ export const CompactView: React.FC<CompactViewProps> = ({
           {/* View-toggle — primary action pill */}
           <button
             onClick={onToggleMode}
-            className="relative ml-1 flex items-center gap-1.5 h-7 px-2.5 rounded-lg overflow-hidden
-              bg-gradient-to-r from-cyan-500/20 to-indigo-500/20
-              border border-cyan-500/40
-              text-cyan-300 text-[10px] font-bold tracking-widest uppercase
-              shadow-[0_0_10px_rgba(6,182,212,0.2)]
-              hover:shadow-[0_0_18px_rgba(6,182,212,0.45)]
-              hover:border-cyan-400/70
-              hover:from-cyan-500/30 hover:to-indigo-500/30
-              transition-all duration-200 group"
+            className="group relative ml-1 flex h-7 items-center gap-1.5 overflow-hidden rounded-lg border border-cyan-500/40 bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 px-2.5 text-[10px] font-bold uppercase tracking-widest text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.2)] transition-all duration-200 hover:border-cyan-400/70 hover:from-cyan-500/30 hover:to-indigo-500/30 hover:shadow-[0_0_18px_rgba(6,182,212,0.45)]"
             title="Compact View"
           >
             {/* shimmer sweep */}
-            <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-500 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+            <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
             <Maximize2 size={13} className="relative z-10 flex-shrink-0" />
           </button>
 
           <button
             onClick={() => (window as any).__TAURI_INTERNALS__.invoke('hide_window')}
-            className="h-7 w-7 flex items-center justify-center rounded-md text-white/25 hover:text-rose-400 hover:bg-rose-500/12 transition-all ml-0.5"
+            className="hover:bg-rose-500/12 ml-0.5 flex h-7 w-7 items-center justify-center rounded-md text-white/25 transition-all hover:text-rose-400"
             title="Close"
           >
             <X size={14} />
@@ -290,19 +393,19 @@ export const CompactView: React.FC<CompactViewProps> = ({
 
       {isVertical ? (
         /* === VERTICAL LAYOUT === */
-        <div className="flex flex-row flex-1 overflow-hidden">
+        <div className="flex flex-1 flex-row overflow-hidden">
           {/* Sidebar */}
           <div
-            className="flex-shrink-0 border-r border-white/10 bg-black/10 overflow-hidden transition-all duration-200"
+            className="flex-shrink-0 overflow-hidden border-r border-white/10 bg-black/10 transition-all duration-200"
             style={{ width: sidebarWidth }}
           >
-            <div 
+            <div
               ref={folderScrollRef}
               onWheel={(e) => {
                 // Cycle through folders with mouse wheel
-                const allFolderIds = [null, ...folders.map(f => f.id)];
+                const allFolderIds = [null, ...folders.map((f) => f.id)];
                 const currentIndex = allFolderIds.indexOf(selectedFolder);
-                
+
                 if (e.deltaY > 0) {
                   // Wheel down -> Next folder
                   if (currentIndex < allFolderIds.length - 1) {
@@ -315,27 +418,34 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   }
                 }
               }}
-              className="w-[140px] h-full flex flex-col gap-1 overflow-y-auto no-scrollbar py-2"
+              className="no-scrollbar flex h-full w-[140px] flex-col gap-1 overflow-y-auto py-2"
             >
               <button
                 onClick={() => onSelectFolder(null)}
                 data-selected={selectedFolder === null}
                 className={cn(
-                  "mx-1.5 px-2 py-2 rounded-lg text-[10px] font-medium transition-all whitespace-nowrap flex flex-row items-center gap-1.5 border",
+                  'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-lg border px-2 py-2 text-[10px] font-medium transition-all',
                   selectedFolder === null && !dragTargetFolderId
-                    ? "bg-indigo-500/20 text-indigo-400 border-indigo-500/40 shadow-[0_0_12px_rgba(99,102,241,0.3)]"
+                    ? 'border-indigo-500/40 bg-indigo-500/20 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.3)]'
                     : dragTargetFolderId === null && isDragging
-                    ? "bg-cyan-500/30 border-cyan-400 text-white"
-                    : "bg-white/5 hover:bg-white/10 border-transparent opacity-60 hover:opacity-100"
+                      ? 'border-cyan-400 bg-cyan-500/30 text-white'
+                      : 'border-transparent bg-white/5 opacity-60 hover:bg-white/10 hover:opacity-100'
                 )}
                 onMouseEnter={() => isDragging && onDragHover(null)}
                 onMouseLeave={onDragLeave}
               >
                 <Clock size={10} className="flex-shrink-0" />
-                <span className="truncate flex-1 text-left">[Clipboard]</span>
-                <span className={cn("opacity-40 text-[9px] flex-shrink-0", selectedFolder === null && "opacity-80")}>({totalClipCount})</span>
+                <span className="flex-1 truncate text-left">[Clipboard]</span>
+                <span
+                  className={cn(
+                    'flex-shrink-0 text-[9px] opacity-40',
+                    selectedFolder === null && 'opacity-80'
+                  )}
+                >
+                  ({totalClipCount})
+                </span>
               </button>
-              {folders.map(folder => {
+              {folders.map((folder) => {
                 const Icon = IconMap[folder.icon || 'Folder'] || FolderIcon;
                 const isSelected = selectedFolder === folder.id;
                 return (
@@ -345,55 +455,82 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     data-selected={isSelected}
                     onContextMenu={(e) => onFolderContextMenu?.(e, folder.id)}
                     className={cn(
-                      "mx-1.5 px-2 py-2 rounded-lg text-[10px] font-medium transition-all whitespace-nowrap flex flex-row items-center gap-1.5 border",
+                      'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-lg border px-2 py-2 text-[10px] font-medium transition-all',
                       isSelected && !dragTargetFolderId
-                        ? "bg-primary/10 text-white/80 border-primary/60 shadow-[0_0_12px_rgba(99,102,241,0.3)] ring-1 ring-primary/40"
+                        ? 'border-primary/60 bg-primary/10 text-white/80 shadow-[0_0_12px_rgba(99,102,241,0.3)] ring-1 ring-primary/40'
                         : dragTargetFolderId === folder.id && isDragging
-                        ? "bg-cyan-500/30 border-cyan-400 text-white"
-                        : "bg-white/5 hover:bg-white/10 border-transparent opacity-60 hover:opacity-100"
+                          ? 'border-cyan-400 bg-cyan-500/30 text-white'
+                          : 'border-transparent bg-white/5 opacity-60 hover:bg-white/10 hover:opacity-100'
                     )}
                     onMouseEnter={() => isDragging && onDragHover(folder.id)}
                     onMouseLeave={onDragLeave}
                   >
-                    <Icon size={10} style={{ color: folder.color || undefined }} className={isSelected ? "text-primary" : "text-white/30 flex-shrink-0"} />
-                    <span className="truncate flex-1 text-left">{folder.name}</span>
-                    <span className={cn("opacity-40 text-[9px] flex-shrink-0", isSelected && "opacity-80")}>({folder.item_count || 0})</span>
+                    <Icon
+                      size={10}
+                      style={{ color: folder.color || undefined }}
+                      className={isSelected ? 'text-primary' : 'flex-shrink-0 text-white/30'}
+                    />
+                    <span className="flex-1 truncate text-left">{folder.name}</span>
+                    <span
+                      className={cn(
+                        'flex-shrink-0 text-[9px] opacity-40',
+                        isSelected && 'opacity-80'
+                      )}
+                    >
+                      ({folder.item_count || 0})
+                    </span>
                   </button>
                 );
               })}
               {onAddFolder && (
                 <button
                   onClick={onAddFolder}
-                  className="mx-1.5 px-2 py-2 rounded-lg text-[10px] font-medium transition-all whitespace-nowrap flex flex-row items-center justify-center gap-1.5 border border-dashed border-white/20 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/80"
+                  className="mx-1.5 flex flex-row items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-dashed border-white/20 bg-white/5 px-2 py-2 text-[10px] font-medium text-white/40 transition-all hover:bg-white/10 hover:text-white/80"
                   title="Add Folder"
                 >
                   <Plus size={10} />
-                  <span className="truncate flex-1 text-left">New Folder</span>
+                  <span className="flex-1 truncate text-left">New Folder</span>
                 </button>
               )}
             </div>
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex flex-1 flex-col overflow-hidden">
             {/* Search */}
-            <div className="p-2 flex-shrink-0">
-              <div className="relative group">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-40 group-focus-within:opacity-100 group-focus-within:text-cyan-400 transition-all" size={14} />
+            <div className="flex-shrink-0 p-2">
+              <div className="group relative">
+                <Search
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-40 transition-all group-focus-within:text-cyan-400 group-focus-within:opacity-100"
+                  size={14}
+                />
                 <input
                   type="text"
                   placeholder={t('common.search')}
                   value={searchQuery}
                   onChange={(e) => onSearchChange(e.target.value)}
-                  className="w-full bg-black/20 border border-white/5 rounded-lg py-1.5 pl-8 pr-3 text-sm focus:outline-none focus:border-cyan-500/50 focus:bg-black/40 transition-all"
+                  className="w-full rounded-lg border border-white/5 bg-black/20 py-1.5 pl-8 pr-8 text-sm transition-all focus:border-cyan-500/50 focus:bg-black/40 focus:outline-none"
                 />
+                {searchQuery && (
+                  <button
+                    onClick={() => onSearchChange('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                    title="Clear search"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
               </div>
             </div>
 
             {/* List */}
-            <div ref={listRef} className="flex-1 overflow-y-auto no-scrollbar px-2 pb-2 space-y-1" onScroll={handleListScroll}>
+            <div
+              ref={listRef}
+              className="no-scrollbar flex-1 space-y-1 overflow-y-auto px-2 pb-2"
+              onScroll={handleListScroll}
+            >
               {clips.length === 0 && !isLoading ? (
-                <div className="flex flex-col items-center justify-center h-full opacity-30 italic text-sm">
+                <div className="flex h-full flex-col items-center justify-center text-sm italic opacity-30">
                   <p>{t('clipList.empty')}</p>
                 </div>
               ) : (
@@ -415,18 +552,19 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     getClipImageSrc={getClipImageSrc}
                     t={t}
                     formatDistanceToNow={formatDistanceToNow}
+                    isDragging={clip.id === draggingClipId}
                   />
                 ))
               )}
               {isLoading && (
                 <div className="flex justify-center p-4">
-                  <div className="w-5 h-5 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-cyan-500/30 border-t-cyan-500" />
                 </div>
               )}
             </div>
 
             {/* Footer */}
-            <div className="p-2 border-t border-white/5 bg-black/10 flex justify-between items-center text-[9px] opacity-40 font-mono tracking-tighter flex-shrink-0">
+            <div className="flex flex-shrink-0 items-center justify-between border-t border-white/5 bg-black/10 p-2 font-mono text-[9px] tracking-tighter opacity-40">
               <span>{t('compact.enterToPaste')}</span>
               <span>{t('compact.arrowsFolders')}</span>
               <span>{t('compact.escToHide')}</span>
@@ -436,25 +574,37 @@ export const CompactView: React.FC<CompactViewProps> = ({
       ) : (
         /* === HORIZONTAL LAYOUT (existing) === */
         <>
-          <div className="p-2 space-y-2 flex-shrink-0">
-            <div className="relative group">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-40 group-focus-within:opacity-100 group-focus-within:text-cyan-400 transition-all" size={14} />
+          <div className="flex-shrink-0 space-y-2 p-2">
+            <div className="group relative">
+              <Search
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-40 transition-all group-focus-within:text-cyan-400 group-focus-within:opacity-100"
+                size={14}
+              />
               <input
                 type="text"
                 placeholder={t('common.search')}
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className="w-full bg-black/20 border border-white/5 rounded-lg py-1.5 pl-8 pr-3 text-sm focus:outline-none focus:border-cyan-500/50 focus:bg-black/40 transition-all"
+                className="w-full rounded-lg border border-white/5 bg-black/20 py-1.5 pl-8 pr-8 text-sm transition-all focus:border-cyan-500/50 focus:bg-black/40 focus:outline-none"
               />
+              {searchQuery && (
+                <button
+                  onClick={() => onSearchChange('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                  title="Clear search"
+                >
+                  <X size={14} />
+                </button>
+              )}
             </div>
 
             <div
               ref={folderScrollRef}
               onWheel={(e) => {
                 // Cycle through folders with mouse wheel
-                const allFolderIds = [null, ...folders.map(f => f.id)];
+                const allFolderIds = [null, ...folders.map((f) => f.id)];
                 const currentIndex = allFolderIds.indexOf(selectedFolder);
-                
+
                 if (e.deltaY > 0) {
                   // Wheel down -> Next folder
                   if (currentIndex < allFolderIds.length - 1) {
@@ -467,20 +617,28 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   }
                 }
               }}
-              className="flex gap-1 overflow-x-auto no-scrollbar pb-1 scroll-smooth"
+              className="no-scrollbar flex gap-1 overflow-x-auto scroll-smooth pb-1"
             >
               <button
                 onClick={() => onSelectFolder(null)}
                 data-selected={selectedFolder === null}
-                className={folderPillClass(null, selectedFolder === null, dragTargetFolderId === null)}
+                className={folderPillClass(
+                  null,
+                  selectedFolder === null,
+                  dragTargetFolderId === null
+                )}
                 onMouseEnter={() => isDragging && onDragHover(null)}
                 onMouseLeave={onDragLeave}
               >
                 <Clock size={10} />
                 [Clipboard]
-                <span className={cn("opacity-40 text-[9px]", selectedFolder === null && "opacity-80")}>({totalClipCount})</span>
+                <span
+                  className={cn('text-[9px] opacity-40', selectedFolder === null && 'opacity-80')}
+                >
+                  ({totalClipCount})
+                </span>
               </button>
-              {folders.map(folder => {
+              {folders.map((folder) => {
                 const isSelected = selectedFolder === folder.id;
                 const Icon = IconMap[folder.icon || 'Folder'] || FolderIcon;
                 return (
@@ -489,20 +647,31 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     onClick={() => onSelectFolder(folder.id)}
                     data-selected={isSelected}
                     onContextMenu={(e) => onFolderContextMenu?.(e, folder.id)}
-                    className={folderPillClassNamed(folder.id, isSelected, dragTargetFolderId === folder.id, folder.color)}
+                    className={folderPillClassNamed(
+                      folder.id,
+                      isSelected,
+                      dragTargetFolderId === folder.id,
+                      folder.color
+                    )}
                     onMouseEnter={() => isDragging && onDragHover(folder.id)}
                     onMouseLeave={onDragLeave}
                   >
-                    <Icon size={10} style={{ color: folder.color || undefined }} className={isSelected ? "text-primary" : "text-white/30"} />
+                    <Icon
+                      size={10}
+                      style={{ color: folder.color || undefined }}
+                      className={isSelected ? 'text-primary' : 'text-white/30'}
+                    />
                     {folder.name}
-                    <span className={cn("opacity-40 text-[9px]", isSelected && "opacity-80")}>({folder.item_count || 0})</span>
+                    <span className={cn('text-[9px] opacity-40', isSelected && 'opacity-80')}>
+                      ({folder.item_count || 0})
+                    </span>
                   </button>
                 );
               })}
               {onAddFolder && (
                 <button
                   onClick={onAddFolder}
-                  className="px-2 py-1 rounded-full text-[10px] font-medium transition-all whitespace-nowrap flex items-center gap-1.5 border border-dashed border-white/20 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/80"
+                  className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-dashed border-white/20 bg-white/5 px-2 py-1 text-[10px] font-medium text-white/40 transition-all hover:bg-white/10 hover:text-white/80"
                   title="Add Folder"
                 >
                   <Plus size={10} />
@@ -512,9 +681,13 @@ export const CompactView: React.FC<CompactViewProps> = ({
             </div>
           </div>
 
-          <div ref={listRef} className="flex-1 overflow-y-auto no-scrollbar px-2 pb-2 space-y-1" onScroll={handleListScroll}>
+          <div
+            ref={listRef}
+            className="no-scrollbar flex-1 space-y-1 overflow-y-auto px-2 pb-2"
+            onScroll={handleListScroll}
+          >
             {clips.length === 0 && !isLoading ? (
-              <div className="flex flex-col items-center justify-center h-full opacity-30 italic text-sm">
+              <div className="flex h-full flex-col items-center justify-center text-sm italic opacity-30">
                 <p>{t('clipList.empty')}</p>
               </div>
             ) : (
@@ -536,17 +709,18 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   getClipImageSrc={getClipImageSrc}
                   t={t}
                   formatDistanceToNow={formatDistanceToNow}
+                  isDragging={clip.id === draggingClipId}
                 />
               ))
             )}
             {isLoading && (
               <div className="flex justify-center p-4">
-                <div className="w-5 h-5 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-cyan-500/30 border-t-cyan-500" />
               </div>
             )}
           </div>
 
-          <div className="p-2 border-t border-white/5 bg-black/10 flex justify-between items-center text-[9px] opacity-40 font-mono tracking-tighter flex-shrink-0">
+          <div className="flex flex-shrink-0 items-center justify-between border-t border-white/5 bg-black/10 p-2 font-mono text-[9px] tracking-tighter opacity-40">
             <span>{t('compact.enterToPaste')}</span>
             <span>{t('compact.arrowsFolders')}</span>
             <span>{t('compact.escToHide')}</span>
@@ -574,11 +748,29 @@ const ClipRow: React.FC<{
   getClipImageSrc: (content: string) => string;
   t: (key: string) => string;
   formatDistanceToNow: (date: Date, opts: { addSuffix: boolean }) => string;
-}> = ({ clip, index, clips, selectedClipId, selectedFolder, onPaste, onDelete, onContextMenu, onDragStart, reorderEnabled, reorderTargetClipId, reorderTargetPosition, getClipImageSrc, t, formatDistanceToNow }) => {
+  isDragging?: boolean;
+}> = ({
+  clip,
+  index,
+  clips,
+  selectedClipId,
+  selectedFolder,
+  onPaste,
+  onDelete,
+  onContextMenu,
+  onDragStart,
+  reorderEnabled,
+  reorderTargetClipId,
+  reorderTargetPosition,
+  getClipImageSrc,
+  t,
+  formatDistanceToNow,
+  isDragging,
+}) => {
   return (
     <React.Fragment>
       {reorderEnabled && reorderTargetClipId === clip.id && reorderTargetPosition === 'before' && (
-        <div className="h-0.5 bg-cyan-400 rounded-full mx-2 shadow-[0_0_8px_rgba(34,211,238,0.6)] flex-shrink-0" />
+        <div className="mx-2 h-0.5 flex-shrink-0 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
       )}
       <div
         data-clip-id={clip.id}
@@ -591,26 +783,27 @@ const ClipRow: React.FC<{
         }}
         draggable="false"
         className={clsx(
-          "group relative flex items-center gap-3 py-1.5 px-2 rounded-lg border transition-all cursor-pointer overflow-hidden h-10 flex-shrink-0",
+          'group relative flex h-10 flex-shrink-0 cursor-pointer items-center gap-3 overflow-hidden rounded-lg border px-2 py-1.5 transition-all',
           selectedClipId === clip.id
-            ? "bg-indigo-500/15 border-indigo-500/40 shadow-[0_0_12px_rgba(99,102,241,0.2)]"
-            : "bg-white/5 border-white/5 hover:bg-white/10 hover:border-cyan-500/30",
-          reorderEnabled && "cursor-grab active:cursor-grabbing"
+            ? 'border-indigo-500/40 bg-indigo-500/15 shadow-[0_0_12px_rgba(99,102,241,0.2)]'
+            : 'border-white/5 bg-white/5 hover:border-cyan-500/30 hover:bg-white/10',
+          reorderEnabled && 'cursor-grab active:cursor-grabbing',
+          isDragging && 'opacity-40 scale-95 pointer-events-none'
         )}
       >
-        <div className="flex-shrink-0 w-8 flex items-center justify-center">
-          <span className="text-[10px] opacity-30 font-mono">#{clips.length - index}</span>
+        <div className="flex w-8 flex-shrink-0 items-center justify-center">
+          <span className="font-mono text-[10px] opacity-30">#{clips.length - index}</span>
         </div>
-        <div className="flex-1 min-w-0 flex items-center gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
           {clip.clip_type === 'image' ? (
             <>
-              <div className="w-10 h-8 rounded border border-white/10 overflow-hidden bg-black/20 flex items-center justify-center flex-shrink-0">
+              <div className="flex h-8 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-white/10 bg-black/20">
                 {clip.content ? (
                   <img
                     src={getClipImageSrc(clip.content)}
                     alt="clip"
                     draggable="false"
-                    className="w-full h-full object-cover"
+                    className="h-full w-full object-cover"
                   />
                 ) : (
                   <span className="text-[10px] opacity-40">IMG</span>
@@ -618,13 +811,19 @@ const ClipRow: React.FC<{
               </div>
               {(() => {
                 try {
-                  const parsed = clip.metadata ? JSON.parse(clip.metadata) as { size_bytes?: number; width?: number; height?: number } : null;
+                  const parsed = clip.metadata
+                    ? (JSON.parse(clip.metadata) as {
+                        size_bytes?: number;
+                        width?: number;
+                        height?: number;
+                      })
+                    : null;
                   const w = parsed?.width || 0;
                   const h = parsed?.height || 0;
                   const kb = parsed?.size_bytes ? Math.round(parsed.size_bytes / 1024) : 0;
                   if (w && h && kb) {
                     return (
-                      <span className="text-[10px] opacity-40 flex items-center gap-1.5 whitespace-nowrap">
+                      <span className="flex items-center gap-1.5 whitespace-nowrap text-[10px] opacity-40">
                         <span className="flex items-center gap-0.5">
                           <MoveHorizontal size={9} />
                           {w}
@@ -639,52 +838,78 @@ const ClipRow: React.FC<{
                       </span>
                     );
                   }
-                } catch { /* empty */ }
+                } catch {
+                  /* empty */
+                }
                 return null;
               })()}
             </>
           ) : clip.clip_type === 'file' ? (
             <span className="flex items-center gap-2 truncate">
-              <span className="text-[10px] font-bold text-yellow-400/70 uppercase flex-shrink-0">FILE</span>
-              <span className="text-xs truncate leading-none text-muted-foreground/80">
+              <span className="flex-shrink-0 text-[10px] font-bold uppercase text-yellow-400/70">
+                FILE
+              </span>
+              <span className="truncate text-xs leading-none text-muted-foreground/80">
                 {clip.preview}
               </span>
             </span>
           ) : (
-            <span className="text-xs font-medium truncate leading-none">
+            <span className="truncate text-xs font-medium leading-none">
               {clip.preview.replace(/[\n\r\t]+/g, ' ')}
             </span>
           )}
         </div>
 
-        <div className="flex-shrink-0 flex items-center gap-3 pr-2">
-          <span className="text-[10px] opacity-40 flex items-center gap-2 whitespace-nowrap">
+        <div className="flex flex-shrink-0 items-center gap-3 pr-2">
+          <span className="flex items-center gap-2 whitespace-nowrap text-[10px] opacity-40">
             {index === 0 && !selectedFolder && (
-              <span className="text-[8px] font-bold tracking-widest text-cyan-400/90 uppercase">Latest</span>
+              <span className="text-[8px] font-bold uppercase tracking-widest text-cyan-400/90">
+                Latest
+              </span>
+            )}
+            {clip.is_pinned && (
+              <Pin
+                size={10}
+                className="text-cyan-400 opacity-90 fill-cyan-400/20 -rotate-45"
+              />
             )}
             {(() => {
-              const TypeIcon = clip.clip_type === 'image' ? ImageIcon : 
-                              clip.clip_type === 'html' || clip.clip_type === 'rtf' ? Code :
-                              clip.clip_type === 'url' ? Link :
-                              clip.clip_type === 'file' ? LucideFile : FileText;
-              return <TypeIcon size={11} className="opacity-70 group-hover:opacity-100 transition-opacity text-cyan-400/90 shadow-[0_0_8px_rgba(34,211,238,0.4)]" />;
+              const TypeIcon =
+                clip.clip_type === 'image'
+                  ? ImageIcon
+                  : clip.clip_type === 'html' || clip.clip_type === 'rtf'
+                    ? Code
+                    : clip.clip_type === 'url'
+                      ? Link
+                      : clip.clip_type === 'file'
+                        ? LucideFile
+                        : FileText;
+              return (
+                <TypeIcon
+                  size={11}
+                  className="text-cyan-400/90 opacity-70 shadow-[0_0_8px_rgba(34,211,238,0.4)] transition-opacity group-hover:opacity-100"
+                />
+              );
             })()}
             {clip.source_icon && (
               <img
                 src={`data:image/png;base64,${clip.source_icon}`}
                 alt=""
                 draggable="false"
-                className="h-3.5 w-3.5 object-contain opacity-80 group-hover:opacity-100 transition-opacity"
+                className="h-3.5 w-3.5 object-contain opacity-80 transition-opacity group-hover:opacity-100"
               />
             )}
             <Clock size={10} className="text-current" />
             {formatDistanceToNow(new Date(clip.created_at), { addSuffix: false })}
           </span>
 
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
             <button
-              onClick={(e) => { e.stopPropagation(); onDelete(clip.id); }}
-              className="p-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500/40 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(clip.id);
+              }}
+              className="rounded bg-red-500/20 p-1 text-red-400 transition-colors hover:bg-red-500/40"
               title={t('common.delete')}
             >
               <Trash2 size={12} />
@@ -693,7 +918,7 @@ const ClipRow: React.FC<{
         </div>
       </div>
       {reorderEnabled && reorderTargetClipId === clip.id && reorderTargetPosition === 'after' && (
-        <div className="h-0.5 bg-cyan-400 rounded-full mx-2 shadow-[0_0_8px_rgba(34,211,238,0.6)] flex-shrink-0" />
+        <div className="mx-2 h-0.5 flex-shrink-0 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
       )}
     </React.Fragment>
   );

@@ -16,11 +16,13 @@ attachConsole()
 const windowLabel = getCurrentWindow().label;
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  windowLabel === 'settings' 
-    ? <SettingsWindow /> 
-    : windowLabel === 'toast' 
-    ? <ToastWindow /> 
-    : windowLabel === 'image_viewer' 
-    ? <ImageViewerWindow /> 
-    : <App />
+  windowLabel === 'settings' ? (
+    <SettingsWindow />
+  ) : windowLabel === 'toast' ? (
+    <ToastWindow />
+  ) : windowLabel === 'image_viewer' ? (
+    <ImageViewerWindow />
+  ) : (
+    <App />
+  )
 );

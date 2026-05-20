@@ -48,8 +48,8 @@ export function ContextMenu({ x, y, options, onClose }: ContextMenuProps) {
 
   return (
     <>
-      <div 
-        className="fixed inset-0 z-[190] bg-transparent" 
+      <div
+        className="fixed inset-0 z-[190] bg-transparent"
         onClick={onClose}
         onContextMenu={(e) => {
           e.preventDefault();
@@ -58,11 +58,11 @@ export function ContextMenu({ x, y, options, onClose }: ContextMenuProps) {
       />
       <div
         ref={menuRef}
-        className="fixed z-[200] min-w-[180px] overflow-hidden rounded-xl border border-white/10 bg-card/95 p-1.5 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150"
-        style={{ 
-          left: coords.x, 
+        className="animate-in fade-in zoom-in-95 fixed z-[200] min-w-[180px] overflow-hidden rounded-xl border border-white/10 bg-card/95 p-1.5 shadow-2xl backdrop-blur-xl duration-150"
+        style={{
+          left: coords.x,
           top: coords.y,
-          boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)'
+          boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)',
         }}
       >
         <div className="flex flex-col gap-0.5">
@@ -87,7 +87,7 @@ export function ContextMenu({ x, y, options, onClose }: ContextMenuProps) {
               }}
               className={clsx(
                 'flex w-full items-center rounded-lg px-3 py-2 text-left text-sm font-medium transition-all duration-100',
-                option.disabled ? 'opacity-40 pointer-events-none' : '',
+                option.disabled ? 'pointer-events-none opacity-40' : '',
                 option.danger
                   ? 'text-red-500 hover:bg-red-500/10'
                   : 'text-foreground/90 hover:bg-white/10 hover:text-primary'

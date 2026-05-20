@@ -5,7 +5,6 @@ import { Settings } from '../types';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { useLanguage } from '../hooks/useLanguage';
 
-
 export function SettingsWindow() {
   const [settings, setSettings] = useState<Settings | null>(null);
 

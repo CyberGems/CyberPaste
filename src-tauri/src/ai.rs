@@ -70,14 +70,27 @@ pub async fn process_text(
 
     let res = client
         .post(&url)
-        .header("Authorization", format!("Bearer {}", config.api_key))
+        .header("Authorization", format!("Bearer {}", config.api_key.trim()))
         .header("Content-Type", "application/json")
         .json(&body)
         .send()
         .await?;
 
     if !res.status().is_success() {
+        let status = res.status();
         let error_text = res.text().await?;
+        eprintln!("AI Request Failed. Status: {}, Body: {}", status, error_text);
+        
+        // Try to parse error message from JSON: {"error": {"message": "..."}} or {"error": "..."}
+        if let Ok(json_err) = serde_json::from_str::<serde_json::Value>(&error_text) {
+            if let Some(err_obj) = json_err.get("error") {
+                if let Some(msg) = err_obj.get("message").and_then(|m| m.as_str()) {
+                    return Err(format!("API Error: {}", msg).into());
+                } else if let Some(msg) = err_obj.as_str() {
+                    return Err(format!("API Error: {}", msg).into());
+                }
+            }
+        }
         return Err(format!("API Error: {}", error_text).into());
     }
 

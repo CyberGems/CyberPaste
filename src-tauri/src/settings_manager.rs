@@ -14,7 +14,7 @@ pub struct SettingsManager {
 impl SettingsManager {
     pub async fn new(app: &AppHandle, db: &Database) -> Self {
         let path = app.path().app_data_dir().unwrap().join("settings.json");
-        let settings = if path.exists() {
+        let mut settings = if path.exists() {
             // Load from file
             match fs::read_to_string(&path) {
                 Ok(content) => serde_json::from_str(&content).unwrap_or_default(),
@@ -25,12 +25,19 @@ impl SettingsManager {
             Self::migrate_from_sqlite(db).await
         };
 
-        // Ensure we save it once immediately if migrating, so file exists
+        let mut needs_save = !path.exists();
+        // Auto-migrate Kimi legacy base URL from .cn to .ai if currently set
+        if settings.ai_provider == "kimi" && settings.ai_base_url == "https://api.moonshot.cn/v1" {
+            settings.ai_base_url = "https://api.moonshot.ai/v1".to_string();
+            needs_save = true;
+        }
+
+        // Ensure we save it once immediately if migrating or updated, so file exists
         let manager = Self {
             file_path: path,
             settings: RwLock::new(settings.clone()),
         };
-        if !manager.file_path.exists() {
+        if needs_save {
             let _ = manager.save(settings);
         }
         manager
@@ -91,6 +98,11 @@ impl SettingsManager {
         if let Some(v) = get_val(pool, "pinned").await {
             if let Ok(b) = v.parse() {
                 settings.pinned = b;
+            }
+        }
+        if let Some(v) = get_val(pool, "reset_view_on_paste").await {
+            if let Ok(b) = v.parse() {
+                settings.reset_view_on_paste = b;
             }
         }
 
@@ -164,7 +176,8 @@ impl SettingsManager {
     }
 
     pub async fn update<F>(&self, f: F) -> Result<(), String>
-    where F: FnOnce(&mut AppSettings)
+    where
+        F: FnOnce(&mut AppSettings),
     {
         let mut settings = self.get();
         f(&mut settings);

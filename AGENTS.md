@@ -151,8 +151,7 @@ Then add a `## vx.y.z` section to `CHANGELOG.md`, commit, tag `vx.y.z`, and push
 
 ## Working Conventions
 
-### Language
-Always respond in English, regardless of the language the user writes in. All content in this file must also be in English.
+
 
 ### Honesty
 Always be truthful and face problems directly. Never fabricate, obscure, or work around a real issue to make things appear to work.

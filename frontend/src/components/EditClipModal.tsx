@@ -9,7 +9,12 @@ interface EditClipModalProps {
   onSave: (newContent: string) => void;
 }
 
-export const EditClipModal: React.FC<EditClipModalProps> = ({ isOpen, content, onClose, onSave }) => {
+export const EditClipModal: React.FC<EditClipModalProps> = ({
+  isOpen,
+  content,
+  onClose,
+  onSave,
+}) => {
   const [editedContent, setEditedContent] = useState(content);
   const { t } = useTranslation();
 
@@ -19,50 +24,63 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({ isOpen, content, o
     }
   }, [isOpen, content]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown, true);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div 
-        className="w-full max-w-2xl max-h-[90vh] bg-card border border-primary/20 rounded-2xl shadow-[0_0_50px_rgba(var(--primary-rgb),0.15)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300"
+    <div className="animate-in fade-in fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm duration-200">
+      <div
+        className="animate-in zoom-in-95 flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-primary/20 bg-card shadow-[0_0_50px_rgba(var(--primary-rgb),0.15)] duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-muted/30 flex-shrink-0">
+        <div className="flex flex-shrink-0 items-center justify-between border-b border-border bg-muted/30 px-5 py-3">
           <div className="flex items-center gap-2 text-primary">
             <Edit3 size={18} />
-            <h3 className="text-sm font-bold tracking-tight uppercase">{t('settings.editClip')}</h3>
+            <h3 className="text-sm font-bold uppercase tracking-tight">{t('settings.editClip')}</h3>
           </div>
-          <button 
+          <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-white/10 text-muted-foreground transition-colors"
+            className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-white/10"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* Editor Area */}
-        <div className="p-4 bg-black/20 overflow-y-auto flex-1 scrollbar-thin">
+        <div className="scrollbar-thin flex-1 overflow-y-auto bg-black/20 p-4">
           <textarea
             value={editedContent}
             onChange={(e) => setEditedContent(e.target.value)}
-            className="w-full h-40 bg-background/50 border border-border rounded-xl p-3 font-mono text-xs leading-relaxed focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all resize-none scrollbar-thin"
+            className="scrollbar-thin h-40 w-full resize-none rounded-xl border border-border bg-background/50 p-3 font-mono text-xs leading-relaxed transition-all focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
             spellCheck={false}
             autoFocus
           />
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-border bg-muted/30 flex justify-end gap-2 flex-shrink-0">
+        <div className="flex flex-shrink-0 justify-end gap-2 border-t border-border bg-muted/30 px-5 py-3">
           <button
             onClick={onClose}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:bg-white/5 transition-all"
+            className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-white/5"
           >
             {t('common.cancel')}
           </button>
           <button
             onClick={() => onSave(editedContent)}
-            className="flex items-center gap-2 px-4 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
             <Save size={14} />
             {t('common.save')}

@@ -1,5 +1,6 @@
 #![allow(non_snake_case)] // crate name CyberPaste is intentional
 use std::fs;
+use std::str::FromStr;
 use std::sync::atomic::{AtomicBool, AtomicI64, Ordering};
 use std::sync::Arc;
 use tauri::{
@@ -11,11 +12,11 @@ use tauri::{
 #[cfg(not(feature = "app-store"))]
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
-use std::str::FromStr;
 
 static IS_ANIMATING: AtomicBool = AtomicBool::new(false);
 static LAST_SHOW_TIME: AtomicI64 = AtomicI64::new(0);
-static TARGET_FOREGROUND_HND: std::sync::atomic::AtomicPtr<()> = std::sync::atomic::AtomicPtr::new(std::ptr::null_mut());
+static TARGET_FOREGROUND_HND: std::sync::atomic::AtomicPtr<()> =
+    std::sync::atomic::AtomicPtr::new(std::ptr::null_mut());
 
 mod ai;
 mod clipboard;
@@ -381,6 +382,7 @@ pub fn run_app() {
             commands::get_clip_detail,
             commands::paste_clip,
             commands::delete_clip,
+            commands::toggle_clip_pin,
             commands::move_to_folder,
             commands::reorder_clip,
             commands::create_folder,
@@ -436,37 +438,79 @@ pub fn position_window_at_bottom(window: &tauri::WebviewWindow) {
 }
 
 pub fn animate_window_show(window: &tauri::WebviewWindow) {
-    if IS_ANIMATING.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_err() {
-        log::debug!("Animation already in progress, skipping show");
-        return;
-    }
-    
     // Safety guard to ensure IS_ANIMATING is always reset even on panic
     struct AnimationGuard;
     impl Drop for AnimationGuard {
-        fn drop(&mut self) { IS_ANIMATING.store(false, Ordering::SeqCst); }
+        fn drop(&mut self) {
+            IS_ANIMATING.store(false, Ordering::SeqCst);
+        }
     }
 
     LAST_SHOW_TIME.store(chrono::Local::now().timestamp_millis(), Ordering::SeqCst);
     let window = window.clone();
-    
+
     std::thread::spawn(move || {
+        let mut retries = 0;
+        let mut acquired = false;
+        while retries < 50 {
+            if IS_ANIMATING
+                .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+                .is_ok()
+            {
+                acquired = true;
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+            retries += 1;
+        }
+        if !acquired {
+            log::warn!("Animation lock acquire timeout in show, forcing lock");
+            IS_ANIMATING.store(true, Ordering::SeqCst);
+        }
+
         let _guard = AnimationGuard;
-        let (side_margin, bottom_margin, float_above_taskbar, view_mode, saved_width, saved_height, compact_pos_mode) = {
+        let (
+            side_margin,
+            bottom_margin,
+            float_above_taskbar,
+            view_mode,
+            saved_width,
+            saved_height,
+            compact_pos_mode,
+        ) = {
             let manager = window.state::<Arc<crate::settings_manager::SettingsManager>>();
             let s = manager.get();
             let is_mica = s.mica_effect != "clear";
             let no_corners = !s.round_corners;
-            let side = if is_mica && no_corners { 0.0 } else { constants::WINDOW_MARGIN };
-            let bottom = if is_mica && no_corners { 0.0 } else { constants::WINDOW_MARGIN };
-            (side, bottom, s.float_above_taskbar, s.view_mode, s.window_width, s.window_height, s.compact_view_position_mode.clone())
+            let side = if is_mica && no_corners {
+                0.0
+            } else {
+                constants::WINDOW_MARGIN
+            };
+            let bottom = if is_mica && no_corners {
+                0.0
+            } else {
+                constants::WINDOW_MARGIN
+            };
+            (
+                side,
+                bottom,
+                s.float_above_taskbar,
+                s.view_mode,
+                s.window_width,
+                s.window_height,
+                s.compact_view_position_mode.clone(),
+            )
         };
 
         let (target_pos, monitor) = {
             use windows::Win32::Foundation::POINT;
-            use windows::Win32::UI::WindowsAndMessaging::{GetCursorPos, GetGUIThreadInfo, GUITHREADINFO, GetForegroundWindow, GetWindowThreadProcessId};
             use windows::Win32::Graphics::Gdi::ClientToScreen;
-            
+            use windows::Win32::UI::WindowsAndMessaging::{
+                GetCursorPos, GetForegroundWindow, GetGUIThreadInfo, GetWindowThreadProcessId,
+                GUITHREADINFO,
+            };
+
             let mut point = POINT { x: 0, y: 0 };
             let mut found = false;
 
@@ -476,9 +520,14 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                     info.cbSize = std::mem::size_of::<GUITHREADINFO>() as u32;
                     let hwnd = unsafe { GetForegroundWindow() };
                     let thread_id = unsafe { GetWindowThreadProcessId(hwnd, None) };
-                    
-                    if unsafe { GetGUIThreadInfo(thread_id, &mut info).is_ok() } && !info.hwndCaret.is_invalid() {
-                        let mut caret_pt = POINT { x: info.rcCaret.left, y: info.rcCaret.bottom };
+
+                    if unsafe { GetGUIThreadInfo(thread_id, &mut info).is_ok() }
+                        && !info.hwndCaret.is_invalid()
+                    {
+                        let mut caret_pt = POINT {
+                            x: info.rcCaret.left,
+                            y: info.rcCaret.bottom,
+                        };
                         if unsafe { ClientToScreen(info.hwndCaret, &mut caret_pt).as_bool() } {
                             point = caret_pt;
                             found = true;
@@ -496,11 +545,18 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
             if found {
                 (point, get_monitor_at_point(&window, point))
             } else {
-                let mon = window.primary_monitor().ok().flatten().or_else(|| window.current_monitor().ok().flatten());
+                let mon = window
+                    .primary_monitor()
+                    .ok()
+                    .flatten()
+                    .or_else(|| window.current_monitor().ok().flatten());
                 let pt = if let Some(ref m) = mon {
                     let pos = m.position();
                     let size = m.size();
-                    POINT { x: pos.x + (size.width / 2) as i32, y: pos.y + (size.height / 2) as i32 }
+                    POINT {
+                        x: pos.x + (size.width / 2) as i32,
+                        y: pos.y + (size.height / 2) as i32,
+                    }
                 } else {
                     POINT { x: 0, y: 0 }
                 };
@@ -514,28 +570,54 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
             let monitor_size = monitor.size();
             let work_area = monitor.work_area();
 
-            log::info!("Showing window on monitor: pos={:?}, size={:?}, work_area={:?}", monitor_pos, monitor_size, work_area);
+            log::info!(
+                "Showing window on monitor: pos={:?}, size={:?}, work_area={:?}",
+                monitor_pos,
+                monitor_size,
+                work_area
+            );
 
             if view_mode == "compact" {
-                let logical_w = if saved_width > 100.0 { saved_width } else { constants::COMPACT_WIDTH };
-                let logical_h = if saved_height > 100.0 { saved_height } else { constants::COMPACT_HEIGHT };
+                let logical_w = if saved_width > 100.0 {
+                    saved_width
+                } else {
+                    constants::COMPACT_WIDTH
+                };
+                let logical_h = if saved_height > 100.0 {
+                    saved_height
+                } else {
+                    constants::COMPACT_HEIGHT
+                };
                 let window_width_px = (logical_w * scale_factor) as u32;
                 let window_height_px = (logical_h * scale_factor) as u32;
-                let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize { width: window_width_px, height: window_height_px }));
+                let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
+                    width: window_width_px,
+                    height: window_height_px,
+                }));
 
-                let target_x = (target_pos.x - (window_width_px / 2) as i32)
-                    .clamp(monitor_pos.x, monitor_pos.x + monitor_size.width as i32 - window_width_px as i32);
-                let target_y = (target_pos.y - (window_height_px / 4) as i32)
-                    .clamp(monitor_pos.y, monitor_pos.y + monitor_size.height as i32 - window_height_px as i32);
+                let target_x = (target_pos.x - (window_width_px / 2) as i32).clamp(
+                    monitor_pos.x,
+                    monitor_pos.x + monitor_size.width as i32 - window_width_px as i32,
+                );
+                let target_y = (target_pos.y - (window_height_px / 4) as i32).clamp(
+                    monitor_pos.y,
+                    monitor_pos.y + monitor_size.height as i32 - window_height_px as i32,
+                );
 
-                let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x: target_x, y: target_y }));
+                let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
+                    x: target_x,
+                    y: target_y,
+                }));
                 let _ = window.show();
                 let _ = window.unminimize();
                 let _ = window.set_focus();
 
                 // Re-apply size after show — webview may have stale DPI scale factor
                 std::thread::sleep(std::time::Duration::from_millis(50));
-                let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize { width: window_width_px, height: window_height_px }));
+                let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
+                    width: window_width_px,
+                    height: window_height_px,
+                }));
 
                 if float_above_taskbar {
                     let _ = window.set_always_on_top(true);
@@ -544,14 +626,18 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                 let side_margin_px = (side_margin * scale_factor) as i32;
                 let bottom_margin_px = (bottom_margin * scale_factor) as i32;
 
-                let reference_bottom = if float_above_taskbar { 
-                    monitor_pos.y + monitor_size.height as i32 
-                } else { 
-                    work_area.position.y + work_area.size.height as i32 
+                let reference_bottom = if float_above_taskbar {
+                    monitor_pos.y + monitor_size.height as i32
+                } else {
+                    work_area.position.y + work_area.size.height as i32
                 };
 
                 // Work in physical pixels to avoid webview DPI scale issues
-                let logical_window_height = if saved_height > 100.0 { saved_height } else { constants::FULL_HEIGHT };
+                let logical_window_height = if saved_height > 100.0 {
+                    saved_height
+                } else {
+                    constants::FULL_HEIGHT
+                };
                 let window_width_px = work_area.size.width - (side_margin_px as u32 * 2);
                 let window_height_px = (logical_window_height * scale_factor) as u32;
 
@@ -562,13 +648,21 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                 // Set physical size before positioning
                 let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
                     width: window_width_px,
-                    height: window_height_px
+                    height: window_height_px,
                 }));
                 std::thread::sleep(std::time::Duration::from_millis(60));
 
-                let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x: target_x, y: start_y }));
+                let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
+                    x: target_x,
+                    y: start_y,
+                }));
 
-                log::debug!("Animation coords: start_y={}, target_y={}, phys_w={}", start_y, target_y, window_width_px);
+                log::debug!(
+                    "Animation coords: start_y={}, target_y={}, phys_w={}",
+                    start_y,
+                    target_y,
+                    window_width_px
+                );
 
                 let _ = window.show();
                 let _ = window.unminimize();
@@ -578,7 +672,7 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                 std::thread::sleep(std::time::Duration::from_millis(50));
                 let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
                     width: window_width_px,
-                    height: window_height_px
+                    height: window_height_px,
                 }));
 
                 let steps = 12;
@@ -587,21 +681,25 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
 
                 for i in 1..=steps {
                     let current_y = start_y as f64 + dy * i as f64;
-                    let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition { 
-                        x: target_x, 
-                        y: current_y as i32 
-                    }));
+                    let _ =
+                        window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
+                            x: target_x,
+                            y: current_y as i32,
+                        }));
                     std::thread::sleep(duration);
                 }
 
-                let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x: target_x, y: target_y }));
+                let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
+                    x: target_x,
+                    y: target_y,
+                }));
                 let _ = window.set_focus();
 
                 // Final size apply after animation — ensures full width overrides window-state plugin
                 std::thread::sleep(std::time::Duration::from_millis(50));
                 let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
                     width: window_width_px,
-                    height: window_height_px
+                    height: window_height_px,
                 }));
 
                 if float_above_taskbar {
@@ -615,28 +713,65 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
     });
 }
 
-pub fn animate_window_hide(window: &tauri::WebviewWindow, on_done: Option<Box<dyn FnOnce() + Send>>) {
-    if IS_ANIMATING.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_err() {
-        return;
-    }
-    
+pub fn animate_window_hide(
+    window: &tauri::WebviewWindow,
+    on_done: Option<Box<dyn FnOnce() + Send>>,
+) {
     // Safety guard to ensure IS_ANIMATING is always reset
     struct AnimationGuard;
     impl Drop for AnimationGuard {
-        fn drop(&mut self) { IS_ANIMATING.store(false, Ordering::SeqCst); }
+        fn drop(&mut self) {
+            IS_ANIMATING.store(false, Ordering::SeqCst);
+        }
     }
 
     let window = window.clone();
     std::thread::spawn(move || {
+        let mut retries = 0;
+        let mut acquired = false;
+        while retries < 50 {
+            if IS_ANIMATING
+                .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+                .is_ok()
+            {
+                acquired = true;
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+            retries += 1;
+        }
+        if !acquired {
+            log::warn!("Animation lock acquire timeout in hide, forcing hide");
+            let _ = window.hide();
+            if let Some(callback) = on_done {
+                callback();
+            }
+            return;
+        }
+
         let _guard = AnimationGuard;
         let (side_margin, bottom_margin, float_above_taskbar, view_mode, saved_height) = {
             let manager = window.state::<Arc<crate::settings_manager::SettingsManager>>();
             let s = manager.get();
             let is_mica = s.mica_effect != "clear";
             let no_corners = !s.round_corners;
-            let side = if is_mica && no_corners { 0.0 } else { constants::WINDOW_MARGIN };
-            let bottom = if is_mica && no_corners { 0.0 } else { constants::WINDOW_MARGIN };
-            (side, bottom, s.float_above_taskbar, s.view_mode, s.window_height)
+            let side = if is_mica && no_corners {
+                0.0
+            } else {
+                constants::WINDOW_MARGIN
+            };
+            let bottom = if is_mica && no_corners {
+                0.0
+            } else {
+                constants::WINDOW_MARGIN
+            };
+            (
+                side,
+                bottom,
+                s.float_above_taskbar,
+                s.view_mode,
+                s.window_height,
+            )
         };
         if view_mode == "compact" {
             let _ = window.hide();
@@ -646,11 +781,19 @@ pub fn animate_window_hide(window: &tauri::WebviewWindow, on_done: Option<Box<dy
                 let monitor_pos = monitor.position();
                 let monitor_size = monitor.size();
                 let work_area = monitor.work_area();
-                let logical_window_height = if saved_height > 100.0 { saved_height } else { constants::FULL_HEIGHT };
+                let logical_window_height = if saved_height > 100.0 {
+                    saved_height
+                } else {
+                    constants::FULL_HEIGHT
+                };
                 let window_height_px = (logical_window_height * scale_factor) as u32;
                 let side_margin_px = (side_margin * scale_factor) as i32;
                 let bottom_margin_px = (bottom_margin * scale_factor) as i32;
-                let reference_bottom = if float_above_taskbar { monitor_pos.y + monitor_size.height as i32 } else { work_area.position.y + work_area.size.height as i32 };
+                let reference_bottom = if float_above_taskbar {
+                    monitor_pos.y + monitor_size.height as i32
+                } else {
+                    work_area.position.y + work_area.size.height as i32
+                };
                 let start_y = reference_bottom - window_height_px as i32 - bottom_margin_px;
                 let target_y = reference_bottom;
                 let steps = 15;
@@ -658,13 +801,22 @@ pub fn animate_window_hide(window: &tauri::WebviewWindow, on_done: Option<Box<dy
                 let dy = (target_y - start_y) as f64 / steps as f64;
                 for i in 1..=steps {
                     let current_y = start_y as f64 + dy * i as f64;
-                    let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x: work_area.position.x + side_margin_px, y: current_y as i32 }));
+                    let _ =
+                        window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
+                            x: work_area.position.x + side_margin_px,
+                            y: current_y as i32,
+                        }));
                     std::thread::sleep(duration);
                 }
                 let _ = window.hide();
+            } else {
+                log::warn!("current_monitor returned None in animate_window_hide, forcing hide");
+                let _ = window.hide();
             }
         }
-        if let Some(callback) = on_done { callback(); }
+        if let Some(callback) = on_done {
+            callback();
+        }
     });
 }
 
@@ -676,12 +828,19 @@ fn get_data_dir() -> std::path::PathBuf {
     }
 }
 
-pub fn get_monitor_at_point(window: &tauri::WebviewWindow, point: windows::Win32::Foundation::POINT) -> Option<tauri::Monitor> {
+pub fn get_monitor_at_point(
+    window: &tauri::WebviewWindow,
+    point: windows::Win32::Foundation::POINT,
+) -> Option<tauri::Monitor> {
     if let Ok(monitors) = window.available_monitors() {
         for m in monitors {
             let pos = m.position();
             let size = m.size();
-            if point.x >= pos.x && point.x < pos.x + size.width as i32 && point.y >= pos.y && point.y < pos.y + size.height as i32 {
+            if point.x >= pos.x
+                && point.x < pos.x + size.width as i32
+                && point.y >= pos.y
+                && point.y < pos.y + size.height as i32
+            {
                 return Some(m);
             }
         }
@@ -700,10 +859,17 @@ pub fn get_monitor_at_cursor(window: &tauri::WebviewWindow) -> Option<tauri::Mon
     }
 }
 
-pub fn apply_window_effect(window: &tauri::WebviewWindow, effect: &str, theme: &tauri::Theme, round_corners: bool) {
+pub fn apply_window_effect(
+    window: &tauri::WebviewWindow,
+    effect: &str,
+    theme: &tauri::Theme,
+    round_corners: bool,
+) {
     use window_vibrancy::{apply_mica, apply_tabbed, clear_mica};
     match effect {
-        "clear" => { let _ = clear_mica(window); }
+        "clear" => {
+            let _ = clear_mica(window);
+        }
         "mica" | "dark" => {
             let _ = clear_mica(window);
             let _ = apply_mica(window, Some(matches!(theme, tauri::Theme::Dark)));
@@ -716,10 +882,23 @@ pub fn apply_window_effect(window: &tauri::WebviewWindow, effect: &str, theme: &
     let use_rounded = effect == "clear" || round_corners;
     if let Ok(handle) = window.hwnd() {
         use windows::Win32::Foundation::HWND;
-        use windows::Win32::Graphics::Dwm::{DwmSetWindowAttribute, DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_DONOTROUND, DWMWCP_ROUND};
+        use windows::Win32::Graphics::Dwm::{
+            DwmSetWindowAttribute, DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_DONOTROUND, DWMWCP_ROUND,
+        };
         let hwnd = HWND(handle.0 as _);
-        let corner_pref = if use_rounded { DWMWCP_ROUND.0 } else { DWMWCP_DONOTROUND.0 };
-        unsafe { let _ = DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, &corner_pref as *const _ as *const _, std::mem::size_of::<u32>() as u32); }
+        let corner_pref = if use_rounded {
+            DWMWCP_ROUND.0
+        } else {
+            DWMWCP_DONOTROUND.0
+        };
+        unsafe {
+            let _ = DwmSetWindowAttribute(
+                hwnd,
+                DWMWA_WINDOW_CORNER_PREFERENCE,
+                &corner_pref as *const _ as *const _,
+                std::mem::size_of::<u32>() as u32,
+            );
+        }
     }
 }
 

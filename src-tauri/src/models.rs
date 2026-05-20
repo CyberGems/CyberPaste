@@ -19,14 +19,15 @@ pub struct AppSettings {
     pub startup_with_windows: bool,
     pub round_corners: bool,
     pub float_above_taskbar: bool,
-    pub view_mode: String, // "full" or "compact"
-    pub scroll_direction: String, // "horizontal" or "vertical"
+    pub view_mode: String,             // "full" or "compact"
+    pub scroll_direction: String,      // "horizontal" or "vertical"
     pub compact_folder_layout: String, // "horizontal" or "vertical"
     pub compact_sidebar_collapsed: bool,
     pub clipboard_sound_enabled: bool,
     pub clipboard_sound_path: String,
     pub auto_inject_paste: bool,
     pub pinned: bool,
+    pub reset_view_on_paste: bool,
     pub image_editor_path: String,
 
     // AI
@@ -86,11 +87,12 @@ impl Default for AppSettings {
             clipboard_sound_path: "".to_string(),
             auto_inject_paste: false,
             pinned: false,
+            reset_view_on_paste: false,
             image_editor_path: "".to_string(),
 
             ai_provider: "openai".to_string(),
             ai_api_key: "".to_string(),
-            ai_model: "gpt-3.5-turbo".to_string(),
+            ai_model: "gpt-4o-mini".to_string(),
             ai_base_url: "https://api.openai.com/v1".to_string(),
 
             ai_prompt_summarize: "Summarize this content concisely.".to_string(),
@@ -141,6 +143,8 @@ pub struct Clip {
     pub source_icon: Option<String>,
     pub metadata: Option<String>,
     pub sort_order: i64,
+    pub is_pinned: bool,
+    pub pinned_at: Option<chrono::DateTime<chrono::Utc>>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub last_accessed: chrono::DateTime<chrono::Utc>,
 }
@@ -161,6 +165,8 @@ impl Default for Clip {
             source_icon: None,
             metadata: None,
             sort_order: 0,
+            is_pinned: false,
+            pinned_at: None,
             created_at: chrono::DateTime::default(),
             last_accessed: chrono::DateTime::default(),
         }
@@ -227,6 +233,7 @@ pub struct ClipboardItem {
     pub source_icon: Option<String>,
     pub metadata: Option<String>,
     pub image_path: Option<String>,
+    pub is_pinned: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

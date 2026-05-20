@@ -3,21 +3,34 @@
 @tailwind utilities;
 
 @keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 @keyframes subtle-gradient {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 .animate-subtle-gradient {
   animation: subtle-gradient 8s ease infinite;
 }
 
 @keyframes toast-shrink {
-  from { width: 100%; }
-  to { width: 0%; }
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
 }
 
 @layer base {
@@ -95,6 +108,11 @@
     @apply font-sans text-foreground antialiased;
   }
 
+  body.is-dragging,
+  body.is-dragging * {
+    cursor: grabbing !important;
+  }
+
   ::-webkit-scrollbar {
     display: none;
   }
@@ -106,13 +124,15 @@
 
 @layer components {
   .clip-card {
-    @apply relative rounded-2xl border border-white/[0.03] bg-gradient-to-br from-zinc-900/80 to-black/95 p-4 transition-all duration-300 backdrop-blur-md;
+    @apply relative rounded-2xl border border-white/[0.03] bg-gradient-to-br from-zinc-900/80 to-black/95 p-4 backdrop-blur-md transition-all duration-300;
     box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.5);
   }
 
   .clip-card:hover {
     @apply border-primary/30 bg-white/[0.02];
-    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.7), 0 0 20px rgba(var(--primary-rgb), 0.1);
+    box-shadow:
+      0 10px 40px -10px rgba(0, 0, 0, 0.7),
+      0 0 20px rgba(var(--primary-rgb), 0.1);
     transform: translateY(-2px);
   }
 
@@ -196,5 +216,21 @@
   .mask-gradient-right {
     mask-image: linear-gradient(to right, black 85%, transparent 100%);
     -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    display: block;
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 9999px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
   }
 }

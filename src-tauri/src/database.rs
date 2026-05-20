@@ -108,21 +108,25 @@ impl Database {
         )
         .await?;
 
-        add_column_if_missing(
-            &self.pool,
-            "ALTER TABLE folders ADD COLUMN icon TEXT",
-        )
-        .await?;
+        add_column_if_missing(&self.pool, "ALTER TABLE folders ADD COLUMN icon TEXT").await?;
 
-        add_column_if_missing(
-            &self.pool,
-            "ALTER TABLE folders ADD COLUMN color TEXT",
-        )
-        .await?;
+        add_column_if_missing(&self.pool, "ALTER TABLE folders ADD COLUMN color TEXT").await?;
 
         add_column_if_missing(
             &self.pool,
             "ALTER TABLE clips ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0",
+        )
+        .await?;
+
+        add_column_if_missing(
+            &self.pool,
+            "ALTER TABLE clips ADD COLUMN is_pinned INTEGER NOT NULL DEFAULT 0",
+        )
+        .await?;
+
+        add_column_if_missing(
+            &self.pool,
+            "ALTER TABLE clips ADD COLUMN pinned_at DATETIME",
         )
         .await?;
 

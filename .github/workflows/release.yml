@@ -11,9 +11,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [windows-latest]
+        settings:
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            args: ""
+          - platform: windows-latest
+            target: aarch64-pc-windows-msvc
+            args: "--target aarch64-pc-windows-msvc"
 
-    runs-on: ${{ matrix.platform }}
+    runs-on: ${{ matrix.settings.platform }}
     steps:
       - uses: actions/checkout@v4
 
@@ -24,6 +30,8 @@ jobs:
 
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.settings.target }}
 
       - name: Cache Rust Dependencies
         uses: Swatinem/rust-cache@v2
@@ -33,9 +41,16 @@ jobs:
       - name: install dependencies
         run: npm install
 
-      - name: Disable Updater for Cloud Build
+      - name: Conditionally Disable Updater
+        env:
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
         run: |
-          node -e "const fs = require('fs'); const config = JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json')); delete config.plugins.updater; delete config.bundle.createUpdaterArtifacts; fs.writeFileSync('src-tauri/tauri.conf.json', JSON.stringify(config, null, 2));"
+          if ([string]::IsNullOrEmpty($env:TAURI_PRIVATE_KEY)) {
+            Write-Host "TAURI_PRIVATE_KEY is not set. Disabling updater config in tauri.conf.json..."
+            node -e "const fs = require('fs'); const config = JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json')); delete config.plugins.updater; delete config.bundle.createUpdaterArtifacts; fs.writeFileSync('src-tauri/tauri.conf.json', JSON.stringify(config, null, 2));"
+          } else {
+            Write-Host "TAURI_PRIVATE_KEY is set. Keeping updater enabled."
+          }
           if (Test-Path pnpm-lock.yaml) { Remove-Item pnpm-lock.yaml }
 
       - name: Extract Release Notes
@@ -69,3 +84,4 @@ jobs:
           releaseBody: ${{ steps.extract_notes.outputs.notes }}
           releaseDraft: false
           prerelease: false
+          args: ${{ matrix.settings.args }}

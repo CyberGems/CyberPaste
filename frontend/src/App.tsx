@@ -9,7 +9,6 @@ import { ClipboardItem as AppClipboardItem, FolderItem, Settings } from './types
 import { ClipList } from './components/ClipList';
 import { ControlBar } from './components/ControlBar';
 import { CompactView } from './components/CompactView';
-import { DragPreview } from './components/DragPreview';
 import { ContextMenu } from './components/ContextMenu';
 import { FolderModal } from './components/FolderModal';
 import { AiResultDialog } from './components/AiResultDialog';
@@ -20,6 +19,13 @@ import { useTranslation } from 'react-i18next';
 import { systemToast as toast } from './utils/toast';
 import { LAYOUT } from './constants';
 import { generateDemoClips } from './debug/demoData';
+import {
+  FileText,
+  Code,
+  Link,
+  File as LucideFile,
+  Image as ImageIcon,
+} from 'lucide-react';
 
 const base64ToBlob = (base64: string, mimeType: string = 'image/png'): Blob => {
   const byteCharacters = atob(base64);
@@ -47,7 +53,7 @@ const getImageMimeType = (metadata: string | null): string => {
 // Debounce utility for window persistence
 function debounce<T extends (...args: any[]) => any>(fn: T, delay: number) {
   let timeoutId: any;
-  return function(this: any, ...args: Parameters<T>) {
+  return function (this: any, ...args: Parameters<T>) {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => fn.apply(this, args), delay);
   };
@@ -77,7 +83,10 @@ function App() {
   // DB size for HUD status strip
   const [dbSizeBytes, setDbSizeBytes] = useState(0);
   useEffect(() => {
-    const fetchSize = () => invoke<number>('get_db_size').then(setDbSizeBytes).catch(() => {});
+    const fetchSize = () =>
+      invoke<number>('get_db_size')
+        .then(setDbSizeBytes)
+        .catch(() => {});
     fetchSize();
     const timer = setInterval(fetchSize, 30000); // refresh every 30s
     return () => clearInterval(timer);
@@ -85,12 +94,13 @@ function App() {
 
   // Simulated Drag State
   const [draggingClipId, setDraggingClipId] = useState<string | null>(null);
-  const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
   const [dragTargetFolderId, setDragTargetFolderId] = useState<string | null>(null);
 
   // Reorder state
   const [reorderTargetClipId, setReorderTargetClipId] = useState<string | null>(null);
-  const [reorderTargetPosition, setReorderTargetPosition] = useState<'before' | 'after' | null>(null);
+  const [reorderTargetPosition, setReorderTargetPosition] = useState<'before' | 'after' | null>(
+    null
+  );
 
   // Add Folder Modal State
   const [showAddFolderModal, setShowAddFolderModal] = useState(false);
@@ -106,6 +116,10 @@ function App() {
     reorderTargetPosition: null as 'before' | 'after' | null,
   });
 
+  const dragIndicatorRef = useRef<HTMLDivElement>(null);
+  const lastReorderCheckRef = useRef<number>(0);
+  const wasDraggingRef = useRef<boolean>(false);
+
   const effectiveTheme = useTheme(theme);
   useLanguage(settings?.language);
   const { t } = useTranslation();
@@ -120,7 +134,7 @@ function App() {
 
   useEffect(() => {
     console.log('App: Initializing...');
-    
+
     // Safety timeout for loading state
     const timer = setTimeout(() => {
       setIsLoading(false);
@@ -167,23 +181,23 @@ function App() {
 
       // Only save if visible
       if (await appWindow.isVisible()) {
-          // Guard: don't let full-width "leak" into compact mode saved width
-          if (currentSettings.view_mode === 'compact' && logicalSize.width > 1000) {
-              return;
-          }
+        // Guard: don't let full-width "leak" into compact mode saved width
+        if (currentSettings.view_mode === 'compact' && logicalSize.width > 1000) {
+          return;
+        }
 
-          // Guard: reject corrupted heights from animation/resize events
-          if (logicalSize.height < 100 || logicalSize.height > 2000) {
-              return;
-          }
+        // Guard: reject corrupted heights from animation/resize events
+        if (logicalSize.height < 100 || logicalSize.height > 2000) {
+          return;
+        }
 
-          await invoke('save_settings', {
-            settings: {
-              ...currentSettings,
-              window_width: logicalSize.width,
-              window_height: logicalSize.height,
-            }
-          });
+        await invoke('save_settings', {
+          settings: {
+            ...currentSettings,
+            window_width: logicalSize.width,
+            window_height: logicalSize.height,
+          },
+        });
       }
     }, 1000);
 
@@ -212,6 +226,13 @@ function App() {
   }, []);
 
   const openSettings = useCallback(async () => {
+    // Hide main window (with animation)
+    try {
+      await invoke('hide_window');
+    } catch (e) {
+      console.error('Failed to hide main window:', e);
+    }
+
     // Check if settings window already exists
     const existingWin = await WebviewWindow.getByLabel('settings');
     if (existingWin) {
@@ -247,7 +268,12 @@ function App() {
   }, []);
 
   const loadClips = useCallback(
-    async (folderId: string | null, append: boolean = false, searchQuery: string = '', limit: number = 20) => {
+    async (
+      folderId: string | null,
+      append: boolean = false,
+      searchQuery: string = '',
+      limit: number = 20
+    ) => {
       const perfId = ++loadPerfIdRef.current;
       const loadStart = perfLogEnabled ? performance.now() : 0;
       let invokeStart = 0;
@@ -378,6 +404,16 @@ function App() {
 
   // Handle global mouse events for simulated drag
   useEffect(() => {
+    const updateDragIndicatorPosition = (x: number, y: number) => {
+      if (dragIndicatorRef.current) {
+        dragIndicatorRef.current.style.setProperty('--mouse-x', `${x}px`);
+        dragIndicatorRef.current.style.setProperty('--mouse-y', `${y}px`);
+      } else {
+        document.documentElement.style.setProperty('--mouse-x', `${x}px`);
+        document.documentElement.style.setProperty('--mouse-y', `${y}px`);
+      }
+    };
+
     const handleGlobalMouseMove = (e: MouseEvent) => {
       const state = dragStateRef.current;
 
@@ -389,37 +425,46 @@ function App() {
 
       // If we are already dragging, update position and detect reorder target
       if (state.isDragging) {
-        setDragPosition({ x: e.clientX, y: e.clientY });
+        updateDragIndicatorPosition(e.clientX, e.clientY);
 
         // Detect reorder target using clips state for reliable lookup
         if (selectedFolderRef.current && clipsRef.current.length > 0) {
-          let closestId: string | null = null;
-          let closestDist = Infinity;
-          let closestRect: DOMRect | null = null;
+          const now = Date.now();
+          if (now - lastReorderCheckRef.current > 50) {
+            lastReorderCheckRef.current = now;
 
-          for (const clip of clipsRef.current) {
-            if (clip.id === state.clipId) continue;
-            const card = document.querySelector(`[data-clip-id="${clip.id}"]`);
-            if (!card) continue;
+            let closestId: string | null = null;
+            let closestDist = Infinity;
+            let closestRect: DOMRect | null = null;
 
-            const rect = card.getBoundingClientRect();
-            const cardCenterY = rect.top + rect.height / 2;
-            const dist = Math.abs(e.clientY - cardCenterY);
-            if (dist < closestDist) {
-              closestDist = dist;
-              closestId = clip.id;
-              closestRect = rect;
+            const cards = document.querySelectorAll('[data-clip-id]');
+            for (let i = 0; i < cards.length; i++) {
+              const card = cards[i] as HTMLElement;
+              const clipId = card.getAttribute('data-clip-id');
+              if (!clipId || clipId === state.clipId) continue;
+
+              const rect = card.getBoundingClientRect();
+              const cardCenterY = rect.top + rect.height / 2;
+              const dist = Math.abs(e.clientY - cardCenterY);
+              if (dist < closestDist) {
+                closestDist = dist;
+                closestId = clipId;
+                closestRect = rect;
+              }
             }
-          }
 
-          if (closestId && closestDist < 300 && closestRect) {
-            const midY = closestRect.top + closestRect.height / 2;
-            const position = e.clientY < midY ? 'before' : 'after';
-            if (dragStateRef.current.reorderTargetClipId !== closestId || dragStateRef.current.reorderTargetPosition !== position) {
-              setReorderTargetClipId(closestId);
-              setReorderTargetPosition(position);
-              dragStateRef.current.reorderTargetClipId = closestId;
-              dragStateRef.current.reorderTargetPosition = position;
+            if (closestId && closestDist < 300 && closestRect) {
+              const midY = closestRect.top + closestRect.height / 2;
+              const position = e.clientY < midY ? 'before' : 'after';
+              if (
+                dragStateRef.current.reorderTargetClipId !== closestId ||
+                dragStateRef.current.reorderTargetPosition !== position
+              ) {
+                setReorderTargetClipId(closestId);
+                setReorderTargetPosition(position);
+                dragStateRef.current.reorderTargetClipId = closestId;
+                dragStateRef.current.reorderTargetPosition = position;
+              }
             }
           }
         }
@@ -433,9 +478,32 @@ function App() {
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist > 5) {
+          const clipId = state.pendingDrag.clipId;
           // Start actual drag
-          setDraggingClipId(state.pendingDrag.clipId);
-          setDragPosition({ x: e.clientX, y: e.clientY });
+          setDraggingClipId(clipId);
+          
+          if (dragIndicatorRef.current) {
+            const draggingClip = clipsRef.current.find((c) => c.id === clipId);
+            const clipType = draggingClip?.clip_type || 'text';
+            
+            // Hide all sub-icons
+            const icons = dragIndicatorRef.current.querySelectorAll('[data-drag-icon]');
+            icons.forEach((el) => el.classList.add('hidden'));
+            
+            // Show matching sub-icon
+            const matchingIcon = dragIndicatorRef.current.querySelector(`[data-drag-icon="${clipType}"]`);
+            if (matchingIcon) {
+              matchingIcon.classList.remove('hidden');
+            } else {
+              dragIndicatorRef.current.querySelector('[data-drag-icon="text"]')?.classList.remove('hidden');
+            }
+            
+            // Show indicator
+            dragIndicatorRef.current.classList.remove('hidden');
+            dragIndicatorRef.current.classList.add('flex');
+          }
+          
+          updateDragIndicatorPosition(e.clientX, e.clientY);
           dragStateRef.current.isDragging = true;
           dragStateRef.current.clipId = state.pendingDrag.clipId;
           dragStateRef.current.pendingDrag = null;
@@ -452,24 +520,34 @@ function App() {
       }
 
       if (dragStateRef.current.isDragging) {
+        wasDraggingRef.current = true;
+        setTimeout(() => {
+          wasDraggingRef.current = false;
+        }, 100);
         finishDrag();
       }
     };
 
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && (dragStateRef.current.isDragging || dragStateRef.current.pendingDrag)) {
-        finishDrag();
+      if (e.key === 'Escape' && dragStateRef.current.isDragging) {
+        e.preventDefault();
+        e.stopPropagation();
+        wasDraggingRef.current = true;
+        setTimeout(() => {
+          wasDraggingRef.current = false;
+        }, 100);
+        finishDrag(true);
       }
     };
 
-    window.addEventListener('mousemove', handleGlobalMouseMove);
+    window.addEventListener('mousemove', handleGlobalMouseMove, { passive: true });
     window.addEventListener('mouseup', handleGlobalMouseUp);
-    window.addEventListener('keydown', handleGlobalKeyDown);
+    window.addEventListener('keydown', handleGlobalKeyDown, { capture: true });
 
     return () => {
       window.removeEventListener('mousemove', handleGlobalMouseMove);
       window.removeEventListener('mouseup', handleGlobalMouseUp);
-      window.removeEventListener('keydown', handleGlobalKeyDown);
+      window.removeEventListener('keydown', handleGlobalKeyDown, { capture: true });
     };
   }, []);
 
@@ -481,8 +559,9 @@ function App() {
     document.body.classList.add('is-dragging');
   };
 
-  const finishDrag = async () => {
-    const { clipId, targetFolderId, reorderTargetClipId, reorderTargetPosition } = dragStateRef.current;
+  const finishDrag = async (isCancelled = false) => {
+    const { clipId, targetFolderId, reorderTargetClipId, reorderTargetPosition } =
+      dragStateRef.current;
 
     // Save reorder targets before clearing state
     const reorderClipId = reorderTargetClipId;
@@ -493,6 +572,10 @@ function App() {
     setDragTargetFolderId(null);
     setReorderTargetClipId(null);
     setReorderTargetPosition(null);
+    if (dragIndicatorRef.current) {
+      dragIndicatorRef.current.classList.add('hidden');
+      dragIndicatorRef.current.classList.remove('flex');
+    }
     dragStateRef.current = {
       isDragging: false,
       clipId: null,
@@ -502,6 +585,10 @@ function App() {
       reorderTargetPosition: null,
     };
     document.body.classList.remove('is-dragging');
+
+    if (isCancelled) {
+      return;
+    }
 
     // Handle reorder drop (priority over folder move)
     if (clipId && reorderClipId && reorderPos && selectedFolderRef.current) {
@@ -542,7 +629,14 @@ function App() {
 
   const refreshTotalCount = useCallback(async () => {
     try {
-      const stats = await invoke<{ total: number; images: number; text: number; files: number; html: number; rtf: number }>('get_clip_stats');
+      const stats = await invoke<{
+        total: number;
+        images: number;
+        text: number;
+        files: number;
+        html: number;
+        rtf: number;
+      }>('get_clip_stats');
       setTotalClipCount(stats.total);
       setImageCount(stats.images);
       setTextCount(stats.text);
@@ -568,7 +662,7 @@ function App() {
   // Auto-select first clip when window gains focus (reopened via hotkey)
   useEffect(() => {
     const unlisten = listen('tauri://focus', () => {
-      setClipListResetToken(prev => prev + 1);
+      setClipListResetToken((prev) => prev + 1);
       if (clipsRef.current.length > 0) {
         setSelectedClipId(clipsRef.current[0].id);
       }
@@ -583,7 +677,7 @@ function App() {
   useEffect(() => {
     const unlistenClipboard = listen('clipboard-change', () => {
       console.log('[App] Clipboard change detected, refreshing...');
-      setClipListResetToken(prev => prev + 1);
+      setClipListResetToken((prev) => prev + 1);
       loadFolders();
       refreshCurrentFolder();
       refreshTotalCount();
@@ -612,6 +706,22 @@ function App() {
     }
   };
 
+  const handleToggleClipPin = useCallback(async (clipId: string | null) => {
+    if (!clipId) return;
+    try {
+      const newPinnedState = await invoke<boolean>('toggle_clip_pin', { uuid: clipId });
+      setClips((prevClips) =>
+        prevClips.map((c) => (c.id === clipId ? { ...c, is_pinned: newPinnedState } : c))
+      );
+      // Since changing pin status changes order, refresh the current folder/clipboard list to get correct new sorting!
+      refreshCurrentFolder();
+      toast.success(newPinnedState ? 'Clip pinned' : 'Clip unpinned');
+    } catch (error) {
+      console.error('Failed to toggle clip pin:', error);
+      toast.error('Failed to toggle pin');
+    }
+  }, [refreshCurrentFolder]);
+
   const getFullImageBlob = useCallback(
     async (clipId: string, fallbackClip: AppClipboardItem): Promise<Blob> => {
       const detail = await invoke<AppClipboardItem>('get_clip_detail', { id: clipId });
@@ -622,6 +732,9 @@ function App() {
   );
 
   const handlePaste = async (clipId: string) => {
+    if (wasDraggingRef.current) {
+      return;
+    }
     try {
       const clip = clips.find((c) => c.id === clipId);
       if (clip && clip.clip_type === 'image') {
@@ -634,9 +747,20 @@ function App() {
       }
 
       await invoke('paste_clip', { id: clipId });
-      // Force immediate refresh in case the background monitor event is ignored
-      refreshCurrentFolder();
+      // Force immediate refresh
+      if (settings?.reset_view_on_paste) {
+        setSelectedFolder(null);
+      } else {
+        refreshCurrentFolder();
+      }
       refreshTotalCount();
+
+      // Close window after paste unless pinned
+      if (!settings?.pinned) {
+        setTimeout(() => {
+          appWindow.hide().catch((err) => console.error('Failed to hide window:', err));
+        }, 150);
+      }
     } catch (error) {
       console.error('Failed to paste clip:', error);
     }
@@ -700,7 +824,7 @@ function App() {
   // Folder navigation handlers (Left/Right arrows in compact mode)
   const handleFolderPrev = useCallback(() => {
     // Build ordered list: [null (clipboard), ...folder ids]
-    const folderIds: (string | null)[] = [null, ...folders.map(f => f.id)];
+    const folderIds: (string | null)[] = [null, ...folders.map((f) => f.id)];
     const currentIdx = folderIds.indexOf(selectedFolder);
     if (currentIdx <= 0) {
       // Wrap to last folder
@@ -711,7 +835,7 @@ function App() {
   }, [folders, selectedFolder, handleSelectFolder]);
 
   const handleFolderNext = useCallback(() => {
-    const folderIds: (string | null)[] = [null, ...folders.map(f => f.id)];
+    const folderIds: (string | null)[] = [null, ...folders.map((f) => f.id)];
     const currentIdx = folderIds.indexOf(selectedFolder);
     if (currentIdx >= folderIds.length - 1) {
       // Wrap to clipboard
@@ -724,13 +848,8 @@ function App() {
   const handlePasteSelected = useCallback(() => {
     if (selectedClipId) {
       handlePaste(selectedClipId);
-      // Close window after paste unless pinned
-      if (!settings?.pinned) {
-        setTimeout(() => appWindow.hide(), 100);
-      }
     }
-  }, [selectedClipId, handlePaste, settings?.pinned]);
-
+  }, [selectedClipId, handlePaste]);
 
   const handleCreateFolder = async (name: string, icon?: string, color?: string) => {
     try {
@@ -796,7 +915,9 @@ function App() {
     } catch (e) {
       console.error('Failed to toggle view mode:', e);
     } finally {
-        setTimeout(() => { isTogglingRef.current = false; }, 2500);
+      setTimeout(() => {
+        isTogglingRef.current = false;
+      }, 2500);
     }
   }, []);
 
@@ -808,15 +929,17 @@ function App() {
 
       const isFull = settings.view_mode === 'full';
       const updatedSettings = {
-          ...settings,
-          window_width: isFull ? 0 : LAYOUT.COMPACT_WIDTH,
-          window_height: isFull ? LAYOUT.FULL_HEIGHT : LAYOUT.COMPACT_HEIGHT
+        ...settings,
+        window_width: isFull ? 0 : LAYOUT.COMPACT_WIDTH,
+        window_height: isFull ? LAYOUT.FULL_HEIGHT : LAYOUT.COMPACT_HEIGHT,
       };
       setSettings(updatedSettings);
     } catch (e) {
       console.error('Failed to reset size:', e);
     } finally {
-        setTimeout(() => { isTogglingRef.current = false; }, 2500);
+      setTimeout(() => {
+        isTogglingRef.current = false;
+      }, 2500);
     }
   }, [settings]);
 
@@ -882,9 +1005,9 @@ function App() {
   const handleUpdateClipContent = async (clipId: string, newContent: string) => {
     try {
       await invoke('update_clip_content', { clipId, newContent });
-      setEditClip(prev => ({ ...prev, isOpen: false }));
+      setEditClip((prev) => ({ ...prev, isOpen: false }));
       // Force a full list reset via token to ensure data is fresh
-      setClipListResetToken(prev => prev + 1);
+      setClipListResetToken((prev) => prev + 1);
       refreshTotalCount();
       toast.success('Clip content updated');
     } catch (e) {
@@ -929,7 +1052,7 @@ function App() {
       const newSettings = { ...settings, pinned: newPinned };
       await invoke('save_settings', { settings: newSettings });
       setSettings(newSettings);
-      toast.success(newPinned ? "Window Pinned" : "Window Unpinned");
+      toast.success(newPinned ? 'Window Pinned' : 'Window Unpinned');
     } catch (e) {
       console.error('Failed to toggle pin:', e);
     }
@@ -939,6 +1062,7 @@ function App() {
     onClose: () => appWindow.hide(),
     onSearch: () => setShowSearch(true),
     onDelete: () => handleDelete(selectedClipId),
+    onPin: () => handleToggleClipPin(selectedClipId),
     onNavigatePrev: handleNavigatePrev,
     onNavigateNext: handleNavigateNext,
     onFolderPrev: settings?.view_mode === 'compact' ? handleFolderPrev : undefined,
@@ -960,13 +1084,6 @@ function App() {
         data-el="app-window"
         className={`relative h-full w-full overflow-hidden ${settings?.mica_effect === 'clear' ? 'bg-background/95' : ''}`}
       >
-        {draggingClipId && (
-          <DragPreview
-            clip={clips.find((c) => c.id === draggingClipId)!}
-            position={dragPosition}
-          />
-        )}
-
         {settings?.view_mode === 'compact' ? (
           <CompactView
             clips={clips}
@@ -995,6 +1112,7 @@ function App() {
             onDragHover={handleDragHover}
             onDragLeave={handleDragLeave}
             isDragging={!!draggingClipId}
+            draggingClipId={draggingClipId}
             dragTargetFolderId={dragTargetFolderId}
             reorderTargetClipId={reorderTargetClipId}
             reorderTargetPosition={reorderTargetPosition}
@@ -1010,7 +1128,8 @@ function App() {
             }}
             onToggleLayout={async () => {
               if (!settings) return;
-              const newLayout: 'horizontal' | 'vertical' = settings.compact_folder_layout === 'vertical' ? 'horizontal' : 'vertical';
+              const newLayout: 'horizontal' | 'vertical' =
+                settings.compact_folder_layout === 'vertical' ? 'horizontal' : 'vertical';
               const newSettings = { ...settings, compact_folder_layout: newLayout };
               await invoke('save_settings', { settings: newSettings });
               setSettings(newSettings);
@@ -1023,7 +1142,7 @@ function App() {
         ) : (
           <div
             data-el="app-frame"
-            className="flex h-full w-full flex-col font-sans text-foreground pt-1.5"
+            className="flex h-full w-full flex-col pt-1.5 font-sans text-foreground"
           >
             <ControlBar
               style={{ height: LAYOUT.CONTROL_BAR_HEIGHT, flexShrink: 0 }}
@@ -1082,13 +1201,14 @@ function App() {
                 selectedFolder={selectedFolder}
                 onPaste={handlePaste}
                 onCopy={handleCopy}
-            onLoadMore={loadMore}
+                onLoadMore={loadMore}
                 onDragStart={startDrag}
                 onCardContextMenu={(e, clipId) => handleContextMenu(e, 'card', clipId)}
                 scrollDirection={settings?.scroll_direction || 'horizontal'}
                 reorderTargetClipId={reorderTargetClipId}
                 reorderTargetPosition={reorderTargetPosition}
                 reorderEnabled={!!selectedFolder}
+                draggingClipId={draggingClipId}
               />
             </main>
           </div>
@@ -1102,9 +1222,9 @@ function App() {
             options={
               contextMenu.type === 'card'
                 ? (() => {
-                    const clip = clips.find(c => c.id === contextMenu.itemId);
+                    const clip = clips.find((c) => c.id === contextMenu.itemId);
                     const opts = [];
-                    
+
                     if (clip?.clip_type === 'image') {
                       opts.push({
                         label: t('contextMenu.view'),
@@ -1113,7 +1233,7 @@ function App() {
                             toast.info('Opening Viewer...');
                           }
                           invoke('open_image_viewer', { clipId: clip.id }).catch(console.error);
-                        }
+                        },
                       });
                     }
 
@@ -1123,44 +1243,53 @@ function App() {
                         if (clip) {
                           if (clip.clip_type === 'image') {
                             if (settings?.image_editor_path) {
-                              invoke('open_with', { 
-                                appPath: settings.image_editor_path, 
-                                filePath: clip.image_path || clip.content 
-                              }).then(() => {
-                                // Auto-hide after successful launch
-                                invoke('hide_window');
-                                toast.success('Image editor launched');
-                              }).catch(e => toast.error(`Failed to open editor: ${e}`));
+                              invoke('open_with', {
+                                appPath: settings.image_editor_path,
+                                filePath: clip.image_path || clip.content,
+                              })
+                                .then(() => {
+                                  // Auto-hide after successful launch
+                                  invoke('hide_window');
+                                  toast.success('Image editor launched');
+                                })
+                                .catch((e) => toast.error(`Failed to open editor: ${e}`));
                             } else {
-                              toast.info('Please configure an External Image Editor (like CyberViewer) in Settings to use this feature.');
+                              toast.info(
+                                'Please configure an External Image Editor (like CyberViewer) in Settings to use this feature.'
+                              );
                             }
                           } else {
                             // Fetch full content before editing since get_clips uses preview_only
                             invoke<AppClipboardItem>('get_clip', { clipId: clip.id })
-                              .then(fullClip => {
+                              .then((fullClip) => {
                                 setEditClip({
                                   isOpen: true,
                                   clipId: (fullClip as any).id || (fullClip as any).uuid,
-                                  content: (fullClip as any).content
+                                  content: (fullClip as any).content,
                                 });
                               })
-                              .catch(err => {
+                              .catch((err) => {
                                 console.error('Failed to fetch clip content:', err);
                                 // Fallback to preview if fetch fails
                                 setEditClip({
                                   isOpen: true,
                                   clipId: clip.id,
-                                  content: clip.content || clip.preview
+                                  content: clip.content || clip.preview,
                                 });
                               });
                           }
                         }
-                      }
+                      },
                     });
 
                     opts.push({
                       label: t('contextMenu.copy') || 'Copy',
                       onClick: () => handlePaste(contextMenu.itemId),
+                    });
+
+                    opts.push({
+                      label: clip?.is_pinned ? (t('contextMenu.unpin') || 'Unpin Clip') : (t('contextMenu.pin') || 'Pin Clip'),
+                      onClick: () => handleToggleClipPin(contextMenu.itemId),
                     });
 
                     opts.push({
@@ -1170,22 +1299,26 @@ function App() {
 
                     opts.push({
                       label: `${settings?.ai_title_summarize || t('contextMenu.summarize')}`,
-                      onClick: () => handleAiAction(contextMenu.itemId, 'summarize', t('ai.summary')),
+                      onClick: () =>
+                        handleAiAction(contextMenu.itemId, 'summarize', t('ai.summary')),
                     });
 
                     opts.push({
                       label: `${settings?.ai_title_translate || t('contextMenu.translate')}`,
-                      onClick: () => handleAiAction(contextMenu.itemId, 'translate', t('ai.translation')),
+                      onClick: () =>
+                        handleAiAction(contextMenu.itemId, 'translate', t('ai.translation')),
                     });
 
                     opts.push({
                       label: `${settings?.ai_title_explain_code || t('contextMenu.explainCode')}`,
-                      onClick: () => handleAiAction(contextMenu.itemId, 'explain_code', t('ai.codeExplanation')),
+                      onClick: () =>
+                        handleAiAction(contextMenu.itemId, 'explain_code', t('ai.codeExplanation')),
                     });
 
                     opts.push({
                       label: `${settings?.ai_title_fix_grammar || t('contextMenu.fixGrammar')}`,
-                      onClick: () => handleAiAction(contextMenu.itemId, 'fix_grammar', t('ai.grammarFix')),
+                      onClick: () =>
+                        handleAiAction(contextMenu.itemId, 'fix_grammar', t('ai.grammarCheck')),
                     });
 
                     opts.push({
@@ -1193,7 +1326,7 @@ function App() {
                       danger: true,
                       onClick: () => handleDelete(contextMenu.itemId),
                     });
-                    
+
                     return opts;
                   })()
                 : [
@@ -1222,8 +1355,16 @@ function App() {
           isOpen={showAddFolderModal}
           mode={folderModalMode}
           initialName={newFolderName}
-          initialIcon={editingFolderId ? (folders.find(f => f.id === editingFolderId)?.icon || undefined) : undefined}
-          initialColor={editingFolderId ? (folders.find(f => f.id === editingFolderId)?.color || undefined) : undefined}
+          initialIcon={
+            editingFolderId
+              ? folders.find((f) => f.id === editingFolderId)?.icon || undefined
+              : undefined
+          }
+          initialColor={
+            editingFolderId
+              ? folders.find((f) => f.id === editingFolderId)?.color || undefined
+              : undefined
+          }
           onClose={() => {
             setShowAddFolderModal(false);
             setNewFolderName('');
@@ -1242,7 +1383,7 @@ function App() {
         <EditClipModal
           isOpen={editClip.isOpen}
           content={editClip.content}
-          onClose={() => setEditClip(prev => ({ ...prev, isOpen: false }))}
+          onClose={() => setEditClip((prev) => ({ ...prev, isOpen: false }))}
           onSave={(newContent) => handleUpdateClipContent(editClip.clipId, newContent)}
         />
 
@@ -1254,6 +1395,22 @@ function App() {
             if (moveToFolderClipId) handleMoveToFolder(moveToFolderClipId, folderId);
           }}
         />
+
+        <div
+          ref={dragIndicatorRef}
+          className="pointer-events-none fixed left-0 top-0 z-[9999] hidden h-7 w-7 flex items-center justify-center rounded-full border border-cyan-500/30 bg-black/85 shadow-[0_0_12px_rgba(34,211,238,0.5)] backdrop-blur-md"
+          style={{
+            transform: 'translate3d(calc(var(--mouse-x, 0px) + 16px), calc(var(--mouse-y, 0px) + 16px), 0)',
+            willChange: 'transform',
+          }}
+        >
+          <ImageIcon data-drag-icon="image" size={13} className="hidden text-cyan-400" />
+          <Code data-drag-icon="html" size={13} className="hidden text-cyan-400" />
+          <Code data-drag-icon="rtf" size={13} className="hidden text-cyan-400" />
+          <Link data-drag-icon="url" size={13} className="hidden text-cyan-400" />
+          <LucideFile data-drag-icon="file" size={13} className="hidden text-cyan-400" />
+          <FileText data-drag-icon="text" size={13} className="hidden text-cyan-400" />
+        </div>
       </div>
     </div>
   );

@@ -17,6 +17,18 @@ interface KeyboardOptions {
 export function useKeyboard(options: KeyboardOptions) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore all keyboard shortcuts when dragging
+      if (document.body.classList.contains('is-dragging')) {
+        return;
+      }
+
+      const isTyping =
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        (e.target instanceof HTMLElement && e.target.isContentEditable);
+
+      const isSearchInput = e.target instanceof HTMLInputElement && e.target.id === 'search-input';
+
       // Helper to check if event matches a hotkey string like "Ctrl+Shift+V"
       const matchesHotkey = (hotkey: string) => {
         const parts = hotkey.split('+');
@@ -28,8 +40,9 @@ export function useKeyboard(options: KeyboardOptions) {
 
         const eventKey = e.key.toLowerCase();
         // Handle physical key names like 'm' vs 'M'
-        const keyMatches = eventKey === key || (e.code.startsWith('Key') && e.code.slice(3).toLowerCase() === key);
-        
+        const keyMatches =
+          eventKey === key || (e.code.startsWith('Key') && e.code.slice(3).toLowerCase() === key);
+
         return (
           keyMatches &&
           e.ctrlKey === hasCtrl &&
@@ -40,6 +53,9 @@ export function useKeyboard(options: KeyboardOptions) {
       };
 
       if (e.key === 'Escape' && options.onClose) {
+        if (isTyping && !isSearchInput) {
+          return;
+        }
         e.preventDefault();
         options.onClose();
       }
@@ -48,7 +64,7 @@ export function useKeyboard(options: KeyboardOptions) {
         e.preventDefault();
         options.onSearch();
       }
-      
+
       // Dynamic Toggle Mode Hotkey
       if (options.onToggleMode && options.toggleModeHotkey) {
         if (matchesHotkey(options.toggleModeHotkey)) {
@@ -62,29 +78,38 @@ export function useKeyboard(options: KeyboardOptions) {
       }
 
       if (e.key === 'Delete' && options.onDelete) {
+        if (isTyping) {
+          return;
+        }
         e.preventDefault();
         options.onDelete();
       }
 
       if (e.key === 'p' && !e.metaKey && !e.ctrlKey && options.onPin) {
+        if (isTyping) {
+          return;
+        }
         e.preventDefault();
         options.onPin();
       }
 
       if (e.key === 'ArrowUp' && options.onNavigatePrev) {
+        if (isTyping && !isSearchInput) {
+          return;
+        }
         e.preventDefault();
         e.stopPropagation();
         options.onNavigatePrev();
       }
 
       if (e.key === 'ArrowDown' && options.onNavigateNext) {
+        if (isTyping && !isSearchInput) {
+          return;
+        }
         e.preventDefault();
         e.stopPropagation();
         options.onNavigateNext();
       }
-
-      // Folder navigation — skip when typing in an input/textarea
-      const isTyping = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
 
       if (e.key === 'ArrowLeft' && options.onFolderPrev && !isTyping) {
         e.preventDefault();
@@ -99,6 +124,9 @@ export function useKeyboard(options: KeyboardOptions) {
       }
 
       if (e.key === 'Enter' && options.onPaste) {
+        if (isTyping && !isSearchInput) {
+          return;
+        }
         e.preventDefault();
         options.onPaste();
       }

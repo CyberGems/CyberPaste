@@ -11,7 +11,7 @@ import { ContextMenu } from '../components/ContextMenu';
 // Debounce utility for window persistence
 function debounce<T extends (...args: any[]) => any>(fn: T, delay: number) {
   let timeoutId: any;
-  return function(this: any, ...args: Parameters<T>) {
+  return function (this: any, ...args: Parameters<T>) {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => fn.apply(this, args), delay);
   };
@@ -23,8 +23,8 @@ export function ImageViewerWindow() {
   const [fitToWindow, setFitToWindow] = useState(true);
   const [loading, setLoading] = useState(true);
   const [isMaximized, setIsMaximized] = useState(false);
-  const [contextMenu, setContextMenu] = useState<{ x: number, y: number } | null>(null);
-  
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+
   const appWindow = getCurrentWebviewWindow();
   const settingsRef = useRef<Settings | null>(null);
 
@@ -35,7 +35,7 @@ export function ImageViewerWindow() {
         setClip(clipData);
         setLoading(false);
       })
-      .catch(err => {
+      .catch((err) => {
         console.error('Failed to load viewer data:', err);
         setLoading(false);
       });
@@ -46,9 +46,12 @@ export function ImageViewerWindow() {
     const clipId = urlParams.get('clip_id');
 
     // Show window ASAP to avoid "two clicks" issue, relying on bg-zinc-950 to hide flash
-    appWindow.show().then(() => {
-      appWindow.setFocus().catch(() => {});
-    }).catch(() => {});
+    appWindow
+      .show()
+      .then(() => {
+        appWindow.setFocus().catch(() => {});
+      })
+      .catch(() => {});
 
     if (clipId) {
       loadClip(clipId);
@@ -73,10 +76,12 @@ export function ImageViewerWindow() {
       }
     };
 
-    invoke<Settings>('get_settings').then(s => {
-      settingsRef.current = s;
-      applyTheme(s.theme);
-    }).catch(console.error);
+    invoke<Settings>('get_settings')
+      .then((s) => {
+        settingsRef.current = s;
+        applyTheme(s.theme);
+      })
+      .catch(console.error);
 
     // Listen for setting changes to update theme in real-time
     const unlistenSettings = listen<Settings>('settings-changed', (event) => {
@@ -87,9 +92,12 @@ export function ImageViewerWindow() {
     // Listen for content updates if window is already open
     const unlistenUpdate = listen<string>('update-viewer-clip', (event) => {
       loadClip(event.payload);
-      appWindow.show().then(() => {
-        appWindow.setFocus().catch(() => {});
-      }).catch(() => {});
+      appWindow
+        .show()
+        .then(() => {
+          appWindow.setFocus().catch(() => {});
+        })
+        .catch(() => {});
     });
 
     // Persistence logic
@@ -104,21 +112,21 @@ export function ImageViewerWindow() {
         const size = await appWindow.innerSize();
         const pos = await appWindow.innerPosition();
         const factor = await appWindow.scaleFactor();
-        
+
         const logicalSize = size.toLogical(factor);
         const logicalPos = pos.toLogical(factor);
 
         // Only save if dimensions are sane and changed
         if (logicalSize.width > 100 && logicalSize.height > 100) {
-            invoke('save_settings', {
-                settings: {
-                    ...currentSettings,
-                    viewer_window_width: logicalSize.width,
-                    viewer_window_height: logicalSize.height,
-                    viewer_window_x: logicalPos.x,
-                    viewer_window_y: logicalPos.y,
-                }
-            }).catch(() => {}); // Silent catch to prevent console flood
+          invoke('save_settings', {
+            settings: {
+              ...currentSettings,
+              viewer_window_width: logicalSize.width,
+              viewer_window_height: logicalSize.height,
+              viewer_window_x: logicalPos.x,
+              viewer_window_y: logicalPos.y,
+            },
+          }).catch(() => {}); // Silent catch to prevent console flood
         }
       } catch (e) {
         // Window might have closed during debounce
@@ -132,10 +140,10 @@ export function ImageViewerWindow() {
     const unlistenMoved = appWindow.onMoved(() => persistWindow());
 
     return () => {
-      unlistenSettings.then(f => f());
-      unlistenUpdate.then(f => f());
-      unlistenResize.then(f => f());
-      unlistenMoved.then(f => f());
+      unlistenSettings.then((f) => f());
+      unlistenUpdate.then((f) => f());
+      unlistenResize.then((f) => f());
+      unlistenMoved.then((f) => f());
     };
   }, [loadClip]); // Removed appWindow from deps as it's stable and avoids unnecessary effect resets
 
@@ -155,7 +163,7 @@ export function ImageViewerWindow() {
     const currentSettings = settingsRef.current;
     if (clip && currentSettings?.image_editor_path) {
       const path = clip.image_path;
-      
+
       if (!path) {
         console.warn('Cannot edit: No file path available for this image yet.');
         return;
@@ -163,11 +171,11 @@ export function ImageViewerWindow() {
 
       // Close viewer IMMEDIATELY so we don't block the editor window or OS prompts
       appWindow.close().then(() => {
-        invoke('open_with', { 
-          appPath: currentSettings.image_editor_path, 
-          filePath: path 
-        }).catch(err => {
-            console.error('Failed to open editor after closing viewer:', err);
+        invoke('open_with', {
+          appPath: currentSettings.image_editor_path,
+          filePath: path,
+        }).catch((err) => {
+          console.error('Failed to open editor after closing viewer:', err);
         });
       });
     }
@@ -185,35 +193,39 @@ export function ImageViewerWindow() {
   };
 
   if (loading && !clip) {
-     return (
-       <div className="h-screen w-screen flex items-center justify-center bg-zinc-950 text-[#00F2FF] font-mono animate-pulse">
-         LOADING_IMAGE_SYSTEM...
-       </div>
-     );
+    return (
+      <div className="flex h-screen w-screen animate-pulse items-center justify-center bg-zinc-950 font-mono text-[#00F2FF]">
+        LOADING_IMAGE_SYSTEM...
+      </div>
+    );
   }
 
   if (!clip) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-zinc-950 text-[#FF00D0] font-mono border border-[#FF00D0]/30">
+      <div className="flex h-screen w-screen items-center justify-center border border-[#FF00D0]/30 bg-zinc-950 font-mono text-[#FF00D0]">
         ERROR::CLIP_NOT_FOUND
       </div>
     );
   }
 
-  const fileName = clip.image_path 
-    ? clip.image_path.split(/[\\/]/).pop() 
-    : (clip.metadata ? (() => {
-        try {
-          const m = JSON.parse(clip.metadata);
-          return m.file_name || 'ClipboardImage.png';
-        } catch { return 'ClipboardImage.png'; }
-      })() : 'ClipboardImage.png');
+  const fileName = clip.image_path
+    ? clip.image_path.split(/[\\/]/).pop()
+    : clip.metadata
+      ? (() => {
+          try {
+            const m = JSON.parse(clip.metadata);
+            return m.file_name || 'ClipboardImage.png';
+          } catch {
+            return 'ClipboardImage.png';
+          }
+        })()
+      : 'ClipboardImage.png';
 
   const friendlyDate = formatDistanceToNow(new Date(clip.created_at), { addSuffix: true });
 
   return (
-    <div 
-      className="h-screen w-screen flex flex-col bg-zinc-950/95 border border-[#7A00FF]/30 overflow-hidden rounded-lg shadow-2xl"
+    <div
+      className="flex h-screen w-screen flex-col overflow-hidden rounded-lg border border-[#7A00FF]/30 bg-zinc-950/95 shadow-2xl"
       onContextMenu={handleContextMenu}
     >
       {contextMenu && (
@@ -223,7 +235,9 @@ export function ImageViewerWindow() {
           onClose={() => setContextMenu(null)}
           options={[
             {
-              label: fitToWindow ? t('viewer.originalSize', 'Original Size') : t('viewer.fitToWindow', 'Fit to Window'),
+              label: fitToWindow
+                ? t('viewer.originalSize', 'Original Size')
+                : t('viewer.fitToWindow', 'Fit to Window'),
               onClick: () => setFitToWindow(!fitToWindow),
             },
             {
@@ -243,48 +257,76 @@ export function ImageViewerWindow() {
         />
       )}
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 bg-zinc-900/90 border-b border-white/5 z-10" data-tauri-drag-region>
+      <div
+        className="z-10 flex items-center justify-between border-b border-white/5 bg-zinc-900/90 px-4 py-2"
+        data-tauri-drag-region
+      >
         <div className="flex items-center gap-3" data-tauri-drag-region>
-          <div className="w-2.5 h-2.5 rounded-full bg-[#00F2FF] shadow-[0_0_8px_#00F2FF]" />
-          
+          <div className="h-2.5 w-2.5 rounded-full bg-[#00F2FF] shadow-[0_0_8px_#00F2FF]" />
+
           <div className="flex items-center" data-tauri-drag-region>
-            <span className="font-bold text-sm tracking-tight text-white/90 mr-1.5" data-tauri-drag-region>CyberPaste</span>
-            <span className="text-[11px] font-bold text-indigo-400/80 tracking-widest uppercase bg-indigo-400/10 px-2 py-0.5 rounded-sm border border-indigo-400/20" data-tauri-drag-region>Viewer</span>
-            
-            <span className="text-zinc-600 mx-3 text-sm" data-tauri-drag-region>//</span>
-            
-            <div className="flex items-center gap-0 font-mono text-[11px] font-medium" data-tauri-drag-region>
-              <span className="text-cyan-400/80" data-tauri-drag-region>{fileName}</span>
-              <span className="text-zinc-700 mx-2" data-tauri-drag-region>|</span>
-              <span className="text-indigo-400/80" data-tauri-drag-region>{friendlyDate}</span>
-              <span className="text-zinc-700 mx-2" data-tauri-drag-region>|</span>
-              <span className="text-zinc-400" data-tauri-drag-region>ID: {clip.id.substring(0, 8)}</span>
+            <span
+              className="mr-1.5 text-sm font-bold tracking-tight text-white/90"
+              data-tauri-drag-region
+            >
+              CyberPaste
+            </span>
+            <span
+              className="rounded-sm border border-indigo-400/20 bg-indigo-400/10 px-2 py-0.5 text-[11px] font-bold uppercase tracking-widest text-indigo-400/80"
+              data-tauri-drag-region
+            >
+              Viewer
+            </span>
+
+            <span className="mx-3 text-sm text-zinc-600" data-tauri-drag-region>
+              //
+            </span>
+
+            <div
+              className="flex items-center gap-0 font-mono text-[11px] font-medium"
+              data-tauri-drag-region
+            >
+              <span className="text-cyan-400/80" data-tauri-drag-region>
+                {fileName}
+              </span>
+              <span className="mx-2 text-zinc-700" data-tauri-drag-region>
+                |
+              </span>
+              <span className="text-indigo-400/80" data-tauri-drag-region>
+                {friendlyDate}
+              </span>
+              <span className="mx-2 text-zinc-700" data-tauri-drag-region>
+                |
+              </span>
+              <span className="text-zinc-400" data-tauri-drag-region>
+                ID: {clip.id.substring(0, 8)}
+              </span>
             </div>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-4">
           {/* Group 1: Image Actions */}
-          <div className="flex items-center gap-0.5 bg-white/5 rounded-lg p-0.5 border border-white/5">
+          <div className="flex items-center gap-0.5 rounded-lg border border-white/5 bg-white/5 p-0.5">
             <button
               onClick={() => setFitToWindow(!fitToWindow)}
-              className="p-1.5 rounded-md hover:bg-white/10 transition-colors text-zinc-400 hover:text-cyan-400"
-              title={fitToWindow ? "Original Size" : "Fit to Window"}
+              className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-cyan-400"
+              title={fitToWindow ? 'Original Size' : 'Fit to Window'}
             >
               {fitToWindow ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
             </button>
-            
+
             <button
               onClick={handleEdit}
-              className="p-1.5 rounded-md hover:bg-white/10 transition-colors text-zinc-400 hover:text-indigo-400"
+              className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-indigo-400"
               title="Edit"
             >
               <Edit size={15} />
             </button>
-            
+
             <button
               onClick={handleCopy}
-              className="p-1.5 rounded-md hover:bg-white/10 transition-colors text-zinc-400 hover:text-emerald-400"
+              className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-emerald-400"
               title="Copy to Clipboard"
             >
               <Clipboard size={15} />
@@ -295,23 +337,23 @@ export function ImageViewerWindow() {
           <div className="flex items-center gap-0.5">
             <button
               onClick={handleMinimize}
-              className="p-1.5 rounded-md hover:bg-white/10 transition-colors text-zinc-400 hover:text-white"
+              className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-white"
               title="Minimize"
             >
               <Minus size={16} />
             </button>
-            
+
             <button
               onClick={handleMaximize}
-              className="p-1.5 rounded-md hover:bg-white/10 transition-colors text-zinc-400 hover:text-cyan-400"
-              title={isMaximized ? "Restore" : "Maximize"}
+              className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-cyan-400"
+              title={isMaximized ? 'Restore' : 'Maximize'}
             >
               {isMaximized ? <Minimize2 size={16} /> : <Maximize size={16} />}
             </button>
-            
+
             <button
               onClick={handleClose}
-              className="p-1.5 rounded-md hover:bg-white/10 transition-colors text-zinc-400 hover:text-rose-400"
+              className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-rose-400"
               title="Close"
             >
               <X size={18} />
@@ -321,21 +363,26 @@ export function ImageViewerWindow() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 relative overflow-auto flex items-center justify-center bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-900 to-zinc-950 p-4">
+      <div className="relative flex flex-1 items-center justify-center overflow-auto bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-900 to-zinc-950 p-4">
         {/* Subtle grid background */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
-             style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 0)', backgroundSize: '24px 24px' }} />
-        
-        <img 
-          src={`data:image/png;base64,${clip.content}`} 
-          alt="" 
-          className={`transition-all duration-500 ease-out shadow-2xl ${fitToWindow ? 'max-w-full max-h-full object-contain' : 'min-w-fit min-h-fit cursor-move'}`}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.03]"
           style={{
-            filter: 'drop-shadow(0 0 20px rgba(0,0,0,0.8))'
+            backgroundImage: 'radial-gradient(#fff 1px, transparent 0)',
+            backgroundSize: '24px 24px',
+          }}
+        />
+
+        <img
+          src={`data:image/png;base64,${clip.content}`}
+          alt=""
+          className={`shadow-2xl transition-all duration-500 ease-out ${fitToWindow ? 'max-h-full max-w-full object-contain' : 'min-h-fit min-w-fit cursor-move'}`}
+          style={{
+            filter: 'drop-shadow(0 0 20px rgba(0,0,0,0.8))',
           }}
         />
       </div>
-      
+
       {/* Footer Accent */}
       <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-[#7A00FF]/50 to-transparent" />
     </div>

@@ -1,7 +1,18 @@
 import { useEffect, useState, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import { Info, CheckCircle2, AlertTriangle, X, Image, Type, FileText, Code, FolderOpen, Link } from 'lucide-react';
+import {
+  Info,
+  CheckCircle2,
+  AlertTriangle,
+  X,
+  Image,
+  Type,
+  FileText,
+  Code,
+  FolderOpen,
+  Link,
+} from 'lucide-react';
 import { Settings } from '../types';
 
 interface ToastPayload {
@@ -18,13 +29,20 @@ function getClipTitle(clipType?: string | null, toastType?: string): string {
     return 'Aviso';
   }
   switch (clipType) {
-    case 'image': return 'Imagen copiada';
-    case 'text': return 'Texto copiado';
-    case 'html': return 'HTML copiado';
-    case 'rtf': return 'Texto enriquecido copiado';
-    case 'file': return 'Archivo copiado';
-    case 'url': return 'URL copiada';
-    default: return 'Copiado';
+    case 'image':
+      return 'Imagen copiada';
+    case 'text':
+      return 'Texto copiado';
+    case 'html':
+      return 'HTML copiado';
+    case 'rtf':
+      return 'Texto enriquecido copiado';
+    case 'file':
+      return 'Archivo copiado';
+    case 'url':
+      return 'URL copiada';
+    default:
+      return 'Copiado';
   }
 }
 
@@ -34,15 +52,22 @@ function getClipIcon(clipType?: string | null, toastType?: string) {
     if (toastType === 'error') return <AlertTriangle className="h-5 w-5 text-[#FF00D0]" />;
     return <Info className="h-5 w-5 text-[#00F2FF]" />;
   }
-  const cls = "h-5 w-5 text-[#00F2FF]";
+  const cls = 'h-5 w-5 text-[#00F2FF]';
   switch (clipType) {
-    case 'image': return <Image className={cls} />;
-    case 'text': return <Type className={cls} />;
-    case 'html': return <Code className={cls} />;
-    case 'rtf': return <FileText className={cls} />;
-    case 'file': return <FolderOpen className={cls} />;
-    case 'url': return <Link className={cls} />;
-    default: return <CheckCircle2 className={cls} />;
+    case 'image':
+      return <Image className={cls} />;
+    case 'text':
+      return <Type className={cls} />;
+    case 'html':
+      return <Code className={cls} />;
+    case 'rtf':
+      return <FileText className={cls} />;
+    case 'file':
+      return <FolderOpen className={cls} />;
+    case 'url':
+      return <Link className={cls} />;
+    default:
+      return <CheckCircle2 className={cls} />;
   }
 }
 
@@ -63,8 +88,10 @@ export function ToastWindow() {
 
       setToast(event.payload);
       setIsClosing(false);
-      
-      invoke('set_toast_position', { width: window.innerWidth, height: window.innerHeight }).catch(console.error);
+
+      invoke('set_toast_position', { width: window.innerWidth, height: window.innerHeight }).catch(
+        console.error
+      );
 
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
 
@@ -85,7 +112,7 @@ export function ToastWindow() {
     });
 
     return () => {
-      unlisten.then(f => f());
+      unlisten.then((f) => f());
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
     };
   }, []);
@@ -105,59 +132,57 @@ export function ToastWindow() {
 
   const isMinimal = settings?.toast_style === 'minimal';
   const isDark = settings?.toast_style === 'dark';
-  const cyberGradient = "bg-gradient-to-r from-[#00F2FF] via-[#7A00FF] to-[#FF00D0]";
-  
+  const cyberGradient = 'bg-gradient-to-r from-[#00F2FF] via-[#7A00FF] to-[#FF00D0]';
+
   const containerClasses = isMinimal
-    ? "bg-zinc-900/95 border border-zinc-700/50 text-white shadow-xl"
+    ? 'bg-zinc-900/95 border border-zinc-700/50 text-white shadow-xl'
     : isDark
-    ? "bg-zinc-950/95 border border-zinc-800 text-white shadow-2xl"
-    : "bg-zinc-900/85 backdrop-blur-xl border border-[#7A00FF]/20 text-white shadow-[0_8px_30px_rgb(0,0,0,0.6),0_0_15px_rgba(0,242,255,0.1)]";
+      ? 'bg-zinc-950/95 border border-zinc-800 text-white shadow-2xl'
+      : 'bg-zinc-900/85 backdrop-blur-xl border border-[#7A00FF]/20 text-white shadow-[0_8px_30px_rgb(0,0,0,0.6),0_0_15px_rgba(0,242,255,0.1)]';
 
   return (
-    <div className="w-full h-full flex items-center" data-tauri-drag-region>
-      <div 
-        className={`relative w-full overflow-hidden rounded-xl transition-all duration-300 ${containerClasses} ${isClosing ? 'opacity-0 translate-y-2 scale-95' : 'opacity-100 translate-y-0 scale-100'}`}
+    <div className="flex h-full w-full items-center" data-tauri-drag-region>
+      <div
+        className={`relative w-full overflow-hidden rounded-xl transition-all duration-300 ${containerClasses} ${isClosing ? 'translate-y-2 scale-95 opacity-0' : 'translate-y-0 scale-100 opacity-100'}`}
       >
         <div className="flex items-start gap-3 p-3 pb-4">
           {/* Icon or image thumbnail */}
           <div className="mt-0.5 shrink-0">
             {hasImagePreview ? (
-              <img 
-                src={`data:image/png;base64,${toast.image_preview}`} 
-                alt="" 
-                className="h-10 w-10 rounded-md object-cover border border-white/10"
+              <img
+                src={`data:image/png;base64,${toast.image_preview}`}
+                alt=""
+                className="h-10 w-10 rounded-md border border-white/10 object-cover"
               />
             ) : (
               icon
             )}
           </div>
-          
-          <div className="flex-1 min-w-0 pr-5">
-            <h4 className="text-sm font-semibold text-zinc-100">
-              {title}
-            </h4>
+
+          <div className="min-w-0 flex-1 pr-5">
+            <h4 className="text-sm font-semibold text-zinc-100">{title}</h4>
             {toast.message && (
-              <p className="mt-0.5 text-sm font-medium text-zinc-300 leading-snug break-words line-clamp-2">
+              <p className="mt-0.5 line-clamp-2 break-words text-sm font-medium leading-snug text-zinc-300">
                 {toast.message}
               </p>
             )}
           </div>
 
-          <button 
+          <button
             onClick={closeToast}
-            className="absolute top-2.5 right-2.5 p-1 rounded-md text-zinc-500 hover:text-white hover:bg-white/10 transition-colors"
+            className="absolute right-2.5 top-2.5 rounded-md p-1 text-zinc-500 transition-colors hover:bg-white/10 hover:text-white"
           >
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
 
         {/* Progress Bar */}
-        <div className="absolute bottom-0 left-0 w-full h-[3px] bg-white/5">
-          <div 
+        <div className="absolute bottom-0 left-0 h-[3px] w-full bg-white/5">
+          <div
             id="toast-progress-bar"
             className={`h-full w-full origin-left ${!isMinimal && !isDark ? cyberGradient : 'bg-zinc-600'}`}
-            style={{ 
-              boxShadow: !isMinimal && !isDark ? '0 0 8px rgba(122, 0, 255, 0.8)' : 'none'
+            style={{
+              boxShadow: !isMinimal && !isDark ? '0 0 8px rgba(122, 0, 255, 0.8)' : 'none',
             }}
           />
         </div>
