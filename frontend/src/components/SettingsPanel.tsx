@@ -1769,7 +1769,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <div className="flex flex-wrap gap-3 pt-2">
                         <button
                           onClick={() =>
-                            openUrl('https://github.com/Ciber-CR/CyberPaste').catch(console.error)
+                            openUrl('https://github.com/CyberGems/CyberPaste').catch(console.error)
                           }
                           className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium transition-all hover:bg-accent"
                         >
@@ -1779,7 +1779,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         <button
                           onClick={() =>
                             openUrl(
-                              'https://github.com/Ciber-CR/CyberPaste/blob/main/LICENSE'
+                              'https://github.com/CyberGems/CyberPaste/blob/main/LICENSE'
                             ).catch(console.error)
                           }
                           className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium transition-all hover:bg-accent"
@@ -1821,7 +1821,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         {/* Footer */}
         <div className="flex flex-col items-center gap-1 border-t border-border bg-background px-4 py-3 text-center">
           <button
-            onClick={() => openUrl('https://github.com/Ciber-CR/CyberPaste').catch(console.error)}
+            onClick={() => openUrl('https://github.com/CyberGems/CyberPaste').catch(console.error)}
             className="text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
             CyberPaste {appVersion || '...'}

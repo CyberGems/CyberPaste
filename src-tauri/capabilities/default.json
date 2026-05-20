@@ -30,7 +30,7 @@
       "identifier": "opener:allow-open-url",
       "allow": [
         {
-          "url": "https://github.com/Ciber-CR/CyberPaste"
+          "url": "https://github.com/CyberGems/CyberPaste"
         }
       ]
     }
