@@ -82,6 +82,6 @@ jobs:
           tagName: v__VERSION__
           releaseName: "CyberPaste v__VERSION__"
           releaseBody: ${{ steps.extract_notes.outputs.notes }}
-          releaseDraft: false
+          releaseDraft: true
           prerelease: false
           args: ${{ matrix.settings.args }}

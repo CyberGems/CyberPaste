@@ -2,6 +2,16 @@
 
 All notable changes to CyberPaste will be documented in this file.
 
+## v1.2.1
+
+### Fixed
+- **CI Release Build**: Fixed an issue where the updater plugin configuration was wiped out during CI builds when `TAURI_PRIVATE_KEY` was not set, causing the application to crash on startup.
+- **Disk Cleanup**: Cleaned up non-essential files and synchronized local changes.
+
+### 修复
+- **CI 构建**: 修复了在未设置 `TAURI_PRIVATE_KEY` 时构建发布版导致更新器配置被清空，从而引起程序启动崩溃的问题。
+- **磁盘清理**: 清理了非必要文件并同步本地更改。
+
 ## v1.2.0
 
 ### Added
