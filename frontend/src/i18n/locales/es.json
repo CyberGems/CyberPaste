@@ -53,7 +53,8 @@
     "summarize": "Resumir (IA)",
     "translate": "Traducir (IA)",
     "explainCode": "Explicar Código (IA)",
-    "fixGrammar": "Corregir Gramática (IA)"
+    "fixGrammar": "Corregir Gramática (IA)",
+    "extractText": "Extraer Texto (OCR)"
   },
   "settings": {
     "title": "Ajustes",
@@ -204,6 +205,12 @@
     "originalSize": "Tamaño Original",
     "edit": "Editar",
     "copy": "Copiar al Portapapeles",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "extractText": "Extraer Texto (OCR)",
+    "extractingText": "Extrayendo texto...",
+    "ocrText": "Texto Detectado (OCR)",
+    "copyOcrText": "Copiar Texto Detectado",
+    "noTextDetected": "No se detectó texto en la imagen",
+    "autoCopyOcr": "Copiar automáticamente al portapapeles"
   }
 }

@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { X, Edit, Clipboard, Maximize2, Minimize2, Maximize, Minus } from 'lucide-react';
+import { X, Edit, Clipboard, Maximize2, Minimize2, Maximize, Minus, FileText, Loader2, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
 import { ClipboardItem, Settings } from '../types';
@@ -24,6 +24,10 @@ export function ImageViewerWindow() {
   const [loading, setLoading] = useState(true);
   const [isMaximized, setIsMaximized] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [showOcrDrawer, setShowOcrDrawer] = useState(false);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrError, setOcrError] = useState<string | null>(null);
+  const [ocrTextCopied, setOcrTextCopied] = useState(false);
 
   const appWindow = getCurrentWebviewWindow();
   const settingsRef = useRef<Settings | null>(null);
@@ -187,6 +191,47 @@ export function ImageViewerWindow() {
     }
   };
 
+  const ocrText = (() => {
+    if (!clip || !clip.metadata) return null;
+    try {
+      const parsed = JSON.parse(clip.metadata);
+      return parsed.ocr_text || null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const handleRunOcr = () => {
+    if (!clip) return;
+    if (ocrText) {
+      setShowOcrDrawer(!showOcrDrawer);
+      return;
+    }
+    setShowOcrDrawer(true);
+    setOcrLoading(true);
+    setOcrError(null);
+    invoke<string>('run_ocr_for_clip', { clipId: clip.id })
+      .then(() => {
+        setOcrLoading(false);
+        loadClip(clip.id);
+      })
+      .catch((err) => {
+        setOcrError(err.toString());
+        setOcrLoading(false);
+      });
+  };
+
+  const handleCopyOcrText = () => {
+    if (ocrText) {
+      navigator.clipboard.writeText(ocrText)
+        .then(() => {
+          setOcrTextCopied(true);
+          setTimeout(() => setOcrTextCopied(false), 2000);
+        })
+        .catch(console.error);
+    }
+  };
+
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     setContextMenu({ x: e.clientX, y: e.clientY });
@@ -331,6 +376,14 @@ export function ImageViewerWindow() {
             >
               <Clipboard size={15} />
             </button>
+
+            <button
+              onClick={handleRunOcr}
+              className={`rounded-md p-1.5 transition-colors hover:bg-white/10 ${showOcrDrawer ? "text-[#00F2FF] bg-white/5" : "text-zinc-400 hover:text-[#00F2FF]"}`}
+              title={t('viewer.extractText') || 'Extract Text (OCR)'}
+            >
+              <FileText size={15} />
+            </button>
           </div>
 
           {/* Group 2: Window Controls */}
@@ -362,25 +415,80 @@ export function ImageViewerWindow() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="relative flex flex-1 items-center justify-center overflow-auto bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-900 to-zinc-950 p-4">
-        {/* Subtle grid background */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: 'radial-gradient(#fff 1px, transparent 0)',
-            backgroundSize: '24px 24px',
-          }}
-        />
+      {/* Main Container */}
+      <div className="relative flex flex-1 overflow-hidden">
+        {/* Main Content */}
+        <div className="relative flex flex-1 items-center justify-center overflow-auto bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-900 to-zinc-950 p-4">
+          {/* Subtle grid background */}
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.03]"
+            style={{
+              backgroundImage: 'radial-gradient(#fff 1px, transparent 0)',
+              backgroundSize: '24px 24px',
+            }}
+          />
 
-        <img
-          src={`data:image/png;base64,${clip.content}`}
-          alt=""
-          className={`shadow-2xl transition-all duration-500 ease-out ${fitToWindow ? 'max-h-full max-w-full object-contain' : 'min-h-fit min-w-fit cursor-move'}`}
-          style={{
-            filter: 'drop-shadow(0 0 20px rgba(0,0,0,0.8))',
-          }}
-        />
+          <img
+            src={`data:image/png;base64,${clip.content}`}
+            alt=""
+            className={`shadow-2xl transition-all duration-500 ease-out ${fitToWindow ? 'max-h-full max-w-full object-contain' : 'min-h-fit min-w-fit cursor-move'}`}
+            style={{
+              filter: 'drop-shadow(0 0 20px rgba(0,0,0,0.8))',
+            }}
+          />
+        </div>
+
+        {/* OCR Drawer */}
+        {showOcrDrawer && (
+          <div className="relative w-80 border-l border-white/10 bg-zinc-900/80 backdrop-blur-md flex flex-col h-full z-20 shadow-2xl">
+            {/* Drawer Header */}
+            <div className="flex items-center justify-between border-b border-white/5 bg-zinc-950/40 px-4 py-3">
+              <span className="font-mono text-xs font-bold uppercase tracking-wider text-cyan-400">
+                {t('viewer.ocrText') || 'OCR Text'}
+              </span>
+              <div className="flex items-center gap-1">
+                {ocrText && (
+                  <button
+                    onClick={handleCopyOcrText}
+                    className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-emerald-400"
+                    title={t('viewer.copyOcrText') || 'Copy OCR Text'}
+                  >
+                    {ocrTextCopied ? <Check size={14} className="text-emerald-500" /> : <Clipboard size={14} />}
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowOcrDrawer(false)}
+                  className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-white"
+                  title="Close Drawer"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+
+            {/* Drawer Content */}
+            <div className="flex-1 overflow-auto p-4 font-mono text-xs leading-relaxed text-zinc-300">
+              {ocrLoading ? (
+                <div className="flex h-full flex-col items-center justify-center gap-2 text-cyan-400/80">
+                  <Loader2 size={24} className="animate-spin text-cyan-400" />
+                  <span className="text-[10px] uppercase tracking-wider">{t('viewer.extractingText') || 'Extracting text...'}</span>
+                </div>
+              ) : ocrError ? (
+                <div className="text-[#FF00D0]/80 p-2 border border-[#FF00D0]/20 bg-[#FF00D0]/5 rounded">
+                  ERROR: {ocrError}
+                </div>
+              ) : ocrText ? (
+                <pre className="whitespace-pre-wrap break-all font-mono select-text selection:bg-[#7A00FF]/30 selection:text-white">
+                  {ocrText}
+                </pre>
+              ) : (
+                <div className="flex h-full flex-col items-center justify-center text-zinc-500">
+                  <span>{t('viewer.noTextDetected') || 'No text detected in image'}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Footer Accent */}

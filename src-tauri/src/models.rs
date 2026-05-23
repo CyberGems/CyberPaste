@@ -180,6 +180,7 @@ pub struct Folder {
     pub icon: Option<String>,
     pub color: Option<String>,
     pub is_system: bool,
+    pub sort_order: i64,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 

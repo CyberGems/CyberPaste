@@ -29,10 +29,14 @@ function getClipTitle(clipType?: string | null, toastType?: string): string {
     return 'Aviso';
   }
   switch (clipType) {
+    case 'welcome':
+      return 'CyberPaste listo';
     case 'image':
       return 'Imagen copiada';
     case 'text':
       return 'Texto copiado';
+    case 'code':
+      return 'Código copiado';
     case 'html':
       return 'HTML copiado';
     case 'rtf':
@@ -54,10 +58,14 @@ function getClipIcon(clipType?: string | null, toastType?: string) {
   }
   const cls = 'h-5 w-5 text-[#00F2FF]';
   switch (clipType) {
+    case 'welcome':
+      return <CheckCircle2 className={cls} />;
     case 'image':
       return <Image className={cls} />;
     case 'text':
       return <Type className={cls} />;
+    case 'code':
+      return <Code className={cls} />;
     case 'html':
       return <Code className={cls} />;
     case 'rtf':
@@ -77,52 +85,65 @@ export function ToastWindow() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    document.documentElement.classList.add('toast-window');
-
-    invoke<Settings>('get_settings').then(setSettings).catch(console.error);
-
-    const unlisten = listen<ToastPayload>('update-toast', async (event) => {
-      const freshSettings = await invoke<Settings>('get_settings').catch(() => null);
-      if (freshSettings) setSettings(freshSettings);
-
-      setToast(event.payload);
-      setIsClosing(false);
-
-      invoke('set_toast_position', { width: window.innerWidth, height: window.innerHeight }).catch(
-        console.error
-      );
-
-      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
-
-      const duration = freshSettings?.toast_duration || settings?.toast_duration || 3000;
-
-      requestAnimationFrame(() => {
-        const bar = document.getElementById('toast-progress-bar');
-        if (bar) {
-          bar.style.animation = 'none';
-          void bar.offsetWidth;
-          bar.style.animation = `toast-shrink ${duration}ms linear forwards`;
-        }
-      });
-
-      hideTimeoutRef.current = setTimeout(() => {
-        closeToast();
-      }, duration);
-    });
-
-    return () => {
-      unlisten.then((f) => f());
-      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
-    };
-  }, []);
-
   const closeToast = () => {
     setIsClosing(true);
     setTimeout(() => {
       invoke('hide_toast').catch(console.error);
     }, 300);
   };
+
+  const handleToastUpdate = async (payload: ToastPayload) => {
+    const freshSettings = await invoke<Settings>('get_settings').catch(() => null);
+    if (freshSettings) setSettings(freshSettings);
+
+    setToast(payload);
+    setIsClosing(false);
+
+    if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+
+    const duration = freshSettings?.toast_duration || settings?.toast_duration || 3000;
+
+    requestAnimationFrame(() => {
+      const bar = document.getElementById('toast-progress-bar');
+      if (bar) {
+        bar.style.animation = 'none';
+        void bar.offsetWidth;
+        bar.style.animation = `toast-shrink ${duration}ms linear forwards`;
+      }
+    });
+
+    hideTimeoutRef.current = setTimeout(() => {
+      closeToast();
+    }, duration);
+  };
+
+  useEffect(() => {
+    document.documentElement.classList.add('toast-window');
+
+    invoke<Settings>('get_settings').then(setSettings).catch(console.error);
+
+    const unlisten = listen<ToastPayload>('update-toast', (event) => {
+      handleToastUpdate(event.payload);
+      // Reposition on subsequent events
+      invoke('set_toast_position', { width: window.innerWidth, height: window.innerHeight }).catch(
+        console.error
+      );
+    });
+
+    // Notify backend that toast window is ready, and request any pending toast payload
+    invoke<ToastPayload | null>('toast_ready', { width: window.innerWidth, height: window.innerHeight })
+      .then((pending) => {
+        if (pending) {
+          handleToastUpdate(pending);
+        }
+      })
+      .catch(console.error);
+
+    return () => {
+      unlisten.then((f) => f());
+      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+    };
+  }, []);
 
   if (!toast) return null;
 

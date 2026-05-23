@@ -134,8 +134,8 @@ export function generateDemoClips(): ClipboardItem[] {
       id: 'demo-12',
       clip_type: 'text',
       content:
-        'Hi,\n\nPlease find the latest build of CyberPaste attached.\n\nBest,\nCyberGems',
-      preview: 'Hi team, Please find the latest build of CyberPaste...',
+        'Hi,\n\nthank you for choosing CyberGems products!',
+      preview: 'Hi, thank you for choosing CyberGems products',
       folder_id: null,
       created_at: ago(50),
       source_app: 'OUTLOOK.EXE',

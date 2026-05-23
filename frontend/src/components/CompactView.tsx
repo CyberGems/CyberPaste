@@ -148,6 +148,7 @@ interface CompactViewProps {
   onToggleLayout?: () => void;
   onAddFolder?: () => void;
   onLoadMore?: () => void;
+  onReorderFolder?: (folderId: string, targetId: string, position: 'before' | 'after') => void;
 }
 
 export const CompactView: React.FC<CompactViewProps> = ({
@@ -184,11 +185,185 @@ export const CompactView: React.FC<CompactViewProps> = ({
   onToggleLayout,
   onAddFolder,
   onLoadMore,
+  onReorderFolder,
 }) => {
   const { t } = useTranslation();
   const folderScrollRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const isVertical = compactFolderLayout === 'vertical';
+
+  // Folder Reorder Drag State (Simulated)
+  const [draggingFolderId, setDraggingFolderId] = React.useState<string | null>(null);
+  const [folderReorderTargetId, setFolderReorderTargetId] = React.useState<string | null>(null);
+  const [folderReorderTargetPosition, setFolderReorderTargetPosition] = React.useState<'before' | 'after' | null>(null);
+
+  const pendingFolderDragRef = useRef<{ id: string; startX: number; startY: number } | null>(null);
+  const wasFolderDraggingRef = useRef<boolean>(false);
+
+  // Highlighted folder for smooth wheel navigation
+  const [highlightedFolderId, setHighlightedFolderId] = React.useState<string | null>(selectedFolder);
+  const isWheelNavigatingRef = useRef(false);
+  const wheelTimeoutRef = useRef<any>(null);
+  const wheelCooldownRef = useRef(false);
+  const wheelAccumulatorRef = useRef(0);
+  const wheelResetTimeoutRef = useRef<any>(null);
+
+  // Sync highlightedFolderId with selectedFolder when not wheel scrolling
+  useEffect(() => {
+    if (!isWheelNavigatingRef.current) {
+      setHighlightedFolderId(selectedFolder);
+    }
+  }, [selectedFolder]);
+
+  // Clean up timers on unmount
+  useEffect(() => {
+    return () => {
+      if (wheelTimeoutRef.current) clearTimeout(wheelTimeoutRef.current);
+      if (wheelResetTimeoutRef.current) clearTimeout(wheelResetTimeoutRef.current);
+    };
+  }, []);
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    
+    if (wheelCooldownRef.current) return;
+
+    // Accumulate delta
+    wheelAccumulatorRef.current += e.deltaY;
+
+    // Reset accumulator after 150ms of inactivity
+    if (wheelResetTimeoutRef.current) clearTimeout(wheelResetTimeoutRef.current);
+    wheelResetTimeoutRef.current = setTimeout(() => {
+      wheelAccumulatorRef.current = 0;
+    }, 150);
+
+    // If accumulated delta is less than threshold (40), wait for more scroll
+    if (Math.abs(wheelAccumulatorRef.current) < 40) return;
+
+    const direction = wheelAccumulatorRef.current > 0 ? 1 : -1;
+    wheelAccumulatorRef.current = 0; // Reset accumulator immediately upon step
+    if (wheelResetTimeoutRef.current) clearTimeout(wheelResetTimeoutRef.current);
+    
+    const allFolderIds = [null, ...folders.map((f) => f.id)];
+    const currentIndex = allFolderIds.indexOf(highlightedFolderId);
+    
+    let nextIndex = currentIndex + direction;
+    if (nextIndex < 0) nextIndex = 0;
+    if (nextIndex > allFolderIds.length - 1) nextIndex = allFolderIds.length - 1;
+    
+    if (nextIndex === currentIndex) return;
+    
+    isWheelNavigatingRef.current = true;
+    const targetFolderId = allFolderIds[nextIndex];
+    setHighlightedFolderId(targetFolderId);
+    
+    // Auto-scroll folder button into view
+    setTimeout(() => {
+      const targetIdAttr = targetFolderId === null ? 'clipboard' : targetFolderId;
+      const activeBtn = folderScrollRef.current?.querySelector(`[data-folder-id="${targetIdAttr}"]`);
+      if (activeBtn) {
+        activeBtn.scrollIntoView({
+          behavior: 'smooth',
+          block: isVertical ? 'nearest' : 'center',
+          inline: isVertical ? 'center' : 'center',
+        });
+      }
+    }, 0);
+    
+    // Cooldown spacing (100ms) to prevent too fast successive transitions
+    wheelCooldownRef.current = true;
+    setTimeout(() => {
+      wheelCooldownRef.current = false;
+    }, 100);
+    
+    // Debounce the actual selectedFolder transition (300ms)
+    if (wheelTimeoutRef.current) clearTimeout(wheelTimeoutRef.current);
+    wheelTimeoutRef.current = setTimeout(() => {
+      isWheelNavigatingRef.current = false;
+      onSelectFolder(targetFolderId);
+    }, 300);
+  };
+
+  const handleFolderMouseDown = (e: React.MouseEvent, folderId: string) => {
+    if (e.button !== 0) return; // Left click only
+    pendingFolderDragRef.current = {
+      id: folderId,
+      startX: e.clientX,
+      startY: e.clientY,
+    };
+    wasFolderDraggingRef.current = false;
+  };
+
+  useEffect(() => {
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      const pending = pendingFolderDragRef.current;
+      if (!pending) return;
+
+      if (!wasFolderDraggingRef.current) {
+        const dx = e.clientX - pending.startX;
+        const dy = e.clientY - pending.startY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 5) {
+          wasFolderDraggingRef.current = true;
+          setDraggingFolderId(pending.id);
+          document.body.classList.add('is-dragging-folder');
+        }
+      }
+    };
+
+    const handleGlobalMouseUp = () => {
+      const pending = pendingFolderDragRef.current;
+      if (pending) {
+        const isDragging = wasFolderDraggingRef.current;
+        pendingFolderDragRef.current = null;
+
+        if (isDragging) {
+          if (draggingFolderId && folderReorderTargetId && folderReorderTargetPosition) {
+            if (onReorderFolder) {
+              onReorderFolder(draggingFolderId, folderReorderTargetId, folderReorderTargetPosition);
+            }
+          }
+          setDraggingFolderId(null);
+          setFolderReorderTargetId(null);
+          setFolderReorderTargetPosition(null);
+          document.body.classList.remove('is-dragging-folder');
+          setTimeout(() => {
+            wasFolderDraggingRef.current = false;
+          }, 50);
+        }
+      }
+    };
+
+    window.addEventListener('mousemove', handleGlobalMouseMove);
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleGlobalMouseMove);
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [draggingFolderId, folderReorderTargetId, folderReorderTargetPosition, onReorderFolder]);
+
+  const handleFolderMouseMove = (e: React.MouseEvent, folderId: string, isVerticalLayout: boolean) => {
+    if (!wasFolderDraggingRef.current || !pendingFolderDragRef.current || pendingFolderDragRef.current.id === folderId) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    let position: 'before' | 'after';
+    if (isVerticalLayout) {
+      const midY = rect.top + rect.height / 2;
+      position = e.clientY < midY ? 'before' : 'after';
+    } else {
+      const midX = rect.left + rect.width / 2;
+      position = e.clientX < midX ? 'before' : 'after';
+    }
+
+    setFolderReorderTargetId(folderId);
+    setFolderReorderTargetPosition(position);
+  };
+
+  const handleFolderMouseLeave = () => {
+    if (!wasFolderDraggingRef.current || !pendingFolderDragRef.current) return;
+    setFolderReorderTargetId(null);
+    setFolderReorderTargetPosition(null);
+  };
 
   // Auto-scroll selected folder into view
   useEffect(() => {
@@ -401,31 +576,16 @@ export const CompactView: React.FC<CompactViewProps> = ({
           >
             <div
               ref={folderScrollRef}
-              onWheel={(e) => {
-                // Cycle through folders with mouse wheel
-                const allFolderIds = [null, ...folders.map((f) => f.id)];
-                const currentIndex = allFolderIds.indexOf(selectedFolder);
-
-                if (e.deltaY > 0) {
-                  // Wheel down -> Next folder
-                  if (currentIndex < allFolderIds.length - 1) {
-                    onSelectFolder(allFolderIds[currentIndex + 1]);
-                  }
-                } else if (e.deltaY < 0) {
-                  // Wheel up -> Previous folder
-                  if (currentIndex > 0) {
-                    onSelectFolder(allFolderIds[currentIndex - 1]);
-                  }
-                }
-              }}
+              onWheel={handleWheel}
               className="no-scrollbar flex h-full w-[140px] flex-col gap-1 overflow-y-auto py-2"
             >
               <button
                 onClick={() => onSelectFolder(null)}
-                data-selected={selectedFolder === null}
+                data-folder-id="clipboard"
+                data-selected={highlightedFolderId === null}
                 className={cn(
                   'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-lg border px-2 py-2 text-[10px] font-medium transition-all',
-                  selectedFolder === null && !dragTargetFolderId
+                  highlightedFolderId === null && !dragTargetFolderId
                     ? 'border-indigo-500/40 bg-indigo-500/20 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.3)]'
                     : dragTargetFolderId === null && isDragging
                       ? 'border-cyan-400 bg-cyan-500/30 text-white'
@@ -447,39 +607,56 @@ export const CompactView: React.FC<CompactViewProps> = ({
               </button>
               {folders.map((folder) => {
                 const Icon = IconMap[folder.icon || 'Folder'] || FolderIcon;
-                const isSelected = selectedFolder === folder.id;
+                const isSelected = highlightedFolderId === folder.id;
                 return (
-                  <button
-                    key={folder.id}
-                    onClick={() => onSelectFolder(folder.id)}
-                    data-selected={isSelected}
-                    onContextMenu={(e) => onFolderContextMenu?.(e, folder.id)}
-                    className={cn(
-                      'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-lg border px-2 py-2 text-[10px] font-medium transition-all',
-                      isSelected && !dragTargetFolderId
-                        ? 'border-primary/60 bg-primary/10 text-white/80 shadow-[0_0_12px_rgba(99,102,241,0.3)] ring-1 ring-primary/40'
-                        : dragTargetFolderId === folder.id && isDragging
-                          ? 'border-cyan-400 bg-cyan-500/30 text-white'
-                          : 'border-transparent bg-white/5 opacity-60 hover:bg-white/10 hover:opacity-100'
+                  <React.Fragment key={folder.id}>
+                    {folderReorderTargetId === folder.id && folderReorderTargetPosition === 'before' && (
+                      <div className="mx-2 h-0.5 flex-shrink-0 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)] animate-pulse" />
                     )}
-                    onMouseEnter={() => isDragging && onDragHover(folder.id)}
-                    onMouseLeave={onDragLeave}
-                  >
-                    <Icon
-                      size={10}
-                      style={{ color: folder.color || undefined }}
-                      className={isSelected ? 'text-primary' : 'flex-shrink-0 text-white/30'}
-                    />
-                    <span className="flex-1 truncate text-left">{folder.name}</span>
-                    <span
+                    <button
+                      data-folder-id={folder.id}
+                      onMouseDown={(e) => handleFolderMouseDown(e, folder.id)}
+                      onMouseMove={(e) => handleFolderMouseMove(e, folder.id, true)}
+                      onMouseLeave={() => {
+                        handleFolderMouseLeave();
+                        onDragLeave();
+                      }}
+                      onClick={() => {
+                        if (wasFolderDraggingRef.current) return;
+                        onSelectFolder(folder.id);
+                      }}
+                      data-selected={isSelected}
+                      onContextMenu={(e) => onFolderContextMenu?.(e, folder.id)}
                       className={cn(
-                        'flex-shrink-0 text-[9px] opacity-40',
-                        isSelected && 'opacity-80'
+                        'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-lg border px-2 py-2 text-[10px] font-medium transition-all',
+                        isSelected && !dragTargetFolderId
+                          ? 'border-primary/60 bg-primary/10 text-white/80 shadow-[0_0_12px_rgba(99,102,241,0.3)] ring-1 ring-primary/40'
+                          : dragTargetFolderId === folder.id && isDragging
+                            ? 'border-cyan-400 bg-cyan-500/30 text-white'
+                            : 'border-transparent bg-white/5 opacity-60 hover:bg-white/10 hover:opacity-100',
+                        draggingFolderId === folder.id && 'opacity-40 scale-95 pointer-events-none'
                       )}
+                      onMouseEnter={() => isDragging && onDragHover(folder.id)}
                     >
-                      ({folder.item_count || 0})
-                    </span>
-                  </button>
+                      <Icon
+                        size={10}
+                        style={{ color: folder.color || undefined }}
+                        className={isSelected ? 'text-primary' : 'flex-shrink-0 text-white/30'}
+                      />
+                      <span className="flex-1 truncate text-left">{folder.name}</span>
+                      <span
+                        className={cn(
+                          'flex-shrink-0 text-[9px] opacity-40',
+                          isSelected && 'opacity-80'
+                        )}
+                      >
+                        ({folder.item_count || 0})
+                      </span>
+                    </button>
+                    {folderReorderTargetId === folder.id && folderReorderTargetPosition === 'after' && (
+                      <div className="mx-2 h-0.5 flex-shrink-0 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)] animate-pulse" />
+                    )}
+                  </React.Fragment>
                 );
               })}
               {onAddFolder && (
@@ -600,31 +777,16 @@ export const CompactView: React.FC<CompactViewProps> = ({
 
             <div
               ref={folderScrollRef}
-              onWheel={(e) => {
-                // Cycle through folders with mouse wheel
-                const allFolderIds = [null, ...folders.map((f) => f.id)];
-                const currentIndex = allFolderIds.indexOf(selectedFolder);
-
-                if (e.deltaY > 0) {
-                  // Wheel down -> Next folder
-                  if (currentIndex < allFolderIds.length - 1) {
-                    onSelectFolder(allFolderIds[currentIndex + 1]);
-                  }
-                } else if (e.deltaY < 0) {
-                  // Wheel up -> Previous folder
-                  if (currentIndex > 0) {
-                    onSelectFolder(allFolderIds[currentIndex - 1]);
-                  }
-                }
-              }}
+              onWheel={handleWheel}
               className="no-scrollbar flex gap-1 overflow-x-auto scroll-smooth pb-1"
             >
               <button
                 onClick={() => onSelectFolder(null)}
-                data-selected={selectedFolder === null}
+                data-folder-id="clipboard"
+                data-selected={highlightedFolderId === null}
                 className={folderPillClass(
                   null,
-                  selectedFolder === null,
+                  highlightedFolderId === null,
                   dragTargetFolderId === null
                 )}
                 onMouseEnter={() => isDragging && onDragHover(null)}
@@ -639,33 +801,52 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 </span>
               </button>
               {folders.map((folder) => {
-                const isSelected = selectedFolder === folder.id;
+                const isSelected = highlightedFolderId === folder.id;
                 const Icon = IconMap[folder.icon || 'Folder'] || FolderIcon;
                 return (
-                  <button
-                    key={folder.id}
-                    onClick={() => onSelectFolder(folder.id)}
-                    data-selected={isSelected}
-                    onContextMenu={(e) => onFolderContextMenu?.(e, folder.id)}
-                    className={folderPillClassNamed(
-                      folder.id,
-                      isSelected,
-                      dragTargetFolderId === folder.id,
-                      folder.color
+                  <React.Fragment key={folder.id}>
+                    {folderReorderTargetId === folder.id && folderReorderTargetPosition === 'before' && (
+                      <div className="mx-0.5 w-0.5 h-6 flex-shrink-0 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)] animate-pulse" style={{ alignSelf: 'center' }} />
                     )}
-                    onMouseEnter={() => isDragging && onDragHover(folder.id)}
-                    onMouseLeave={onDragLeave}
-                  >
-                    <Icon
-                      size={10}
-                      style={{ color: folder.color || undefined }}
-                      className={isSelected ? 'text-primary' : 'text-white/30'}
-                    />
-                    {folder.name}
-                    <span className={cn('text-[9px] opacity-40', isSelected && 'opacity-80')}>
-                      ({folder.item_count || 0})
-                    </span>
-                  </button>
+                    <button
+                      data-folder-id={folder.id}
+                      onMouseDown={(e) => handleFolderMouseDown(e, folder.id)}
+                      onMouseMove={(e) => handleFolderMouseMove(e, folder.id, false)}
+                      onMouseLeave={() => {
+                        handleFolderMouseLeave();
+                        onDragLeave();
+                      }}
+                      onClick={() => {
+                        if (wasFolderDraggingRef.current) return;
+                        onSelectFolder(folder.id);
+                      }}
+                      data-selected={isSelected}
+                      onContextMenu={(e) => onFolderContextMenu?.(e, folder.id)}
+                      className={cn(
+                        folderPillClassNamed(
+                          folder.id,
+                          isSelected,
+                          dragTargetFolderId === folder.id,
+                          folder.color
+                        ),
+                        draggingFolderId === folder.id && 'opacity-40 scale-95 pointer-events-none'
+                      )}
+                      onMouseEnter={() => isDragging && onDragHover(folder.id)}
+                    >
+                      <Icon
+                        size={10}
+                        style={{ color: folder.color || undefined }}
+                        className={isSelected ? 'text-primary' : 'text-white/30'}
+                      />
+                      {folder.name}
+                      <span className={cn('text-[9px] opacity-40', isSelected && 'opacity-80')}>
+                        ({folder.item_count || 0})
+                      </span>
+                    </button>
+                    {folderReorderTargetId === folder.id && folderReorderTargetPosition === 'after' && (
+                      <div className="mx-0.5 w-0.5 h-6 flex-shrink-0 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)] animate-pulse" style={{ alignSelf: 'center' }} />
+                    )}
+                  </React.Fragment>
                 );
               })}
               {onAddFolder && (
@@ -877,7 +1058,7 @@ const ClipRow: React.FC<{
               const TypeIcon =
                 clip.clip_type === 'image'
                   ? ImageIcon
-                  : clip.clip_type === 'html' || clip.clip_type === 'rtf'
+                  : clip.clip_type === 'html' || clip.clip_type === 'rtf' || clip.clip_type === 'code'
                     ? Code
                     : clip.clip_type === 'url'
                       ? Link

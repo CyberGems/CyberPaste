@@ -53,7 +53,8 @@
     "summarize": "Summarize (AI)",
     "translate": "Translate (AI)",
     "explainCode": "Explain Code (AI)",
-    "fixGrammar": "Fix Grammar (AI)"
+    "fixGrammar": "Fix Grammar (AI)",
+    "extractText": "Extract Text (OCR)"
   },
   "settings": {
     "title": "Settings",
@@ -207,6 +208,12 @@
     "originalSize": "Original Size",
     "edit": "Edit",
     "copy": "Copy to Clipboard",
-    "close": "Close"
+    "close": "Close",
+    "extractText": "Extract Text (OCR)",
+    "extractingText": "Extracting text...",
+    "ocrText": "OCR Text",
+    "copyOcrText": "Copy OCR Text",
+    "noTextDetected": "No text detected in image",
+    "autoCopyOcr": "Auto-copy to clipboard immediately"
   }
 }

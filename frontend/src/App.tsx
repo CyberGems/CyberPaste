@@ -12,6 +12,7 @@ import { CompactView } from './components/CompactView';
 import { ContextMenu } from './components/ContextMenu';
 import { FolderModal } from './components/FolderModal';
 import { AiResultDialog } from './components/AiResultDialog';
+import { OcrResultModal } from './components/OcrResultModal';
 import { useKeyboard } from './hooks/useKeyboard';
 import { useTheme } from './hooks/useTheme';
 import { useLanguage } from './hooks/useLanguage';
@@ -105,6 +106,13 @@ function App() {
   // Add Folder Modal State
   const [showAddFolderModal, setShowAddFolderModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
+
+  // OCR Modal State
+  const [ocrModal, setOcrModal] = useState({
+    isOpen: false,
+    content: '',
+    clipId: '',
+  });
 
   // Using refs for event handlers to access latest state without re-attaching listeners
   const dragStateRef = useRef({
@@ -324,9 +332,14 @@ function App() {
           });
         } else {
           setClips(data);
-          // Always select the first (latest) clip on fresh load
+          // Keep current selection if it's still present, otherwise select the first clip
           if (data.length > 0) {
-            setSelectedClipId(data[0].id);
+            setSelectedClipId((prev) => {
+              if (prev && data.some((item) => item.id === prev)) {
+                return prev;
+              }
+              return data[0].id;
+            });
           }
         }
 
@@ -623,6 +636,7 @@ function App() {
   const [totalClipCount, setTotalClipCount] = useState(0);
   const [imageCount, setImageCount] = useState(0);
   const [textCount, setTextCount] = useState(0);
+  const [codeCount, setCodeCount] = useState(0);
   const [fileCount, setFileCount] = useState(0);
   const [htmlCount, setHtmlCount] = useState(0);
   const [rtfCount, setRtfCount] = useState(0);
@@ -633,6 +647,7 @@ function App() {
         total: number;
         images: number;
         text: number;
+        code: number;
         files: number;
         html: number;
         rtf: number;
@@ -640,6 +655,7 @@ function App() {
       setTotalClipCount(stats.total);
       setImageCount(stats.images);
       setTextCount(stats.text);
+      setCodeCount(stats.code || 0);
       setFileCount(stats.files || 0);
       setHtmlCount(stats.html || 0);
       setRtfCount(stats.rtf || 0);
@@ -666,10 +682,10 @@ function App() {
         setSearchQuery('');
         setShowSearch(false);
         setSelectedFolder(null);
-      }
-      setClipListResetToken((prev) => prev + 1);
-      if (clipsRef.current.length > 0) {
-        setSelectedClipId(clipsRef.current[0].id);
+        setClipListResetToken((prev) => prev + 1);
+        if (clipsRef.current.length > 0) {
+          setSelectedClipId(clipsRef.current[0].id);
+        }
       }
     });
     return () => {
@@ -682,7 +698,6 @@ function App() {
   useEffect(() => {
     const unlistenClipboard = listen('clipboard-change', () => {
       console.log('[App] Clipboard change detected, refreshing...');
-      setClipListResetToken((prev) => prev + 1);
       loadFolders();
       refreshCurrentFolder();
       refreshTotalCount();
@@ -890,6 +905,16 @@ function App() {
     }
   };
 
+  const handleReorderFolder = async (folderId: string, targetId: string, position: 'before' | 'after') => {
+    try {
+      await invoke('reorder_folder', { folderId, targetId, position });
+      loadFolders();
+    } catch (error) {
+      console.error('Failed to reorder folder:', error);
+      toast.error('Failed to reorder folder');
+    }
+  };
+
   // Context Menu State
   const [contextMenu, setContextMenu] = useState<{
     type: 'card' | 'folder';
@@ -1013,8 +1038,8 @@ function App() {
     try {
       await invoke('update_clip_content', { clipId, newContent });
       setEditClip((prev) => ({ ...prev, isOpen: false }));
-      // Force a full list reset via token to ensure data is fresh
-      setClipListResetToken((prev) => prev + 1);
+      // Refresh clips in place to preserve scroll position and selection
+      refreshCurrentFolder();
       refreshTotalCount();
       toast.success('Clip content updated');
     } catch (e) {
@@ -1145,6 +1170,7 @@ function App() {
               setShowAddFolderModal(true);
             }}
             onLoadMore={loadMore}
+            onReorderFolder={handleReorderFolder}
           />
         ) : (
           <div
@@ -1180,6 +1206,7 @@ function App() {
               totalClipCount={totalClipCount}
               imageCount={imageCount}
               textCount={textCount}
+              codeCount={codeCount}
               fileCount={fileCount}
               htmlCount={htmlCount}
               rtfCount={rtfCount}
@@ -1196,6 +1223,7 @@ function App() {
               hotkey={settings?.hotkey}
               lastClipTime={clips[0]?.created_at ?? null}
               dbSizeBytes={dbSizeBytes}
+              onReorderFolder={handleReorderFolder}
             />
 
             <main data-el="clip-list-area" className="no-scrollbar relative flex-1 overflow-hidden">
@@ -1240,6 +1268,29 @@ function App() {
                             toast.info('Opening Viewer...');
                           }
                           invoke('open_image_viewer', { clipId: clip.id }).catch(console.error);
+                        },
+                      });
+
+                      opts.push({
+                        label: t('contextMenu.extractText') || 'Extract Text (OCR)',
+                        onClick: async () => {
+                          const loadingToast = toast.loading(t('viewer.extractingText') || 'Extracting text...');
+                          try {
+                            const text = await invoke<string>('run_ocr_for_clip', { clipId: clip.id });
+                            toast.dismiss(loadingToast);
+                            if (text && text.trim().length > 0) {
+                              setOcrModal({
+                                isOpen: true,
+                                content: text,
+                                clipId: clip.id,
+                              });
+                            } else {
+                              toast.info(t('viewer.noTextDetected') || 'No text detected in image');
+                            }
+                          } catch (err) {
+                            toast.dismiss(loadingToast);
+                            toast.error(`OCR Error: ${err}`);
+                          }
                         },
                       });
                     }
@@ -1394,6 +1445,27 @@ function App() {
           onSave={(newContent) => handleUpdateClipContent(editClip.clipId, newContent)}
         />
 
+        <OcrResultModal
+          isOpen={ocrModal.isOpen}
+          content={ocrModal.content}
+          onClose={() => setOcrModal((prev) => ({ ...prev, isOpen: false }))}
+          onSave={async (newText) => {
+            try {
+              await invoke('update_ocr_text', {
+                clipId: ocrModal.clipId,
+                newText,
+              });
+              setOcrModal((prev) => ({ ...prev, isOpen: false }));
+              refreshCurrentFolder();
+              refreshTotalCount();
+              toast.success('OCR text updated successfully');
+            } catch (err) {
+              console.error('Failed to update OCR text:', err);
+              toast.error('Failed to update OCR text');
+            }
+          }}
+        />
+
         <MoveToFolderModal
           isOpen={!!moveToFolderClipId}
           folders={folders}
@@ -1412,6 +1484,7 @@ function App() {
           }}
         >
           <ImageIcon data-drag-icon="image" size={13} className="hidden text-cyan-400" />
+          <Code data-drag-icon="code" size={13} className="hidden text-cyan-400" />
           <Code data-drag-icon="html" size={13} className="hidden text-cyan-400" />
           <Code data-drag-icon="rtf" size={13} className="hidden text-cyan-400" />
           <Link data-drag-icon="url" size={13} className="hidden text-cyan-400" />

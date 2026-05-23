@@ -934,7 +934,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         </p>
                       </label>
                       <Select
-                        value={settings.scroll_direction || 'horizontal'}
+                        value={settings.scroll_direction || 'vertical'}
                         onChange={(val) => updateSetting('scroll_direction', val)}
                         options={[
                           { value: 'horizontal', label: t('settings.scrollHorizontal') },

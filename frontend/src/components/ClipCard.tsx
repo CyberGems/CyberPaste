@@ -102,6 +102,30 @@ export const ClipCard = memo(
       }
     }, [clip.clip_type, clip.metadata]);
 
+    const ocrTooltip = useMemo(() => {
+      if (clip.clip_type !== 'image' || !clip.metadata) return null;
+      try {
+        const parsed = JSON.parse(clip.metadata) as { ocr_text?: string };
+        if (parsed && parsed.ocr_text) {
+          const ocrText = parsed.ocr_text.trim();
+          if (ocrText) {
+            const firstLine = ocrText.split('\n')[0] || '';
+            const hasMoreLines = ocrText.includes('\n');
+            if (firstLine.length > 80) {
+              return firstLine.substring(0, 80) + '...';
+            }
+            if (hasMoreLines) {
+              return firstLine + '...';
+            }
+            return firstLine;
+          }
+        }
+      } catch {
+        // Ignore
+      }
+      return null;
+    }, [clip.clip_type, clip.metadata]);
+
     // Memoize the content rendering
     const renderedContent = useMemo(() => {
       if (clip.clip_type === 'image') {
@@ -190,6 +214,7 @@ export const ClipCard = memo(
           position: 'relative',
         }}
         className="flex-shrink-0"
+        title={ocrTooltip || undefined}
       >
         {/* Drop indicator - before */}
         {reorderEnabled && reorderDropIndicator === 'before' && (
@@ -371,7 +396,7 @@ export const ClipCard = memo(
                 const TypeIcon =
                   clip.clip_type === 'image'
                     ? ImageIcon
-                    : clip.clip_type === 'html' || clip.clip_type === 'rtf'
+                    : clip.clip_type === 'html' || clip.clip_type === 'rtf' || clip.clip_type === 'code'
                       ? Code
                       : clip.clip_type === 'url'
                         ? Link

@@ -16,6 +16,153 @@ impl Database {
         Self { pool }
     }
 
+    pub async fn get_and_prepare_first_unpinned_slot(
+        &self,
+        folder_id: Option<i64>,
+        exclude_uuid: Option<&str>,
+    ) -> Result<i64, sqlx::Error> {
+        let pool = &self.pool;
+        
+        let first_unpinned_sort: Option<i64> = match (folder_id, exclude_uuid) {
+            (Some(fid), Some(uuid)) => {
+                sqlx::query_scalar(
+                    r#"
+                    SELECT sort_order FROM clips 
+                    WHERE is_deleted = 0 AND folder_id = ? AND is_pinned = 0 AND uuid != ?
+                    ORDER BY sort_order ASC, created_at DESC
+                    LIMIT 1
+                    "#
+                )
+                .bind(fid)
+                .bind(uuid)
+                .fetch_optional(pool)
+                .await?
+            }
+            (Some(fid), None) => {
+                sqlx::query_scalar(
+                    r#"
+                    SELECT sort_order FROM clips 
+                    WHERE is_deleted = 0 AND folder_id = ? AND is_pinned = 0
+                    ORDER BY sort_order ASC, created_at DESC
+                    LIMIT 1
+                    "#
+                )
+                .bind(fid)
+                .fetch_optional(pool)
+                .await?
+            }
+            (None, Some(uuid)) => {
+                sqlx::query_scalar(
+                    r#"
+                    SELECT sort_order FROM clips 
+                    WHERE is_deleted = 0 AND folder_id IS NULL AND is_pinned = 0 AND uuid != ?
+                    ORDER BY sort_order ASC, created_at DESC
+                    LIMIT 1
+                    "#
+                )
+                .bind(uuid)
+                .fetch_optional(pool)
+                .await?
+            }
+            (None, None) => {
+                sqlx::query_scalar(
+                    r#"
+                    SELECT sort_order FROM clips 
+                    WHERE is_deleted = 0 AND folder_id IS NULL AND is_pinned = 0
+                    ORDER BY sort_order ASC, created_at DESC
+                    LIMIT 1
+                    "#
+                )
+                .fetch_optional(pool)
+                .await?
+            }
+        };
+
+        if let Some(sort_order) = first_unpinned_sort {
+            match (folder_id, exclude_uuid) {
+                (Some(fid), Some(uuid)) => {
+                    sqlx::query(
+                        r#"
+                        UPDATE clips 
+                        SET sort_order = sort_order + 1 
+                        WHERE is_deleted = 0 AND folder_id = ? AND is_pinned = 0 AND uuid != ? AND sort_order >= ?
+                        "#
+                    )
+                    .bind(fid)
+                    .bind(uuid)
+                    .bind(sort_order)
+                    .execute(pool)
+                    .await?;
+                }
+                (Some(fid), None) => {
+                    sqlx::query(
+                        r#"
+                        UPDATE clips 
+                        SET sort_order = sort_order + 1 
+                        WHERE is_deleted = 0 AND folder_id = ? AND is_pinned = 0 AND sort_order >= ?
+                        "#
+                    )
+                    .bind(fid)
+                    .bind(sort_order)
+                    .execute(pool)
+                    .await?;
+                }
+                (None, Some(uuid)) => {
+                    sqlx::query(
+                        r#"
+                        UPDATE clips 
+                        SET sort_order = sort_order + 1 
+                        WHERE is_deleted = 0 AND folder_id IS NULL AND is_pinned = 0 AND uuid != ? AND sort_order >= ?
+                        "#
+                    )
+                    .bind(uuid)
+                    .bind(sort_order)
+                    .execute(pool)
+                    .await?;
+                }
+                (None, None) => {
+                    sqlx::query(
+                        r#"
+                        UPDATE clips 
+                        SET sort_order = sort_order + 1 
+                        WHERE is_deleted = 0 AND folder_id IS NULL AND is_pinned = 0 AND sort_order >= ?
+                        "#
+                    )
+                    .bind(sort_order)
+                    .execute(pool)
+                    .await?;
+                }
+            }
+            Ok(sort_order)
+        } else {
+            let max_sort: Option<i64> = match folder_id {
+                Some(fid) => {
+                    sqlx::query_scalar(
+                        r#"
+                        SELECT MAX(sort_order) FROM clips 
+                        WHERE is_deleted = 0 AND folder_id = ?
+                        "#
+                    )
+                    .bind(fid)
+                    .fetch_optional(pool)
+                    .await?
+                }
+                None => {
+                    sqlx::query_scalar(
+                        r#"
+                        SELECT MAX(sort_order) FROM clips 
+                        WHERE is_deleted = 0 AND folder_id IS NULL
+                        "#
+                    )
+                    .fetch_optional(pool)
+                    .await?
+                }
+            };
+            Ok(max_sort.unwrap_or(0) + 1)
+        }
+    }
+
+
     pub async fn migrate(&self) -> Result<(), sqlx::Error> {
         sqlx::query(
             r#"
@@ -128,6 +275,21 @@ impl Database {
             &self.pool,
             "ALTER TABLE clips ADD COLUMN pinned_at DATETIME",
         )
+        .await?;
+
+        add_column_if_missing(
+            &self.pool,
+            "ALTER TABLE folders ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0",
+        )
+        .await?;
+
+        // Backfill: assign sort_order based on current row id for existing folders
+        sqlx::query(
+            r#"
+            UPDATE folders SET sort_order = id WHERE sort_order = 0
+            "#,
+        )
+        .execute(&self.pool)
         .await?;
 
         // Backfill: assign sort_order based on current row id for existing clips

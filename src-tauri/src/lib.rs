@@ -24,6 +24,7 @@ mod commands;
 mod constants;
 mod database;
 mod models;
+mod ocr;
 mod settings_commands;
 mod settings_manager;
 
@@ -373,6 +374,35 @@ pub fn run_app() {
                 }
             });
 
+            let handle_for_toast = app_handle.clone();
+            let saved_hotkey_clone = saved_hotkey.clone();
+            tauri::async_runtime::spawn(async move {
+                // Wait 1 second for the app environment/windows to fully boot
+                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+
+                // Ensure activation sound is generated on startup if enabled
+                let manager = handle_for_toast.state::<Arc<SettingsManager>>();
+                let settings = manager.get();
+                if settings.clipboard_sound_enabled {
+                    let data_dir = get_data_dir();
+                    let activation_sound_path = data_dir.join("activation_sound.wav");
+                    if !activation_sound_path.exists() {
+                        let wav_bytes = generate_activation_sound_wav();
+                        let _ = std::fs::write(&activation_sound_path, wav_bytes);
+                    }
+                }
+
+                let msg = format!("{} para abrir, Esc para ocultar", saved_hotkey_clone);
+                let _ = commands::show_toast(
+                    handle_for_toast,
+                    msg,
+                    "info".to_string(),
+                    Some("welcome".to_string()),
+                    None,
+                )
+                .await;
+            });
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -385,6 +415,7 @@ pub fn run_app() {
             commands::toggle_clip_pin,
             commands::move_to_folder,
             commands::reorder_clip,
+            commands::reorder_folder,
             commands::create_folder,
             commands::rename_folder,
             commands::delete_folder,
@@ -427,7 +458,10 @@ pub fn run_app() {
             commands::show_toast,
             commands::hide_toast,
             commands::set_toast_position,
-            commands::open_image_viewer
+            commands::toast_ready,
+            commands::open_image_viewer,
+            commands::run_ocr_for_clip,
+            commands::update_ocr_text
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -910,4 +944,80 @@ pub fn update_tray_icon(tray: &TrayIcon, theme: &tauri::Theme) {
     if let Ok(icon) = Image::from_bytes(icon_data) {
         let _ = tray.set_icon(Some(icon));
     }
+}
+
+fn generate_activation_sound_wav() -> Vec<u8> {
+    let p = 1.0;
+    let c = 0.45;
+    let v = 0.28;
+
+    let sr = 44100;
+    let duration_ms = 90;
+    let n = sr * duration_ms / 1000;
+
+    let data_size = n * 2;
+    let mut wav = Vec::with_capacity(44 + data_size);
+
+    // Write WAV header
+    wav.extend_from_slice(b"RIFF");
+    wav.extend_from_slice(&((36 + data_size) as u32).to_le_bytes());
+    wav.extend_from_slice(b"WAVE");
+    wav.extend_from_slice(b"fmt ");
+    wav.extend_from_slice(&(16u32).to_le_bytes());
+    wav.extend_from_slice(&(1u16).to_le_bytes()); // PCM
+    wav.extend_from_slice(&(1u16).to_le_bytes()); // Mono
+    wav.extend_from_slice(&(sr as u32).to_le_bytes()); // Sample rate
+    wav.extend_from_slice(&((sr * 2) as u32).to_le_bytes()); // Byte rate
+    wav.extend_from_slice(&(2u16).to_le_bytes()); // Block align
+    wav.extend_from_slice(&(16u16).to_le_bytes()); // Bits per sample
+    wav.extend_from_slice(b"data");
+    wav.extend_from_slice(&(data_size as u32).to_le_bytes());
+
+    // Helpers
+    fn soft_clip(x: f64) -> f64 {
+        (x * 1.2).tanh() / 1.2f64.tanh()
+    }
+
+    fn env(t: f64, attack_ms: f64, decay_rate: f64) -> f64 {
+        let a = attack_ms / 1000.0;
+        let atk = if t < a {
+            (std::f64::consts::PI * 0.5 * t / a).sin()
+        } else {
+            1.0
+        };
+        atk * (-t * decay_rate).exp()
+    }
+
+    // Deterministic random generator for the noise transient
+    let mut state: u32 = 42;
+    let mut next_double = |state: &mut u32| -> f64 {
+        *state = state.wrapping_mul(1664525).wrapping_add(1013904223);
+        (*state as f64) / (u32::MAX as f64)
+    };
+
+    for i in 0..n {
+        let t = (i as f64) / (sr as f64);
+
+        // Gentle noise transient
+        let noise_val = next_double(&mut state) * 2.0 - 1.0;
+        let noise = noise_val * (-t * 400.0).exp() * 0.06;
+
+        // Warm fundamental with slow chirp settling
+        let f0 = (720.0 + 20.0 * (-t * 80.0).exp()) * p;
+        let fund = (2.0 * std::f64::consts::PI * f0 * t).sin() * env(t, 4.0, 32.0) * 0.30;
+
+        // Soft harmonic
+        let h2 = (2.0 * std::f64::consts::PI * f0 * 2.0 * t).sin() * env(t, 4.0, 55.0) * (0.08 + c * 0.06);
+
+        // Sub body
+        let sub = (2.0 * std::f64::consts::PI * 260.0 * p * t).sin() * env(t, 6.0, 25.0) * 0.12;
+
+        let sample = soft_clip(noise + fund + h2 + sub) * v;
+
+        let sample_clamped = sample.clamp(-1.0, 1.0);
+        let sample_i16 = (sample_clamped * (i16::MAX as f64)) as i16;
+        wav.extend_from_slice(&sample_i16.to_le_bytes());
+    }
+
+    wav
 }

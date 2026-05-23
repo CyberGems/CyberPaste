@@ -256,7 +256,7 @@ async fn process_clipboard_change(
             if !found_content && ctx.has(ContentFormat::Html) {
                 if let Ok(html) = ctx.get_html() {
                     let trimmed = html.trim();
-                    if !trimmed.is_empty() {
+                    if !trimmed.is_empty() && is_rich_html(trimmed) {
                         clip_content = trimmed.as_bytes().to_vec();
                         clip_hash = calculate_hash(&clip_content);
                         clip_type = "html";
@@ -297,7 +297,7 @@ async fn process_clipboard_change(
                     if !trimmed.is_empty() {
                         clip_content = trimmed.as_bytes().to_vec();
                         clip_hash = calculate_hash(&clip_content);
-                        clip_type = "text";
+                        clip_type = if is_code_snippet(&trimmed) { "code" } else { "text" };
                         clip_preview = trimmed.chars().take(200).collect::<String>();
                         found_content = true;
                         log::debug!("CLIPBOARD: Found text: {}", clip_preview);
@@ -313,7 +313,7 @@ async fn process_clipboard_change(
                 if !trimmed.is_empty() {
                     clip_content = trimmed.as_bytes().to_vec();
                     clip_hash = calculate_hash(&clip_content);
-                    clip_type = "text";
+                    clip_type = if is_code_snippet(&trimmed) { "code" } else { "text" };
                     clip_preview = trimmed.chars().take(200).collect::<String>();
                     found_content = true;
                     log::debug!("CLIPBOARD: Found text (fallback): {}", clip_preview);
@@ -417,6 +417,22 @@ async fn process_clipboard_change(
     let db_write_started = std::time::Instant::now();
     let emitted_id = if let Some(existing_id) = existing_uuid {
         was_existing = true;
+
+        let (is_pinned, clip_folder_id): (bool, Option<i64>) =
+            sqlx::query_as("SELECT is_pinned, folder_id FROM clips WHERE uuid = ?")
+                .bind(&existing_id)
+                .fetch_one(pool)
+                .await
+                .unwrap_or((false, None));
+
+        let new_sort_order = if is_pinned || clip_folder_id.is_some() {
+            0
+        } else {
+            db.get_and_prepare_first_unpinned_slot(None, Some(&existing_id))
+                .await
+                .unwrap_or(0)
+        };
+
         if clip_type == "image" {
             let _ = sqlx::query(
                 r#"
@@ -429,7 +445,7 @@ async fn process_clipboard_change(
                     text_preview = ?,
                     metadata = ?,
                     is_thumbnail = 0,
-                    sort_order = CASE WHEN is_pinned = 1 OR folder_id IS NOT NULL THEN sort_order ELSE (SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips) END
+                    sort_order = CASE WHEN is_pinned = 1 OR folder_id IS NOT NULL THEN sort_order ELSE ? END
                 WHERE uuid = ?
                 "#,
             )
@@ -438,6 +454,7 @@ async fn process_clipboard_change(
             .bind(&clip_content)
             .bind(&clip_preview)
             .bind(Some(metadata.clone()))
+            .bind(new_sort_order)
             .bind(&existing_id)
             .execute(pool)
             .await;
@@ -470,12 +487,13 @@ async fn process_clipboard_change(
             let _ = sqlx::query(r#"
                 UPDATE clips 
                 SET created_at = CASE WHEN is_pinned = 1 OR folder_id IS NOT NULL THEN created_at ELSE CURRENT_TIMESTAMP END, 
-                    sort_order = CASE WHEN is_pinned = 1 OR folder_id IS NOT NULL THEN sort_order ELSE (SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips) END, 
+                    sort_order = CASE WHEN is_pinned = 1 OR folder_id IS NOT NULL THEN sort_order ELSE ? END, 
                     is_deleted = 0, 
                     source_app = ?, 
                     source_icon = ? 
                 WHERE uuid = ?
             "#)
+                .bind(new_sort_order)
                 .bind(&source_app)
                 .bind(&source_icon)
                 .bind(&existing_id)
@@ -486,10 +504,15 @@ async fn process_clipboard_change(
     } else {
         let clip_uuid = Uuid::new_v4().to_string();
 
+        let new_sort_order = db
+            .get_and_prepare_first_unpinned_slot(None, None)
+            .await
+            .unwrap_or(0);
+
         let _ = sqlx::query(
             r#"
             INSERT INTO clips (uuid, clip_type, content, text_preview, content_hash, folder_id, is_deleted, is_thumbnail, source_app, source_icon, metadata, sort_order, created_at, last_accessed)
-            VALUES (?, ?, ?, ?, ?, NULL, 0, ?, ?, ?, ?, (SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            VALUES (?, ?, ?, ?, ?, NULL, 0, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             "#,
         )
         .bind(&clip_uuid)
@@ -505,6 +528,7 @@ async fn process_clipboard_change(
         } else {
             None
         })
+        .bind(new_sort_order)
         .execute(pool)
         .await;
 
@@ -1070,6 +1094,165 @@ pub fn strip_html_tags(html: &str) -> String {
     }
 
     out.trim().to_string()
+}
+
+pub fn is_rich_html(html: &str) -> bool {
+    let plain_text = strip_html_tags(html);
+    let is_single_line = !plain_text.contains('\n') && !plain_text.contains('\r');
+
+    let bytes = html.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'<' {
+            i += 1;
+            if i < bytes.len() && bytes[i] == b'!' {
+                i += 1;
+                continue;
+            }
+            if i < bytes.len() && bytes[i] == b'?' {
+                i += 1;
+                continue;
+            }
+            let mut _is_closing = false;
+            if i < bytes.len() && bytes[i] == b'/' {
+                _is_closing = true;
+                i += 1;
+            }
+            let start = i;
+            while i < bytes.len() && bytes[i].is_ascii_alphanumeric() {
+                i += 1;
+            }
+            let end = i;
+            if end > start {
+                let tag_name = std::str::from_utf8(&bytes[start..end]).unwrap_or("");
+                let tag_lower = tag_name.to_lowercase();
+                
+                if is_single_line {
+                    match tag_lower.as_str() {
+                        "a" | "img" | "iframe" => {
+                            return true;
+                        }
+                        _ => {}
+                    }
+                } else {
+                    match tag_lower.as_str() {
+                        "a" | "img" | "table" | "tr" | "td" | "th" | "ul" | "ol" | "li" | 
+                        "p" | "br" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | 
+                        "strong" | "b" | "em" | "i" | "u" | "s" | "strike" | "del" | "ins" | 
+                        "code" | "pre" | "blockquote" | "hr" | "iframe" | "button" | "input" |
+                        "textarea" | "select" | "option" => {
+                            return true;
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+        i += 1;
+    }
+    false
+}
+
+pub fn is_code_snippet(text: &str) -> bool {
+    let trimmed = text.trim();
+    if trimmed.len() < 8 {
+        return false;
+    }
+
+    // Check for markdown code block markers
+    if trimmed.starts_with("```") || trimmed.contains("\n```") {
+        return true;
+    }
+
+    let mut score = 0;
+
+    // Check line endings and indentation
+    let lines: Vec<&str> = trimmed.lines().collect();
+    let total_lines = lines.len();
+    let mut semi_count = 0;
+    let mut indent_count = 0;
+
+    for line in &lines {
+        let line_trimmed = line.trim();
+        if line_trimmed.ends_with(';') {
+            semi_count += 1;
+        }
+        if line.starts_with('\t') || line.starts_with("  ") {
+            indent_count += 1;
+        }
+    }
+
+    // Heuristics for semicolons (common in JS/TS, C/C++, Java, Rust, CSS)
+    if semi_count > 0 {
+        let semi_ratio = semi_count as f32 / total_lines as f32;
+        if semi_ratio > 0.15 {
+            score += 5;
+        } else {
+            score += 2;
+        }
+    }
+
+    // Indentation score
+    if indent_count > 0 {
+        let indent_ratio = indent_count as f32 / total_lines as f32;
+        if indent_ratio > 0.2 {
+            score += 3;
+        } else {
+            score += 1;
+        }
+    }
+
+    // Curly braces balance/presence
+    if trimmed.contains('{') && trimmed.contains('}') {
+        score += 3;
+    }
+
+    // Common operators / code symbols
+    let operators = [
+        "=>", "->", "::", "&&", "||", "!=", "==", "===", "!==", "+=", "-=", "++", "--",
+        "//", "/*", "*/", "<!--", "-->", "</", "/>", "const ", "let ", "var ", "fn ", "pub ",
+        "import ", "export ", "class ", "struct ", "impl ", "interface ", "enum ",
+        "def ", "elif ", "lambda ", "function ", "return ", "typeof ",
+        "#include", "#define", "#ifdef", "using namespace", "public class ",
+        "console.log", "println!", "print(", "std::", "import {", "import *",
+        "className=", "onClick=", "onChange=", "style={{",
+        "<!DOCTYPE html>", "<html", "<body", "<head", "</html", "</body"
+    ];
+
+    for op in &operators {
+        if trimmed.contains(op) {
+            score += 2;
+        }
+    }
+
+    // Check for SQL keywords
+    let sql_keywords = ["SELECT ", "INSERT INTO ", "UPDATE ", "DELETE FROM ", " WHERE ", " JOIN ", " FROM "];
+    let mut sql_matches = 0;
+    for kw in &sql_keywords {
+        if trimmed.to_uppercase().contains(kw) {
+            sql_matches += 1;
+        }
+    }
+    if sql_matches >= 2 {
+        score += 4;
+    }
+
+    // CLI Commands check
+    let cli_prefixes = ["npm run ", "cargo run", "git commit ", "docker run ", "npm install ", "pip install "];
+    for prefix in &cli_prefixes {
+        if trimmed.starts_with(prefix) {
+            score += 7;
+        }
+    }
+
+    // Single line threshold is higher to prevent conversational lines matching
+    let threshold = if total_lines == 1 {
+        7
+    } else {
+        5
+    };
+
+    score >= threshold
 }
 
 pub fn strip_rtf_tags(rtf: &str) -> String {

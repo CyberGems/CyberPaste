@@ -32,7 +32,7 @@ pub async fn ai_process_clip(
         .map_err(|e| e.to_string())?
         .ok_or("Clip not found")?;
 
-    let text_content = if clip.clip_type == "text" || clip.clip_type == "url" {
+    let text_content = if clip.clip_type == "text" || clip.clip_type == "url" || clip.clip_type == "code" {
         String::from_utf8_lossy(&clip.content).to_string()
     } else if clip.clip_type == "html" {
         crate::clipboard::strip_html_tags(&String::from_utf8_lossy(&clip.content))
@@ -751,19 +751,40 @@ pub async fn paste_clip(
                 .unwrap_or(None);
 
                 if let Some(hist_uuid) = existing_history_uuid {
+                    let (is_pinned, clip_folder_id): (bool, Option<i64>) =
+                        sqlx::query_as("SELECT is_pinned, folder_id FROM clips WHERE uuid = ?")
+                            .bind(&hist_uuid)
+                            .fetch_one(pool)
+                            .await
+                            .unwrap_or((false, None));
+
+                    let new_sort_order = if is_pinned || clip_folder_id.is_some() {
+                        0
+                    } else {
+                        db.get_and_prepare_first_unpinned_slot(None, Some(&hist_uuid))
+                            .await
+                            .unwrap_or(0)
+                    };
+
                     let _ = sqlx::query(
                         r#"
                         UPDATE clips 
                         SET created_at = CURRENT_TIMESTAMP, 
-                            sort_order = (SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips) 
+                            sort_order = CASE WHEN is_pinned = 1 OR folder_id IS NOT NULL THEN sort_order ELSE ? END
                         WHERE uuid = ?
                         "#,
                     )
+                    .bind(new_sort_order)
                     .bind(hist_uuid)
                     .execute(pool)
                     .await;
                 } else {
                     let new_uuid = uuid::Uuid::new_v4().to_string();
+                    let new_sort_order = db
+                        .get_and_prepare_first_unpinned_slot(None, None)
+                        .await
+                        .unwrap_or(0);
+
                     let _ = sqlx::query(
                         r#"
                         INSERT INTO clips (
@@ -771,7 +792,7 @@ pub async fn paste_clip(
                             folder_id, is_deleted, is_thumbnail, source_app, 
                             source_icon, metadata, sort_order, created_at, last_accessed
                         )
-                        VALUES (?, ?, ?, ?, ?, NULL, 0, ?, ?, ?, ?, (SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                        VALUES (?, ?, ?, ?, ?, NULL, 0, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                         "#
                     )
                     .bind(&new_uuid)
@@ -783,6 +804,7 @@ pub async fn paste_clip(
                     .bind(&clip.source_app)
                     .bind(&clip.source_icon)
                     .bind(&clip.metadata)
+                    .bind(new_sort_order)
                     .execute(pool)
                     .await;
 
@@ -1009,8 +1031,14 @@ pub async fn move_to_folder(
         None => None,
     };
 
-    let result = sqlx::query(r#"UPDATE clips SET folder_id = ? WHERE uuid = ?"#)
+    let new_sort_order = db
+        .get_and_prepare_first_unpinned_slot(folder_id_parsed, Some(&clip_id))
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let result = sqlx::query(r#"UPDATE clips SET folder_id = ?, sort_order = ? WHERE uuid = ?"#)
         .bind(folder_id_parsed)
+        .bind(new_sort_order)
         .bind(&clip_id)
         .execute(pool)
         .await
@@ -1123,6 +1151,111 @@ pub async fn reorder_clip(
 }
 
 #[tauri::command]
+pub async fn reorder_folder(
+    folder_id: String,
+    target_id: String,
+    position: String,
+    db: tauri::State<'_, Arc<Database>>,
+    window: tauri::WebviewWindow,
+) -> Result<(), String> {
+    let pool = &db.pool;
+    let folder_id_num = folder_id.parse::<i64>().map_err(|e| format!("Invalid folder ID: {}", e))?;
+    let target_id_num = target_id.parse::<i64>().map_err(|e| format!("Invalid target ID: {}", e))?;
+
+    let mut tx = pool.begin().await.map_err(|e| e.to_string())?;
+
+    // Get current sort orders
+    let (folder_sort, target_sort): (i64, i64) = sqlx::query_as(
+        r#"
+        SELECT f.sort_order, t.sort_order FROM folders f
+        JOIN folders t ON t.id = ?
+        WHERE f.id = ?
+        "#,
+    )
+    .bind(target_id_num)
+    .bind(folder_id_num)
+    .fetch_optional(&mut *tx)
+    .await
+    .map_err(|e| e.to_string())?
+    .ok_or("Folder or target not found")?;
+
+    if position == "before" {
+        if folder_sort < target_sort {
+            // Moving folder forward: shift (folder_sort, target_sort) down by 1
+            sqlx::query(
+                "UPDATE folders SET sort_order = sort_order - 1 WHERE sort_order > ? AND sort_order < ?"
+            )
+            .bind(folder_sort)
+            .bind(target_sort)
+            .execute(&mut *tx).await.map_err(|e| e.to_string())?;
+            
+            sqlx::query("UPDATE folders SET sort_order = ? WHERE id = ?")
+                .bind(target_sort - 1)
+                .bind(folder_id_num)
+                .execute(&mut *tx)
+                .await
+                .map_err(|e| e.to_string())?;
+        } else {
+            // Moving folder backward: shift [target_sort, folder_sort) up by 1
+            sqlx::query(
+                "UPDATE folders SET sort_order = sort_order + 1 WHERE sort_order >= ? AND sort_order < ?"
+            )
+            .bind(target_sort)
+            .bind(folder_sort)
+            .execute(&mut *tx).await.map_err(|e| e.to_string())?;
+            
+            sqlx::query("UPDATE folders SET sort_order = ? WHERE id = ?")
+                .bind(target_sort)
+                .bind(folder_id_num)
+                .execute(&mut *tx)
+                .await
+                .map_err(|e| e.to_string())?;
+        }
+    } else {
+        // position == "after"
+        if folder_sort > target_sort {
+            // Moving folder backward: shift (target_sort, folder_sort) up by 1
+            sqlx::query(
+                "UPDATE folders SET sort_order = sort_order + 1 WHERE sort_order > ? AND sort_order < ?"
+            )
+            .bind(target_sort)
+            .bind(folder_sort)
+            .execute(&mut *tx).await.map_err(|e| e.to_string())?;
+            
+            sqlx::query("UPDATE folders SET sort_order = ? WHERE id = ?")
+                .bind(target_sort + 1)
+                .bind(folder_id_num)
+                .execute(&mut *tx)
+                .await
+                .map_err(|e| e.to_string())?;
+        } else {
+            // Moving folder forward: shift everything > target_sort up by 1, set folder to target_sort + 1
+            sqlx::query(
+                "UPDATE folders SET sort_order = sort_order + 1 WHERE sort_order > ?"
+            )
+            .bind(target_sort)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| e.to_string())?;
+            
+            sqlx::query("UPDATE folders SET sort_order = ? WHERE id = ?")
+                .bind(target_sort + 1)
+                .bind(folder_id_num)
+                .execute(&mut *tx)
+                .await
+                .map_err(|e| e.to_string())?;
+        }
+    }
+
+    tx.commit().await.map_err(|e| e.to_string())?;
+    
+    // Emit event so frontend knows to refresh
+    let _ = window.emit("clipboard-change", ());
+    
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn create_folder(
     name: String,
     icon: Option<String>,
@@ -1143,7 +1276,7 @@ pub async fn create_folder(
         return Err("A folder with this name already exists".to_string());
     }
 
-    let id = sqlx::query(r#"INSERT INTO folders (name, icon, color) VALUES (?, ?, ?)"#)
+    let id = sqlx::query(r#"INSERT INTO folders (name, icon, color, sort_order) VALUES (?, ?, ?, (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM folders))"#)
         .bind(&name)
         .bind(icon.as_ref())
         .bind(color.as_ref())
@@ -1339,7 +1472,7 @@ pub async fn search_clips(
 pub async fn get_folders(db: tauri::State<'_, Arc<Database>>) -> Result<Vec<FolderItem>, String> {
     let pool = &db.pool;
 
-    let folders: Vec<Folder> = sqlx::query_as(r#"SELECT * FROM folders ORDER BY created_at"#)
+    let folders: Vec<Folder> = sqlx::query_as(r#"SELECT * FROM folders ORDER BY sort_order ASC, created_at ASC"#)
         .fetch_all(pool)
         .await
         .map_err(|e| e.to_string())?;
@@ -1442,6 +1575,7 @@ pub async fn get_clip_stats(
             COUNT(*) as total,
             SUM(CASE WHEN clip_type = 'image' THEN 1 ELSE 0 END) as images,
             SUM(CASE WHEN clip_type = 'text' THEN 1 ELSE 0 END) as text,
+            SUM(CASE WHEN clip_type = 'code' THEN 1 ELSE 0 END) as code,
             SUM(CASE WHEN clip_type = 'file' THEN 1 ELSE 0 END) as files,
             SUM(CASE WHEN clip_type = 'html' THEN 1 ELSE 0 END) as html,
             SUM(CASE WHEN clip_type = 'rtf' THEN 1 ELSE 0 END) as rtf
@@ -1454,14 +1588,16 @@ pub async fn get_clip_stats(
     let total: i64 = row.get(0);
     let images: i64 = row.get(1);
     let text: i64 = row.get(2);
-    let files: i64 = row.get(3);
-    let html: i64 = row.get(4);
-    let rtf: i64 = row.get(5);
+    let code: i64 = row.get(3);
+    let files: i64 = row.get(4);
+    let html: i64 = row.get(5);
+    let rtf: i64 = row.get(6);
 
     Ok(serde_json::json!({
         "total": total,
         "images": images,
         "text": text,
+        "code": code,
         "files": files,
         "html": html,
         "rtf": rtf
@@ -2279,6 +2415,53 @@ fn simulate_ctrl_v_internal(target_hwnd: Option<isize>) {
     }
 }
 
+use once_cell::sync::Lazy;
+use parking_lot::Mutex;
+
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+pub struct ToastPayload {
+    message: String,
+    toast_type: String,
+    clip_type: Option<String>,
+    image_preview: Option<String>,
+}
+
+static PENDING_TOAST: Lazy<Mutex<Option<ToastPayload>>> =
+    Lazy::new(|| Mutex::new(None));
+
+#[tauri::command]
+pub async fn toast_ready(
+    app: AppHandle,
+    width: f64,
+    height: f64,
+) -> Result<Option<ToastPayload>, String> {
+    let payload = {
+        let mut lock = PENDING_TOAST.lock();
+        lock.take()
+    };
+
+    if let Some(ref p) = payload {
+        let _ = set_toast_position(app.clone(), width, height).await;
+
+        // If this is the welcome toast, play the activation sound when the window is ready and displayed
+        if p.clip_type == Some("welcome".to_string()) {
+            use crate::settings_manager::SettingsManager;
+            use std::sync::Arc;
+            let manager = app.state::<Arc<SettingsManager>>();
+            let settings = manager.get();
+            if settings.clipboard_sound_enabled {
+                let data_dir = crate::get_data_dir();
+                let activation_sound_path = data_dir.join("activation_sound.wav");
+                if let Some(path_str) = activation_sound_path.to_str() {
+                    let _ = play_clipboard_sound(path_str.to_string());
+                }
+            }
+        }
+    }
+
+    Ok(payload)
+}
+
 #[tauri::command]
 pub async fn show_toast(
     app: AppHandle,
@@ -2295,11 +2478,32 @@ pub async fn show_toast(
     }
 
     let window_label = "toast";
+    let payload = ToastPayload {
+        message,
+        toast_type,
+        clip_type: clip_type.clone(),
+        image_preview,
+    };
 
-    // Check if toast window exists, if not create it
-    let toast_window = if let Some(win) = app.get_webview_window(window_label) {
+    {
+        let mut lock = PENDING_TOAST.lock();
+        *lock = Some(payload.clone());
+    }
+
+    if let Some(win) = app.get_webview_window(window_label) {
         let _ = win.set_focusable(false);
-        win
+        win.emit("update-toast", payload).map_err(|e| e.to_string())?;
+
+        // If this is the welcome toast and the window already exists, play the sound immediately
+        if clip_type == Some("welcome".to_string()) {
+            if manager.get().clipboard_sound_enabled {
+                let data_dir = crate::get_data_dir();
+                let activation_sound_path = data_dir.join("activation_sound.wav");
+                if let Some(path_str) = activation_sound_path.to_str() {
+                    let _ = play_clipboard_sound(path_str.to_string());
+                }
+            }
+        }
     } else {
         tauri::WebviewWindowBuilder::new(
             &app,
@@ -2318,29 +2522,8 @@ pub async fn show_toast(
         .focusable(false)
         .visible(false) // hidden until positioned
         .build()
-        .map_err(|e| format!("Failed to create toast window: {}", e))?
-    };
-
-    // Emit event to update content
-    #[derive(serde::Serialize, Clone)]
-    struct ToastPayload {
-        message: String,
-        toast_type: String,
-        clip_type: Option<String>,
-        image_preview: Option<String>,
+        .map_err(|e| format!("Failed to create toast window: {}", e))?;
     }
-
-    toast_window
-        .emit(
-            "update-toast",
-            ToastPayload {
-                message,
-                toast_type,
-                clip_type,
-                image_preview,
-            },
-        )
-        .map_err(|e| e.to_string())?;
 
     Ok(())
 }
@@ -2493,3 +2676,100 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
 
     Ok(())
 }
+
+#[tauri::command]
+pub async fn run_ocr_for_clip(
+    app: AppHandle,
+    clip_id: String,
+    db: tauri::State<'_, Arc<Database>>,
+) -> Result<String, String> {
+    let pool = &db.pool;
+
+    // 1. Fetch clip
+    let mut clip: Clip = sqlx::query_as(r#"SELECT * FROM clips WHERE uuid = ?"#)
+        .bind(&clip_id)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| "Clip not found".to_string())?;
+
+    if clip.clip_type != "image" {
+        return Err("OCR is only supported for image clips".to_string());
+    }
+
+    // 2. Load image bytes
+    let image_bytes = load_full_image_content(pool, &mut clip).await?;
+
+    // 3. Run OCR
+    let manager = app.state::<Arc<SettingsManager>>();
+    let settings = manager.get();
+    let language_tag = Some(settings.language.as_str());
+    let ocr_text = crate::ocr::run_ocr(&image_bytes, language_tag).await?;
+
+    // 4. Update Metadata and text_preview
+    let mut metadata: serde_json::Value = if let Some(ref meta_str) = clip.metadata {
+        serde_json::from_str(meta_str).unwrap_or(serde_json::json!({}))
+    } else {
+        serde_json::json!({})
+    };
+
+    metadata["ocr_text"] = serde_json::json!(ocr_text);
+    let new_metadata_str = metadata.to_string();
+
+    sqlx::query("UPDATE clips SET text_preview = ?, metadata = ? WHERE uuid = ?")
+        .bind(&ocr_text)
+        .bind(&new_metadata_str)
+        .bind(&clip_id)
+        .execute(pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    // 5. Emit events to refresh UI
+    let _ = app.emit("clipboard-change", ());
+    let _ = app.emit("update-viewer-clip", &clip_id);
+
+    Ok(ocr_text)
+}
+
+#[tauri::command]
+pub async fn update_ocr_text(
+    app: AppHandle,
+    clip_id: String,
+    new_text: String,
+    db: tauri::State<'_, Arc<Database>>,
+) -> Result<(), String> {
+    let pool = &db.pool;
+
+    let clip: Option<Clip> = sqlx::query_as(r#"SELECT * FROM clips WHERE uuid = ?"#)
+        .bind(&clip_id)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if let Some(clip) = clip {
+        let mut metadata: serde_json::Value = if let Some(ref meta_str) = clip.metadata {
+            serde_json::from_str(meta_str).unwrap_or(serde_json::json!({}))
+        } else {
+            serde_json::json!({})
+        };
+
+        metadata["ocr_text"] = serde_json::json!(new_text);
+        let new_metadata_str = metadata.to_string();
+
+        sqlx::query("UPDATE clips SET text_preview = ?, metadata = ? WHERE uuid = ?")
+            .bind(&new_text)
+            .bind(&new_metadata_str)
+            .bind(&clip_id)
+            .execute(pool)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        // Emit events to refresh UI
+        let _ = app.emit("clipboard-change", ());
+        let _ = app.emit("update-viewer-clip", &clip_id);
+    }
+
+    Ok(())
+}
+
+
