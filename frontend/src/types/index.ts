@@ -72,6 +72,9 @@ export interface Settings {
   viewer_window_x?: number | null;
   viewer_window_y?: number | null;
   show_action_messages?: boolean;
+  type_to_search?: boolean;
+  clip_numbering?: 'positional' | 'countdown';
+  auto_check_updates?: boolean;
 }
 
 export type ClipType = 'text' | 'image' | 'html' | 'rtf' | 'file' | 'url';

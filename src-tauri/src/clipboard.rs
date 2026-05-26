@@ -297,10 +297,16 @@ async fn process_clipboard_change(
                     if !trimmed.is_empty() {
                         clip_content = trimmed.as_bytes().to_vec();
                         clip_hash = calculate_hash(&clip_content);
-                        clip_type = if is_code_snippet(&trimmed) { "code" } else { "text" };
+                        clip_type = if is_url(&trimmed) {
+                            "url"
+                        } else if is_code_snippet(&trimmed) {
+                            "code"
+                        } else {
+                            "text"
+                        };
                         clip_preview = trimmed.chars().take(200).collect::<String>();
                         found_content = true;
-                        log::debug!("CLIPBOARD: Found text: {}", clip_preview);
+                        log::debug!("CLIPBOARD: Found text: {} (type={})", clip_preview, clip_type);
                     }
                 }
             }
@@ -313,10 +319,16 @@ async fn process_clipboard_change(
                 if !trimmed.is_empty() {
                     clip_content = trimmed.as_bytes().to_vec();
                     clip_hash = calculate_hash(&clip_content);
-                    clip_type = if is_code_snippet(&trimmed) { "code" } else { "text" };
+                    clip_type = if is_url(&trimmed) {
+                        "url"
+                    } else if is_code_snippet(&trimmed) {
+                        "code"
+                    } else {
+                        "text"
+                    };
                     clip_preview = trimmed.chars().take(200).collect::<String>();
                     found_content = true;
-                    log::debug!("CLIPBOARD: Found text (fallback): {}", clip_preview);
+                    log::debug!("CLIPBOARD: Found text (fallback): {} (type={})", clip_preview, clip_type);
                 }
             }
         }
@@ -1149,6 +1161,28 @@ pub fn is_rich_html(html: &str) -> bool {
             }
         }
         i += 1;
+    }
+    false
+}
+
+/// Cheap URL detector. Recognises a single absolute URL (http/https/ftp/ftps/file)
+/// with no whitespace. Designed to be O(n) and avoid allocations.
+pub fn is_url(text: &str) -> bool {
+    if text.is_empty() || text.len() > 2048 {
+        return false;
+    }
+    // Whitespace or control chars ⇒ not a single URL
+    if text.bytes().any(|b| b.is_ascii_whitespace() || b == 0) {
+        return false;
+    }
+    const PREFIXES: &[&[u8]] = &[
+        b"http://", b"https://", b"ftp://", b"ftps://", b"file://",
+    ];
+    let bytes = text.as_bytes();
+    for prefix in PREFIXES {
+        if bytes.len() > prefix.len() && bytes[..prefix.len()].eq_ignore_ascii_case(prefix) {
+            return true;
+        }
     }
     false
 }

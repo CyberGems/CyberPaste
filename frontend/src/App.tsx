@@ -68,8 +68,12 @@ function App() {
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
+  const [compactTypeFilter, setCompactTypeFilter] = useState<
+    'all' | 'text' | 'code' | 'image' | 'url' | 'file'
+  >('all');
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [clipListResetToken, setClipListResetToken] = useState(0);
+  const [searchFocusToken, setSearchFocusToken] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [theme, setTheme] = useState('system');
@@ -396,6 +400,20 @@ function App() {
     setSearchQuery(query);
   }, []);
 
+  const handleStartTypingSearch = useCallback(
+    (char: string) => {
+      if (settings?.type_to_search === false) return;
+      if (settings?.view_mode === 'compact') {
+        setSearchQuery(char);
+        setSearchFocusToken((prev) => prev + 1);
+      } else {
+        setShowSearch(true);
+        setSearchQuery(char);
+      }
+    },
+    [settings?.view_mode, settings?.type_to_search]
+  );
+
   const handleSelectFolder = useCallback((folderId: string | null) => {
     // Reset view-level selection state whenever user switches/re-clicks folders.
     setSelectedClipId(null);
@@ -682,6 +700,7 @@ function App() {
         setSearchQuery('');
         setShowSearch(false);
         setSelectedFolder(null);
+        setCompactTypeFilter('all');
         setClipListResetToken((prev) => prev + 1);
         if (clipsRef.current.length > 0) {
           setSelectedClipId(clipsRef.current[0].id);
@@ -771,6 +790,7 @@ function App() {
       if (settings?.reset_view_on_paste) {
         setSearchQuery('');
         setShowSearch(false);
+        setCompactTypeFilter('all');
         handleSelectFolder(null);
       } else {
         refreshCurrentFolder();
@@ -1091,8 +1111,19 @@ function App() {
   };
 
   useKeyboard({
-    onClose: () => appWindow.hide(),
-    onSearch: () => setShowSearch(true),
+    onClose: () => {
+      appWindow.hide().catch((err) => {
+        console.error('hide() failed, trying close():', err);
+        appWindow.close().catch(() => {});
+      });
+    },
+    onSearch: () => {
+      if (settings?.view_mode === 'compact') {
+        setSearchFocusToken((prev) => prev + 1);
+      } else {
+        setShowSearch(true);
+      }
+    },
     onDelete: () => handleDelete(selectedClipId),
     onPin: () => handleToggleClipPin(selectedClipId),
     onNavigatePrev: handleNavigatePrev,
@@ -1102,6 +1133,7 @@ function App() {
     onPaste: handlePasteSelected,
     onToggleMode: toggleViewMode,
     toggleModeHotkey: settings?.view_mode_hotkey,
+    onStartTypingSearch: handleStartTypingSearch,
   });
 
   return (
@@ -1171,6 +1203,10 @@ function App() {
             }}
             onLoadMore={loadMore}
             onReorderFolder={handleReorderFolder}
+            typeFilter={compactTypeFilter}
+            onTypeFilterChange={setCompactTypeFilter}
+            searchFocusToken={searchFocusToken}
+            clipNumbering={settings?.clip_numbering || 'positional'}
           />
         ) : (
           <div
@@ -1244,6 +1280,7 @@ function App() {
                 reorderTargetPosition={reorderTargetPosition}
                 reorderEnabled={!!selectedFolder}
                 draggingClipId={draggingClipId}
+                clipNumbering={settings?.clip_numbering || 'positional'}
               />
             </main>
           </div>

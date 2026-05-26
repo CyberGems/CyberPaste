@@ -25,6 +25,7 @@ interface ClipListProps {
   reorderTargetPosition?: 'before' | 'after' | null;
   reorderEnabled?: boolean;
   draggingClipId?: string | null;
+  clipNumbering?: 'positional' | 'countdown';
 }
 
 export const ClipList: React.FC<ClipListProps> = ({
@@ -43,6 +44,7 @@ export const ClipList: React.FC<ClipListProps> = ({
   reorderTargetPosition,
   reorderEnabled,
   draggingClipId,
+  clipNumbering = 'positional',
 }) => {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -160,7 +162,7 @@ export const ClipList: React.FC<ClipListProps> = ({
       >
         <ClipCard
           clip={clip}
-          clipIndex={clips.length - index}
+          clipIndex={clipNumbering === 'positional' ? index + 1 : clips.length - index}
           isLatest={index === 0 && !selectedFolder}
           isSelected={selectedClipId === clip.id}
           onPaste={() => onPaste(clip.id)}

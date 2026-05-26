@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { ClipboardItem as AppClip, FolderItem } from '../types';
 import {
   Search,
@@ -9,6 +9,8 @@ import {
   X,
   Pin,
   PinOff,
+  ChevronDown,
+  Check,
   Zap,
   Flame,
   Star,
@@ -60,6 +62,7 @@ import {
   File as LucideFile,
   Image as ImageIcon,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
@@ -70,6 +73,139 @@ import { convertFileSrc } from '@tauri-apps/api/core';
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+export type CompactTypeFilter = 'all' | 'text' | 'code' | 'image' | 'url' | 'file';
+
+const TYPE_FILTER_OPTIONS: {
+  value: CompactTypeFilter;
+  labelKey: string;
+  fallback: string;
+  icon: LucideIcon;
+}[] = [
+  { value: 'all',   labelKey: 'compact.filterAll',   fallback: 'All',   icon: Layers },
+  { value: 'text',  labelKey: 'compact.filterText',  fallback: 'Text',  icon: FileText },
+  { value: 'code',  labelKey: 'compact.filterCode',  fallback: 'Code',  icon: Code },
+  { value: 'image', labelKey: 'compact.filterImage', fallback: 'Image', icon: ImageIcon },
+  { value: 'url',   labelKey: 'compact.filterUrl',   fallback: 'URL',   icon: Link },
+  { value: 'file',  labelKey: 'compact.filterFile',  fallback: 'File',  icon: LucideFile },
+];
+
+const TypeFilterDropdown: React.FC<{
+  value: CompactTypeFilter;
+  onChange: (v: CompactTypeFilter) => void;
+  t: (k: string, opts?: any) => string;
+}> = ({ value, onChange, t }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number; width: number }>({
+    top: 0,
+    left: 0,
+    width: 150,
+  });
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (buttonRef.current?.contains(target)) return;
+      const menuEl = document.getElementById('compact-type-filter-menu');
+      if (menuEl?.contains(target)) return;
+      setIsOpen(false);
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [isOpen]);
+
+  const openMenu = () => {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const width = 150;
+    const viewportRight = window.innerWidth - 6;
+    let left = rect.right - width;
+    if (left + width > viewportRight) left = viewportRight - width;
+    if (left < 6) left = 6;
+    setMenuPos({ top: rect.bottom + 4, left, width });
+    setIsOpen(true);
+  };
+
+  const selected =
+    TYPE_FILTER_OPTIONS.find((o) => o.value === value) ?? TYPE_FILTER_OPTIONS[0];
+  const SelectedIcon = selected.icon;
+  const isActive = value !== 'all';
+  const label = t(selected.labelKey) === selected.labelKey ? selected.fallback : t(selected.labelKey);
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => (isOpen ? setIsOpen(false) : openMenu())}
+        className={cn(
+          'flex h-[30px] flex-shrink-0 items-center gap-1 rounded-lg border px-2 text-[11px] font-medium transition-all',
+          isActive
+            ? 'border-cyan-500/40 bg-cyan-500/15 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.18)]'
+            : 'border-white/5 bg-black/20 text-white/55 hover:border-white/15 hover:bg-black/30 hover:text-white/85',
+          isOpen && 'border-cyan-400/60 bg-cyan-500/15 text-cyan-300'
+        )}
+        title={`${t('compact.filterTitle') === 'compact.filterTitle' ? 'Filter by type' : t('compact.filterTitle')}: ${label}`}
+      >
+        <SelectedIcon size={12} />
+        <ChevronDown
+          size={11}
+          className={cn('opacity-70 transition-transform', isOpen && 'rotate-180')}
+        />
+      </button>
+      {isOpen && (
+        <div
+          id="compact-type-filter-menu"
+          className="fixed z-[200] overflow-hidden rounded-lg border border-cyan-500/25 bg-black/95 py-1 shadow-[0_8px_24px_rgba(0,0,0,0.55)] backdrop-blur-md"
+          style={{ top: menuPos.top, left: menuPos.left, width: menuPos.width }}
+        >
+          {TYPE_FILTER_OPTIONS.map((opt) => {
+            const OptIcon = opt.icon;
+            const isSel = opt.value === value;
+            const optLabel =
+              t(opt.labelKey) === opt.labelKey ? opt.fallback : t(opt.labelKey);
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  onChange(opt.value);
+                  setIsOpen(false);
+                }}
+                className={cn(
+                  'flex w-full items-center gap-2 px-2.5 py-1.5 text-[11px] transition-colors',
+                  isSel
+                    ? 'bg-cyan-500/20 text-cyan-300'
+                    : 'text-white/70 hover:bg-white/10 hover:text-white'
+                )}
+              >
+                <OptIcon size={12} className={cn(isSel ? 'text-cyan-300' : 'text-white/60')} />
+                <span className="flex-1 text-left">{optLabel}</span>
+                {isSel && <Check size={11} className="text-cyan-400" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+};
+
+const matchesTypeFilter = (clipType: string, filter: CompactTypeFilter): boolean => {
+  if (filter === 'all') return true;
+  if (filter === 'code') return clipType === 'code' || clipType === 'html' || clipType === 'rtf';
+  if (filter === 'text') return clipType === 'text';
+  return clipType === filter;
+};
 
 const IconMap: Record<string, any> = {
   Zap,
@@ -149,6 +285,10 @@ interface CompactViewProps {
   onAddFolder?: () => void;
   onLoadMore?: () => void;
   onReorderFolder?: (folderId: string, targetId: string, position: 'before' | 'after') => void;
+  typeFilter?: CompactTypeFilter;
+  onTypeFilterChange?: (v: CompactTypeFilter) => void;
+  searchFocusToken?: number;
+  clipNumbering?: 'positional' | 'countdown';
 }
 
 export const CompactView: React.FC<CompactViewProps> = ({
@@ -186,11 +326,43 @@ export const CompactView: React.FC<CompactViewProps> = ({
   onAddFolder,
   onLoadMore,
   onReorderFolder,
+  typeFilter = 'all',
+  onTypeFilterChange,
+  searchFocusToken,
+  clipNumbering = 'positional',
 }) => {
   const { t } = useTranslation();
   const folderScrollRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const isVertical = compactFolderLayout === 'vertical';
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const didFocusRef = useRef(false);
+
+  useEffect(() => {
+    if (!didFocusRef.current) {
+      didFocusRef.current = true;
+      return;
+    }
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+      searchInputRef.current.setSelectionRange(
+        searchInputRef.current.value.length,
+        searchInputRef.current.value.length
+      );
+    }
+  }, [searchFocusToken]);
+
+  useEffect(() => {
+    if (!searchQuery && document.activeElement === searchInputRef.current) {
+      searchInputRef.current?.blur();
+    }
+  }, [searchQuery]);
+
+  const filteredClips = useMemo(
+    () => (typeFilter === 'all' ? clips : clips.filter((c) => matchesTypeFilter(c.clip_type, typeFilter))),
+    [clips, typeFilter]
+  );
+  const isFiltering = typeFilter !== 'all';
 
   // Folder Reorder Drag State (Simulated)
   const [draggingFolderId, setDraggingFolderId] = React.useState<string | null>(null);
@@ -429,7 +601,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
         ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/40 shadow-[0_0_12px_rgba(99,102,241,0.3)]'
         : isDragTarget && isDragging
           ? 'bg-cyan-500/30 border-cyan-400 text-white'
-          : 'bg-white/5 hover:bg-white/10 border-transparent opacity-60 hover:opacity-100'
+          : 'bg-white/5 hover:bg-white/10 border-transparent opacity-75 hover:opacity-100'
     );
 
   const folderPillClassNamed = (
@@ -444,7 +616,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
         ? 'bg-primary/10 text-white/80 border-primary/60 shadow-[0_0_12px_rgba(99,102,241,0.3)] ring-1 ring-primary/40'
         : isDragTarget && isDragging
           ? 'bg-cyan-500/30 border-cyan-400 text-white'
-          : 'bg-white/5 hover:bg-white/10 border-transparent opacity-60 hover:opacity-100'
+          : 'bg-white/5 hover:bg-white/10 border-transparent opacity-75 hover:opacity-100'
     );
 
   const sidebarWidth = isVertical ? (compactSidebarCollapsed ? 0 : 140) : 0;
@@ -557,7 +729,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
           </button>
 
           <button
-            onClick={() => (window as any).__TAURI_INTERNALS__.invoke('hide_window')}
+            onClick={() => invoke('hide_window').catch(() => (window as any).__TAURI_INTERNALS__?.invoke('hide_window'))}
             className="hover:bg-rose-500/12 ml-0.5 flex h-7 w-7 items-center justify-center rounded-md text-white/25 transition-all hover:text-rose-400"
             title="Close"
           >
@@ -584,12 +756,12 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 data-folder-id="clipboard"
                 data-selected={highlightedFolderId === null}
                 className={cn(
-                  'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-lg border px-2 py-2 text-[10px] font-medium transition-all',
+                  'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-lg border px-2 py-1.5 text-[10px] font-medium transition-all',
                   highlightedFolderId === null && !dragTargetFolderId
                     ? 'border-indigo-500/40 bg-indigo-500/20 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.3)]'
                     : dragTargetFolderId === null && isDragging
                       ? 'border-cyan-400 bg-cyan-500/30 text-white'
-                      : 'border-transparent bg-white/5 opacity-60 hover:bg-white/10 hover:opacity-100'
+                      : 'border-transparent bg-white/5 opacity-75 hover:bg-white/10 hover:opacity-100'
                 )}
                 onMouseEnter={() => isDragging && onDragHover(null)}
                 onMouseLeave={onDragLeave}
@@ -628,12 +800,12 @@ export const CompactView: React.FC<CompactViewProps> = ({
                       data-selected={isSelected}
                       onContextMenu={(e) => onFolderContextMenu?.(e, folder.id)}
                       className={cn(
-                        'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-lg border px-2 py-2 text-[10px] font-medium transition-all',
+                        'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-lg border px-2 py-1.5 text-[10px] font-medium transition-all',
                         isSelected && !dragTargetFolderId
                           ? 'border-primary/60 bg-primary/10 text-white/80 shadow-[0_0_12px_rgba(99,102,241,0.3)] ring-1 ring-primary/40'
                           : dragTargetFolderId === folder.id && isDragging
                             ? 'border-cyan-400 bg-cyan-500/30 text-white'
-                            : 'border-transparent bg-white/5 opacity-60 hover:bg-white/10 hover:opacity-100',
+                            : 'border-transparent bg-white/5 opacity-75 hover:bg-white/10 hover:opacity-100',
                         draggingFolderId === folder.id && 'opacity-40 scale-95 pointer-events-none'
                       )}
                       onMouseEnter={() => isDragging && onDragHover(folder.id)}
@@ -662,7 +834,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
               {onAddFolder && (
                 <button
                   onClick={onAddFolder}
-                  className="mx-1.5 flex flex-row items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-dashed border-white/20 bg-white/5 px-2 py-2 text-[10px] font-medium text-white/40 transition-all hover:bg-white/10 hover:text-white/80"
+                  className="mx-1.5 flex flex-row items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-dashed border-white/20 bg-white/5 px-2 py-1.5 text-[10px] font-medium text-white/40 transition-all hover:bg-white/10 hover:text-white/80"
                   title="Add Folder"
                 >
                   <Plus size={10} />
@@ -676,26 +848,37 @@ export const CompactView: React.FC<CompactViewProps> = ({
           <div className="flex flex-1 flex-col overflow-hidden">
             {/* Search */}
             <div className="flex-shrink-0 p-2">
-              <div className="group relative">
-                <Search
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-40 transition-all group-focus-within:text-cyan-400 group-focus-within:opacity-100"
-                  size={14}
-                />
-                <input
-                  type="text"
-                  placeholder={t('common.search')}
-                  value={searchQuery}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                  className="w-full rounded-lg border border-white/5 bg-black/20 py-1.5 pl-8 pr-8 text-sm transition-all focus:border-cyan-500/50 focus:bg-black/40 focus:outline-none"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => onSearchChange('')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
-                    title="Clear search"
-                  >
-                    <X size={14} />
-                  </button>
+              <div className="flex items-center gap-1.5">
+                <div className="group relative flex-1 min-w-0">
+                  <Search
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-40 transition-all group-focus-within:text-cyan-400 group-focus-within:opacity-100"
+                    size={14}
+                  />
+                  <input
+                    type="text"
+                    id="search-input"
+                    ref={searchInputRef}
+                    placeholder={t('common.search')}
+                    value={searchQuery}
+                    onChange={(e) => onSearchChange(e.target.value)}
+                    className="w-full rounded-lg border border-white/5 bg-black/20 py-1.5 pl-8 pr-8 text-sm transition-all focus:border-cyan-500/50 focus:bg-black/40 focus:outline-none"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => onSearchChange('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                      title="Clear search"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+                {onTypeFilterChange && (
+                  <TypeFilterDropdown
+                    value={typeFilter}
+                    onChange={onTypeFilterChange}
+                    t={t}
+                  />
                 )}
               </div>
             </div>
@@ -706,12 +889,18 @@ export const CompactView: React.FC<CompactViewProps> = ({
               className="no-scrollbar flex-1 space-y-1 overflow-y-auto px-2 pb-2"
               onScroll={handleListScroll}
             >
-              {clips.length === 0 && !isLoading ? (
+              {filteredClips.length === 0 && !isLoading ? (
                 <div className="flex h-full flex-col items-center justify-center text-sm italic opacity-30">
-                  <p>{t('clipList.empty')}</p>
+                  <p>
+                    {isFiltering && clips.length > 0
+                      ? t('compact.noMatchFilter') === 'compact.noMatchFilter'
+                        ? 'No clips match this filter'
+                        : t('compact.noMatchFilter')
+                      : t('clipList.empty')}
+                  </p>
                 </div>
               ) : (
-                clips.map((clip, index) => (
+                filteredClips.map((clip, index) => (
                   <ClipRow
                     key={clip.id}
                     clip={clip}
@@ -730,6 +919,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     t={t}
                     formatDistanceToNow={formatDistanceToNow}
                     isDragging={clip.id === draggingClipId}
+                    clipNumbering={clipNumbering}
                   />
                 ))
               )}
@@ -752,26 +942,37 @@ export const CompactView: React.FC<CompactViewProps> = ({
         /* === HORIZONTAL LAYOUT (existing) === */
         <>
           <div className="flex-shrink-0 space-y-2 p-2">
-            <div className="group relative">
-              <Search
-                className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-40 transition-all group-focus-within:text-cyan-400 group-focus-within:opacity-100"
-                size={14}
-              />
-              <input
-                type="text"
-                placeholder={t('common.search')}
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="w-full rounded-lg border border-white/5 bg-black/20 py-1.5 pl-8 pr-8 text-sm transition-all focus:border-cyan-500/50 focus:bg-black/40 focus:outline-none"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => onSearchChange('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
-                  title="Clear search"
-                >
-                  <X size={14} />
-                </button>
+            <div className="flex items-center gap-1.5">
+              <div className="group relative flex-1 min-w-0">
+                <Search
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-40 transition-all group-focus-within:text-cyan-400 group-focus-within:opacity-100"
+                  size={14}
+                />
+                <input
+                  type="text"
+                  id="search-input"
+                  ref={searchInputRef}
+                  placeholder={t('common.search')}
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  className="w-full rounded-lg border border-white/5 bg-black/20 py-1.5 pl-8 pr-8 text-sm transition-all focus:border-cyan-500/50 focus:bg-black/40 focus:outline-none"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => onSearchChange('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                    title="Clear search"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+              {onTypeFilterChange && (
+                <TypeFilterDropdown
+                  value={typeFilter}
+                  onChange={onTypeFilterChange}
+                  t={t}
+                />
               )}
             </div>
 
@@ -867,12 +1068,18 @@ export const CompactView: React.FC<CompactViewProps> = ({
             className="no-scrollbar flex-1 space-y-1 overflow-y-auto px-2 pb-2"
             onScroll={handleListScroll}
           >
-            {clips.length === 0 && !isLoading ? (
+            {filteredClips.length === 0 && !isLoading ? (
               <div className="flex h-full flex-col items-center justify-center text-sm italic opacity-30">
-                <p>{t('clipList.empty')}</p>
+                <p>
+                  {isFiltering && clips.length > 0
+                    ? t('compact.noMatchFilter') === 'compact.noMatchFilter'
+                      ? 'No clips match this filter'
+                      : t('compact.noMatchFilter')
+                    : t('clipList.empty')}
+                </p>
               </div>
             ) : (
-              clips.map((clip, index) => (
+              filteredClips.map((clip, index) => (
                 <ClipRow
                   key={clip.id}
                   clip={clip}
@@ -891,6 +1098,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   t={t}
                   formatDistanceToNow={formatDistanceToNow}
                   isDragging={clip.id === draggingClipId}
+                  clipNumbering={clipNumbering}
                 />
               ))
             )}
@@ -930,6 +1138,7 @@ const ClipRow: React.FC<{
   t: (key: string) => string;
   formatDistanceToNow: (date: Date, opts: { addSuffix: boolean }) => string;
   isDragging?: boolean;
+  clipNumbering?: 'positional' | 'countdown';
 }> = ({
   clip,
   index,
@@ -947,6 +1156,7 @@ const ClipRow: React.FC<{
   t,
   formatDistanceToNow,
   isDragging,
+  clipNumbering,
 }) => {
   return (
     <React.Fragment>
@@ -973,7 +1183,7 @@ const ClipRow: React.FC<{
         )}
       >
         <div className="flex w-8 flex-shrink-0 items-center justify-center">
-          <span className="font-mono text-[10px] opacity-30">#{clips.length - index}</span>
+          <span className="font-mono text-[10px] opacity-30">#{clipNumbering === 'positional' ? index + 1 : clips.length - index}</span>
         </div>
         <div className="flex min-w-0 flex-1 items-center gap-3">
           {clip.clip_type === 'image' ? (

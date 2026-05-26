@@ -31,10 +31,11 @@ import { useTheme } from '../hooks/useTheme';
 import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
 import { emit } from '@tauri-apps/api/event';
-import { FlaskConical } from 'lucide-react';
+import { FlaskConical, Wrench } from 'lucide-react';
 import { getCurrentWindow, availableMonitors } from '@tauri-apps/api/window';
 import { getVersion } from '@tauri-apps/api/app';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { check } from '@tauri-apps/plugin-updater';
 import { systemToast as toast } from '../utils/toast';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Select } from './ui/Select';
@@ -46,7 +47,7 @@ interface SettingsPanelProps {
   onClose: () => void;
 }
 
-type Tab = 'general' | 'ai' | 'notifications' | 'about';
+type Tab = 'general' | 'ai' | 'notifications' | 'maintenance' | 'about';
 
 function PromptEditor({
   label,
@@ -77,7 +78,7 @@ function PromptEditor({
   }, [titleValue, label]);
 
   return (
-    <div className="space-y-2 rounded-lg border border-border/40 bg-accent/5 p-3">
+    <div className="space-y-2 rounded-[4px] border border-white/[0.08] bg-[#2D2D2D] p-3">
       <div className="flex items-center justify-between gap-4">
         <input
           type="text"
@@ -104,7 +105,7 @@ function PromptEditor({
           }
         }}
         placeholder={placeholder}
-        className="min-h-[60px] w-full resize-none rounded-md border border-border bg-input px-3 py-2 text-xs text-foreground transition-all focus:outline-none focus:ring-1 focus:ring-primary/30"
+        className="min-h-[60px] w-full resize-none rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] transition-all focus:outline-none focus:border-white/20 focus:ring-0 placeholder:text-white/30"
       />
     </div>
   );
@@ -502,11 +503,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         {/* Header */}
         <div
           data-tauri-drag-region
-          className="flex cursor-default items-center justify-between border-b border-border bg-card/30 p-4"
+          className="flex cursor-default items-center justify-between border-b border-border bg-transparent py-3 px-4"
         >
           <div data-tauri-drag-region className="pointer-events-none flex items-center gap-3">
-            <img src="/logo.png" alt="CyberPaste" className="h-6 w-6 object-contain" />
-            <h2 className="text-xl font-bold tracking-tight text-foreground/90">CyberPaste</h2>
+            <img src="/logo.png" alt="CyberPaste" className="h-5 w-5 object-contain" />
+            <h2 className="text-[18px] font-bold tracking-tight text-white">CyberPaste</h2>
           </div>
           <div className="flex items-center gap-1">
             <button
@@ -533,58 +534,70 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
         <div className="flex flex-1 overflow-hidden">
           {/* Sidebar */}
-          <div className="w-56 flex-shrink-0 border-r border-border bg-card/50 p-3">
-            <div className="px-4 py-2 mb-3">
-              <h1 className="text-xl font-bold tracking-tight text-foreground/90">{t('settings.title')}</h1>
+          <div className="w-[150px] flex-shrink-0 border-r border-white/[0.05] bg-transparent py-3.5 px-2.5">
+            <div className="px-2.5 mb-4">
+              <h1 className="text-[18px] font-bold tracking-tight text-white">{t('settings.title')}</h1>
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1">
               <button
                 onClick={() => setActiveTab('general')}
                 className={clsx(
-                  'flex items-center gap-3 rounded-md px-4 py-2.5 text-base font-medium transition-all duration-200',
+                  'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'general'
-                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                    : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                    ? 'bg-white/10 text-white shadow-none border-l-[3px] border-cyan-400'
+                    : 'text-white/70 hover:bg-white/[0.05] hover:text-white'
                 )}
               >
-                <SettingsIcon size={18} />
+                <SettingsIcon size={14} />
                 {t('settings.general')}
               </button>
               <button
                 onClick={() => setActiveTab('ai')}
                 className={clsx(
-                  'flex items-center gap-3 rounded-md px-4 py-2.5 text-base font-medium transition-all duration-200',
+                  'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'ai'
-                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                    : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                    ? 'bg-white/10 text-white shadow-none border-l-[3px] border-cyan-400'
+                    : 'text-white/70 hover:bg-white/[0.05] hover:text-white'
                 )}
               >
-                <BrainCircuit size={18} />
+                <BrainCircuit size={14} />
                 {t('settings.ai')}
               </button>
               <button
                 onClick={() => setActiveTab('notifications')}
                 className={clsx(
-                  'flex items-center gap-3 rounded-md px-4 py-2.5 text-base font-medium transition-all duration-200',
+                  'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'notifications'
-                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                    : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                    ? 'bg-white/10 text-white shadow-none border-l-[3px] border-cyan-400'
+                    : 'text-white/70 hover:bg-white/[0.05] hover:text-white'
                 )}
               >
-                <Bell size={18} />
+                <Bell size={14} />
                 {t('settings.toasts')}
               </button>
-              <div className="mt-auto border-t border-border/50 pt-4">
+              <button
+                onClick={() => setActiveTab('maintenance')}
+                className={clsx(
+                  'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
+                  activeTab === 'maintenance'
+                    ? 'bg-white/10 text-white shadow-none border-l-[3px] border-cyan-400'
+                    : 'text-white/70 hover:bg-white/[0.05] hover:text-white'
+                )}
+              >
+                <Wrench size={14} />
+                {t('settings.maintenance')}
+              </button>
+              <div className="mt-auto border-t border-white/[0.05] pt-4">
                 <button
                   onClick={() => setActiveTab('about')}
                   className={clsx(
-                    'flex h-11 w-full items-center gap-3 rounded-md px-4 py-2.5 text-base font-medium transition-all duration-200',
+                    'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                     activeTab === 'about'
-                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                      : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                      ? 'bg-white/10 text-white shadow-none border-l-[3px] border-cyan-400'
+                      : 'text-white/70 hover:bg-white/[0.05] hover:text-white'
                   )}
                 >
-                  <Info size={18} />
+                  <Info size={14} />
                   {t('settings.about')}
                 </button>
               </div>
@@ -599,7 +612,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 <>
                   {/* Appearance */}
                   <section className="space-y-4">
-                    <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-primary/80">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
                       <SettingsIcon size={14} /> Appearance
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
@@ -649,7 +662,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         ]}
                       />
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border border-border bg-accent/20 p-3">
+                    <div className="flex items-center justify-between rounded-[4px] border border-white/[0.08] bg-[#2D2D2D] p-3">
                       <div>
                         <span className="text-sm font-medium">
                           {t('settings.floatAboveTaskbar')}
@@ -665,14 +678,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             !(settings.float_above_taskbar ?? true)
                           )
                         }
-                        className={`h-6 w-11 rounded-full transition-colors ${(settings.float_above_taskbar ?? true) ? 'bg-primary' : 'bg-accent'}`}
+                        className={`h-6 w-11 rounded-full transition-colors ${(settings.float_above_taskbar ?? true) ? 'bg-primary' : 'bg-white/10'}`}
                       >
                         <span
-                          className={`block h-4 w-4 rounded-full bg-white transition-transform ${(settings.float_above_taskbar ?? true) ? 'translate-x-6' : 'translate-x-1'}`}
+                          className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.float_above_taskbar ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
                         />
                       </button>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border border-border bg-accent/20 p-3">
+                    <div className="flex items-center justify-between rounded-[4px] border border-white/[0.08] bg-[#2D2D2D] p-3">
                       <div>
                         <span className="text-sm font-medium">{t('settings.roundCorners')}</span>
                         <p className="text-xs text-muted-foreground">
@@ -683,14 +696,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         onClick={() =>
                           updateSetting('round_corners', !(settings.round_corners ?? false))
                         }
-                        className={`h-6 w-11 rounded-full transition-colors ${(settings.round_corners ?? false) ? 'bg-primary' : 'bg-accent'}`}
+                        className={`h-6 w-11 rounded-full transition-colors ${(settings.round_corners ?? false) ? 'bg-primary' : 'bg-white/10'}`}
                       >
                         <span
-                          className={`block h-4 w-4 rounded-full bg-white transition-transform ${(settings.round_corners ?? false) ? 'translate-x-6' : 'translate-x-1'}`}
+                          className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.round_corners ?? false) ? 'translate-x-5' : 'translate-x-0.5'}`}
                         />
                       </button>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border border-border bg-accent/20 p-3">
+                    <div className="flex items-center justify-between rounded-[4px] border border-white/[0.08] bg-[#2D2D2D] p-3">
                       <div>
                         <span className="text-base font-semibold">
                           {t('settings.startupWithWindows')}
@@ -703,7 +716,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         onClick={() =>
                           updateSetting('startup_with_windows', !settings.startup_with_windows)
                         }
-                        className={`h-6 w-11 rounded-full transition-colors ${settings.startup_with_windows ? 'bg-primary' : 'bg-accent'}`}
+                        className={`h-6 w-11 rounded-full transition-colors ${settings.startup_with_windows ? 'bg-primary' : 'bg-white/10'}`}
                       >
                         <div
                           className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.startup_with_windows ? 'translate-x-5' : 'translate-x-0.5'}`}
@@ -714,7 +727,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
                   {/* Clipboard & Capture */}
                   <section className="space-y-4">
-                    <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-cyan-400/80">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-cyan-400/80">
                       <Clipboard size={14} /> Clipboard & Capture
                     </h3>
                     <div className="space-y-3">
@@ -741,7 +754,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border border-border bg-accent/20 p-3">
+                    <div className="flex items-center justify-between rounded-[4px] border border-white/[0.08] bg-[#2D2D2D] p-3">
                       <div>
                         <span className="text-base font-semibold">
                           {t('settings.ignoreGhostClips')}
@@ -754,7 +767,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         onClick={() =>
                           updateSetting('ignore_ghost_clips', !settings.ignore_ghost_clips)
                         }
-                        className={`h-6 w-11 rounded-full transition-colors ${settings.ignore_ghost_clips ? 'bg-primary' : 'bg-accent'}`}
+                        className={`h-6 w-11 rounded-full transition-colors ${settings.ignore_ghost_clips ? 'bg-primary' : 'bg-white/10'}`}
                       >
                         <div
                           className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.ignore_ghost_clips ? 'translate-x-5' : 'translate-x-0.5'}`}
@@ -762,7 +775,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </button>
                     </div>
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between rounded-lg border border-border bg-accent/20 p-3">
+                      <div className="flex items-center justify-between rounded-[4px] border border-white/[0.08] bg-[#2D2D2D] p-3">
                         <div>
                           <span className="text-sm font-medium">
                             {t('settings.clipboardSound')}
@@ -778,10 +791,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               !(settings.clipboard_sound_enabled ?? false)
                             )
                           }
-                          className={`h-6 w-11 rounded-full transition-colors ${(settings.clipboard_sound_enabled ?? false) ? 'bg-primary' : 'bg-accent'}`}
+                          className={`h-6 w-11 rounded-full transition-colors ${(settings.clipboard_sound_enabled ?? false) ? 'bg-primary' : 'bg-white/10'}`}
                         >
                           <span
-                            className={`block h-4 w-4 rounded-full bg-white transition-transform ${(settings.clipboard_sound_enabled ?? false) ? 'translate-x-6' : 'translate-x-1'}`}
+                            className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.clipboard_sound_enabled ?? false) ? 'translate-x-5' : 'translate-x-0.5'}`}
                           />
                         </button>
                       </div>
@@ -806,7 +819,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                 if (e !== 'No file selected') console.error(e);
                               }
                             }}
-                            className="btn btn-secondary flex-shrink-0 text-xs"
+                            className="btn btn-secondary flex-shrink-0 text-xs rounded-[4px]"
                           >
                             {t('common.browse')}
                           </button>
@@ -823,7 +836,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               }
                             }}
                             disabled={!settings.clipboard_sound_path}
-                            className="btn btn-secondary flex-shrink-0 text-xs disabled:opacity-50"
+                            className="btn btn-secondary flex-shrink-0 text-xs disabled:opacity-50 rounded-[4px]"
                             title="Preview sound"
                           >
                             <Volume2 size={14} />
@@ -831,7 +844,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border border-border bg-accent/20 p-3">
+                    <div className="flex items-center justify-between rounded-[4px] border border-white/[0.08] bg-[#2D2D2D] p-3">
                       <div>
                         <span className="text-sm font-medium">{t('settings.autoPaste')}</span>
                         <p className="text-sm text-muted-foreground/80">
@@ -840,14 +853,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
                       <button
                         onClick={() => updateSetting('auto_paste', !settings.auto_paste)}
-                        className={`h-6 w-11 rounded-full transition-colors ${settings.auto_paste ? 'bg-primary' : 'bg-accent'}`}
+                        className={`h-6 w-11 rounded-full transition-colors ${settings.auto_paste ? 'bg-primary' : 'bg-white/10'}`}
                       >
                         <div
                           className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.auto_paste ? 'translate-x-5' : 'translate-x-0.5'}`}
                         />
                       </button>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border border-border bg-accent/20 p-3">
+                    <div className="flex items-center justify-between rounded-[4px] border border-white/[0.08] bg-[#2D2D2D] p-3">
                       <div>
                         <span className="text-sm font-medium">{t('settings.autoInjectPaste')}</span>
                         <p className="text-sm text-muted-foreground/80">
@@ -858,14 +871,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         onClick={() =>
                           updateSetting('auto_inject_paste', !settings.auto_inject_paste)
                         }
-                        className={`h-6 w-11 rounded-full transition-colors ${settings.auto_inject_paste ? 'bg-primary' : 'bg-accent'}`}
+                        className={`h-6 w-11 rounded-full transition-colors ${settings.auto_inject_paste ? 'bg-primary' : 'bg-white/10'}`}
                       >
                         <div
                           className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.auto_inject_paste ? 'translate-x-5' : 'translate-x-0.5'}`}
                         />
                       </button>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border border-border bg-accent/20 p-3">
+                    <div className="flex items-center justify-between rounded-[4px] border border-white/[0.08] bg-[#2D2D2D] p-3">
                       <div>
                         <span className="text-sm font-medium">{t('settings.resetViewOnPaste')}</span>
                         <p className="text-sm text-muted-foreground/80">
@@ -876,7 +889,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         onClick={() =>
                           updateSetting('reset_view_on_paste', !settings.reset_view_on_paste)
                         }
-                        className={`h-6 w-11 rounded-full transition-colors ${settings.reset_view_on_paste ? 'bg-primary' : 'bg-accent'}`}
+                        className={`h-6 w-11 rounded-full transition-colors ${settings.reset_view_on_paste ? 'bg-primary' : 'bg-white/10'}`}
                       >
                         <div
                           className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.reset_view_on_paste ? 'translate-x-5' : 'translate-x-0.5'}`}
@@ -899,7 +912,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           value={settings.image_editor_path || ''}
                           onChange={(e) => updateSetting('image_editor_path', e.target.value)}
                           placeholder="C:\Path\To\Editor.exe"
-                          className="flex-1 rounded-lg border border-border bg-input px-3 py-2 text-sm transition-all focus:border-primary/50"
+                          className="flex-1 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] placeholder:text-white/30 focus:outline-none focus:border-white/20 focus:ring-0"
                         />
                         <button
                           onClick={async () => {
@@ -911,7 +924,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               if (path) updateSetting('image_editor_path', path);
                             } catch (e) {}
                           }}
-                          className="rounded-lg bg-accent px-3 py-2 text-sm font-medium transition-all hover:bg-accent/80"
+                          className="rounded-[4px] bg-accent px-3 py-2 text-sm font-medium transition-all hover:bg-accent/80"
                         >
                           Browse
                         </button>
@@ -921,7 +934,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
                   {/* Layout & Navigation */}
                   <section className="space-y-4">
-                    <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-purple-400/80">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-purple-400/80">
                       <Layout size={14} /> Layout & Navigation
                     </h3>
                     <div className="space-y-3">
@@ -960,7 +973,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         ]}
                       />
                       {(settings.compact_folder_layout || 'horizontal') === 'vertical' && (
-                        <div className="flex items-center justify-between rounded-lg border border-border bg-accent/20 p-3">
+                        <div className="flex items-center justify-between rounded-[4px] border border-white/[0.08] bg-[#2D2D2D] p-3">
                           <div>
                             <span className="text-sm font-medium">
                               {t('settings.compactSidebarCollapsed')}
@@ -976,10 +989,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                 !(settings.compact_sidebar_collapsed ?? false)
                               )
                             }
-                            className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_sidebar_collapsed ?? false) ? 'bg-primary' : 'bg-accent'}`}
+                            className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_sidebar_collapsed ?? false) ? 'bg-primary' : 'bg-white/10'}`}
                           >
                             <span
-                              className={`block h-4 w-4 rounded-full bg-white transition-transform ${(settings.compact_sidebar_collapsed ?? false) ? 'translate-x-6' : 'translate-x-1'}`}
+                              className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.compact_sidebar_collapsed ?? false) ? 'translate-x-5' : 'translate-x-0.5'}`}
                             />
                           </button>
                         </div>
@@ -1004,11 +1017,49 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         ]}
                       />
                     </div>
+                    <div className="flex items-center justify-between rounded-[4px] border border-white/[0.08] bg-[#2D2D2D] p-3">
+                      <div>
+                        <span className="text-sm font-medium">
+                          {t('settings.typeToSearch')}
+                        </span>
+                        <p className="text-xs text-muted-foreground">
+                          {t('settings.typeToSearchDesc')}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() =>
+                          updateSetting('type_to_search', !(settings.type_to_search ?? true))
+                        }
+                        className={`h-6 w-11 rounded-full transition-colors ${(settings.type_to_search ?? true) ? 'bg-primary' : 'bg-white/10'}`}
+                      >
+                        <span
+                          className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.type_to_search ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                        />
+                      </button>
+                    </div>
+                    <div className="space-y-3">
+                      <label className="block">
+                        <span className="text-base font-medium">
+                          {t('settings.clipNumbering')}
+                        </span>
+                        <p className="text-xs text-muted-foreground">
+                          {t('settings.clipNumberingDesc')}
+                        </p>
+                      </label>
+                      <Select
+                        value={settings.clip_numbering || 'positional'}
+                        onChange={(val) => updateSetting('clip_numbering', val)}
+                        options={[
+                          { value: 'positional', label: t('settings.clipNumberingPositional') },
+                          { value: 'countdown', label: t('settings.clipNumberingCountdown') },
+                        ]}
+                      />
+                    </div>
                   </section>
 
                   {/* Folders Management */}
                   <section className="space-y-4">
-                    <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-blue-400/80">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-blue-400/80">
                       <FolderIcon size={14} /> {t('settings.manageFolders')}
                     </h3>
                     <div className="space-y-3">
@@ -1018,13 +1069,13 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           value={newFolderName}
                           onChange={(e) => setNewFolderName(e.target.value)}
                           placeholder={t('settings.newFolderPlaceholder')}
-                          className="flex-1 rounded-lg border border-border bg-input px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="flex-1 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] placeholder:text-white/30 focus:outline-none focus:border-white/20 focus:ring-0"
                           onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
                         />
                         <button
                           onClick={handleCreateFolder}
                           disabled={!newFolderName.trim()}
-                          className="btn btn-secondary px-3 py-1.5 text-xs flex items-center gap-1"
+                          className="btn btn-secondary px-3 py-1.5 text-xs flex items-center gap-1 rounded-[4px]"
                         >
                           <Plus size={14} />
                           {t('settings.add')}
@@ -1106,7 +1157,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
                   {/* Shortcuts */}
                   <section className="space-y-4">
-                    <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-amber-400/80">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-amber-400/80">
                       <Command size={14} /> Shortcuts
                     </h3>
                     <div className="space-y-6">
@@ -1119,7 +1170,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         </label>
                         {recordingTarget === 'hotkey' ? (
                           <div className="space-y-2">
-                            <div className="flex w-full items-center gap-2 rounded-lg border border-primary bg-input px-3 py-2 text-sm ring-2 ring-primary">
+                            <div className="flex w-full items-center gap-2 rounded-[4px] border border-primary bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] ring-2 ring-primary">
                               <span className="animate-pulse font-mono text-primary">
                                 {shortcut.length > 0
                                   ? formatHotkey(shortcut)
@@ -1147,7 +1198,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         ) : (
                           <button
                             onClick={() => handleStartRecording('hotkey')}
-                            className="group flex w-full items-center gap-2 rounded-lg border border-border bg-input px-3 py-2 text-sm transition-colors hover:border-primary"
+                            className="group flex w-full items-center gap-2 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] focus:outline-none focus:border-white/20 focus:ring-0 transition-colors hover:border-white/20"
                           >
                             <span className="rounded bg-accent px-2 py-0.5 font-mono text-xs font-medium transition-colors group-hover:text-primary">
                               {settings.hotkey}
@@ -1169,7 +1220,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         </label>
                         {recordingTarget === 'view_mode_hotkey' ? (
                           <div className="space-y-2">
-                            <div className="flex w-full items-center gap-2 rounded-lg border border-primary bg-input px-3 py-2 text-sm ring-2 ring-primary">
+                            <div className="flex w-full items-center gap-2 rounded-[4px] border border-primary bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] ring-2 ring-primary">
                               <span className="animate-pulse font-mono text-primary">
                                 {shortcut.length > 0
                                   ? formatHotkey(shortcut)
@@ -1197,7 +1248,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         ) : (
                           <button
                             onClick={() => handleStartRecording('view_mode_hotkey')}
-                            className="group flex w-full items-center gap-2 rounded-lg border border-border bg-input px-3 py-2 text-sm transition-colors hover:border-primary"
+                            className="group flex w-full items-center gap-2 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] focus:outline-none focus:border-white/20 focus:ring-0 transition-colors hover:border-white/20"
                           >
                             <span className="rounded bg-accent px-2 py-0.5 font-mono text-xs font-medium transition-colors group-hover:text-primary">
                               {settings.view_mode_hotkey || 'Ctrl+M'}
@@ -1213,7 +1264,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
                   {/* Privacy */}
                   <section className="space-y-4">
-                    <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-emerald-400/80">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-emerald-400/80">
                       <Lock size={14} /> Privacy
                     </h3>
                     <div className="space-y-3">
@@ -1230,12 +1281,12 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           value={newIgnoredApp}
                           onChange={(e) => setNewIgnoredApp(e.target.value)}
                           placeholder={'e.g. notepad.exe'}
-                          className="flex-1 rounded-lg border border-border bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="flex-1 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] placeholder:text-white/30 focus:outline-none focus:border-white/20 focus:ring-0"
                           onKeyDown={(e) => e.key === 'Enter' && handleAddIgnoredApp()}
                         />
                         <button
                           onClick={handleBrowseFile}
-                          className="btn btn-secondary px-3"
+                          className="btn btn-secondary px-3 rounded-[4px]"
                           title="Browse executable"
                         >
                           <FolderOpen size={16} />
@@ -1243,7 +1294,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         <button
                           onClick={handleAddIgnoredApp}
                           disabled={!newIgnoredApp.trim()}
-                          className="btn btn-secondary px-3"
+                          className="btn btn-secondary px-3 rounded-[4px]"
                           title="Add to list"
                         >
                           <Plus size={16} />
@@ -1275,119 +1326,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         )}
                       </div>
                     </div>
-                  </section>
-
-                  {/* Data Management */}
-                  <section className="space-y-4">
-                    <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-rose-400/80">
-                      <Database size={14} /> Data Management
-                    </h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        onClick={confirmClearHistory}
-                        className="btn border border-destructive/20 bg-destructive/10 text-destructive hover:bg-destructive/20"
-                      >
-                        <Trash2 size={16} className="mr-2" />
-                        {t('settings.clearHistory')}
-                      </button>
-                      <button
-                        onClick={async () => {
-                          try {
-                            const count = await invoke<number>('remove_duplicate_clips');
-                            toast.success(t('settings.removeDuplicatesSuccess', { count }));
-                            const newSize = await invoke<number>('get_clipboard_history_size');
-                            setHistorySize(newSize);
-                          } catch (error) {
-                            console.error(error);
-                            toast.error(`Failed to remove duplicates: ${error}`);
-                          }
-                        }}
-                        className="btn btn-secondary text-xs"
-                      >
-                        {t('settings.removeDuplicates')}
-                      </button>
-                    </div>
-                  </section>
-
-                  {/* Panic Room */}
-                  <section className="space-y-4 border-t border-border/30 pt-4">
-                    <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-rose-500/80">
-                      <Flame size={14} /> Panic Room
-                    </h3>
-                    <div className="flex flex-col gap-3 rounded-xl border border-rose-500/20 bg-rose-500/5 p-4">
-                      <p className="text-xs text-muted-foreground">
-                        If the window becomes deformed, off-screen, or behaves erratically, use this
-                        to restore all layout and visibility settings to factory defaults.
-                      </p>
-                      <button
-                        onClick={handleResetLayout}
-                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-rose-500 py-2.5 font-bold text-white shadow-lg shadow-rose-500/20 transition-all hover:bg-rose-600"
-                      >
-                        <RotateCcw size={16} />
-                        Reset Layout & Visibility
-                      </button>
-                    </div>
-                  </section>
-
-                  <section className="space-y-4">
-                    <h3 className="text-sm font-medium text-primary/80">Backup & Restore</h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        onClick={async () => {
-                          const id = toast.loading('Generating backup...');
-                          try {
-                            await invoke('export_backup_to_file');
-                            toast.success('Backup saved successfully', { id });
-                          } catch (error) {
-                            if (error === 'Export cancelled') {
-                              toast.dismiss(id);
-                            } else {
-                              toast.error(`Export failed: ${error}`, { id });
-                            }
-                          }
-                        }}
-                        className="btn border border-primary/20 bg-primary/10 text-primary hover:bg-primary/20"
-                      >
-                        <FolderOpen size={16} className="mr-2" />
-                        Export Backup (JSON)
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setConfirmDialog({
-                            isOpen: true,
-                            title: 'Import Backup?',
-                            message:
-                              'This will REPLACE all current clips, folders, images, and settings with the backup data. Your current data will be lost. Export a backup first if you want to keep it.',
-                            action: async () => {
-                              const id = toast.loading('Restoring backup...');
-                              try {
-                                await invoke('import_backup_from_file');
-                                toast.success('Restore complete! CyberPaste has been updated.', {
-                                  id,
-                                });
-                                // Force reload to see changes
-                                setTimeout(() => window.location.reload(), 1500);
-                              } catch (error) {
-                                if (error === 'Import cancelled') {
-                                  toast.dismiss(id);
-                                } else {
-                                  toast.error(`Import failed: ${error}`, { id });
-                                }
-                              }
-                            },
-                          });
-                        }}
-                        className="btn border border-orange-500/20 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20"
-                      >
-                        <Plus size={16} className="mr-2" />
-                        Import Backup
-                      </button>
-                    </div>
-                    <p className="mt-1 text-[10px] text-muted-foreground">
-                      * Export saves all clips, images, folders, and settings. Import replaces
-                      everything with the backup data.
-                    </p>
                   </section>
                 </>
               )}
@@ -1471,7 +1409,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               updateSetting('ai_api_key', trimmed);
                             }}
                             placeholder="API Key"
-                            className="w-full rounded-lg border border-border bg-input py-2 pl-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                            className="w-full rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] py-1.5 pl-2.5 pr-10 text-[12px] text-[#F0F0F0] placeholder:text-white/30 focus:outline-none focus:border-white/20 focus:ring-0"
                           />
                           <button
                             type="button"
@@ -1507,7 +1445,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             onChange={(e) => setLocalModel(e.target.value)}
                             onBlur={() => updateSetting('ai_model', localModel)}
                             placeholder="gpt-4o, deepseek-chat, etc."
-                            className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring mt-2"
+                            className="w-full rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] placeholder:text-white/30 focus:outline-none focus:border-white/20 focus:ring-0 mt-2"
                           />
                         )}
                       </div>
@@ -1522,12 +1460,12 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           onChange={(e) => setLocalBaseUrl(e.target.value)}
                           onBlur={() => updateSetting('ai_base_url', localBaseUrl)}
                           placeholder="https://api.openai.com/v1"
-                          className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="w-full rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] placeholder:text-white/30 focus:outline-none focus:border-white/20 focus:ring-0"
                         />
                       </div>
                     </section>
 
-                    <section className="space-y-4 border-t border-border/50 pt-4">
+                    <section className="space-y-4 border-t border-white/[0.05] pt-4">
                       <h3 className="text-sm font-medium text-muted-foreground">
                         {t('settings.customPrompts')}
                       </h3>
@@ -1584,7 +1522,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     {t('settings.toasts')}
                   </h3>
 
-                  <div className="flex items-center justify-between rounded-lg border border-border bg-accent/20 p-3">
+                  <div className="flex items-center justify-between rounded-[4px] border border-white/[0.08] bg-[#2D2D2D] p-3">
                     <div>
                       <span className="text-base font-semibold">{t('settings.enableToasts')}</span>
                       <p className="text-sm text-muted-foreground/80">
@@ -1595,7 +1533,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       onClick={() =>
                         updateSetting('toast_enabled', !(settings.toast_enabled ?? true))
                       }
-                      className={`h-6 w-11 rounded-full transition-colors ${(settings.toast_enabled ?? true) ? 'bg-primary' : 'bg-accent'}`}
+                      className={`h-6 w-11 rounded-full transition-colors ${(settings.toast_enabled ?? true) ? 'bg-primary' : 'bg-white/10'}`}
                     >
                       <div
                         className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.toast_enabled ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
@@ -1603,7 +1541,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     </button>
                   </div>
 
-                  <div className="flex items-center justify-between rounded-lg border border-border bg-accent/20 p-3">
+                  <div className="flex items-center justify-between rounded-[4px] border border-white/[0.08] bg-[#2D2D2D] p-3">
                     <div>
                       <span className="text-base font-semibold">
                         {t('settings.showActionMessages')}
@@ -1616,7 +1554,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       onClick={() =>
                         updateSetting('show_action_messages', !settings.show_action_messages)
                       }
-                      className={`h-6 w-11 rounded-full transition-colors ${settings.show_action_messages ? 'bg-primary' : 'bg-accent'}`}
+                      className={`h-6 w-11 rounded-full transition-colors ${settings.show_action_messages ? 'bg-primary' : 'bg-white/10'}`}
                     >
                       <div
                         className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.show_action_messages ? 'translate-x-5' : 'translate-x-0.5'}`}
@@ -1700,12 +1638,208 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           m.systemToast.success(t('settings.testToastMsg'))
                         );
                       }}
-                      className="btn btn-primary w-full"
+                      className="btn btn-primary w-full rounded-[4px] border border-white/[0.08]"
                     >
                       {t('settings.testToast')}
+                      </button>
+                    </div>
+                  </section>
+              )}
+
+              {/* --- MAINTENANCE TAB --- */}
+              {activeTab === 'maintenance' && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 space-y-8 duration-500">
+                  {/* Check for Updates */}
+                  <section className="space-y-4">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-cyan-400/80">
+                      <RotateCcw size={14} /> Updates
+                    </h3>
+                    <div className="flex items-center justify-between rounded-[4px] border border-white/[0.08] bg-[#2D2D2D] p-3">
+                      <div>
+                        <span className="text-sm font-medium">{t('settings.autoCheckUpdates')}</span>
+                        <p className="text-xs text-muted-foreground">{t('settings.autoCheckUpdatesDesc')}</p>
+                      </div>
+                      <button
+                        onClick={() =>
+                          updateSetting('auto_check_updates', !(settings.auto_check_updates ?? false))
+                        }
+                        className={`h-6 w-11 rounded-full transition-colors ${(settings.auto_check_updates ?? false) ? 'bg-primary' : 'bg-white/10'}`}
+                      >
+                        <span
+                          className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.auto_check_updates ?? false) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                        />
+                      </button>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        const loadingToast = toast.loading(t('settings.checkingUpdates'));
+                        try {
+                          const update = await check({ timeout: 15000 });
+                          toast.dismiss(loadingToast);
+                          if (update) {
+                            toast.success(t('settings.updateAvailable', { version: update.version }));
+                          } else {
+                            toast.info(t('settings.noUpdates'));
+                          }
+                        } catch (err: any) {
+                          toast.dismiss(loadingToast);
+                          const raw = typeof err === 'string' ? err : err?.message || String(err);
+                          const msg = raw.length > 80 ? raw.slice(0, 80) + '...' : raw;
+                          if (/fetch|network|connect|timeout|404|not found/i.test(raw)) {
+                            toast.info('Update server is not reachable yet. This is normal if no release version has been published.');
+                          } else {
+                            toast.error(`${t('settings.updateError')}: ${msg}`);
+                          }
+                          console.error('Update check failed:', err);
+                        }
+                      }}
+                      className="btn border border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 rounded-[4px] w-full"
+                    >
+                      <RotateCcw size={16} className="mr-2" />
+                      {t('settings.checkForUpdates')}
                     </button>
-                  </div>
-                </section>
+                  </section>
+
+                  {/* Data Management */}
+                  <section className="space-y-4">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-rose-400/80">
+                      <Database size={14} /> Data Management
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={confirmClearHistory}
+                        className="btn border border-destructive/20 bg-destructive/10 text-destructive hover:bg-destructive/20 rounded-[4px]"
+                      >
+                        <Trash2 size={16} className="mr-2" />
+                        {t('settings.clearHistory')}
+                      </button>
+                      <button
+                        onClick={async () => {
+                          try {
+                            const count = await invoke<number>('remove_duplicate_clips');
+                            toast.success(t('settings.removeDuplicatesSuccess', { count }));
+                            const newSize = await invoke<number>('get_clipboard_history_size');
+                            setHistorySize(newSize);
+                          } catch (error) {
+                            console.error(error);
+                            toast.error(`Failed to remove duplicates: ${error}`);
+                          }
+                        }}
+                        className="btn btn-secondary text-xs rounded-[4px]"
+                      >
+                        {t('settings.removeDuplicates')}
+                      </button>
+                    </div>
+                  </section>
+
+                  {/* Panic Room */}
+                  <section className="space-y-4">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-rose-500/80">
+                      <Flame size={14} /> Panic Room
+                    </h3>
+                    <div className="flex flex-col gap-3 rounded-[4px] border border-rose-500/20 bg-rose-500/5 p-4">
+                      <p className="text-xs text-muted-foreground">
+                        If the window becomes deformed, off-screen, or behaves erratically, use this
+                        to restore all layout and visibility settings to factory defaults.
+                      </p>
+                      <button
+                        onClick={handleResetLayout}
+                        className="flex w-full items-center justify-center gap-2 rounded-[4px] bg-rose-500 py-2.5 font-bold text-white shadow-lg shadow-rose-500/20 transition-all hover:bg-rose-600"
+                      >
+                        <RotateCcw size={16} />
+                        Reset Layout & Visibility
+                      </button>
+                    </div>
+                  </section>
+
+                  {/* Backup & Restore */}
+                  <section className="space-y-4">
+                    <h3 className="text-[13px] font-semibold text-primary/80">Backup & Restore</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={async () => {
+                          const id = toast.loading('Generating backup...');
+                          try {
+                            await invoke('export_backup_to_file');
+                            toast.success('Backup saved successfully', { id });
+                          } catch (error) {
+                            if (error === 'Export cancelled') {
+                              toast.dismiss(id);
+                            } else {
+                              toast.error(`Export failed: ${error}`, { id });
+                            }
+                          }
+                        }}
+                        className="btn border border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 rounded-[4px]"
+                      >
+                        <FolderOpen size={16} className="mr-2" />
+                        Export Backup (JSON)
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setConfirmDialog({
+                            isOpen: true,
+                            title: 'Import Backup?',
+                            message:
+                              'This will REPLACE all current clips, folders, images, and settings with the backup data. Your current data will be lost. Export a backup first if you want to keep it.',
+                            action: async () => {
+                              const id = toast.loading('Restoring backup...');
+                              try {
+                                await invoke('import_backup_from_file');
+                                toast.success('Restore complete! CyberPaste has been updated.', {
+                                  id,
+                                });
+                                setTimeout(() => window.location.reload(), 1500);
+                              } catch (error) {
+                                if (error === 'Import cancelled') {
+                                  toast.dismiss(id);
+                                } else {
+                                  toast.error(`Import failed: ${error}`, { id });
+                                }
+                              }
+                            },
+                          });
+                        }}
+                        className="btn border border-orange-500/20 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 rounded-[4px]"
+                      >
+                        <Plus size={16} className="mr-2" />
+                        Import Backup
+                      </button>
+                    </div>
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      * Export saves all clips, images, folders, and settings. Import replaces
+                      everything with the backup data.
+                    </p>
+                  </section>
+
+                  {/* Debug */}
+                  <section className="space-y-4 border-t border-white/[0.05] pt-4">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-muted-foreground">
+                      <FlaskConical size={14} /> Debug
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => {
+                          emit('load-demo-data');
+                          toast.info('Demo clips loaded');
+                        }}
+                        className="btn border border-white/[0.08] bg-[#1E1E1E] text-white/70 hover:bg-white/10 rounded-[4px] text-xs"
+                      >
+                        Load 20 demo clips
+                      </button>
+                      <button
+                        onClick={() => {
+                          emit('restore-actual-data');
+                          toast.info('Data restored');
+                        }}
+                        className="btn border border-white/[0.08] bg-[#1E1E1E] text-white/70 hover:bg-white/10 rounded-[4px] text-xs"
+                      >
+                        Restore actual data
+                      </button>
+                    </div>
+                  </section>
+                </div>
               )}
 
               {/* --- ABOUT TAB --- */}
@@ -1726,7 +1860,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   </div>
 
                   <div className="grid grid-cols-1 gap-4">
-                    <div className="space-y-4 rounded-xl border border-border bg-card/30 p-6">
+                    <div className="space-y-4 rounded-[4px] border border-white/[0.08] bg-[#2D2D2D] p-6">
                       <div className="flex items-center gap-3 text-primary">
                         <Terminal size={20} />
                         <h4 className="text-sm font-semibold uppercase tracking-wider">
@@ -1740,14 +1874,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <div className="flex flex-wrap gap-3 pt-2">
                         <button
                           onClick={openDataDir}
-                          className="flex items-center gap-2 rounded-lg bg-accent/50 px-4 py-2 text-sm font-medium transition-all hover:bg-accent hover:text-foreground"
+                          className="flex items-center gap-2 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-4 py-2 text-sm font-medium transition-all hover:bg-white/10"
                         >
                           <FolderOpen size={16} />
                           Data Directory
                         </button>
                         <button
                           onClick={openConsole}
-                          className="flex items-center gap-2 rounded-lg bg-accent/50 px-4 py-2 text-sm font-medium transition-all hover:bg-accent hover:text-foreground"
+                          className="flex items-center gap-2 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-4 py-2 text-sm font-medium transition-all hover:bg-white/10"
                         >
                           <Terminal size={16} />
                           Developer Console
@@ -1755,7 +1889,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
                     </div>
 
-                    <div className="space-y-4 rounded-xl border border-border bg-card/30 p-6">
+                    <div className="space-y-4 rounded-[4px] border border-white/[0.08] bg-[#2D2D2D] p-6">
                       <div className="flex items-center gap-3 text-primary">
                         <Heart size={20} />
                         <h4 className="text-sm font-semibold uppercase tracking-wider">
@@ -1771,7 +1905,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           onClick={() =>
                             openUrl('https://github.com/CyberGems/CyberPaste').catch(console.error)
                           }
-                          className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium transition-all hover:bg-accent"
+                          className="flex items-center gap-2 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-4 py-2 text-sm font-medium transition-all hover:bg-white/10"
                         >
                           <ExternalLink size={16} />
                           GitHub Repository
@@ -1782,7 +1916,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               'https://github.com/CyberGems/CyberPaste/blob/main/LICENSE'
                             ).catch(console.error)
                           }
-                          className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium transition-all hover:bg-accent"
+                          className="flex items-center gap-2 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-4 py-2 text-sm font-medium transition-all hover:bg-white/10"
                         >
                           <Info size={16} />
                           License (GPL-3.0)
@@ -1795,28 +1929,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
             </div>
           </div>
         </div>
-
-        {/* Debug Tools — dev build only */}
-        {import.meta.env.DEV && (
-          <div className="border-t border-border px-4 py-3">
-            <p className="mb-2 text-xs font-medium text-muted-foreground">Debug</p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => emit('load-demo-data')}
-                className="flex items-center gap-2 rounded-md border border-dashed border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-primary"
-              >
-                <FlaskConical size={12} />
-                Load 20 demo clips
-              </button>
-              <button
-                onClick={() => emit('restore-actual-data')}
-                className="flex items-center gap-2 rounded-md border border-dashed border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
-              >
-                Restore actual data
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Footer */}
         <div className="flex flex-col items-center gap-1 border-t border-border bg-background px-4 py-3 text-center">

@@ -12,6 +12,7 @@ interface KeyboardOptions {
   onPaste?: () => void;
   onToggleMode?: () => void;
   toggleModeHotkey?: string; // e.g. "Ctrl+M"
+  onStartTypingSearch?: (char: string) => void;
 }
 
 export function useKeyboard(options: KeyboardOptions) {
@@ -83,6 +84,20 @@ export function useKeyboard(options: KeyboardOptions) {
         }
         e.preventDefault();
         options.onDelete();
+      }
+
+      // Type-to-search: activate search when user types a printable character
+      if (
+        options.onStartTypingSearch &&
+        !isTyping &&
+        e.key.length === 1 &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        !e.metaKey &&
+        e.key !== 'p'
+      ) {
+        e.preventDefault();
+        options.onStartTypingSearch(e.key);
       }
 
       if (e.key === 'p' && !e.metaKey && !e.ctrlKey && options.onPin) {

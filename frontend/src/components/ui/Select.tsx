@@ -58,25 +58,25 @@ export function Select({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={clsx(
-          'flex w-full items-center justify-between rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring',
+          'flex w-full items-center justify-between rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-foreground transition-all duration-200 focus:outline-none focus:ring-0',
           disabled && 'cursor-not-allowed opacity-50',
-          isOpen && 'border-ring ring-2 ring-ring'
+          isOpen && 'border-white/20'
         )}
       >
         <span className={clsx(!selectedOption && 'text-muted-foreground')}>
           {selectedOption ? selectedOption.label : placeholder || 'Select...'}
         </span>
         <ChevronDown
-          size={16}
+          size={12}
           className={clsx(
-            'text-muted-foreground transition-transform duration-200',
+            'ml-2 opacity-50 text-muted-foreground transition-transform duration-200',
             isOpen && 'rotate-180'
           )}
         />
       </button>
 
       {isOpen && (
-        <div className="animate-in fade-in-0 zoom-in-95 absolute left-0 top-full z-50 mt-1 w-full overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-md duration-100">
+        <div className="animate-in fade-in-0 zoom-in-95 absolute left-0 top-full z-50 mt-1 w-full overflow-hidden rounded-[6px] border border-white/[0.08] bg-[#2D2D2D] text-popover-foreground shadow-lg duration-100">
           <div className="max-h-60 overflow-y-auto py-1">
             {options.map((option) => (
               <button
@@ -84,14 +84,14 @@ export function Select({
                 type="button"
                 onClick={() => handleSelect(option.value)}
                 className={clsx(
-                  'relative flex w-full cursor-default select-none items-center py-1.5 pl-3 pr-8 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground',
-                  option.value === value && 'bg-accent/50 font-medium text-accent-foreground'
+                  'relative flex w-full cursor-default select-none items-center py-1.5 pl-3 pr-8 text-[12px] outline-none transition-colors hover:bg-white/10 hover:text-white',
+                  option.value === value && 'bg-white/[0.05] font-medium text-white'
                 )}
               >
                 <span className="truncate">{option.label}</span>
                 {option.value === value && (
                   <span className="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
-                    <Check size={14} className="text-primary" />
+                    <Check size={14} className="text-white" />
                   </span>
                 )}
               </button>

@@ -95,6 +95,9 @@ impl SettingsManager {
         if let Some(v) = get_val(pool, "scroll_direction").await {
             settings.scroll_direction = v;
         }
+        if let Some(v) = get_val(pool, "clip_numbering").await {
+            settings.clip_numbering = v;
+        }
         if let Some(v) = get_val(pool, "pinned").await {
             if let Ok(b) = v.parse() {
                 settings.pinned = b;

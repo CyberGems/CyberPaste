@@ -159,7 +159,7 @@ export function ToastWindow() {
     ? 'bg-zinc-900/95 border border-zinc-700/50 text-white shadow-xl'
     : isDark
       ? 'bg-zinc-950/95 border border-zinc-800 text-white shadow-2xl'
-      : 'bg-zinc-900/85 backdrop-blur-xl border border-[#7A00FF]/20 text-white shadow-[0_8px_30px_rgb(0,0,0,0.6),0_0_15px_rgba(0,242,255,0.1)]';
+      : 'bg-[#1A1B1F] border border-[rgba(0,200,215,0.627)] text-white shadow-[0_3px_18px_rgba(0,0,0,0.32)]';
 
   return (
     <div className="flex h-full w-full items-center" data-tauri-drag-region>
