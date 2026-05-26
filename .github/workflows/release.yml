@@ -73,7 +73,7 @@ jobs:
 
       - uses: tauri-apps/tauri-action@v0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
           # TAURI_PRIVATE_KEY and TAURI_KEY_PASSWORD are required for the updater
           # Ensure these are set in the GitHub repository secrets
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
