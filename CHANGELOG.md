@@ -2,6 +2,16 @@
 
 All notable changes to CyberPaste will be documented in this file.
 
+## v1.5.0
+
+### Added
+- **Global Keyboard Hook for Cut Detection**: Implemented low-level global Win32 hook (`WH_KEYBOARD_LL`) to accurately identify `Ctrl+X` and `Shift+Delete` cut events even when the main window is hidden in the background, updating the toast notifications to show "Cortado" / "Imagen cortada" with a custom Scissors icon.
+- **Dynamic Type Filter Option Counts**: Added real-time item counts next to each format filter (All, Text, Code, Image, URL, File) inside the type selector dropdown in Compact View.
+- **Toast Notification Click Navigation**: Enabled clicking on toast notifications to immediately open CyberPaste, navigate to the main Clipboard list, select the corresponding clip, and bring the window to the foreground.
+- **Main List Clip Reordering**: Restored and enabled clip reordering by dragging and dropping items within the main clipboard list.
+- **Symmetric Folder Drop Highlights**: Polished and resolved conflicting hover and selection styling on the main Clipboard tab and folders during clip drag-and-drop operations, preventing flickering and selection state resets.
+- **Move to Folder Context Option**: Added a three-dot menu option "Move to Folder..." inside the clip card menu for quick folder migrations.
+
 ## v1.2.2
 
 ### Added
