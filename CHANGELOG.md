@@ -2,6 +2,11 @@
 
 All notable changes to CyberPaste will be documented in this file.
 
+## v1.5.1
+
+### Fixed
+- **Release Build Correction**: Corrected the release deployment to ensure all local features and bug fixes (global cut hook, dynamic type counts, toast click navigation, clip reordering, etc.) are correctly compiled and bundled.
+
 ## v1.5.0
 
 ### Added
