@@ -399,6 +399,7 @@ pub fn run_app() {
                     "info".to_string(),
                     Some("welcome".to_string()),
                     None,
+                    None,
                 )
                 .await;
             });
@@ -457,6 +458,7 @@ pub fn run_app() {
             commands::simulate_ctrl_v,
             commands::show_toast,
             commands::hide_toast,
+            commands::click_toast,
             commands::set_toast_position,
             commands::toast_ready,
             commands::open_image_viewer,
@@ -472,6 +474,7 @@ pub fn position_window_at_bottom(window: &tauri::WebviewWindow) {
 }
 
 pub fn animate_window_show(window: &tauri::WebviewWindow) {
+    let _ = window.emit("window-visibility", true);
     // Safety guard to ensure IS_ANIMATING is always reset even on panic
     struct AnimationGuard;
     impl Drop for AnimationGuard {
@@ -751,6 +754,7 @@ pub fn animate_window_hide(
     window: &tauri::WebviewWindow,
     on_done: Option<Box<dyn FnOnce() + Send>>,
 ) {
+    let _ = window.emit("window-visibility", false);
     // Safety guard to ensure IS_ANIMATING is always reset
     struct AnimationGuard;
     impl Drop for AnimationGuard {

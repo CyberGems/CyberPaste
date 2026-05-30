@@ -1078,7 +1078,7 @@ pub async fn reorder_clip(
     .ok_or("Clip or target not found")?;
 
     let folder_sub = format!(
-        "folder_id = (SELECT folder_id FROM clips WHERE uuid = '{}') AND is_deleted = 0",
+        "IFNULL(folder_id, -1) = IFNULL((SELECT folder_id FROM clips WHERE uuid = '{}'), -1) AND is_deleted = 0",
         target_uuid.replace('\'', "''")
     );
 
@@ -2424,6 +2424,7 @@ pub struct ToastPayload {
     toast_type: String,
     clip_type: Option<String>,
     image_preview: Option<String>,
+    clip_uuid: Option<String>,
 }
 
 static PENDING_TOAST: Lazy<Mutex<Option<ToastPayload>>> =
@@ -2469,6 +2470,7 @@ pub async fn show_toast(
     toast_type: String,            // "success", "error", "info"
     clip_type: Option<String>,     // "text", "image", "html", "rtf", "file", "url"
     image_preview: Option<String>, // base64 encoded tiny thumbnail for images
+    clip_uuid: Option<String>,
 ) -> Result<(), String> {
     use crate::settings_manager::SettingsManager;
     use std::sync::Arc;
@@ -2483,6 +2485,7 @@ pub async fn show_toast(
         toast_type,
         clip_type: clip_type.clone(),
         image_preview,
+        clip_uuid,
     };
 
     {
@@ -2532,6 +2535,22 @@ pub async fn show_toast(
 pub async fn hide_toast(app: AppHandle) -> Result<(), String> {
     if let Some(win) = app.get_webview_window("toast") {
         let _ = win.hide();
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn click_toast(app: AppHandle, clip_uuid: String) -> Result<(), String> {
+    if let Some(toast_win) = app.get_webview_window("toast") {
+        let _ = toast_win.hide();
+    }
+
+    if let Some(main_win) = app.get_webview_window("main") {
+        crate::position_window_at_bottom(&main_win);
+        let _ = main_win.unminimize();
+        let _ = main_win.show();
+        let _ = main_win.set_focus();
+        let _ = main_win.emit("select-clip", clip_uuid);
     }
     Ok(())
 }

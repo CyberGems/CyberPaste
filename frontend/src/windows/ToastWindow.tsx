@@ -12,6 +12,7 @@ import {
   Code,
   FolderOpen,
   Link,
+  Scissors,
 } from 'lucide-react';
 import { Settings } from '../types';
 
@@ -20,13 +21,37 @@ interface ToastPayload {
   toast_type: 'success' | 'error' | 'info';
   clip_type?: string | null;
   image_preview?: string | null; // base64 thumbnail
+  clip_uuid?: string | null;
 }
 
 function getClipTitle(clipType?: string | null, toastType?: string): string {
   if (!clipType) {
     if (toastType === 'success') return 'Éxito';
     if (toastType === 'error') return 'Error';
+    if (toastType === 'cut') return 'Cortado';
     return 'Aviso';
+  }
+  if (toastType === 'cut') {
+    switch (clipType) {
+      case 'welcome':
+        return 'CyberPaste listo';
+      case 'image':
+        return 'Imagen cortada';
+      case 'text':
+        return 'Texto cortado';
+      case 'code':
+        return 'Código cortado';
+      case 'html':
+        return 'HTML cortado';
+      case 'rtf':
+        return 'Texto enriquecido cortado';
+      case 'file':
+        return 'Archivo cortado';
+      case 'url':
+        return 'URL cortada';
+      default:
+        return 'Cortado';
+    }
   }
   switch (clipType) {
     case 'welcome':
@@ -51,6 +76,9 @@ function getClipTitle(clipType?: string | null, toastType?: string): string {
 }
 
 function getClipIcon(clipType?: string | null, toastType?: string) {
+  if (toastType === 'cut') {
+    return <Scissors className="h-5 w-5 text-[#FF00D0]" />;
+  }
   if (!clipType) {
     if (toastType === 'success') return <CheckCircle2 className="h-5 w-5 text-[#00F2FF]" />;
     if (toastType === 'error') return <AlertTriangle className="h-5 w-5 text-[#FF00D0]" />;
@@ -161,8 +189,18 @@ export function ToastWindow() {
       ? 'bg-zinc-950/95 border border-zinc-800 text-white shadow-2xl'
       : 'bg-[#1A1B1F] border border-[rgba(0,200,215,0.627)] text-white shadow-[0_3px_18px_rgba(0,0,0,0.32)]';
 
+  const handleToastClick = () => {
+    if (toast && toast.clip_uuid) {
+      invoke('click_toast', { clipUuid: toast.clip_uuid }).catch(console.error);
+    }
+  };
+
   return (
-    <div className="flex h-full w-full items-center" data-tauri-drag-region>
+    <div
+      onClick={handleToastClick}
+      className={`flex h-full w-full items-center ${toast && toast.clip_uuid ? 'cursor-pointer' : ''}`}
+      data-tauri-drag-region
+    >
       <div
         className={`relative w-full overflow-hidden rounded-xl transition-all duration-300 ${containerClasses} ${isClosing ? 'translate-y-2 scale-95 opacity-0' : 'translate-y-0 scale-100 opacity-100'}`}
       >

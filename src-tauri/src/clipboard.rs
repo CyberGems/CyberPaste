@@ -36,6 +36,123 @@ use windows::Win32::System::Threading::{OpenProcess, PROCESS_QUERY_INFORMATION, 
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     SendInput, INPUT, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP, VK_INSERT, VK_SHIFT,
 };
+
+use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::atomic::{AtomicU64, Ordering};
+
+static LAST_CUT_TIMESTAMP: AtomicU64 = AtomicU64::new(0);
+
+#[cfg(target_os = "windows")]
+static mut CTRL_DOWN: bool = false;
+#[cfg(target_os = "windows")]
+static mut SHIFT_DOWN: bool = false;
+
+#[cfg(target_os = "windows")]
+unsafe extern "system" fn keyboard_proc(code: i32, wparam: windows::Win32::Foundation::WPARAM, lparam: windows::Win32::Foundation::LPARAM) -> windows::Win32::Foundation::LRESULT {
+    use windows::Win32::UI::WindowsAndMessaging::{
+        CallNextHookEx, WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP, KBDLLHOOKSTRUCT,
+    };
+    use windows::Win32::UI::Input::KeyboardAndMouse::{
+        VK_CONTROL, VK_LCONTROL, VK_RCONTROL, VK_SHIFT, VK_LSHIFT, VK_RSHIFT,
+    };
+
+    if code >= 0 {
+        let kb = unsafe { *(lparam.0 as *const KBDLLHOOKSTRUCT) };
+        let vk = kb.vkCode;
+
+        let is_down = wparam.0 == WM_KEYDOWN as usize || wparam.0 == WM_SYSKEYDOWN as usize;
+        let is_up = wparam.0 == WM_KEYUP as usize || wparam.0 == WM_SYSKEYUP as usize;
+
+        if vk == VK_CONTROL.0 as u32 || vk == VK_LCONTROL.0 as u32 || vk == VK_RCONTROL.0 as u32 {
+            if is_down {
+                CTRL_DOWN = true;
+            } else if is_up {
+                CTRL_DOWN = false;
+            }
+        } else if vk == VK_SHIFT.0 as u32 || vk == VK_LSHIFT.0 as u32 || vk == VK_RSHIFT.0 as u32 {
+            if is_down {
+                SHIFT_DOWN = true;
+            } else if is_up {
+                SHIFT_DOWN = false;
+            }
+        } else if vk == 0x58 { // 'X'
+            if is_down && CTRL_DOWN {
+                let now = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_millis() as u64;
+                LAST_CUT_TIMESTAMP.store(now, Ordering::SeqCst);
+                log::info!("CLIPBOARD: Global hook detected Cut (Ctrl+X) at timestamp {}", now);
+            }
+        } else if vk == 0x2E { // 'Delete'
+            if is_down && SHIFT_DOWN {
+                let now = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_millis() as u64;
+                LAST_CUT_TIMESTAMP.store(now, Ordering::SeqCst);
+                log::info!("CLIPBOARD: Global hook detected Cut (Shift+Delete) at timestamp {}", now);
+            }
+        }
+    }
+
+    CallNextHookEx(None, code, wparam, lparam)
+}
+
+#[cfg(target_os = "windows")]
+fn start_cut_detection_thread() {
+    log::info!("CLIPBOARD: Spawning cut detection thread with global hook...");
+    std::thread::spawn(|| {
+        use windows::Win32::UI::WindowsAndMessaging::{
+            GetMessageW, MSG, SetWindowsHookExW, WH_KEYBOARD_LL,
+        };
+
+        unsafe {
+            let hook = SetWindowsHookExW(
+                WH_KEYBOARD_LL,
+                Some(keyboard_proc),
+                None,
+                0,
+            );
+
+            match hook {
+                Ok(h) => {
+                    log::info!("CLIPBOARD: Global keyboard hook registered successfully!");
+                    let mut msg = MSG::default();
+                    while GetMessageW(&mut msg, None, 0, 0).as_bool() {
+                        // Pump messages
+                    }
+                    let _ = windows::Win32::UI::WindowsAndMessaging::UnhookWindowsHookEx(h);
+                }
+                Err(e) => {
+                    log::error!("CLIPBOARD: Failed to register global keyboard hook: {:?}", e);
+                }
+            }
+        }
+    });
+}
+
+#[cfg(target_os = "windows")]
+fn detect_if_cut_key_pressed() -> bool {
+    let last_cut = LAST_CUT_TIMESTAMP.load(Ordering::SeqCst);
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as u64;
+    
+    let diff = now.saturating_sub(last_cut);
+    let is_cut = diff < 600;
+    log::info!("CLIPBOARD: detect_if_cut_key_pressed: now={}, last_cut={}, diff={}ms, is_cut={}", now, last_cut, diff, is_cut);
+    is_cut
+}
+
+#[cfg(not(target_os = "windows"))]
+fn start_cut_detection_thread() {}
+
+#[cfg(not(target_os = "windows"))]
+fn detect_if_cut_key_pressed() -> bool {
+    false
+}
 #[cfg(target_os = "windows")]
 use windows::Win32::UI::Shell::{
     SHGetFileInfoW, SHFILEINFOW, SHGFI_ICON, SHGFI_LARGEICON, SHGFI_USEFILEATTRIBUTES,
@@ -55,7 +172,6 @@ static LAST_STABLE_HASH: Lazy<parking_lot::Mutex<Option<String>>> =
 pub static CLIPBOARD_SYNC: Lazy<Arc<tokio::sync::Mutex<()>>> =
     Lazy::new(|| Arc::new(tokio::sync::Mutex::new(())));
 
-use std::sync::atomic::{AtomicU64, Ordering};
 static DEBOUNCE_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 pub fn set_ignore_hash(hash: String) {
@@ -64,6 +180,7 @@ pub fn set_ignore_hash(hash: String) {
 }
 
 pub fn init(app: &AppHandle, db: Arc<Database>) {
+    start_cut_detection_thread();
     let app_clone = app.clone();
     let db_clone = db.clone();
 
@@ -85,6 +202,7 @@ pub fn init(app: &AppHandle, db: Arc<Database>) {
     app.listen(event_name, move |_event| {
         let app = app_clone.clone();
         let db = db_clone.clone();
+        let is_cut = detect_if_cut_key_pressed();
 
         // DEBOUNCE LOGIC:
         let current_count = DEBOUNCE_COUNTER.fetch_add(1, Ordering::SeqCst) + 1;
@@ -107,7 +225,7 @@ pub fn init(app: &AppHandle, db: Arc<Database>) {
                     .await
                     .unwrap_or((None, None, None, None, false));
 
-            process_clipboard_change(app, db, source_app_info).await;
+            process_clipboard_change(app, db, source_app_info, is_cut).await;
         });
     });
 }
@@ -163,6 +281,7 @@ async fn process_clipboard_change(
     app: AppHandle,
     db: Arc<Database>,
     source_app_info: SourceAppInfo,
+    is_cut: bool,
 ) {
     let started = std::time::Instant::now();
     let mut image_read_ms = 0u128;
@@ -637,12 +756,18 @@ async fn process_clipboard_change(
             } else {
                 None
             };
+            let toast_type_str = if is_cut {
+                "cut".to_string()
+            } else {
+                "info".to_string()
+            };
             let _ = crate::commands::show_toast(
                 app.clone(),
                 msg,
-                "info".to_string(),
+                toast_type_str,
                 Some(clip_type.to_string()),
                 image_b64,
+                Some(emitted_id),
             )
             .await;
         }

@@ -115,7 +115,7 @@ interface ControlBarProps {
   onMoreClick: () => void;
   onMoveClip: (clipId: string, folderId: string | null) => void;
   isDragging: boolean;
-  dragTargetFolderId: string | null;
+  dragTargetFolderId: string | null | undefined;
   onDragHover: (folderId: string | null) => void;
   onDragLeave: () => void;
   totalClipCount: number;
@@ -137,6 +137,7 @@ interface ControlBarProps {
   lastClipTime?: string | null;
   dbSizeBytes?: number;
   onReorderFolder?: (folderId: string, targetId: string, position: 'before' | 'after') => void;
+  isWindowActive?: boolean;
 }
 
 export const ControlBar: React.FC<ControlBarProps> = ({
@@ -172,6 +173,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   lastClipTime,
   dbSizeBytes,
   onReorderFolder,
+  isWindowActive = true,
 }) => {
   const foldersRef = React.useRef<HTMLDivElement>(null);
 
@@ -364,9 +366,10 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   ];
   const [hintIndex, setHintIndex] = useState(0);
   useEffect(() => {
+    if (!isWindowActive) return;
     const timer = setInterval(() => setHintIndex((i) => (i + 1) % HINTS.length), 4000);
     return () => clearInterval(timer);
-  }, []);
+  }, [isWindowActive]);
 
   // ── Last clip age (live-updating) ──
   const [lastClipAge, setLastClipAge] = useState('');
@@ -375,6 +378,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
       setLastClipAge('');
       return;
     }
+    if (!isWindowActive) return;
     const update = () => {
       const diffMs = Date.now() - new Date(lastClipTime).getTime();
       if (diffMs < 0) {
@@ -390,7 +394,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
     update();
     const timer = setInterval(update, 5000);
     return () => clearInterval(timer);
-  }, [lastClipTime]);
+  }, [lastClipTime, isWindowActive]);
 
   // ── DB size formatting ──
   const formatBytes = (bytes: number) => {
@@ -422,7 +426,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             className="absolute inset-y-0 w-[25%]"
             style={{
               background: 'linear-gradient(90deg, transparent, rgba(6,182,212,0.05), transparent)',
-              animation: 'hud-scan 4s ease-in-out infinite alternate',
+              animation: isWindowActive ? 'hud-scan 4s ease-in-out infinite alternate' : 'none',
             }}
           />
         </div>
@@ -484,7 +488,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               <span className="relative flex h-1.5 w-1.5">
                 <span
                   className="absolute inset-0 rounded-full bg-cyan-400"
-                  style={{ animation: 'hud-breathe 3s ease-in-out infinite' }}
+                  style={{ animation: isWindowActive ? 'hud-breathe 3s ease-in-out infinite' : 'none' }}
                 />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-cyan-500" />
               </span>
@@ -635,9 +639,11 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               data-selected={highlightedFolderId === null}
               className={clsx(
                 'group relative flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1 text-sm font-bold transition-all',
-                highlightedFolderId === null && !dragTargetFolderId
+                highlightedFolderId === null && dragTargetFolderId === undefined
                   ? 'border border-indigo-500/60 bg-indigo-500/30 text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.5)] ring-1 ring-indigo-500/40'
-                  : 'border border-transparent bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60'
+                  : dragTargetFolderId === null && isDragging
+                    ? 'border-transparent bg-primary/40 ring-2 ring-primary text-white'
+                    : 'border border-transparent bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60'
               )}
             >
               <div
@@ -682,7 +688,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               const Icon = IconMap[folder.icon || 'FolderIcon'] || FolderIcon;
               const folderColor = folder.color || '#22d3ee';
 
-              const activeStyle = isSelected && !isDragTarget ? {
+              const activeStyle = isSelected && dragTargetFolderId === undefined ? {
                 borderColor: `${folderColor}80`,
                 backgroundColor: `${folderColor}20`,
                 boxShadow: `0 0 20px ${folderColor}40, inset 0 0 10px ${folderColor}15`,
@@ -712,7 +718,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                     style={activeStyle}
                     className={clsx(
                       'flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1 text-sm font-bold transition-all',
-                      isSelected && !isDragTarget
+                      isSelected && dragTargetFolderId === undefined
                         ? 'border ring-1 ring-white/10'
                         : isDragTarget
                           ? 'border-transparent bg-primary/40 ring-2 ring-primary text-white'

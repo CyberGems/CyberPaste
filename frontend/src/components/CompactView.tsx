@@ -94,13 +94,14 @@ const TypeFilterDropdown: React.FC<{
   value: CompactTypeFilter;
   onChange: (v: CompactTypeFilter) => void;
   t: (k: string, opts?: any) => string;
-}> = ({ value, onChange, t }) => {
+  counts: Record<CompactTypeFilter, number>;
+}> = ({ value, onChange, t, counts }) => {
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number; width: number }>({
     top: 0,
     left: 0,
-    width: 150,
+    width: 170,
   });
 
   useEffect(() => {
@@ -126,7 +127,7 @@ const TypeFilterDropdown: React.FC<{
   const openMenu = () => {
     if (!buttonRef.current) return;
     const rect = buttonRef.current.getBoundingClientRect();
-    const width = 150;
+    const width = 170;
     const viewportRight = window.innerWidth - 6;
     let left = rect.right - width;
     if (left + width > viewportRight) left = viewportRight - width;
@@ -190,6 +191,12 @@ const TypeFilterDropdown: React.FC<{
               >
                 <OptIcon size={12} className={cn(isSel ? 'text-cyan-300' : 'text-white/60')} />
                 <span className="flex-1 text-left">{optLabel}</span>
+                <span className={cn(
+                  'text-[9px] font-mono opacity-40 px-1',
+                  isSel && 'opacity-85 text-cyan-300'
+                )}>
+                  ({counts[opt.value]})
+                </span>
                 {isSel && <Check size={11} className="text-cyan-400" />}
               </button>
             );
@@ -277,7 +284,7 @@ interface CompactViewProps {
   reorderTargetClipId?: string | null;
   reorderTargetPosition?: 'before' | 'after' | null;
   reorderEnabled?: boolean;
-  dragTargetFolderId: string | null;
+  dragTargetFolderId: string | null | undefined;
   compactFolderLayout?: 'horizontal' | 'vertical';
   compactSidebarCollapsed?: boolean;
   onToggleSidebar?: () => void;
@@ -289,9 +296,11 @@ interface CompactViewProps {
   onTypeFilterChange?: (v: CompactTypeFilter) => void;
   searchFocusToken?: number;
   clipNumbering?: 'positional' | 'countdown';
+  isWindowActive?: boolean;
 }
 
 export const CompactView: React.FC<CompactViewProps> = ({
+  isWindowActive = true,
   clips,
   folders,
   selectedFolder,
@@ -363,6 +372,23 @@ export const CompactView: React.FC<CompactViewProps> = ({
     [clips, typeFilter]
   );
   const isFiltering = typeFilter !== 'all';
+
+  const filterCounts = useMemo(() => {
+    let all = clips.length;
+    let text = 0;
+    let code = 0;
+    let image = 0;
+    let url = 0;
+    let file = 0;
+    clips.forEach((c) => {
+      if (c.clip_type === 'text') text++;
+      else if (c.clip_type === 'code' || c.clip_type === 'html' || c.clip_type === 'rtf') code++;
+      else if (c.clip_type === 'image') image++;
+      else if (c.clip_type === 'url') url++;
+      else if (c.clip_type === 'file') file++;
+    });
+    return { all, text, code, image, url, file };
+  }, [clips]);
 
   // Folder Reorder Drag State (Simulated)
   const [draggingFolderId, setDraggingFolderId] = React.useState<string | null>(null);
@@ -597,8 +623,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
   const folderPillClass = (_folderId: string | null, isSelected: boolean, isDragTarget: boolean) =>
     cn(
       'px-3 py-1 rounded-full text-[10px] font-medium transition-all whitespace-nowrap flex items-center gap-1.5 border',
-      isSelected && !dragTargetFolderId
-        ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/40 shadow-[0_0_12px_rgba(99,102,241,0.3)]'
+      isSelected && dragTargetFolderId === undefined
+        ? 'border-indigo-500/40 bg-indigo-500/15 shadow-[0_0_12px_rgba(99,102,241,0.2)] text-white/90'
         : isDragTarget && isDragging
           ? 'bg-cyan-500/30 border-cyan-400 text-white'
           : 'bg-white/5 hover:bg-white/10 border-transparent opacity-75 hover:opacity-100'
@@ -612,8 +638,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
   ) =>
     cn(
       'px-3 py-1 rounded-full text-[10px] font-medium transition-all whitespace-nowrap flex items-center gap-1.5 border',
-      isSelected && !dragTargetFolderId
-        ? 'bg-primary/10 text-white/80 border-primary/60 shadow-[0_0_12px_rgba(99,102,241,0.3)] ring-1 ring-primary/40'
+      isSelected && dragTargetFolderId === undefined
+        ? 'border-indigo-500/40 bg-indigo-500/15 shadow-[0_0_12px_rgba(99,102,241,0.2)] text-white/90'
         : isDragTarget && isDragging
           ? 'bg-cyan-500/30 border-cyan-400 text-white'
           : 'bg-white/5 hover:bg-white/10 border-transparent opacity-75 hover:opacity-100'
@@ -646,7 +672,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
             className="absolute inset-y-0 w-[25%]"
             style={{
               background: 'linear-gradient(90deg, transparent, rgba(6,182,212,0.025), transparent)',
-              animation: 'compact-scan 6.5s ease-in-out infinite alternate',
+              animation: isWindowActive ? 'compact-scan 6.5s ease-in-out infinite alternate' : 'none',
             }}
           />
         </div>
@@ -757,8 +783,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 data-selected={highlightedFolderId === null}
                 className={cn(
                   'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-lg border px-2 py-1.5 text-[10px] font-medium transition-all',
-                  highlightedFolderId === null && !dragTargetFolderId
-                    ? 'border-indigo-500/40 bg-indigo-500/20 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.3)]'
+                  highlightedFolderId === null && dragTargetFolderId === undefined
+                    ? 'border-indigo-500/40 bg-indigo-500/15 shadow-[0_0_12px_rgba(99,102,241,0.2)] text-white/90'
                     : dragTargetFolderId === null && isDragging
                       ? 'border-cyan-400 bg-cyan-500/30 text-white'
                       : 'border-transparent bg-white/5 opacity-75 hover:bg-white/10 hover:opacity-100'
@@ -801,8 +827,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
                       onContextMenu={(e) => onFolderContextMenu?.(e, folder.id)}
                       className={cn(
                         'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-lg border px-2 py-1.5 text-[10px] font-medium transition-all',
-                        isSelected && !dragTargetFolderId
-                          ? 'border-primary/60 bg-primary/10 text-white/80 shadow-[0_0_12px_rgba(99,102,241,0.3)] ring-1 ring-primary/40'
+                        isSelected && dragTargetFolderId === undefined
+                          ? 'border-indigo-500/40 bg-indigo-500/15 shadow-[0_0_12px_rgba(99,102,241,0.2)] text-white/90'
                           : dragTargetFolderId === folder.id && isDragging
                             ? 'border-cyan-400 bg-cyan-500/30 text-white'
                             : 'border-transparent bg-white/5 opacity-75 hover:bg-white/10 hover:opacity-100',
@@ -878,6 +904,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     value={typeFilter}
                     onChange={onTypeFilterChange}
                     t={t}
+                    counts={filterCounts}
                   />
                 )}
               </div>
@@ -886,6 +913,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
             {/* List */}
             <div
               ref={listRef}
+              data-clip-list="true"
               className="no-scrollbar flex-1 space-y-1 overflow-y-auto px-2 pb-2"
               onScroll={handleListScroll}
             >
@@ -972,6 +1000,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   value={typeFilter}
                   onChange={onTypeFilterChange}
                   t={t}
+                  counts={filterCounts}
                 />
               )}
             </div>
@@ -1065,6 +1094,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
 
           <div
             ref={listRef}
+            data-clip-list="true"
             className="no-scrollbar flex-1 space-y-1 overflow-y-auto px-2 pb-2"
             onScroll={handleListScroll}
           >

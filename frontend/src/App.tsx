@@ -81,13 +81,48 @@ function App() {
   const settingsRef = useRef<Settings | null>(null);
   const isTogglingRef = useRef(false);
 
+  const [isWindowActive, setIsWindowActive] = useState(true);
+
   useEffect(() => {
     settingsRef.current = settings;
   }, [settings]);
 
+  useEffect(() => {
+    const updateVisibility = () => {
+      setIsWindowActive(document.visibilityState === 'visible');
+    };
+
+    document.addEventListener('visibilitychange', updateVisibility);
+
+    const focusPromise = listen('tauri://focus', () => {
+      setIsWindowActive(true);
+    });
+
+    const blurPromise = listen('tauri://blur', () => {
+      const isPinned = settingsRef.current?.pinned;
+      if (!isPinned || document.visibilityState === 'hidden') {
+        setIsWindowActive(false);
+      }
+    });
+
+    const visibilityPromise = listen<boolean>('window-visibility', (event) => {
+      setIsWindowActive(event.payload);
+    });
+
+    updateVisibility();
+
+    return () => {
+      document.removeEventListener('visibilitychange', updateVisibility);
+      focusPromise.then((f) => f());
+      blurPromise.then((f) => f());
+      visibilityPromise.then((f) => f());
+    };
+  }, [settings?.pinned]);
+
   // DB size for HUD status strip
   const [dbSizeBytes, setDbSizeBytes] = useState(0);
   useEffect(() => {
+    if (!isWindowActive) return;
     const fetchSize = () =>
       invoke<number>('get_db_size')
         .then(setDbSizeBytes)
@@ -95,11 +130,11 @@ function App() {
     fetchSize();
     const timer = setInterval(fetchSize, 30000); // refresh every 30s
     return () => clearInterval(timer);
-  }, []);
+  }, [isWindowActive]);
 
   // Simulated Drag State
   const [draggingClipId, setDraggingClipId] = useState<string | null>(null);
-  const [dragTargetFolderId, setDragTargetFolderId] = useState<string | null>(null);
+  const [dragTargetFolderId, setDragTargetFolderId] = useState<string | null | undefined>(undefined);
 
   // Reorder state
   const [reorderTargetClipId, setReorderTargetClipId] = useState<string | null>(null);
@@ -175,6 +210,19 @@ function App() {
       openSettings();
     });
 
+    // Listen for select-clip from toast click
+    const unlistenSelectClip = listen<string>('select-clip', (event) => {
+      const clipId = event.payload;
+      console.log('[App] Selecting clip from toast:', clipId);
+      setSelectedFolder(null);
+      setSearchQuery('');
+      setShowSearch(false);
+      setCompactTypeFilter('all');
+      setSelectedClipId(clipId);
+      setClipListResetToken((prev) => prev + 1);
+      getCurrentWindow().setFocus().catch(console.error);
+    });
+
     // Listen for reset-window-layout from settings
     const unlistenReset = listen('reset-window-layout', () => {
       handleResetSize();
@@ -231,6 +279,7 @@ function App() {
     return () => {
       unlisten.then((f) => f());
       unlistenOpenSettings.then((f) => f());
+      unlistenSelectClip.then((f) => f());
       unlistenReset.then((f) => f());
       unlistenResize.then((f) => f());
       unlistenDemo.then((fs) => fs.forEach((f) => f()));
@@ -454,12 +503,43 @@ function App() {
         return;
       }
 
-      // If we are already dragging, update position and detect reorder target
+      // If we are already dragging, update position and detect reorder target / folder hover
       if (state.isDragging) {
         updateDragIndicatorPosition(e.clientX, e.clientY);
 
+        // Detect folder hover (for moving clips from main clipboard to regular folders)
+        const elem = document.elementFromPoint(e.clientX, e.clientY);
+        const folderBtn = elem?.closest('[data-folder-id]');
+        if (folderBtn) {
+          const folderId = folderBtn.getAttribute('data-folder-id');
+          const targetId = folderId === 'clipboard' ? null : folderId;
+          
+          // Allow dropping to any folder as long as it's different from the currently viewed folder
+          if (targetId !== selectedFolderRef.current) {
+            if (dragStateRef.current.targetFolderId !== targetId) {
+              handleDragHover(targetId);
+            }
+            // Clear reorder target visual indicators when hovering over a folder
+            if (dragStateRef.current.reorderTargetClipId !== null) {
+              setReorderTargetClipId(null);
+              setReorderTargetPosition(null);
+              dragStateRef.current.reorderTargetClipId = null;
+              dragStateRef.current.reorderTargetPosition = null;
+            }
+          } else {
+            if (dragStateRef.current.targetFolderId !== undefined) {
+              handleDragLeave();
+            }
+          }
+        } else {
+          if (dragStateRef.current.targetFolderId !== undefined) {
+            handleDragLeave();
+          }
+        }
+
         // Detect reorder target using clips state for reliable lookup
-        if (selectedFolderRef.current && clipsRef.current.length > 0) {
+        const isOverClipList = elem?.closest('[data-clip-list="true"]');
+        if (isOverClipList && !folderBtn && clipsRef.current.length > 0) {
           const now = Date.now();
           if (now - lastReorderCheckRef.current > 50) {
             lastReorderCheckRef.current = now;
@@ -497,6 +577,13 @@ function App() {
                 dragStateRef.current.reorderTargetPosition = position;
               }
             }
+          }
+        } else {
+          if (dragStateRef.current.reorderTargetClipId !== null) {
+            setReorderTargetClipId(null);
+            setReorderTargetPosition(null);
+            dragStateRef.current.reorderTargetClipId = null;
+            dragStateRef.current.reorderTargetPosition = null;
           }
         }
         return;
@@ -594,13 +681,13 @@ function App() {
     const { clipId, targetFolderId, reorderTargetClipId, reorderTargetPosition } =
       dragStateRef.current;
 
-    // Save reorder targets before clearing state
-    const reorderClipId = reorderTargetClipId;
-    const reorderPos = reorderTargetPosition;
+    // Save reorder targets before clearing state (override reordering if dropping to a folder)
+    const reorderClipId = targetFolderId !== undefined ? null : reorderTargetClipId;
+    const reorderPos = targetFolderId !== undefined ? null : reorderTargetPosition;
 
     // Clear all state immediately
     setDraggingClipId(null);
-    setDragTargetFolderId(null);
+    setDragTargetFolderId(undefined);
     setReorderTargetClipId(null);
     setReorderTargetPosition(null);
     if (dragIndicatorRef.current) {
@@ -622,7 +709,7 @@ function App() {
     }
 
     // Handle reorder drop (priority over folder move)
-    if (clipId && reorderClipId && reorderPos && selectedFolderRef.current) {
+    if (clipId && reorderClipId && reorderPos) {
       try {
         await invoke('reorder_clip', {
           clipUuid: clipId,
@@ -646,7 +733,7 @@ function App() {
   };
 
   const handleDragLeave = () => {
-    setDragTargetFolderId(null);
+    setDragTargetFolderId(undefined);
     dragStateRef.current.targetFolderId = undefined;
   };
 
@@ -693,10 +780,10 @@ function App() {
     }
   }, [clipListResetToken]);
 
-  // Auto-select first clip and reset view (if enabled) when window gains focus (reopened via hotkey)
+  // Auto-select first clip and reset view (if enabled) when window is reopened (visibility becomes true)
   useEffect(() => {
-    const unlisten = listen('tauri://focus', () => {
-      if (settingsRef.current?.reset_view_on_paste) {
+    const unlisten = listen<boolean>('window-visibility', (event) => {
+      if (event.payload && settingsRef.current?.reset_view_on_paste) {
         setSearchQuery('');
         setShowSearch(false);
         setSelectedFolder(null);
@@ -1139,7 +1226,7 @@ function App() {
   return (
     <div
       data-el="app-root"
-      className="relative h-dvh w-full overflow-hidden"
+      className={`relative h-dvh w-full overflow-hidden ${!isWindowActive ? 'pause-all-animations' : ''}`}
       style={{ border: '1px solid rgba(34, 211, 238, 0.25)' }}
       onContextMenu={(e) => e.preventDefault()}
     >
@@ -1150,6 +1237,7 @@ function App() {
       >
         {settings?.view_mode === 'compact' ? (
           <CompactView
+            isWindowActive={isWindowActive}
             clips={clips}
             folders={folders}
             selectedFolder={selectedFolder}
@@ -1180,7 +1268,7 @@ function App() {
             dragTargetFolderId={dragTargetFolderId}
             reorderTargetClipId={reorderTargetClipId}
             reorderTargetPosition={reorderTargetPosition}
-            reorderEnabled={!!selectedFolder}
+            reorderEnabled={true}
             compactFolderLayout={settings?.compact_folder_layout || 'horizontal'}
             compactSidebarCollapsed={settings?.compact_sidebar_collapsed ?? false}
             onToggleSidebar={async () => {
@@ -1214,6 +1302,7 @@ function App() {
             className="flex h-full w-full flex-col pt-1.5 font-sans text-foreground"
           >
             <ControlBar
+              isWindowActive={isWindowActive}
               style={{ height: LAYOUT.CONTROL_BAR_HEIGHT, flexShrink: 0 }}
               folders={folders}
               selectedFolder={selectedFolder}
@@ -1278,7 +1367,7 @@ function App() {
                 scrollDirection={settings?.scroll_direction || 'vertical'}
                 reorderTargetClipId={reorderTargetClipId}
                 reorderTargetPosition={reorderTargetPosition}
-                reorderEnabled={!!selectedFolder}
+                reorderEnabled={true}
                 draggingClipId={draggingClipId}
                 clipNumbering={settings?.clip_numbering || 'positional'}
               />

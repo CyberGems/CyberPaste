@@ -236,4 +236,11 @@
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.3);
   }
+
+  .pause-all-animations *,
+  .pause-all-animations *::before,
+  .pause-all-animations *::after {
+    animation-play-state: paused !important;
+    transition: none !important;
+  }
 }
