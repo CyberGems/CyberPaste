@@ -15,6 +15,7 @@ Thumbs.db
 
 # Rust
 target/
+src-tauri/gen/
 
 # Local data
 data/
