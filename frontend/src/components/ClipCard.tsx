@@ -17,6 +17,32 @@ import {
   Pin,
 } from 'lucide-react';
 import { useMotionValue, useMotionTemplate, motion } from 'framer-motion';
+import Tooltip from './Tooltip';
+import { formatDistanceToNow } from 'date-fns';
+import { de, enUS, es, fr, ja, zhCN } from 'date-fns/locale';
+
+const localeMap: Record<string, any> = {
+  de,
+  en: enUS,
+  es,
+  fr,
+  ja,
+  zh: zhCN,
+};
+
+const getRelativeTime = (dateStr: string, lang: string) => {
+  const code = lang?.substring(0, 2) || 'en';
+  const locale = localeMap[code] || enUS;
+  try {
+    let formatted = formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale });
+    formatted = formatted.replace(/\b(alrededor de|about|environ|ca\.?|etwa|almost|casi)\b/gi, '~');
+    formatted = formatted.replace(/~\s+/g, '~');
+    return formatted;
+  } catch (err) {
+    console.error(err);
+    return '';
+  }
+};
 
 interface ClipCardProps {
   clip: ClipboardItem;
@@ -49,7 +75,14 @@ export const ClipCard = memo(
     }: ClipCardProps,
     ref
   ) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const typeLabel = useMemo(() => {
+      if (clip.clip_type === 'image') return t('common.image') || 'Image';
+      if (clip.clip_type === 'file') return t('common.file') || 'File';
+      if (clip.clip_type === 'url') return t('compact.filterUrl') === 'compact.filterUrl' ? 'URL' : t('compact.filterUrl');
+      if (clip.clip_type === 'code' || clip.clip_type === 'html' || clip.clip_type === 'rtf') return t('compact.filterCode') === 'compact.filterCode' ? 'Code' : t('compact.filterCode');
+      return t('compact.filterText') === 'compact.filterText' ? 'Text' : t('compact.filterText');
+    }, [clip.clip_type, t]);
     const [copied, setCopied] = useState(false);
     const [hovered, setHovered] = useState(false);
     const title = clip.source_app || clip.clip_type.toUpperCase();
@@ -275,14 +308,16 @@ export const ClipCard = memo(
             className="relative z-10 flex flex-shrink-0 items-center gap-2 border-b border-white/5 bg-black/20 px-2.5 py-2 backdrop-blur-sm"
           >
             {clip.source_icon && (
-              <div className="flex items-center justify-center rounded-sm border border-white/5 bg-black/20 p-0.5">
-                <img
-                  src={`data:image/png;base64,${clip.source_icon}`}
-                  alt=""
-                  draggable="false"
-                  className="h-3.5 w-3.5 object-contain"
-                />
-              </div>
+              <Tooltip label={clip.source_app || 'App'} placement="top">
+                <div className="flex items-center justify-center rounded-sm border border-white/5 bg-black/20 p-0.5">
+                  <img
+                    src={`data:image/png;base64,${clip.source_icon}`}
+                    alt=""
+                    draggable="false"
+                    className="h-3.5 w-3.5 object-contain"
+                  />
+                </div>
+              </Tooltip>
             )}
             {clip.is_pinned && (
               <span className="flex items-center text-cyan-400 opacity-80" title={t('common.pinnedClip')}>
@@ -292,7 +327,7 @@ export const ClipCard = memo(
             {clipIndex !== undefined && (
               <span className="select-none font-mono text-[9px] opacity-20">#{clipIndex}</span>
             )}
-            <div className="relative flex-1 overflow-hidden">
+            <div className="relative flex-1 overflow-hidden flex items-center gap-1.5">
               <span
                 className="inline-block whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.1em]"
                 style={{
@@ -309,6 +344,11 @@ export const ClipCard = memo(
                   </>
                 )}
               </span>
+              <Tooltip label={new Date(clip.created_at).toLocaleString(i18n.language || undefined, { dateStyle: 'full', timeStyle: 'medium' })} placement="top">
+                <span className="whitespace-nowrap text-[9px] text-muted-foreground/50 hover:text-cyan-300 transition-colors font-medium">
+                  • {getRelativeTime(clip.created_at, i18n.language)}
+                </span>
+              </Tooltip>
             </div>
             <div className="relative flex h-full min-w-[40px] items-center justify-end">
               {/* LATEST badge + LED - slide together on hover */}
@@ -403,7 +443,13 @@ export const ClipCard = memo(
                         : clip.clip_type === 'file'
                           ? LucideFile
                           : FileText;
-                return <TypeIcon size={12} />;
+                return (
+                  <Tooltip label={typeLabel} placement="top">
+                    <span className="flex items-center justify-center">
+                      <TypeIcon size={12} />
+                    </span>
+                  </Tooltip>
+                );
               })()}
             </div>
           </div>

@@ -610,15 +610,19 @@ export const ControlBar: React.FC<ControlBarProps> = ({
 
       {/* ── Main Toolbar ── */}
       <div className="flex min-w-0 flex-1 items-center gap-1 px-4">
-        <button
-          onClick={onSearchClick}
-          className={clsx(
-            'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all',
-            showSearch ? 'bg-primary text-white shadow-lg' : 'hover:bg-secondary/50'
-          )}
-        >
-          <Search size={16} />
-        </button>
+        <Tooltip label={t('common.searchPlaceholder')?.replace('... (Ctrl+F)', '') || 'Search'} placement="top">
+          <button
+            onClick={onSearchClick}
+            className={clsx(
+              'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all',
+              showSearch
+                ? 'bg-primary border-primary text-white shadow-lg'
+                : 'border-transparent hover:border-white/10 hover:bg-white/10 text-white/30 hover:text-white/90 active:bg-white/15'
+            )}
+          >
+            <Search size={16} />
+          </button>
+        </Tooltip>
 
         <div className="mx-0.5 h-5 w-px shrink-0 bg-border/50" />
 
@@ -760,12 +764,14 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               );
             })}
 
-            <button
-              onClick={onAddClick}
-              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-dashed border-white/20 bg-white/5 text-white/40 transition-all hover:bg-white/10 hover:text-white"
-            >
-              <Plus size={18} />
-            </button>
+            <Tooltip label={t('folders.addFolderBtn') || 'Add Folder'} placement="bottom">
+              <button
+                onClick={onAddClick}
+                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-dashed border-white/20 bg-white/5 text-white/40 transition-all hover:border-white/10 hover:bg-white/10 hover:text-white/90 active:bg-white/15"
+              >
+                <Plus size={18} />
+              </button>
+            </Tooltip>
           </div>
 
           {/* Search Bar Overlay */}
@@ -815,7 +821,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             <Tooltip label={t('common.resetWindowSize')} placement="top">
               <button
                 onClick={onResetSize}
-                className="hover:bg-white/8 flex h-8 w-8 items-center justify-center rounded-lg text-white/30 transition-all hover:text-white/70"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent hover:border-white/10 hover:bg-white/10 text-white/30 hover:text-white/90 active:bg-white/15 transition-all"
               >
                 <RotateCcw size={15} />
               </button>
@@ -827,10 +833,10 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               <button
                 onClick={onTogglePin}
                 className={clsx(
-                  'flex h-8 w-8 items-center justify-center rounded-lg transition-all',
+                  'flex h-8 w-8 items-center justify-center rounded-lg border transition-all',
                   isPinned
-                    ? 'border border-indigo-500/30 bg-indigo-500/15 text-indigo-400'
-                    : 'hover:bg-white/8 text-white/30 hover:text-white/70'
+                    ? 'border-indigo-500/40 bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/20'
+                    : 'border-transparent hover:border-white/10 hover:bg-white/10 text-white/30 hover:text-white/90 active:bg-white/15'
                 )}
               >
                 {isPinned ? <PinOff size={15} /> : <Pin size={15} />}
@@ -841,7 +847,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           <Tooltip label={t('settings.title')} placement="top">
             <button
               onClick={onMoreClick}
-              className="hover:bg-white/8 flex h-8 w-8 items-center justify-center rounded-lg text-white/30 transition-all hover:text-white/70"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent hover:border-white/10 hover:bg-white/10 text-white/30 hover:text-white/90 active:bg-white/15 transition-all"
             >
               <Settings size={15} />
             </button>
@@ -851,7 +857,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           <Tooltip label={viewMode === 'full' ? t('common.switchToCompact') : t('common.switchToFull')} placement="top">
             <button
               onClick={onToggleMode}
-              className="group relative ml-1 flex h-7 items-center gap-1 overflow-hidden rounded-lg border border-cyan-500/40 bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 px-2 text-cyan-300 shadow-[0_0_8px_rgba(6,182,212,0.15)] transition-all duration-200 hover:border-cyan-400/70 hover:from-cyan-500/30 hover:to-indigo-500/30 hover:shadow-[0_0_16px_rgba(6,182,212,0.4)]"
+              className="group relative ml-1 flex h-8 items-center gap-1.5 overflow-hidden rounded-lg border border-cyan-500/40 bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 px-2 text-cyan-300 shadow-[0_0_8px_rgba(6,182,212,0.15)] transition-all duration-200 hover:border-cyan-400/70 hover:from-cyan-500/30 hover:to-indigo-500/30 hover:shadow-[0_0_16px_rgba(6,182,212,0.4)] active:scale-[0.98]"
             >
               {/* shimmer sweep */}
               <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
@@ -866,7 +872,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           <Tooltip label={t('common.closeWindow')} placement="top">
             <button
               onClick={() => (window as any).__TAURI_INTERNALS__.invoke('hide_window')}
-              className="hover:bg-rose-500/12 ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg text-white/25 transition-all hover:text-rose-400"
+              className="hover:bg-rose-500/15 border border-transparent hover:border-rose-500/20 ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg text-white/25 transition-all hover:text-rose-400 active:bg-rose-500/25"
             >
               <X size={15} />
             </button>
