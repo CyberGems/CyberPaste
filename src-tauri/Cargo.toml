@@ -42,6 +42,7 @@ tauri-plugin-clipboard-x = "2.0.1"
 tauri-plugin-window-state = "2"
 tauri-plugin-dialog = "2"
 clipboard-rs = "0.2"
+libloading = "0.8"
 
 
 [target.'cfg(target_os = "windows")'.dependencies]

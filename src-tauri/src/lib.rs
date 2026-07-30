@@ -28,11 +28,32 @@ mod ocr;
 mod settings_commands;
 mod settings_manager;
 
+#[cfg(target_os = "windows")]
+fn setup_menu_theme() {
+    use once_cell::sync::Lazy;
+    static UXTHEME: Lazy<Option<libloading::Library>> = Lazy::new(|| {
+        unsafe { libloading::Library::new("uxtheme.dll").ok() }
+    });
+    if let Some(ref lib) = *UXTHEME {
+        unsafe {
+            if let Ok(set_preferred_app_mode) = lib.get::<unsafe extern "system" fn(i32) -> i32>(b"#135") {
+                set_preferred_app_mode(2);
+            }
+            if let Ok(flush_menu_themes) = lib.get::<unsafe extern "system" fn()>(b"#136") {
+                flush_menu_themes();
+            }
+        }
+    }
+}
+
 use database::Database;
 use models::get_runtime;
 use settings_manager::SettingsManager;
 
 pub fn run_app() {
+    #[cfg(target_os = "windows")]
+    setup_menu_theme();
+
     let data_dir = get_data_dir();
     fs::create_dir_all(&data_dir).ok();
     let db_path = data_dir.join("cyber_paste.db");
@@ -259,6 +280,13 @@ pub fn run_app() {
                         if let Some(win) = app.get_webview_window("main") {
                             position_window_at_bottom(&win);
                         }
+                    } else if event.id.as_ref() == "toggle_pause" {
+                        use std::sync::atomic::Ordering;
+                        let current = crate::clipboard::CLIPBOARD_MONITORING_PAUSED.load(Ordering::SeqCst);
+                        let new_val = !current;
+                        crate::clipboard::CLIPBOARD_MONITORING_PAUSED.store(new_val, Ordering::SeqCst);
+                        let _ = rebuild_tray_menu(app);
+                        let _ = app.emit("clipboard-monitoring-state-changed", new_val);
                     } else if event.id.as_ref() == "settings" {
                         // Open settings window directly without showing the main window
                         if let Some(settings_win) = app.get_webview_window("settings") {
@@ -483,7 +511,9 @@ pub fn run_app() {
             commands::toast_ready,
             commands::open_image_viewer,
             commands::run_ocr_for_clip,
-            commands::update_ocr_text
+            commands::update_ocr_text,
+            commands::toggle_clipboard_monitoring,
+            commands::is_clipboard_monitoring_paused
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -1048,6 +1078,38 @@ fn generate_activation_sound_wav() -> Vec<u8> {
     wav
 }
 
+fn generate_pause_icon() -> Vec<u8> {
+    use image::{ImageBuffer, Rgba};
+    let mut img = ImageBuffer::from_pixel(16, 16, Rgba([255_u8, 255_u8, 255_u8, 0_u8]));
+    for y in 3..13 {
+        for x in 4..7 {
+            img.put_pixel(x, y, Rgba([255_u8, 255_u8, 255_u8, 255_u8]));
+        }
+        for x in 9..12 {
+            img.put_pixel(x, y, Rgba([255_u8, 255_u8, 255_u8, 255_u8]));
+        }
+    }
+    let mut bytes = Vec::new();
+    let mut cursor = std::io::Cursor::new(&mut bytes);
+    let _ = img.write_to(&mut cursor, image::ImageFormat::Png);
+    bytes
+}
+
+fn generate_play_icon() -> Vec<u8> {
+    use image::{ImageBuffer, Rgba};
+    let mut img = ImageBuffer::from_pixel(16, 16, Rgba([255_u8, 255_u8, 255_u8, 0_u8]));
+    for x in 5..13 {
+        let offset = x - 5;
+        for y in (3 + offset)..(13 - offset) {
+            img.put_pixel(x as u32, y as u32, Rgba([255_u8, 255_u8, 255_u8, 255_u8]));
+        }
+    }
+    let mut bytes = Vec::new();
+    let mut cursor = std::io::Cursor::new(&mut bytes);
+    let _ = img.write_to(&mut cursor, image::ImageFormat::Png);
+    bytes
+}
+
 pub fn rebuild_tray_menu(app: &tauri::AppHandle) -> Result<(), tauri::Error> {
     let manager = app.state::<Arc<SettingsManager>>();
     let settings = manager.get();
@@ -1057,6 +1119,13 @@ pub fn rebuild_tray_menu(app: &tauri::AppHandle) -> Result<(), tauri::Error> {
         ("Mostrar / Ocultar", "Configuración...", "Acerca de...", "Salir")
     } else {
         ("Show / Hide", "Settings...", "About...", "Exit")
+    };
+
+    let is_paused = crate::clipboard::CLIPBOARD_MONITORING_PAUSED.load(std::sync::atomic::Ordering::SeqCst);
+    let pause_resume_label = if lang == "es" {
+        if is_paused { "Reanudar monitoreo" } else { "Pausar monitoreo" }
+    } else {
+        if is_paused { "Resume Monitoring" } else { "Pause Monitoring" }
     };
 
     let version = env!("CARGO_PKG_VERSION");
@@ -1083,11 +1152,24 @@ pub fn rebuild_tray_menu(app: &tauri::AppHandle) -> Result<(), tauri::Error> {
     let about_icon = Image::from_bytes(about_icon_data).expect("failed to load about icon");
     let quit_icon = Image::from_bytes(quit_icon_data).expect("failed to load quit icon");
 
+    let pause_icon_bytes = if is_paused {
+        generate_play_icon()
+    } else {
+        generate_pause_icon()
+    };
+    let pause_icon = Image::from_bytes(&pause_icon_bytes).expect("failed to load pause icon");
+
     let title_i = MenuItem::with_id(app, "title", &app_title, false, None::<&str>)?;
     
     let show_i = IconMenuItemBuilder::new(dynamic_label)
         .id("show")
         .icon(show_icon)
+        .accelerator(settings.hotkey.clone())
+        .build(app)?;
+
+    let pause_i = IconMenuItemBuilder::new(pause_resume_label)
+        .id("toggle_pause")
+        .icon(pause_icon)
         .build(app)?;
 
     let settings_i = IconMenuItemBuilder::new(settings_label)
@@ -1110,7 +1192,7 @@ pub fn rebuild_tray_menu(app: &tauri::AppHandle) -> Result<(), tauri::Error> {
 
     let menu = Menu::with_items(
         app,
-        &[&title_i, &separator1, &show_i, &settings_i, &about_i, &separator2, &quit_i],
+        &[&title_i, &separator1, &show_i, &pause_i, &settings_i, &about_i, &separator2, &quit_i],
     )?;
 
     if let Some(tray) = app.tray_by_id("main") {

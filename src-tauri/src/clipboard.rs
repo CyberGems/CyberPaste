@@ -38,9 +38,10 @@ use windows::Win32::UI::Input::KeyboardAndMouse::{
 };
 
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, AtomicBool, Ordering};
 
 static LAST_CUT_TIMESTAMP: AtomicU64 = AtomicU64::new(0);
+pub static CLIPBOARD_MONITORING_PAUSED: AtomicBool = AtomicBool::new(false);
 
 #[cfg(target_os = "windows")]
 static mut CTRL_DOWN: bool = false;
@@ -200,6 +201,10 @@ pub fn init(app: &AppHandle, db: Arc<Database>) {
     let event_name = "plugin:clipboard-x://clipboard_changed";
 
     app.listen(event_name, move |_event| {
+        if CLIPBOARD_MONITORING_PAUSED.load(Ordering::SeqCst) {
+            log::info!("CLIPBOARD: Monitoring is paused, ignoring event.");
+            return;
+        }
         let app = app_clone.clone();
         let db = db_clone.clone();
         let is_cut = detect_if_cut_key_pressed();

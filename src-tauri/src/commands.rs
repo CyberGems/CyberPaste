@@ -2792,4 +2792,23 @@ pub async fn update_ocr_text(
     Ok(())
 }
 
+#[tauri::command]
+pub fn toggle_clipboard_monitoring(app: AppHandle) -> Result<bool, String> {
+    use std::sync::atomic::Ordering;
+    let current = crate::clipboard::CLIPBOARD_MONITORING_PAUSED.load(Ordering::SeqCst);
+    let new_val = !current;
+    crate::clipboard::CLIPBOARD_MONITORING_PAUSED.store(new_val, Ordering::SeqCst);
+    
+    // Rebuild the tray menu to reflect the new state (checked state / pause/resume text)
+    let _ = crate::rebuild_tray_menu(&app);
+    
+    Ok(new_val)
+}
+
+#[tauri::command]
+pub fn is_clipboard_monitoring_paused() -> bool {
+    use std::sync::atomic::Ordering;
+    crate::clipboard::CLIPBOARD_MONITORING_PAUSED.load(Ordering::SeqCst)
+}
+
 
