@@ -357,21 +357,27 @@ pub fn run_app() {
             let win = app_handle.get_webview_window("main").unwrap();
 
             {
-                let manager = app_handle.state::<Arc<SettingsManager>>();
-                let settings = manager.get();
-                let mica_effect = settings.mica_effect;
-                let theme = settings.theme;
-                let round_corners = settings.round_corners;
+                let app_handle_clone = app_handle.clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+                    if let Some(win) = app_handle_clone.get_webview_window("main") {
+                        let manager = win.state::<Arc<SettingsManager>>();
+                        let settings = manager.get();
+                        let mica_effect = settings.mica_effect;
+                        let theme = settings.theme;
+                        let round_corners = settings.round_corners;
 
-                let current_theme = if theme == "light" {
-                    tauri::Theme::Light
-                } else if theme == "dark" {
-                    tauri::Theme::Dark
-                } else {
-                    win.theme().unwrap_or(tauri::Theme::Light)
-                };
+                        let current_theme = if theme == "light" {
+                            tauri::Theme::Light
+                        } else if theme == "dark" {
+                            tauri::Theme::Dark
+                        } else {
+                            win.theme().unwrap_or(tauri::Theme::Light)
+                        };
 
-                crate::apply_window_effect(&win, &mica_effect, &current_theme, round_corners);
+                        crate::apply_window_effect(&win, &mica_effect, &current_theme, round_corners);
+                    }
+                });
             }
 
             let manager = app_handle.state::<Arc<SettingsManager>>();
@@ -425,8 +431,8 @@ pub fn run_app() {
             let handle_for_toast = app_handle.clone();
             let saved_hotkey_clone = saved_hotkey.clone();
             tauri::async_runtime::spawn(async move {
-                // Wait 1 second for the app environment/windows to fully boot
-                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                // Wait 5 seconds for the app environment/windows to fully boot
+                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
                 // Ensure activation sound is generated on startup if enabled
                 let manager = handle_for_toast.state::<Arc<SettingsManager>>();
@@ -565,6 +571,9 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
             saved_width,
             saved_height,
             compact_pos_mode,
+            mica_effect,
+            theme_str,
+            round_corners,
         ) = {
             let manager = window.state::<Arc<crate::settings_manager::SettingsManager>>();
             let s = manager.get();
@@ -588,6 +597,9 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                 s.window_width,
                 s.window_height,
                 s.compact_view_position_mode.clone(),
+                s.mica_effect.clone(),
+                s.theme.clone(),
+                s.round_corners,
             )
         };
 
@@ -696,6 +708,14 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                     x: target_x,
                     y: target_y,
                 }));
+                let current_theme = if theme_str == "light" {
+                    tauri::Theme::Light
+                } else if theme_str == "dark" {
+                    tauri::Theme::Dark
+                } else {
+                    window.theme().unwrap_or(tauri::Theme::Light)
+                };
+                crate::apply_window_effect(&window, &mica_effect, &current_theme, round_corners);
                 let _ = window.show();
                 let _ = window.unminimize();
                 let _ = window.set_focus();
@@ -752,6 +772,14 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                     window_width_px
                 );
 
+                let current_theme = if theme_str == "light" {
+                    tauri::Theme::Light
+                } else if theme_str == "dark" {
+                    tauri::Theme::Dark
+                } else {
+                    window.theme().unwrap_or(tauri::Theme::Light)
+                };
+                crate::apply_window_effect(&window, &mica_effect, &current_theme, round_corners);
                 let _ = window.show();
                 let _ = window.unminimize();
                 let _ = window.set_focus();
@@ -795,6 +823,14 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                 }
             }
         } else {
+            let current_theme = if theme_str == "light" {
+                tauri::Theme::Light
+            } else if theme_str == "dark" {
+                tauri::Theme::Dark
+            } else {
+                window.theme().unwrap_or(tauri::Theme::Light)
+            };
+            crate::apply_window_effect(&window, &mica_effect, &current_theme, round_corners);
             let _ = window.show();
             let _ = window.unminimize();
         }
