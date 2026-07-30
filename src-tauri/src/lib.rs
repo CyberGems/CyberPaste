@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicBool, AtomicI64, Ordering};
 use std::sync::Arc;
 use tauri::{
     image::Image,
-    menu::{Menu, MenuItem, PredefinedMenuItem},
+    menu::{Menu, MenuItem, PredefinedMenuItem, IconMenuItemBuilder},
     tray::{TrayIcon, TrayIconBuilder},
     Emitter, Manager,
 };
@@ -1073,13 +1073,40 @@ pub fn rebuild_tray_menu(app: &tauri::AppHandle) -> Result<(), tauri::Error> {
         parts.get(0).copied().unwrap_or("Show")
     };
 
+    let show_icon_data = include_bytes!("../icons/show-hide.png");
+    let settings_icon_data = include_bytes!("../icons/settings.png");
+    let about_icon_data = include_bytes!("../icons/about.png");
+    let quit_icon_data = include_bytes!("../icons/quit.png");
+
+    let show_icon = Image::from_bytes(show_icon_data).expect("failed to load show-hide icon");
+    let settings_icon = Image::from_bytes(settings_icon_data).expect("failed to load settings icon");
+    let about_icon = Image::from_bytes(about_icon_data).expect("failed to load about icon");
+    let quit_icon = Image::from_bytes(quit_icon_data).expect("failed to load quit icon");
+
     let title_i = MenuItem::with_id(app, "title", &app_title, false, None::<&str>)?;
-    let show_i = MenuItem::with_id(app, "show", dynamic_label, true, None::<&str>)?;
-    let settings_i = MenuItem::with_id(app, "settings", settings_label, true, None::<&str>)?;
-    let about_i = MenuItem::with_id(app, "about", about_label, true, None::<&str>)?;
+    
+    let show_i = IconMenuItemBuilder::new(dynamic_label)
+        .id("show")
+        .icon(show_icon)
+        .build(app)?;
+
+    let settings_i = IconMenuItemBuilder::new(settings_label)
+        .id("settings")
+        .icon(settings_icon)
+        .build(app)?;
+
+    let about_i = IconMenuItemBuilder::new(about_label)
+        .id("about")
+        .icon(about_icon)
+        .build(app)?;
+
+    let quit_i = IconMenuItemBuilder::new(quit_label)
+        .id("quit")
+        .icon(quit_icon)
+        .build(app)?;
+
     let separator1 = PredefinedMenuItem::separator(app)?;
     let separator2 = PredefinedMenuItem::separator(app)?;
-    let quit_i = MenuItem::with_id(app, "quit", quit_label, true, None::<&str>)?;
 
     let menu = Menu::with_items(
         app,
