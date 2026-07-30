@@ -238,15 +238,6 @@ pub fn run_app() {
             let handle = app.handle().clone();
             let db_for_clipboard = db_arc.clone();
 
-            let version = env!("CARGO_PKG_VERSION");
-            let title = format!("v{}", version);
-            let title_i = MenuItem::with_id(app, "title", &title, false, None::<&str>)?;
-            let quit_i = MenuItem::with_id(app, "quit", "Quit CyberPaste", true, None::<&str>)?;
-            let show_i = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
-            let settings_i = MenuItem::with_id(app, "settings", "Settings", true, None::<&str>)?;
-            let separator_i = PredefinedMenuItem::separator(app)?;
-            let menu = Menu::with_items(app, &[&title_i, &show_i, &settings_i, &separator_i, &quit_i])?;
-
             let is_dark = dark_light::detect().map(|m| m == dark_light::Mode::Dark).unwrap_or(false);
             let icon_data: &[u8] = if is_dark {
                 include_bytes!("../icons/tray_white.png")
@@ -257,7 +248,6 @@ pub fn run_app() {
 
             let tray_builder = TrayIconBuilder::with_id("main")
                 .icon(icon)
-                .menu(&menu)
                 .show_menu_on_left_click(false);
 
             let _tray = tray_builder
@@ -290,6 +280,34 @@ pub fn run_app() {
                             .center()
                             .build();
                         }
+                    } else if event.id.as_ref() == "about" {
+                        if let Some(settings_win) = app.get_webview_window("settings") {
+                            let _ = settings_win.unminimize();
+                            let _ = settings_win.show();
+                            let _ = settings_win.set_focus();
+                            let _ = settings_win.emit("open-tab", "about");
+                        } else {
+                            let _ = tauri::WebviewWindowBuilder::new(
+                                app,
+                                "settings",
+                                tauri::WebviewUrl::App("index.html?window=settings".into()),
+                            )
+                            .title("Settings")
+                            .inner_size(800.0, 700.0)
+                            .resizable(true)
+                            .maximizable(true)
+                            .decorations(false)
+                            .transparent(false)
+                            .center()
+                            .build();
+                            let app_clone = app.clone();
+                            tauri::async_runtime::spawn(async move {
+                                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                                if let Some(settings_win) = app_clone.get_webview_window("settings") {
+                                    let _ = settings_win.emit("open-tab", "about");
+                                }
+                            });
+                        }
                     }
                 })
                 .on_tray_icon_event(|tray, event| {
@@ -304,6 +322,8 @@ pub fn run_app() {
                     }
                 })
                 .build(app)?;
+
+            rebuild_tray_menu(app.handle())?;
 
             let app_handle = handle.clone();
             let win = app_handle.get_webview_window("main").unwrap();
@@ -475,6 +495,7 @@ pub fn position_window_at_bottom(window: &tauri::WebviewWindow) {
 
 pub fn animate_window_show(window: &tauri::WebviewWindow) {
     let _ = window.emit("window-visibility", true);
+    let _ = rebuild_tray_menu(window.app_handle());
     // Safety guard to ensure IS_ANIMATING is always reset even on panic
     struct AnimationGuard;
     impl Drop for AnimationGuard {
@@ -755,6 +776,7 @@ pub fn animate_window_hide(
     on_done: Option<Box<dyn FnOnce() + Send>>,
 ) {
     let _ = window.emit("window-visibility", false);
+    let _ = rebuild_tray_menu(window.app_handle());
     // Safety guard to ensure IS_ANIMATING is always reset
     struct AnimationGuard;
     impl Drop for AnimationGuard {
@@ -1024,4 +1046,50 @@ fn generate_activation_sound_wav() -> Vec<u8> {
     }
 
     wav
+}
+
+pub fn rebuild_tray_menu(app: &tauri::AppHandle) -> Result<(), tauri::Error> {
+    let manager = app.state::<Arc<SettingsManager>>();
+    let settings = manager.get();
+    let lang = settings.language.as_str();
+
+    let (show_hide_label, settings_label, about_label, quit_label) = if lang == "es" {
+        ("Mostrar / Ocultar", "Configuración...", "Acerca de...", "Salir")
+    } else {
+        ("Show / Hide", "Settings...", "About...", "Exit")
+    };
+
+    let version = env!("CARGO_PKG_VERSION");
+    let app_title = format!("CyberPaste v{}", version);
+
+    let is_visible = app.get_webview_window("main")
+        .and_then(|w| w.is_visible().ok())
+        .unwrap_or(false);
+
+    let parts: Vec<&str> = show_hide_label.split(" / ").collect();
+    let dynamic_label = if is_visible {
+        parts.get(1).copied().unwrap_or("Hide")
+    } else {
+        parts.get(0).copied().unwrap_or("Show")
+    };
+
+    let title_i = MenuItem::with_id(app, "title", &app_title, false, None::<&str>)?;
+    let show_i = MenuItem::with_id(app, "show", dynamic_label, true, None::<&str>)?;
+    let settings_i = MenuItem::with_id(app, "settings", settings_label, true, None::<&str>)?;
+    let about_i = MenuItem::with_id(app, "about", about_label, true, None::<&str>)?;
+    let separator1 = PredefinedMenuItem::separator(app)?;
+    let separator2 = PredefinedMenuItem::separator(app)?;
+    let quit_i = MenuItem::with_id(app, "quit", quit_label, true, None::<&str>)?;
+
+    let menu = Menu::with_items(
+        app,
+        &[&title_i, &separator1, &show_i, &settings_i, &about_i, &separator2, &quit_i],
+    )?;
+
+    if let Some(tray) = app.tray_by_id("main") {
+        let _ = tray.set_menu(Some(menu));
+        let _ = tray.set_tooltip(Some(format!("CyberPaste v{}", version)));
+    }
+
+    Ok(())
 }

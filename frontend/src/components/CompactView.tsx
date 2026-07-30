@@ -69,6 +69,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { convertFileSrc } from '@tauri-apps/api/core';
+import Tooltip from './Tooltip';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -678,13 +679,14 @@ export const CompactView: React.FC<CompactViewProps> = ({
         </div>
         <div data-tauri-drag-region className="flex items-center gap-2">
           {isVertical && onToggleSidebar && (
-            <button
-              onClick={onToggleSidebar}
-              className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
-              title={compactSidebarCollapsed ? t('common.expandSidebar') : t('common.collapseSidebar')}
-            >
-              {compactSidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-            </button>
+            <Tooltip label={compactSidebarCollapsed ? t('common.expandSidebar') : t('common.collapseSidebar')} placement="bottom">
+              <button
+                onClick={onToggleSidebar}
+                className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                {compactSidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+              </button>
+            </Tooltip>
           )}
           <div
             data-tauri-drag-region
@@ -706,61 +708,67 @@ export const CompactView: React.FC<CompactViewProps> = ({
         </div>
         <div className="flex items-center gap-0.5">
           {onTogglePin && (
-            <button
-              onClick={onTogglePin}
-              className={cn(
-                'flex h-7 w-7 items-center justify-center rounded-md transition-all',
-                isPinned
-                  ? 'border border-indigo-500/30 bg-indigo-500/15 text-indigo-400'
-                  : 'hover:bg-white/8 text-white/30 hover:text-white/70'
-              )}
-              title={isPinned ? t('common.unpinWindowShort') : t('common.pinWindowShort')}
-            >
-              {isPinned ? <PinOff size={14} /> : <Pin size={14} />}
-            </button>
+            <Tooltip label={isPinned ? t('common.unpinWindowShort') : t('common.pinWindowShort')} placement="bottom">
+              <button
+                onClick={onTogglePin}
+                className={cn(
+                  'flex h-7 w-7 items-center justify-center rounded-md transition-all',
+                  isPinned
+                    ? 'border border-indigo-500/30 bg-indigo-500/15 text-indigo-400'
+                    : 'hover:bg-white/8 text-white/30 hover:text-white/70'
+                )}
+              >
+                {isPinned ? <PinOff size={14} /> : <Pin size={14} />}
+              </button>
+            </Tooltip>
           )}
           {onToggleLayout && (
-            <button
-              onClick={onToggleLayout}
-              className="hover:bg-white/8 flex h-7 w-7 items-center justify-center rounded-md text-white/30 transition-all hover:text-white/70"
-              title={isVertical ? t('compact.switchHorizontal') : t('compact.switchVertical')}
-            >
-              {isVertical ? <PanelTop size={14} /> : <PanelLeftOpen size={14} />}
-            </button>
+            <Tooltip label={isVertical ? t('compact.switchHorizontal') : t('compact.switchVertical')} placement="bottom">
+              <button
+                onClick={onToggleLayout}
+                className="hover:bg-white/8 flex h-7 w-7 items-center justify-center rounded-md text-white/30 transition-all hover:text-white/70"
+              >
+                {isVertical ? <PanelTop size={14} /> : <PanelLeftOpen size={14} />}
+              </button>
+            </Tooltip>
           )}
-          <button
-            onClick={handleResetSize}
-            className="hover:bg-white/8 flex h-7 w-7 items-center justify-center rounded-md text-white/30 transition-all hover:text-white/70"
-            title={t('common.resetDefaultSize')}
-          >
-            <RotateCcw size={14} />
-          </button>
-          <button
-            onClick={onOpenSettings}
-            className="hover:bg-white/8 flex h-7 w-7 items-center justify-center rounded-md text-white/30 transition-all hover:text-white/70"
-            title={t('common.settings')}
-          >
-            <Settings size={14} />
-          </button>
+          <Tooltip label={t('common.resetDefaultSize')} placement="bottom">
+            <button
+              onClick={handleResetSize}
+              className="hover:bg-white/8 flex h-7 w-7 items-center justify-center rounded-md text-white/30 transition-all hover:text-white/70"
+            >
+              <RotateCcw size={14} />
+            </button>
+          </Tooltip>
+          <Tooltip label={t('common.settings')} placement="bottom">
+            <button
+              onClick={onOpenSettings}
+              className="hover:bg-white/8 flex h-7 w-7 items-center justify-center rounded-md text-white/30 transition-all hover:text-white/70"
+            >
+              <Settings size={14} />
+            </button>
+          </Tooltip>
 
           {/* View-toggle — primary action pill */}
-          <button
-            onClick={onToggleMode}
-            className="group relative ml-1 flex h-7 items-center gap-1.5 overflow-hidden rounded-lg border border-cyan-500/40 bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 px-2.5 text-[10px] font-bold uppercase tracking-widest text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.2)] transition-all duration-200 hover:border-cyan-400/70 hover:from-cyan-500/30 hover:to-indigo-500/30 hover:shadow-[0_0_18px_rgba(6,182,212,0.45)]"
-            title={t('common.fullMode')}
-          >
-            {/* shimmer sweep */}
-            <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
-            <Maximize2 size={13} className="relative z-10 flex-shrink-0" />
-          </button>
+          <Tooltip label={t('common.fullMode')} placement="bottom">
+            <button
+              onClick={onToggleMode}
+              className="group relative ml-1 flex h-7 items-center gap-1.5 overflow-hidden rounded-lg border border-cyan-500/40 bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 px-2.5 text-[10px] font-bold uppercase tracking-widest text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.2)] transition-all duration-200 hover:border-cyan-400/70 hover:from-cyan-500/30 hover:to-indigo-500/30 hover:shadow-[0_0_18px_rgba(6,182,212,0.45)]"
+            >
+              {/* shimmer sweep */}
+              <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+              <Maximize2 size={13} className="relative z-10 flex-shrink-0" />
+            </button>
+          </Tooltip>
 
-          <button
-            onClick={() => invoke('hide_window').catch(() => (window as any).__TAURI_INTERNALS__?.invoke('hide_window'))}
-            className="hover:bg-rose-500/12 ml-0.5 flex h-7 w-7 items-center justify-center rounded-md text-white/25 transition-all hover:text-rose-400"
-            title={t('common.closeCompact')}
-          >
-            <X size={14} />
-          </button>
+          <Tooltip label={t('common.closeCompact')} placement="bottom">
+            <button
+              onClick={() => invoke('hide_window').catch(() => (window as any).__TAURI_INTERNALS__?.invoke('hide_window'))}
+              className="hover:bg-rose-500/12 ml-0.5 flex h-7 w-7 items-center justify-center rounded-md text-white/25 transition-all hover:text-rose-400"
+            >
+              <X size={14} />
+            </button>
+          </Tooltip>
         </div>
       </div>
 
@@ -858,14 +866,15 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 );
               })}
               {onAddFolder && (
-                <button
-                  onClick={onAddFolder}
-                  className="mx-1.5 flex flex-row items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-dashed border-white/20 bg-white/5 px-2 py-1.5 text-[10px] font-medium text-white/40 transition-all hover:bg-white/10 hover:text-white/80"
-                  title={t('folders.addFolderBtn')}
-                >
-                  <Plus size={10} />
-                  <span className="flex-1 truncate text-left">{t('folders.newFolder')}</span>
-                </button>
+                <Tooltip label={t('folders.addFolderBtn')} placement="right">
+                  <button
+                    onClick={onAddFolder}
+                    className="mx-1.5 flex flex-row items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-dashed border-white/20 bg-white/5 px-2 py-1.5 text-[10px] font-medium text-white/40 transition-all hover:bg-white/10 hover:text-white/80"
+                  >
+                    <Plus size={10} />
+                    <span className="flex-1 truncate text-left">{t('folders.newFolder')}</span>
+                  </button>
+                </Tooltip>
               )}
             </div>
           </div>
@@ -1080,14 +1089,15 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 );
               })}
               {onAddFolder && (
-                <button
-                  onClick={onAddFolder}
-                  className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-dashed border-white/20 bg-white/5 px-2 py-1 text-[10px] font-medium text-white/40 transition-all hover:bg-white/10 hover:text-white/80"
-                  title={t('folders.addFolderBtn')}
-                >
-                  <Plus size={10} />
-                  {t('folders.new')}
-                </button>
+                <Tooltip label={t('folders.addFolderBtn')} placement="bottom">
+                  <button
+                    onClick={onAddFolder}
+                    className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-dashed border-white/20 bg-white/5 px-2 py-1 text-[10px] font-medium text-white/40 transition-all hover:bg-white/10 hover:text-white/80"
+                  >
+                    <Plus size={10} />
+                    {t('folders.new')}
+                  </button>
+                </Tooltip>
               )}
             </div>
           </div>

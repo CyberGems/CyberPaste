@@ -30,7 +30,7 @@ import { useState, useEffect } from 'react';
 import { useTheme } from '../hooks/useTheme';
 import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
-import { emit } from '@tauri-apps/api/event';
+import { emit, listen } from '@tauri-apps/api/event';
 import { FlaskConical, Wrench } from 'lucide-react';
 import { getCurrentWindow, availableMonitors } from '@tauri-apps/api/window';
 import { getVersion } from '@tauri-apps/api/app';
@@ -166,6 +166,18 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         );
       })
       .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    const unlisten = listen<string>('open-tab', (event) => {
+      const tab = event.payload as Tab;
+      if (['general', 'ai', 'notifications', 'maintenance', 'about'].includes(tab)) {
+        setActiveTab(tab);
+      }
+    });
+    return () => {
+      unlisten.then((f) => f());
+    };
   }, []);
 
   const openDataDir = async () => {

@@ -90,6 +90,7 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
         new_settings.theme
     );
     manager.save(new_settings)?;
+    let _ = crate::rebuild_tray_menu(&app);
     Ok(())
 }
 
