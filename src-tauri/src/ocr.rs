@@ -372,7 +372,12 @@ pub async fn run_ocr(png_bytes: &[u8], language_tag: Option<&str>) -> Result<Str
         return Ok(String::new());
     }
 
-    let prepared_bytes = preprocess_and_upscale_image(png_bytes);
+    let bytes_vec = png_bytes.to_vec();
+    let prepared_bytes = tauri::async_runtime::spawn_blocking(move || {
+        preprocess_and_upscale_image(&bytes_vec)
+    })
+    .await
+    .unwrap_or_else(|_| png_bytes.to_vec());
 
     let run_impl = || async {
         let stream = InMemoryRandomAccessStream::new()?;

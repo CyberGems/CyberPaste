@@ -559,7 +559,8 @@ async fn process_clipboard_change(
         let new_sort_order = if is_pinned || clip_folder_id.is_some() {
             0
         } else {
-            db.get_and_prepare_first_unpinned_slot(None, Some(&existing_id))
+            sqlx::query_scalar::<_, i64>("SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips")
+                .fetch_one(pool)
                 .await
                 .unwrap_or(0)
         };
@@ -635,8 +636,8 @@ async fn process_clipboard_change(
     } else {
         let clip_uuid = Uuid::new_v4().to_string();
 
-        let new_sort_order = db
-            .get_and_prepare_first_unpinned_slot(None, None)
+        let new_sort_order = sqlx::query_scalar::<_, i64>("SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips")
+            .fetch_one(pool)
             .await
             .unwrap_or(0);
 
@@ -736,23 +737,29 @@ async fn process_clipboard_change(
             };
             // Generate tiny thumbnail for image toasts
             let image_b64 = if clip_type == "image" {
-                full_image_content.as_ref().and_then(|bytes| {
-                    image::load_from_memory(bytes).ok().map(|img| {
-                        let thumb = img.thumbnail(48, 48);
-                        let mut buf = Vec::new();
-                        let encoder = image::codecs::png::PngEncoder::new(&mut buf);
-                        use image::ImageEncoder;
-                        encoder
-                            .write_image(
-                                thumb.to_rgba8().as_raw(),
-                                thumb.width(),
-                                thumb.height(),
-                                image::ColorType::Rgba8,
-                            )
-                            .ok();
-                        BASE64.encode(&buf)
+                if let Some(bytes) = full_image_content.clone() {
+                    tauri::async_runtime::spawn_blocking(move || {
+                        image::load_from_memory(&bytes).ok().map(|img| {
+                            let thumb = img.thumbnail(48, 48);
+                            let mut buf = Vec::new();
+                            let encoder = image::codecs::png::PngEncoder::new(&mut buf);
+                            use image::ImageEncoder;
+                            encoder
+                                .write_image(
+                                    thumb.to_rgba8().as_raw(),
+                                    thumb.width(),
+                                    thumb.height(),
+                                    image::ColorType::Rgba8,
+                                )
+                                .ok();
+                            BASE64.encode(&buf)
+                        })
                     })
-                })
+                    .await
+                    .unwrap_or(None)
+                } else {
+                    None
+                }
             } else {
                 None
             };

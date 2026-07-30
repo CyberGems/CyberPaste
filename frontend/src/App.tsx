@@ -153,7 +153,6 @@ function App() {
     clipId: '',
   });
 
-  // Using refs for event handlers to access latest state without re-attaching listeners
   const dragStateRef = useRef({
     isDragging: false,
     clipId: null as string | null,
@@ -161,10 +160,10 @@ function App() {
     pendingDrag: null as { clipId: string; startX: number; startY: number } | null,
     reorderTargetClipId: null as string | null,
     reorderTargetPosition: null as 'before' | 'after' | null,
+    cachedRects: null as { id: string; rect: DOMRect; centerY: number }[] | null,
   });
 
   const dragIndicatorRef = useRef<HTMLDivElement>(null);
-  const lastReorderCheckRef = useRef<number>(0);
   const wasDraggingRef = useRef<boolean>(false);
 
   const effectiveTheme = useTheme(theme);
@@ -540,33 +539,23 @@ function App() {
         // Detect reorder target using clips state for reliable lookup
         const isOverClipList = elem?.closest('[data-clip-list="true"]');
         if (isOverClipList && !folderBtn && clipsRef.current.length > 0) {
-          const now = Date.now();
-          if (now - lastReorderCheckRef.current > 50) {
-            lastReorderCheckRef.current = now;
-
             let closestId: string | null = null;
             let closestDist = Infinity;
-            let closestRect: DOMRect | null = null;
+            let closestCenterY = 0;
 
-            const cards = document.querySelectorAll('[data-clip-id]');
-            for (let i = 0; i < cards.length; i++) {
-              const card = cards[i] as HTMLElement;
-              const clipId = card.getAttribute('data-clip-id');
-              if (!clipId || clipId === state.clipId) continue;
-
-              const rect = card.getBoundingClientRect();
-              const cardCenterY = rect.top + rect.height / 2;
-              const dist = Math.abs(e.clientY - cardCenterY);
+            const cached = dragStateRef.current.cachedRects || [];
+            for (let i = 0; i < cached.length; i++) {
+              const entry = cached[i];
+              const dist = Math.abs(e.clientY - entry.centerY);
               if (dist < closestDist) {
                 closestDist = dist;
-                closestId = clipId;
-                closestRect = rect;
+                closestId = entry.id;
+                closestCenterY = entry.centerY;
               }
             }
 
-            if (closestId && closestDist < 300 && closestRect) {
-              const midY = closestRect.top + closestRect.height / 2;
-              const position = e.clientY < midY ? 'before' : 'after';
+            if (closestId && closestDist < 300) {
+              const position = e.clientY < closestCenterY ? 'before' : 'after';
               if (
                 dragStateRef.current.reorderTargetClipId !== closestId ||
                 dragStateRef.current.reorderTargetPosition !== position
@@ -577,7 +566,6 @@ function App() {
                 dragStateRef.current.reorderTargetPosition = position;
               }
             }
-          }
         } else {
           if (dragStateRef.current.reorderTargetClipId !== null) {
             setReorderTargetClipId(null);
@@ -621,6 +609,23 @@ function App() {
             dragIndicatorRef.current.classList.add('flex');
           }
           
+          // Cache card rects to avoid layout thrashing during mousemove
+          const cards = document.querySelectorAll('[data-clip-id]');
+          const rects: { id: string; rect: DOMRect; centerY: number }[] = [];
+          for (let i = 0; i < cards.length; i++) {
+            const card = cards[i] as HTMLElement;
+            const cardId = card.getAttribute('data-clip-id');
+            if (cardId && cardId !== clipId) {
+              const rect = card.getBoundingClientRect();
+              rects.push({
+                id: cardId,
+                rect,
+                centerY: rect.top + rect.height / 2,
+              });
+            }
+          }
+          dragStateRef.current.cachedRects = rects;
+
           updateDragIndicatorPosition(e.clientX, e.clientY);
           dragStateRef.current.isDragging = true;
           dragStateRef.current.clipId = state.pendingDrag.clipId;
@@ -701,6 +706,7 @@ function App() {
       pendingDrag: null,
       reorderTargetClipId: null,
       reorderTargetPosition: null,
+      cachedRects: null,
     };
     document.body.classList.remove('is-dragging');
 

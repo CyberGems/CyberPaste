@@ -9,7 +9,9 @@ impl Database {
     pub async fn new(db_path: &str) -> Self {
         let options = sqlx::sqlite::SqliteConnectOptions::new()
             .filename(db_path)
-            .create_if_missing(true);
+            .create_if_missing(true)
+            .journal_mode(sqlx::sqlite::SqliteJournalMode::Wal)
+            .synchronous(sqlx::sqlite::SqliteSynchronous::Normal);
 
         let pool = SqlitePool::connect_with(options).await.unwrap();
 

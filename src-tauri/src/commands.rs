@@ -761,7 +761,8 @@ pub async fn paste_clip(
                     let new_sort_order = if is_pinned || clip_folder_id.is_some() {
                         0
                     } else {
-                        db.get_and_prepare_first_unpinned_slot(None, Some(&hist_uuid))
+                        sqlx::query_scalar::<_, i64>("SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips")
+                            .fetch_one(pool)
                             .await
                             .unwrap_or(0)
                     };
@@ -780,8 +781,8 @@ pub async fn paste_clip(
                     .await;
                 } else {
                     let new_uuid = uuid::Uuid::new_v4().to_string();
-                    let new_sort_order = db
-                        .get_and_prepare_first_unpinned_slot(None, None)
+                    let new_sort_order = sqlx::query_scalar::<_, i64>("SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips")
+                        .fetch_one(pool)
                         .await
                         .unwrap_or(0);
 
