@@ -1,0 +1,244 @@
+import { useState, useEffect, useLayoutEffect, useRef, cloneElement, isValidElement } from 'react'
+import type { ReactElement, ReactNode, MouseEvent as ReactMouseEvent, CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
+
+type Placement = 'top' | 'bottom' | 'left' | 'right'
+
+interface TooltipProps {
+  label: ReactNode
+  placement?: Placement
+  children: ReactElement
+}
+
+const VIEWPORT_MARGIN = 8 // separación mínima respecto al borde de la ventana
+const GAP = 8 // separación respecto al elemento ancla
+
+function clamp(value: number, min: number, max: number) {
+  if (max < min) return min // el tooltip es más grande que el espacio: prioriza el margen
+  return Math.max(min, Math.min(value, max))
+}
+
+// Tooltip elegante y reutilizable (mismo estilo que las pestañas del editor).
+// Clona al hijo y le añade los handlers de hover sin envolverlo en otro nodo,
+// de modo que no altera los layouts flex existentes. Se reposiciona para no
+// salirse de la pantalla y la flecha se re-ancla al centro del elemento.
+export default function Tooltip({ label, placement = 'bottom', children }: TooltipProps) {
+  const [anchor, setAnchor] = useState<DOMRect | null>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState<{ left: number; top: number; arrow: CSSProperties } | null>(null)
+  const delayTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Medimos el tooltip ya renderizado y calculamos la posición con clamping.
+  useLayoutEffect(() => {
+    if (!anchor || !cardRef.current) {
+      setPos(null)
+      return
+    }
+    const card = cardRef.current.getBoundingClientRect()
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    const cx = anchor.left + anchor.width / 2
+    const cy = anchor.top + anchor.height / 2
+    let left = 0
+    let top = 0
+    let arrow: CSSProperties = {}
+
+    const borderStyle = '1px solid rgba(255, 255, 255, 0.1)'
+
+    if (placement === 'top' || placement === 'bottom') {
+      left = clamp(cx - card.width / 2, VIEWPORT_MARGIN, vw - card.width - VIEWPORT_MARGIN)
+      top = placement === 'bottom' ? anchor.bottom + GAP : anchor.top - GAP - card.height
+      const ax = clamp(cx - left, 12, card.width - 12) // flecha alineada al centro del ancla
+      arrow =
+        placement === 'bottom'
+          ? {
+              top: -4,
+              left: ax,
+              marginLeft: -4,
+              borderTop: borderStyle,
+              borderLeft: borderStyle
+            }
+          : {
+              bottom: -4,
+              left: ax,
+              marginLeft: -4,
+              borderBottom: borderStyle,
+              borderRight: borderStyle
+            }
+    } else {
+      top = clamp(cy - card.height / 2, VIEWPORT_MARGIN, vh - card.height - VIEWPORT_MARGIN)
+      left = placement === 'right' ? anchor.right + GAP : anchor.left - GAP - card.width
+      const ay = clamp(cy - top, 12, card.height - 12)
+      arrow =
+        placement === 'right'
+          ? {
+              left: -4,
+              top: ay,
+              marginTop: -4,
+              borderBottom: borderStyle,
+              borderLeft: borderStyle
+            }
+          : {
+              right: -4,
+              top: ay,
+              marginTop: -4,
+              borderTop: borderStyle,
+              borderRight: borderStyle
+            }
+    }
+    setPos({ left, top, arrow })
+    // Nota: no dependemos de `label` para evitar recálculos en bucle.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anchor, placement])
+
+  // Ocultar al hacer scroll para que el tooltip no quede "flotando".
+  useEffect(() => {
+    if (!anchor) return
+    const hide = () => setAnchor(null)
+    window.addEventListener('scroll', hide, true)
+    window.addEventListener('wheel', hide, true)
+    return () => {
+      window.removeEventListener('scroll', hide, true)
+      window.removeEventListener('wheel', hide, true)
+    }
+  }, [anchor])
+
+  // Limpiar temporizadores de retardo al desmontar
+  useEffect(() => {
+    return () => {
+      if (delayTimer.current) clearTimeout(delayTimer.current)
+    }
+  }, [])
+
+  if (!isValidElement(children)) return children
+  const child = children as ReactElement<any>
+
+  const show = (e: ReactMouseEvent<HTMLElement>): void => {
+    child.props.onMouseEnter?.(e)
+    if (delayTimer.current) {
+      clearTimeout(delayTimer.current)
+      delayTimer.current = null
+    }
+
+    const target = e.target as HTMLElement
+    const currentTarget = e.currentTarget as HTMLElement
+    const closestTooltipEl = target.closest('[data-has-tooltip="true"]')
+    const closestInteractive = target.closest('button, a, [role="button"]')
+    if (
+      (closestTooltipEl && closestTooltipEl !== currentTarget) ||
+      (closestInteractive && closestInteractive !== currentTarget)
+    ) {
+      setAnchor(null)
+    } else if (label) {
+      const rect = currentTarget.getBoundingClientRect()
+      delayTimer.current = setTimeout(() => {
+        setAnchor(rect)
+      }, 300)
+    }
+  }
+  const hide = (e: ReactMouseEvent<HTMLElement>): void => {
+    child.props.onMouseLeave?.(e)
+    if (delayTimer.current) {
+      clearTimeout(delayTimer.current)
+      delayTimer.current = null
+    }
+    setAnchor(null)
+  }
+  const clickHide = (e: ReactMouseEvent<HTMLElement>): void => {
+    child.props.onClick?.(e)
+    if (delayTimer.current) {
+      clearTimeout(delayTimer.current)
+      delayTimer.current = null
+    }
+    setAnchor(null)
+  }
+  const handleMouseMove = (e: ReactMouseEvent<HTMLElement>): void => {
+    child.props.onMouseMove?.(e)
+    const target = e.target as HTMLElement
+    const currentTarget = e.currentTarget as HTMLElement
+    const closestTooltipEl = target.closest('[data-has-tooltip="true"]')
+    const closestInteractive = target.closest('button, a, [role="button"]')
+    if (
+      (closestTooltipEl && closestTooltipEl !== currentTarget) ||
+      (closestInteractive && closestInteractive !== currentTarget)
+    ) {
+      if (delayTimer.current) {
+        clearTimeout(delayTimer.current)
+        delayTimer.current = null
+      }
+      setAnchor(null)
+    } else if (label) {
+      if (!anchor && !delayTimer.current) {
+        const rect = currentTarget.getBoundingClientRect()
+        delayTimer.current = setTimeout(() => {
+          setAnchor(rect)
+        }, 300)
+      }
+    }
+  }
+
+  // eslint-disable-next-line react-hooks/refs
+  const cloned = cloneElement(child, {
+    onMouseEnter: show,
+    onMouseLeave: hide,
+    onClick: clickHide,
+    onMouseMove: handleMouseMove,
+    'data-has-tooltip': 'true'
+  })
+
+  return (
+    <>
+      {cloned}
+      {anchor &&
+        label &&
+        createPortal(
+          <div
+            style={{
+              position: 'fixed',
+              left: pos ? pos.left : -9999,
+              top: pos ? pos.top : -9999,
+              zIndex: 1000001,
+              pointerEvents: 'none',
+              visibility: pos ? 'visible' : 'hidden'
+            }}
+          >
+            <div
+              ref={cardRef}
+              className="premium-tooltip glass-effect"
+              style={{
+                position: 'relative',
+                background: 'rgba(15, 15, 20, 0.97)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4), 0 0 4px rgba(139, 92, 246, 0.4)',
+                borderRadius: 8,
+                padding: '6px 10px',
+                color: 'rgba(255, 255, 255, 0.95)',
+                fontSize: 11,
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 3,
+                animation: 'tooltipPop 0.14s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+            >
+              {label}
+              <div
+                style={{
+                  position: 'absolute',
+                  width: 8,
+                  height: 8,
+                  background: 'rgba(15, 15, 20, 0.97)',
+                  transform: 'rotate(45deg)',
+                  ...(pos?.arrow || {})
+                }}
+              />
+            </div>
+          </div>,
+          document.body
+        )}
+    </>
+  )
+}

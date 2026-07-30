@@ -12,7 +12,13 @@
     "copied": "Copiado al portapapeles",
     "pasteSuccess": "Pegado con éxito",
     "image": "Imagen",
-    "browse": "Examinar"
+    "browse": "Examinar",
+    "resetWindowSize": "Restablecer tamaño de ventana",
+    "pinWindow": "Fijar ventana",
+    "unpinWindow": "Desfijar ventana",
+    "switchToCompact": "Cambiar a Vista Compacta",
+    "switchToFull": "Cambiar a Vista Completa",
+    "closeWindow": "Cerrar ventana"
   },
   "compact": {
     "enterToPaste": "ENTER PARA PEGAR",

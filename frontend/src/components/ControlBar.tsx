@@ -59,6 +59,8 @@ import {
 } from 'lucide-react';
 import { FolderItem } from '../types';
 import { clsx } from 'clsx';
+import { useTranslation } from 'react-i18next';
+import Tooltip from './Tooltip';
 
 const IconMap: Record<string, any> = {
   Zap,
@@ -176,6 +178,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   isWindowActive = true,
 }) => {
   const foldersRef = React.useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
 
   const currentFolderName = selectedFolder
     ? folders.find((f) => f.id === selectedFolder)?.name || 'Folder'
@@ -809,60 +812,65 @@ export const ControlBar: React.FC<ControlBarProps> = ({
 
         <div className="flex shrink-0 items-center gap-0.5 pl-2">
           {onResetSize && (
-            <button
-              onClick={onResetSize}
-              className="hover:bg-white/8 flex h-8 w-8 items-center justify-center rounded-lg text-white/30 transition-all hover:text-white/70"
-              title="Reset Window Size"
-            >
-              <RotateCcw size={15} />
-            </button>
+            <Tooltip label={t('common.resetWindowSize')} placement="top">
+              <button
+                onClick={onResetSize}
+                className="hover:bg-white/8 flex h-8 w-8 items-center justify-center rounded-lg text-white/30 transition-all hover:text-white/70"
+              >
+                <RotateCcw size={15} />
+              </button>
+            </Tooltip>
           )}
 
           {onTogglePin && (
-            <button
-              onClick={onTogglePin}
-              className={clsx(
-                'flex h-8 w-8 items-center justify-center rounded-lg transition-all',
-                isPinned
-                  ? 'border border-indigo-500/30 bg-indigo-500/15 text-indigo-400'
-                  : 'hover:bg-white/8 text-white/30 hover:text-white/70'
-              )}
-              title={isPinned ? 'Unpin Window' : 'Pin Window'}
-            >
-              {isPinned ? <PinOff size={15} /> : <Pin size={15} />}
-            </button>
+            <Tooltip label={isPinned ? t('common.unpinWindow') : t('common.pinWindow')} placement="top">
+              <button
+                onClick={onTogglePin}
+                className={clsx(
+                  'flex h-8 w-8 items-center justify-center rounded-lg transition-all',
+                  isPinned
+                    ? 'border border-indigo-500/30 bg-indigo-500/15 text-indigo-400'
+                    : 'hover:bg-white/8 text-white/30 hover:text-white/70'
+                )}
+              >
+                {isPinned ? <PinOff size={15} /> : <Pin size={15} />}
+              </button>
+            </Tooltip>
           )}
 
-          <button
-            onClick={onMoreClick}
-            className="hover:bg-white/8 flex h-8 w-8 items-center justify-center rounded-lg text-white/30 transition-all hover:text-white/70"
-            title="Settings"
-          >
-            <Settings size={15} />
-          </button>
+          <Tooltip label={t('settings.title')} placement="top">
+            <button
+              onClick={onMoreClick}
+              className="hover:bg-white/8 flex h-8 w-8 items-center justify-center rounded-lg text-white/30 transition-all hover:text-white/70"
+            >
+              <Settings size={15} />
+            </button>
+          </Tooltip>
 
           {/* View-toggle — compact pill */}
-          <button
-            onClick={onToggleMode}
-            className="group relative ml-1 flex h-7 items-center gap-1 overflow-hidden rounded-lg border border-cyan-500/40 bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 px-2 text-cyan-300 shadow-[0_0_8px_rgba(6,182,212,0.15)] transition-all duration-200 hover:border-cyan-400/70 hover:from-cyan-500/30 hover:to-indigo-500/30 hover:shadow-[0_0_16px_rgba(6,182,212,0.4)]"
-            title={viewMode === 'full' ? 'Switch to Compact Mode' : 'Switch to Full Mode'}
-          >
-            {/* shimmer sweep */}
-            <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
-            {viewMode === 'full' ? (
-              <Minimize2 size={13} className="relative z-10 flex-shrink-0" />
-            ) : (
-              <Maximize2 size={13} className="relative z-10 flex-shrink-0" />
-            )}
-          </button>
+          <Tooltip label={viewMode === 'full' ? t('common.switchToCompact') : t('common.switchToFull')} placement="top">
+            <button
+              onClick={onToggleMode}
+              className="group relative ml-1 flex h-7 items-center gap-1 overflow-hidden rounded-lg border border-cyan-500/40 bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 px-2 text-cyan-300 shadow-[0_0_8px_rgba(6,182,212,0.15)] transition-all duration-200 hover:border-cyan-400/70 hover:from-cyan-500/30 hover:to-indigo-500/30 hover:shadow-[0_0_16px_rgba(6,182,212,0.4)]"
+            >
+              {/* shimmer sweep */}
+              <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+              {viewMode === 'full' ? (
+                <Minimize2 size={13} className="relative z-10 flex-shrink-0" />
+              ) : (
+                <Maximize2 size={13} className="relative z-10 flex-shrink-0" />
+              )}
+            </button>
+          </Tooltip>
 
-          <button
-            onClick={() => (window as any).__TAURI_INTERNALS__.invoke('hide_window')}
-            className="hover:bg-rose-500/12 ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg text-white/25 transition-all hover:text-rose-400"
-            title="Close Window"
-          >
-            <X size={15} />
-          </button>
+          <Tooltip label={t('common.closeWindow')} placement="top">
+            <button
+              onClick={() => (window as any).__TAURI_INTERNALS__.invoke('hide_window')}
+              className="hover:bg-rose-500/12 ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg text-white/25 transition-all hover:text-rose-400"
+            >
+              <X size={15} />
+            </button>
+          </Tooltip>
         </div>
       </div>
     </div>

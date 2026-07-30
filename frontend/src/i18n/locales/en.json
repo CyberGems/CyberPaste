@@ -12,7 +12,13 @@
     "copied": "Copied to clipboard",
     "pasteSuccess": "Pasted successfully",
     "image": "Image",
-    "browse": "Browse"
+    "browse": "Browse",
+    "resetWindowSize": "Reset Window Size",
+    "pinWindow": "Pin Window",
+    "unpinWindow": "Unpin Window",
+    "switchToCompact": "Switch to Compact Mode",
+    "switchToFull": "Switch to Full Mode",
+    "closeWindow": "Close Window"
   },
   "compact": {
     "enterToPaste": "ENTER TO PASTE",
