@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Folder, FolderPlus } from 'lucide-react';
 import { FolderItem } from '../types';
+import { useTranslation } from 'react-i18next';
 
 interface MoveToFolderModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ export const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
   onClose,
   onSelect,
 }) => {
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
   return (
@@ -26,7 +28,7 @@ export const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
         <div className="flex flex-shrink-0 items-center justify-between border-b border-border bg-muted/30 px-5 py-3">
           <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-tight text-primary">
             <Folder size={16} />
-            Move to Folder
+            {t('folders.moveToFolder')}
           </h3>
           <button
             onClick={onClose}
@@ -48,7 +50,7 @@ export const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted transition-colors group-hover:bg-primary/20">
               <FolderPlus size={16} />
             </div>
-            <span className="text-sm font-medium">Main Clipboard</span>
+            <span className="text-sm font-medium">{t('folders.mainClipboard')}</span>
           </button>
 
           {folders
@@ -75,14 +77,14 @@ export const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
                 <div className="flex-1 text-left">
                   <span className="block truncate text-sm font-medium">{folder.name}</span>
                   <span className="block text-[10px] opacity-40">
-                    {folder.item_count || 0} items
+                    {t('folders.itemCount', { count: folder.item_count || 0 })}
                   </span>
                 </div>
               </button>
             ))}
 
           {folders.filter((f) => !f.is_system).length === 0 && (
-            <div className="p-8 text-center text-sm italic opacity-30">No folders created yet</div>
+            <div className="p-8 text-center text-sm italic opacity-30">{t('folders.noFoldersCreated')}</div>
           )}
         </div>
       </div>

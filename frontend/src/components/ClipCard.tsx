@@ -139,7 +139,7 @@ export const ClipCard = memo(
                 className="max-h-full max-w-full object-contain"
               />
             ) : (
-              <span className="text-xs text-muted-foreground/70">Image</span>
+              <span className="text-xs text-muted-foreground/70">{t('common.image')}</span>
             )}
           </div>
         );
@@ -147,14 +147,14 @@ export const ClipCard = memo(
         return (
           <div className="flex h-full w-full select-none flex-col items-center justify-center gap-1">
             <span className="text-xs font-bold uppercase tracking-wider text-yellow-400/70">
-              Files
+              {t('common.files')}
             </span>
             <span className="max-w-full truncate px-3 text-center text-xs text-muted-foreground/60">
               {clip.preview || filePaths[0] || ''}
             </span>
             {filePaths.length > 1 && (
               <span className="text-[10px] text-muted-foreground/40">
-                +{filePaths.length - 1} more
+                {t('common.more', { count: filePaths.length - 1 })}
               </span>
             )}
           </div>
@@ -285,7 +285,7 @@ export const ClipCard = memo(
               </div>
             )}
             {clip.is_pinned && (
-              <span className="flex items-center text-cyan-400 opacity-80" title="Pinned Clip">
+              <span className="flex items-center text-cyan-400 opacity-80" title={t('common.pinnedClip')}>
                 <Pin size={10} className="fill-cyan-400/20 -rotate-45" />
               </span>
             )}
@@ -321,7 +321,7 @@ export const ClipCard = memo(
               >
                 {isLatest && (
                   <span className="select-none rounded bg-black/80 px-1 text-[8px] font-bold uppercase tracking-widest text-cyan-400/90">
-                    Latest
+                    {t('common.latest')}
                   </span>
                 )}
                 <div
@@ -349,7 +349,7 @@ export const ClipCard = memo(
                   setTimeout(() => setCopied(false), 2000);
                 }}
                 className="relative z-10 rounded-md p-1 text-foreground/70 hover:bg-white/10 hover:text-foreground"
-                title="Copy to clipboard"
+                title={t('common.copyToClipboard')}
               >
                 {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
               </motion.button>
@@ -386,7 +386,7 @@ export const ClipCard = memo(
                   </div>
                 </div>
               ) : clip.clip_type === 'file' ? (
-                `${clip.preview || 'File'}`
+                `${clip.preview || t('common.file')}`
               ) : (
                 t('clipList.textLength', { count: clip.content_length })
               )}

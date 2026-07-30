@@ -1,5 +1,6 @@
 import { Search, X, Keyboard } from 'lucide-react';
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface SearchBarProps {
   query: string;
@@ -8,6 +9,7 @@ interface SearchBarProps {
 }
 
 export function SearchBar({ query, onQueryChange, onClear }: SearchBarProps) {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -38,18 +40,18 @@ export function SearchBar({ query, onQueryChange, onClear }: SearchBarProps) {
         type="text"
         value={query}
         onChange={(e) => onQueryChange(e.target.value)}
-        placeholder={`Search clips... (Ctrl+F)`}
+        placeholder={t('common.searchPlaceholder')}
         className="search-input pl-10 pr-20"
       />
       <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
         {query && (
-          <button onClick={onClear} className="icon-button p-1" title="Clear search">
+          <button onClick={onClear} className="icon-button p-1" title={t('common.clearSearch')}>
             <X size={14} />
           </button>
         )}
         <div className="flex items-center gap-1 rounded bg-accent px-1.5 py-0.5">
           <Keyboard size={10} className="text-muted-foreground" />
-          <span className="text-[10px] text-muted-foreground">ESC</span>
+          <span className="text-[10px] text-muted-foreground">{t('common.esc')}</span>
         </div>
       </div>
     </div>

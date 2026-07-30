@@ -240,7 +240,7 @@ export function ImageViewerWindow() {
   if (loading && !clip) {
     return (
       <div className="flex h-screen w-screen animate-pulse items-center justify-center bg-zinc-950 font-mono text-[#00F2FF]">
-        LOADING_IMAGE_SYSTEM...
+        {t('viewer.loadingImage')}
       </div>
     );
   }
@@ -248,7 +248,7 @@ export function ImageViewerWindow() {
   if (!clip) {
     return (
       <div className="flex h-screen w-screen items-center justify-center border border-[#FF00D0]/30 bg-zinc-950 font-mono text-[#FF00D0]">
-        ERROR::CLIP_NOT_FOUND
+        {t('viewer.clipNotFound')}
       </div>
     );
   }
@@ -356,7 +356,7 @@ export function ImageViewerWindow() {
             <button
               onClick={() => setFitToWindow(!fitToWindow)}
               className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-cyan-400"
-              title={fitToWindow ? 'Original Size' : 'Fit to Window'}
+              title={fitToWindow ? t('viewer.originalSize') : t('viewer.fitToWindow')}
             >
               {fitToWindow ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
             </button>
@@ -364,7 +364,7 @@ export function ImageViewerWindow() {
             <button
               onClick={handleEdit}
               className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-indigo-400"
-              title="Edit"
+              title={t('viewer.edit')}
             >
               <Edit size={15} />
             </button>
@@ -372,7 +372,7 @@ export function ImageViewerWindow() {
             <button
               onClick={handleCopy}
               className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-emerald-400"
-              title="Copy to Clipboard"
+              title={t('viewer.copy')}
             >
               <Clipboard size={15} />
             </button>
@@ -380,7 +380,7 @@ export function ImageViewerWindow() {
             <button
               onClick={handleRunOcr}
               className={`rounded-md p-1.5 transition-colors hover:bg-white/10 ${showOcrDrawer ? "text-[#00F2FF] bg-white/5" : "text-zinc-400 hover:text-[#00F2FF]"}`}
-              title={t('viewer.extractText') || 'Extract Text (OCR)'}
+              title={t('viewer.extractText')}
             >
               <FileText size={15} />
             </button>
@@ -391,7 +391,7 @@ export function ImageViewerWindow() {
             <button
               onClick={handleMinimize}
               className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-white"
-              title="Minimize"
+              title={t('common.minimize')}
             >
               <Minus size={16} />
             </button>
@@ -399,7 +399,7 @@ export function ImageViewerWindow() {
             <button
               onClick={handleMaximize}
               className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-cyan-400"
-              title={isMaximized ? 'Restore' : 'Maximize'}
+              title={isMaximized ? t('common.restore') : t('common.maximize')}
             >
               {isMaximized ? <Minimize2 size={16} /> : <Maximize size={16} />}
             </button>
@@ -407,7 +407,7 @@ export function ImageViewerWindow() {
             <button
               onClick={handleClose}
               className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-rose-400"
-              title="Close"
+              title={t('viewer.close')}
             >
               <X size={18} />
             </button>
@@ -459,7 +459,7 @@ export function ImageViewerWindow() {
                 <button
                   onClick={() => setShowOcrDrawer(false)}
                   className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-white"
-                  title="Close Drawer"
+                  title={t('viewer.closeDrawer')}
                 >
                   <X size={14} />
                 </button>

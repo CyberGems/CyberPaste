@@ -90,7 +90,7 @@ function PromptEditor({
             }
           }}
           className="bg-transparent text-xs font-semibold text-foreground/70 outline-none transition-colors focus:text-primary"
-          title="Click to rename action"
+          title={t('settings.clickToRename')}
         />
         <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
           {t('settings.actionName')}
@@ -174,7 +174,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
       await invoke('show_item_in_folder', { path: dataDir });
     } catch (e) {
       console.error('Failed to open data dir:', e);
-      toast.error('Failed to open data directory');
+      toast.error(t('settings.failedToOpenDataDir'));
     }
   };
 
@@ -183,7 +183,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
       await invoke('open_devtools');
     } catch (e) {
       console.error('Failed to open console:', e);
-      toast.error('Failed to open developer console');
+      toast.error(t('settings.failedToOpenConsole'));
     }
   };
   const [localApiKey, setLocalApiKey] = useState(initialSettings.ai_api_key || '');
@@ -252,7 +252,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
           }
         } catch (error) {
           console.error(`Failed to save settings:`, error);
-          toast.error(`Failed to save settings`);
+          toast.error(t('settings.failedToSave'));
         }
       })();
 
@@ -267,13 +267,13 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
             .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
             .join(' ');
           if (typeof value === 'boolean') {
-            toast.success(`${label} was ${value ? 'enabled' : 'disabled'}`);
+            toast.success(`${label}: ${value ? t('common.enabled') : t('common.disabled')}`);
           } else {
-            toast.success(`${label} updated`);
+            toast.success(`${label} ${t('common.updated')}`);
           }
         }
       } else if (keys.length > 1) {
-        toast.success('Settings updated');
+        toast.success(t('settings.layoutRestored'));
       }
 
       return newSettings;
@@ -326,14 +326,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
   const handleResetLayout = async () => {
     try {
       await emit('reset-window-layout', {});
-      toast.success('Layout restored to defaults!');
+      toast.success(t('settings.layoutRestored'));
       // Small delay to let user see success message
       setTimeout(() => {
         onClose();
       }, 800);
     } catch (e) {
       console.error(e);
-      toast.error('Failed to send reset command');
+      toast.error(t('settings.failedToResetLayout'));
     }
   };
 
@@ -366,9 +366,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
       await invoke('add_ignored_app', { appName: newIgnoredApp.trim() });
       setIgnoredApps((prev) => [...prev, newIgnoredApp.trim()].sort());
       setNewIgnoredApp('');
-      toast.success(`Added ${newIgnoredApp.trim()} to ignored apps`);
+      toast.success(t('settings.addedToIgnored', { name: newIgnoredApp.trim() }));
     } catch (e) {
-      toast.error(`Failed to add ignored app: ${e}`);
+      toast.error(t('settings.failedToAddIgnored', { error: e }));
       console.error(e);
     }
   };
@@ -390,9 +390,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     try {
       await invoke('remove_ignored_app', { appName: app });
       setIgnoredApps((prev) => prev.filter((a) => a !== app));
-      toast.success(`Removed ${app} from ignored apps`);
+      toast.success(t('settings.removedFromIgnored', { app }));
     } catch (e) {
-      toast.error(`Failed to remove ignored app: ${e}`);
+      toast.error(t('settings.failedToRemoveIgnored', { error: e }));
       console.error(e);
     }
   };
@@ -410,7 +410,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
           toast.success(t('settings.clearHistorySuccess'));
         } catch (error) {
           console.error('Failed to clear history:', error);
-          toast.error(`Failed to clear history: ${error}`);
+          toast.error(t('settings.failedToClearHistory', { error }));
         }
       },
     });
@@ -423,9 +423,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
       await invoke('create_folder', { name: newFolderName.trim(), icon: null, color: null });
       setNewFolderName('');
       await loadFolders();
-      toast.success('Folder created');
+      toast.success(t('settings.folderCreatedToast'));
     } catch (e) {
-      toast.error(`Failed to create folder: ${e}`);
+      toast.error(t('settings.failedToCreateFolder', { error: e }));
     }
   };
 
@@ -433,9 +433,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     try {
       await invoke('delete_folder', { id });
       await loadFolders();
-      toast.success('Folder deleted');
+      toast.success(t('settings.folderDeletedToast'));
     } catch (e) {
-      toast.error(`Failed to delete folder: ${e}`);
+      toast.error(t('settings.failedToDeleteFolder', { error: e }));
     }
   };
 
@@ -451,9 +451,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
       setEditingFolderId(null);
       setRenameValue('');
       await loadFolders();
-      toast.success('Folder renamed');
+      toast.success(t('settings.folderRenamedToast'));
     } catch (e) {
-      toast.error(`Failed to rename folder: ${e}`);
+      toast.error(t('settings.failedToRenameFolder', { error: e }));
     }
   };
 
@@ -613,7 +613,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   {/* Appearance */}
                   <section className="space-y-4">
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
-                      <SettingsIcon size={14} /> Appearance
+                      <SettingsIcon size={14} /> {t('settings.appearanceSection')}
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-3">
@@ -728,7 +728,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   {/* Clipboard & Capture */}
                   <section className="space-y-4">
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-cyan-400/80">
-                      <Clipboard size={14} /> Clipboard & Capture
+                      <Clipboard size={14} /> {t('settings.clipboardCapture')}
                     </h3>
                     <div className="space-y-3">
                       <label className="block">
@@ -736,7 +736,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           {t('settings.historyLimit')}
                         </span>
                         <p className="text-xs text-muted-foreground">
-                          Maximum number of clips to keep in history (excludes folders).
+                          {t('settings.historyLimitDesc')}
                         </p>
                       </label>
                       <div className="flex items-center gap-4 rounded-xl border border-border/40 bg-accent/10 p-3">
@@ -837,7 +837,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             }}
                             disabled={!settings.clipboard_sound_path}
                             className="btn btn-secondary flex-shrink-0 text-xs disabled:opacity-50 rounded-[4px]"
-                            title="Preview sound"
+                            title={t('settings.previewSound')}
                           >
                             <Volume2 size={14} />
                           </button>
@@ -899,11 +899,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <div className="space-y-3">
                       <label className="block">
                         <span className="text-sm font-bold uppercase tracking-tight text-primary/70">
-                          External Image Editor
+                          {t('settings.externalImageEditor')}
                         </span>
                         <p className="text-xs text-muted-foreground">
-                          Path to your favorite editor (e.g., CyberViewer). Opens when editing image
-                          clips.
+                          {t('settings.externalImageEditorDesc')}
                         </p>
                       </label>
                       <div className="flex items-center gap-2">
@@ -926,7 +925,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           }}
                           className="rounded-[4px] bg-accent px-3 py-2 text-sm font-medium transition-all hover:bg-accent/80"
                         >
-                          Browse
+                          {t('common.browse')}
                         </button>
                       </div>
                     </div>
@@ -935,7 +934,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   {/* Layout & Navigation */}
                   <section className="space-y-4">
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-purple-400/80">
-                      <Layout size={14} /> Layout & Navigation
+                      <Layout size={14} /> {t('settings.layoutNavigation')}
                     </h3>
                     <div className="space-y-3">
                       <label className="block">
@@ -1127,21 +1126,21 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                       <FolderIcon size={14} className="text-blue-400 flex-shrink-0" />
                                       <span className="truncate font-medium">{folder.name}</span>
                                       <span className="text-[10px] text-muted-foreground flex-shrink-0">
-                                        ({folder.item_count} items)
+                                        {t('folders.itemCount', { count: folder.item_count })}
                                       </span>
                                     </div>
                                     <div className="flex items-center gap-1 flex-shrink-0">
                                       <button
                                         onClick={() => startRenameFolder(folder)}
                                         className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                                        title="Rename"
+                                        title={t('folders.rename')}
                                       >
                                         <MoreHorizontal size={13} />
                                       </button>
                                       <button
                                         onClick={() => handleDeleteFolder(folder.id)}
                                         className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-                                        title="Delete"
+                                        title={t('common.delete')}
                                       >
                                         <Trash2 size={13} />
                                       </button>
@@ -1158,7 +1157,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   {/* Shortcuts */}
                   <section className="space-y-4">
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-amber-400/80">
-                      <Command size={14} /> Shortcuts
+                      <Command size={14} /> {t('settings.shortcuts')}
                     </h3>
                     <div className="space-y-6">
                       <div className="space-y-3">
@@ -1265,7 +1264,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   {/* Privacy */}
                   <section className="space-y-4">
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-emerald-400/80">
-                      <Lock size={14} /> Privacy
+                      <Lock size={14} /> {t('settings.privacy')}
                     </h3>
                     <div className="space-y-3">
                       <label className="block">
@@ -1280,14 +1279,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           type="text"
                           value={newIgnoredApp}
                           onChange={(e) => setNewIgnoredApp(e.target.value)}
-                          placeholder={'e.g. notepad.exe'}
+                          placeholder={t('settings.ignoredAppPlaceholder')}
                           className="flex-1 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] placeholder:text-white/30 focus:outline-none focus:border-white/20 focus:ring-0"
                           onKeyDown={(e) => e.key === 'Enter' && handleAddIgnoredApp()}
                         />
                         <button
                           onClick={handleBrowseFile}
                           className="btn btn-secondary px-3 rounded-[4px]"
-                          title="Browse executable"
+                          title={t('settings.browseExecutable')}
                         >
                           <FolderOpen size={16} />
                         </button>
@@ -1295,7 +1294,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           onClick={handleAddIgnoredApp}
                           disabled={!newIgnoredApp.trim()}
                           className="btn btn-secondary px-3 rounded-[4px]"
-                          title="Add to list"
+                          title={t('settings.addToList')}
                         >
                           <Plus size={16} />
                         </button>
@@ -1408,7 +1407,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               setLocalApiKey(trimmed);
                               updateSetting('ai_api_key', trimmed);
                             }}
-                            placeholder="API Key"
+                            placeholder={t('settings.apiKeyPlaceholder')}
                             className="w-full rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] py-1.5 pl-2.5 pr-10 text-[12px] text-[#F0F0F0] placeholder:text-white/30 focus:outline-none focus:border-white/20 focus:ring-0"
                           />
                           <button
@@ -1444,7 +1443,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             value={localModel}
                             onChange={(e) => setLocalModel(e.target.value)}
                             onBlur={() => updateSetting('ai_model', localModel)}
-                            placeholder="gpt-4o, deepseek-chat, etc."
+                            placeholder={t('settings.modelPlaceholder')}
                             className="w-full rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] placeholder:text-white/30 focus:outline-none focus:border-white/20 focus:ring-0 mt-2"
                           />
                         )}
@@ -1459,7 +1458,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           value={localBaseUrl}
                           onChange={(e) => setLocalBaseUrl(e.target.value)}
                           onBlur={() => updateSetting('ai_base_url', localBaseUrl)}
-                          placeholder="https://api.openai.com/v1"
+                          placeholder={t('settings.baseUrlPlaceholder')}
                           className="w-full rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] placeholder:text-white/30 focus:outline-none focus:border-white/20 focus:ring-0"
                         />
                       </div>
@@ -1652,7 +1651,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   {/* Check for Updates */}
                   <section className="space-y-4">
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-cyan-400/80">
-                      <RotateCcw size={14} /> Updates
+                      <RotateCcw size={14} /> {t('settings.updates')}
                     </h3>
                     <div className="flex items-center justify-between rounded-[4px] border border-white/[0.08] bg-[#2D2D2D] p-3">
                       <div>
@@ -1686,7 +1685,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           const raw = typeof err === 'string' ? err : err?.message || String(err);
                           const msg = raw.length > 80 ? raw.slice(0, 80) + '...' : raw;
                           if (/fetch|network|connect|timeout|404|not found/i.test(raw)) {
-                            toast.info('Update server is not reachable yet. This is normal if no release version has been published.');
+                            toast.info(t('settings.updateNotReachable'));
                           } else {
                             toast.error(`${t('settings.updateError')}: ${msg}`);
                           }
@@ -1703,7 +1702,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   {/* Data Management */}
                   <section className="space-y-4">
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-rose-400/80">
-                      <Database size={14} /> Data Management
+                      <Database size={14} /> {t('settings.dataManagement')}
                     </h3>
                     <div className="grid grid-cols-2 gap-3">
                       <button
@@ -1722,7 +1721,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             setHistorySize(newSize);
                           } catch (error) {
                             console.error(error);
-                            toast.error(`Failed to remove duplicates: ${error}`);
+                            toast.error(t('settings.failedToRemoveDuplicates', { error }));
                           }
                         }}
                         className="btn btn-secondary text-xs rounded-[4px]"
@@ -1735,59 +1734,57 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   {/* Panic Room */}
                   <section className="space-y-4">
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-rose-500/80">
-                      <Flame size={14} /> Panic Room
+                      <Flame size={14} /> {t('settings.panicRoom')}
                     </h3>
                     <div className="flex flex-col gap-3 rounded-[4px] border border-rose-500/20 bg-rose-500/5 p-4">
                       <p className="text-xs text-muted-foreground">
-                        If the window becomes deformed, off-screen, or behaves erratically, use this
-                        to restore all layout and visibility settings to factory defaults.
+                        {t('settings.panicRoomDesc')}
                       </p>
                       <button
                         onClick={handleResetLayout}
                         className="flex w-full items-center justify-center gap-2 rounded-[4px] bg-rose-500 py-2.5 font-bold text-white shadow-lg shadow-rose-500/20 transition-all hover:bg-rose-600"
                       >
                         <RotateCcw size={16} />
-                        Reset Layout & Visibility
+                        {t('settings.resetLayoutVisibility')}
                       </button>
                     </div>
                   </section>
 
                   {/* Backup & Restore */}
                   <section className="space-y-4">
-                    <h3 className="text-[13px] font-semibold text-primary/80">Backup & Restore</h3>
+                    <h3 className="text-[13px] font-semibold text-primary/80">{t('settings.backupRestore')}</h3>
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         onClick={async () => {
-                          const id = toast.loading('Generating backup...');
+                          const id = toast.loading(t('settings.generatingBackup'));
                           try {
                             await invoke('export_backup_to_file');
-                            toast.success('Backup saved successfully', { id });
+                            toast.success(t('settings.backupSaved'), { id });
                           } catch (error) {
                             if (error === 'Export cancelled') {
                               toast.dismiss(id);
                             } else {
-                              toast.error(`Export failed: ${error}`, { id });
+                              toast.error(t('settings.exportFailed', { error }), { id });
                             }
                           }
                         }}
                         className="btn border border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 rounded-[4px]"
                       >
                         <FolderOpen size={16} className="mr-2" />
-                        Export Backup (JSON)
+                        {t('settings.exportBackup')}
                       </button>
 
                       <button
                         onClick={() => {
                           setConfirmDialog({
                             isOpen: true,
-                            title: 'Import Backup?',
-                            message:
-                              'This will REPLACE all current clips, folders, images, and settings with the backup data. Your current data will be lost. Export a backup first if you want to keep it.',
+                            title: t('settings.importBackupTitle'),
+                            message: t('settings.importBackupMessage'),
                             action: async () => {
-                              const id = toast.loading('Restoring backup...');
+                              const id = toast.loading(t('settings.generatingBackup'));
                               try {
                                 await invoke('import_backup_from_file');
-                                toast.success('Restore complete! CyberPaste has been updated.', {
+                                toast.success(t('settings.restoreComplete'), {
                                   id,
                                 });
                                 setTimeout(() => window.location.reload(), 1500);
@@ -1795,7 +1792,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                 if (error === 'Import cancelled') {
                                   toast.dismiss(id);
                                 } else {
-                                  toast.error(`Import failed: ${error}`, { id });
+                                  toast.error(t('settings.importFailed', { error }), { id });
                                 }
                               }
                             },
@@ -1804,38 +1801,37 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         className="btn border border-orange-500/20 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 rounded-[4px]"
                       >
                         <Plus size={16} className="mr-2" />
-                        Import Backup
+                        {t('settings.importBackup')}
                       </button>
                     </div>
                     <p className="mt-1 text-[10px] text-muted-foreground">
-                      * Export saves all clips, images, folders, and settings. Import replaces
-                      everything with the backup data.
+                      {t('settings.backupDesc')}
                     </p>
                   </section>
 
                   {/* Debug */}
                   <section className="space-y-4 border-t border-white/[0.05] pt-4">
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-muted-foreground">
-                      <FlaskConical size={14} /> Debug
+                      <FlaskConical size={14} /> {t('settings.debug')}
                     </h3>
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         onClick={() => {
                           emit('load-demo-data');
-                          toast.info('Demo clips loaded');
+                          toast.info(t('settings.demoClipsLoaded'));
                         }}
                         className="btn border border-white/[0.08] bg-[#1E1E1E] text-white/70 hover:bg-white/10 rounded-[4px] text-xs"
                       >
-                        Load 20 demo clips
+                        {t('settings.loadDemoClips')}
                       </button>
                       <button
                         onClick={() => {
                           emit('restore-actual-data');
-                          toast.info('Data restored');
+                          toast.info(t('settings.dataRestored'));
                         }}
                         className="btn border border-white/[0.08] bg-[#1E1E1E] text-white/70 hover:bg-white/10 rounded-[4px] text-xs"
                       >
-                        Restore actual data
+                        {t('settings.restoreActualData')}
                       </button>
                     </div>
                   </section>
@@ -1864,12 +1860,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <div className="flex items-center gap-3 text-primary">
                         <Terminal size={20} />
                         <h4 className="text-sm font-semibold uppercase tracking-wider">
-                          System & Debug
+                          {t('settings.systemDebug')}
                         </h4>
                       </div>
                       <p className="text-sm leading-relaxed text-muted-foreground/80">
-                        Access internal tools and data storage. Useful for advanced troubleshooting
-                        or manual backups.
+                        {t('settings.systemDebugDesc')}
                       </p>
                       <div className="flex flex-wrap gap-3 pt-2">
                         <button
@@ -1877,14 +1872,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           className="flex items-center gap-2 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-4 py-2 text-sm font-medium transition-all hover:bg-white/10"
                         >
                           <FolderOpen size={16} />
-                          Data Directory
+                          {t('settings.dataDirectory')}
                         </button>
                         <button
                           onClick={openConsole}
                           className="flex items-center gap-2 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-4 py-2 text-sm font-medium transition-all hover:bg-white/10"
                         >
                           <Terminal size={16} />
-                          Developer Console
+                          {t('settings.developerConsole')}
                         </button>
                       </div>
                     </div>
@@ -1893,12 +1888,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <div className="flex items-center gap-3 text-primary">
                         <Heart size={20} />
                         <h4 className="text-sm font-semibold uppercase tracking-wider">
-                          Open Source
+                          {t('settings.openSource')}
                         </h4>
                       </div>
                       <p className="text-sm leading-relaxed text-muted-foreground/80">
-                        CyberPaste is built with passion and open-source technologies like Rust,
-                        Tauri, and React.
+                        {t('settings.openSourceDesc')}
                       </p>
                       <div className="flex flex-wrap gap-3 pt-2">
                         <button
@@ -1908,7 +1902,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           className="flex items-center gap-2 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-4 py-2 text-sm font-medium transition-all hover:bg-white/10"
                         >
                           <ExternalLink size={16} />
-                          GitHub Repository
+                          {t('settings.gitHubRepository')}
                         </button>
                         <button
                           onClick={() =>
@@ -1919,7 +1913,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           className="flex items-center gap-2 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-4 py-2 text-sm font-medium transition-all hover:bg-white/10"
                         >
                           <Info size={16} />
-                          License (GPL-3.0)
+                          {t('settings.licenseGpl')}
                         </button>
                       </div>
                     </div>

@@ -681,7 +681,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
             <button
               onClick={onToggleSidebar}
               className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
-              title={compactSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+              title={compactSidebarCollapsed ? t('common.expandSidebar') : t('common.collapseSidebar')}
             >
               {compactSidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
             </button>
@@ -714,7 +714,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   ? 'border border-indigo-500/30 bg-indigo-500/15 text-indigo-400'
                   : 'hover:bg-white/8 text-white/30 hover:text-white/70'
               )}
-              title={isPinned ? 'Unpin Window' : 'Pin Window'}
+              title={isPinned ? t('common.unpinWindowShort') : t('common.pinWindowShort')}
             >
               {isPinned ? <PinOff size={14} /> : <Pin size={14} />}
             </button>
@@ -731,14 +731,14 @@ export const CompactView: React.FC<CompactViewProps> = ({
           <button
             onClick={handleResetSize}
             className="hover:bg-white/8 flex h-7 w-7 items-center justify-center rounded-md text-white/30 transition-all hover:text-white/70"
-            title="Reset Default Size"
+            title={t('common.resetDefaultSize')}
           >
             <RotateCcw size={14} />
           </button>
           <button
             onClick={onOpenSettings}
             className="hover:bg-white/8 flex h-7 w-7 items-center justify-center rounded-md text-white/30 transition-all hover:text-white/70"
-            title="Settings"
+            title={t('common.settings')}
           >
             <Settings size={14} />
           </button>
@@ -747,7 +747,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
           <button
             onClick={onToggleMode}
             className="group relative ml-1 flex h-7 items-center gap-1.5 overflow-hidden rounded-lg border border-cyan-500/40 bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 px-2.5 text-[10px] font-bold uppercase tracking-widest text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.2)] transition-all duration-200 hover:border-cyan-400/70 hover:from-cyan-500/30 hover:to-indigo-500/30 hover:shadow-[0_0_18px_rgba(6,182,212,0.45)]"
-            title="Full Mode"
+            title={t('common.fullMode')}
           >
             {/* shimmer sweep */}
             <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
@@ -757,7 +757,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
           <button
             onClick={() => invoke('hide_window').catch(() => (window as any).__TAURI_INTERNALS__?.invoke('hide_window'))}
             className="hover:bg-rose-500/12 ml-0.5 flex h-7 w-7 items-center justify-center rounded-md text-white/25 transition-all hover:text-rose-400"
-            title="Close"
+            title={t('common.closeCompact')}
           >
             <X size={14} />
           </button>
@@ -861,10 +861,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 <button
                   onClick={onAddFolder}
                   className="mx-1.5 flex flex-row items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-dashed border-white/20 bg-white/5 px-2 py-1.5 text-[10px] font-medium text-white/40 transition-all hover:bg-white/10 hover:text-white/80"
-                  title="Add Folder"
+                  title={t('folders.addFolderBtn')}
                 >
                   <Plus size={10} />
-                  <span className="flex-1 truncate text-left">New Folder</span>
+                  <span className="flex-1 truncate text-left">{t('folders.newFolder')}</span>
                 </button>
               )}
             </div>
@@ -893,7 +893,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     <button
                       onClick={() => onSearchChange('')}
                       className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
-                      title="Clear search"
+                      title={t('common.clearSearch')}
                     >
                       <X size={14} />
                     </button>
@@ -1023,7 +1023,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 onMouseLeave={onDragLeave}
               >
                 <Clock size={10} />
-                [Clipboard]
+                {t('folders.all')}
                 <span
                   className={cn('text-[9px] opacity-40', selectedFolder === null && 'opacity-80')}
                 >
@@ -1083,10 +1083,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 <button
                   onClick={onAddFolder}
                   className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-dashed border-white/20 bg-white/5 px-2 py-1 text-[10px] font-medium text-white/40 transition-all hover:bg-white/10 hover:text-white/80"
-                  title="Add Folder"
+                  title={t('folders.addFolderBtn')}
                 >
                   <Plus size={10} />
-                  New
+                  {t('folders.new')}
                 </button>
               )}
             </div>
@@ -1227,7 +1227,7 @@ const ClipRow: React.FC<{
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <span className="text-[10px] opacity-40">IMG</span>
+                  <span className="text-[10px] opacity-40">{t('common.image')}</span>
                 )}
               </div>
               {(() => {
@@ -1268,7 +1268,7 @@ const ClipRow: React.FC<{
           ) : clip.clip_type === 'file' ? (
             <span className="flex items-center gap-2 truncate">
               <span className="flex-shrink-0 text-[10px] font-bold uppercase text-yellow-400/70">
-                FILE
+                {t('common.file')}
               </span>
               <span className="truncate text-xs leading-none text-muted-foreground/80">
                 {clip.preview}
@@ -1284,9 +1284,9 @@ const ClipRow: React.FC<{
         <div className="flex flex-shrink-0 items-center gap-3 pr-2">
           <span className="flex items-center gap-2 whitespace-nowrap text-[10px] opacity-40">
             {index === 0 && !selectedFolder && (
-              <span className="text-[8px] font-bold uppercase tracking-widest text-cyan-400/90">
-                Latest
-              </span>
+                  <span className="text-[8px] font-bold uppercase tracking-widest text-cyan-400/90">
+                    {t('common.latest')}
+                  </span>
             )}
             {clip.is_pinned && (
               <Pin

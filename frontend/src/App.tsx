@@ -847,10 +847,10 @@ function App() {
       );
       // Since changing pin status changes order, refresh the current folder/clipboard list to get correct new sorting!
       refreshCurrentFolder();
-      toast.success(newPinnedState ? 'Clip pinned' : 'Clip unpinned');
+      toast.success(newPinnedState ? t('toasts.clipPinned') : t('toasts.clipUnpinned'));
     } catch (error) {
       console.error('Failed to toggle clip pin:', error);
-      toast.error('Failed to toggle pin');
+      toast.error(t('toasts.togglePinFailed'));
     }
   }, [refreshCurrentFolder]);
 
@@ -1024,7 +1024,7 @@ function App() {
       loadFolders();
     } catch (error) {
       console.error('Failed to reorder folder:', error);
-      toast.error('Failed to reorder folder');
+      toast.error(t('toasts.folderReorderFailed'));
     }
   };
 
@@ -1154,10 +1154,10 @@ function App() {
       // Refresh clips in place to preserve scroll position and selection
       refreshCurrentFolder();
       refreshTotalCount();
-      toast.success('Clip content updated');
+      toast.success(t('toasts.clipContentUpdated'));
     } catch (e) {
       console.error('Failed to update clip content:', e);
-      toast.error('Failed to update clip');
+      toast.error(t('toasts.clipUpdateFailed'));
     }
   };
 
@@ -1167,10 +1167,10 @@ function App() {
       await loadClips(selectedFolderRef.current);
       await loadFolders();
       refreshTotalCount();
-      toast.success(folderId ? 'Moved to folder' : 'Moved to main clipboard');
+      toast.success(folderId ? t('toasts.movedToFolder') : t('toasts.movedToMainClipboard'));
     } catch (e) {
       console.error('Failed to move clip:', e);
-      toast.error('Failed to move clip');
+      toast.error(t('toasts.clipMoveFailed'));
     }
   };
 
@@ -1197,7 +1197,7 @@ function App() {
       const newSettings = { ...settings, pinned: newPinned };
       await invoke('save_settings', { settings: newSettings });
       setSettings(newSettings);
-      toast.success(newPinned ? 'Window Pinned' : 'Window Unpinned');
+      toast.success(newPinned ? t('toasts.windowPinned') : t('toasts.windowUnpinned'));
     } catch (e) {
       console.error('Failed to toggle pin:', e);
     }
@@ -1397,7 +1397,7 @@ function App() {
                         label: t('contextMenu.view'),
                         onClick: () => {
                           if (settings?.show_action_messages) {
-                            toast.info('Opening Viewer...');
+                            toast.info(t('toasts.openingViewer'));
                           }
                           invoke('open_image_viewer', { clipId: clip.id }).catch(console.error);
                         },
@@ -1421,14 +1421,14 @@ function App() {
                             }
                           } catch (err) {
                             toast.dismiss(loadingToast);
-                            toast.error(`OCR Error: ${err}`);
+                            toast.error(t('toasts.ocrError', { error: err }));
                           }
                         },
                       });
                     }
 
                     opts.push({
-                      label: 'Edit',
+                      label: t('viewer.edit') || 'Edit',
                       onClick: () => {
                         if (clip) {
                           if (clip.clip_type === 'image') {
@@ -1440,13 +1440,11 @@ function App() {
                                 .then(() => {
                                   // Auto-hide after successful launch
                                   invoke('hide_window');
-                                  toast.success('Image editor launched');
+                                  toast.success(t('toasts.imageEditorLaunched'));
                                 })
-                                .catch((e) => toast.error(`Failed to open editor: ${e}`));
+                                .catch((e) => toast.error(t('toasts.editorOpenFailed', { error: e })));
                             } else {
-                              toast.info(
-                                'Please configure an External Image Editor (like CyberViewer) in Settings to use this feature.'
-                              );
+                              toast.info(t('toasts.configureEditor'));
                             }
                           } else {
                             // Fetch full content before editing since get_clips uses preview_only
@@ -1521,7 +1519,7 @@ function App() {
                   })()
                 : [
                     {
-                      label: 'Edit',
+                      label: t('common.rename') || 'Edit',
                       onClick: () => {
                         setFolderModalMode('rename');
                         setEditingFolderId(contextMenu.itemId);
@@ -1590,10 +1588,10 @@ function App() {
               setOcrModal((prev) => ({ ...prev, isOpen: false }));
               refreshCurrentFolder();
               refreshTotalCount();
-              toast.success('OCR text updated successfully');
+              toast.success(t('toasts.ocrTextUpdated'));
             } catch (err) {
               console.error('Failed to update OCR text:', err);
-              toast.error('Failed to update OCR text');
+              toast.error(t('toasts.ocrTextUpdateFailed'));
             }
           }}
         />

@@ -74,7 +74,7 @@ export const OcrResultModal: React.FC<OcrResultModalProps> = ({
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy text:', err);
-      toast.error('Failed to copy text');
+      toast.error(t('toasts.failedToCopyText'));
     }
   };
 
