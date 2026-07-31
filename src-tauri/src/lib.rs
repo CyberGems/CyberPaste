@@ -505,6 +505,8 @@ pub fn run_app() {
             commands::get_data_dir_path,
             commands::show_item_in_folder,
             commands::update_clip_content,
+            commands::read_clipboard_text,
+            commands::write_clipboard_text,
             commands::open_with,
             commands::reset_window_size,
             commands::center_window,

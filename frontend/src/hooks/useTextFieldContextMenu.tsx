@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
+import { invoke } from '@tauri-apps/api/core';
 import type { ContextMenuOption } from '../components/ContextMenu';
 
 type TextFieldElement = HTMLInputElement | HTMLTextAreaElement;
@@ -14,6 +15,22 @@ interface SelectionSnapshot {
   end: number;
   selected: string;
   current: string;
+}
+
+async function clipboardWrite(text: string) {
+  try {
+    await invoke('write_clipboard_text', { text });
+  } catch {
+    await navigator.clipboard.writeText(text);
+  }
+}
+
+async function clipboardRead(): Promise<string> {
+  try {
+    return await invoke<string>('read_clipboard_text');
+  } catch {
+    return await navigator.clipboard.readText();
+  }
 }
 
 export function useTextFieldContextMenu(
@@ -141,7 +158,7 @@ export function useTextFieldContextMenu(
         onClick: async () => {
           if (!hasSelection) return;
           try {
-            await navigator.clipboard.writeText(selected);
+            await clipboardWrite(selected);
           } catch {
             /* ignore */
           }
@@ -153,7 +170,7 @@ export function useTextFieldContextMenu(
         onClick: async () => {
           if (!hasSelection) return;
           try {
-            await navigator.clipboard.writeText(selected);
+            await clipboardWrite(selected);
           } catch {
             /* still delete selection locally */
           }
@@ -164,10 +181,10 @@ export function useTextFieldContextMenu(
         label: t('contextMenu.paste'),
         onClick: async () => {
           try {
-            const text = await navigator.clipboard.readText();
+            const text = await clipboardRead();
             replaceRange(start, end, text, current);
           } catch {
-            /* clipboard permission denied */
+            /* clipboard read failed */
           }
         },
       },

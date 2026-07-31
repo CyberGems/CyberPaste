@@ -1,6 +1,6 @@
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_clipboard_x::{
-    start_listening, stop_listening, write_files, write_html, write_rtf, write_text,
+    read_text, start_listening, stop_listening, write_files, write_html, write_rtf, write_text,
 };
 
 use crate::ai::{self, AiAction, AiConfig};
@@ -14,6 +14,25 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Instant;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
+
+/// Native clipboard read (avoids browser Clipboard API permission prompts).
+#[tauri::command]
+pub async fn read_clipboard_text() -> Result<String, String> {
+    read_text().await.map_err(|e| e.to_string())
+}
+
+/// Native clipboard write (avoids browser Clipboard API permission prompts).
+#[tauri::command]
+pub async fn write_clipboard_text(text: String) -> Result<(), String> {
+    let hash = {
+        use sha2::{Digest, Sha256};
+        let mut hasher = Sha256::new();
+        hasher.update(text.as_bytes());
+        format!("{:x}", hasher.finalize())
+    };
+    crate::clipboard::set_ignore_hash(hash);
+    write_text(text).await.map_err(|e| e.to_string())
+}
 
 #[tauri::command]
 pub async fn ai_process_clip(
