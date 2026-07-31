@@ -84,7 +84,7 @@ impl Default for AppSettings {
             float_above_taskbar: true,
             view_mode: "compact".to_string(),
             scroll_direction: "vertical".to_string(),
-            compact_folder_layout: "horizontal".to_string(),
+            compact_folder_layout: "vertical".to_string(),
             compact_sidebar_collapsed: false,
             clipboard_sound_enabled: false,
             clipboard_sound_path: "".to_string(),

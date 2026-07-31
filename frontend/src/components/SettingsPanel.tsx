@@ -976,14 +976,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         </p>
                       </label>
                       <Select
-                        value={settings.compact_folder_layout || 'horizontal'}
+                        value={settings.compact_folder_layout || 'vertical'}
                         onChange={(val) => updateSetting('compact_folder_layout', val)}
                         options={[
                           { value: 'horizontal', label: t('settings.scrollHorizontal') },
                           { value: 'vertical', label: t('settings.scrollVertical') },
                         ]}
                       />
-                      {(settings.compact_folder_layout || 'horizontal') === 'vertical' && (
+                      {(settings.compact_folder_layout || 'vertical') === 'vertical' && (
                         <div className="flex items-center justify-between rounded-[4px] border border-white/[0.08] bg-[#2D2D2D] p-3">
                           <div>
                             <span className="text-sm font-medium">

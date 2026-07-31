@@ -1459,7 +1459,7 @@ function App() {
             reorderTargetClipId={reorderTargetClipId}
             reorderTargetPosition={reorderTargetPosition}
             reorderEnabled={true}
-            compactFolderLayout={settings?.compact_folder_layout || 'horizontal'}
+            compactFolderLayout={settings?.compact_folder_layout || 'vertical'}
             compactSidebarCollapsed={settings?.compact_sidebar_collapsed ?? false}
             onToggleSidebar={async () => {
               if (!settings) return;

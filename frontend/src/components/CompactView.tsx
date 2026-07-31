@@ -53,9 +53,10 @@ import {
   RotateCcw,
   MoveHorizontal,
   MoveVertical,
-  PanelLeftClose,
   PanelLeftOpen,
   PanelTop,
+  ChevronLeft,
+  ChevronRight,
   Plus,
   FileText,
   Link,
@@ -364,7 +365,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   reorderTargetPosition,
   reorderEnabled,
   dragTargetFolderId,
-  compactFolderLayout = 'horizontal',
+  compactFolderLayout = 'vertical',
   compactSidebarCollapsed = false,
   onToggleSidebar,
   onToggleLayout,
@@ -681,7 +682,13 @@ export const CompactView: React.FC<CompactViewProps> = ({
           : 'bg-white/5 hover:bg-white/10 border-transparent opacity-75 hover:opacity-100'
     );
 
-  const sidebarWidth = isVertical ? (compactSidebarCollapsed ? 0 : 140) : 0;
+  const SIDEBAR_EXPANDED_W = 140;
+  const SIDEBAR_COLLAPSED_W = 16;
+  const sidebarWidth = isVertical
+    ? compactSidebarCollapsed
+      ? SIDEBAR_COLLAPSED_W
+      : SIDEBAR_EXPANDED_W
+    : 0;
 
   return (
     <div
@@ -713,16 +720,6 @@ export const CompactView: React.FC<CompactViewProps> = ({
           />
         </div>
         <div data-tauri-drag-region className="flex items-center gap-2">
-          {isVertical && onToggleSidebar && (
-            <Tooltip label={compactSidebarCollapsed ? t('common.expandSidebar') : t('common.collapseSidebar')} placement="bottom">
-              <button
-                onClick={onToggleSidebar}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent hover:border-white/10 hover:bg-white/10 text-slate-400 hover:text-white transition-all active:bg-white/15"
-              >
-                {compactSidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-              </button>
-            </Tooltip>
-          )}
           <div
             data-tauri-drag-region
             className="flex h-6 w-6 items-center justify-center overflow-hidden"
@@ -812,110 +809,143 @@ export const CompactView: React.FC<CompactViewProps> = ({
         <div className="flex flex-1 flex-row overflow-hidden">
           {/* Sidebar */}
           <div
-            className="flex-shrink-0 overflow-hidden border-r border-white/10 bg-black/10 transition-all duration-200"
+            className={cn(
+              'group/sidebar relative flex-shrink-0 overflow-hidden border-r border-white/[0.06] bg-transparent transition-all duration-200',
+              compactSidebarCollapsed && 'hover:bg-white/[0.03]'
+            )}
             style={{ width: sidebarWidth }}
           >
-            <div
-              ref={folderScrollRef}
-              onWheel={handleWheel}
-              className="no-scrollbar flex h-full w-[140px] flex-col gap-1 overflow-y-auto py-2"
-            >
-              <Tooltip label={t('folders.all') || '[Clipboard]'} placement="right">
-                <button
-                  onClick={() => onSelectFolder(null)}
-                  data-folder-id="clipboard"
-                  data-selected={highlightedFolderId === null}
-                  className={cn(
-                    'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-lg border px-2 py-1.5 text-[10px] font-medium transition-all',
-                    highlightedFolderId === null && dragTargetFolderId === undefined
-                      ? 'border-indigo-500/40 bg-indigo-500/15 shadow-[0_0_12px_rgba(99,102,241,0.2)] text-white/90'
-                      : dragTargetFolderId === null && isDragging
-                        ? 'border-cyan-400 bg-cyan-500/30 text-white'
-                        : 'border-transparent bg-white/5 opacity-75 hover:bg-white/10 hover:opacity-100'
-                  )}
-                  onMouseEnter={() => isDragging && onDragHover(null)}
-                  onMouseLeave={onDragLeave}
-                >
-                  <Clock size={10} className="flex-shrink-0" />
-                  <span className="flex-1 truncate text-left">[Clipboard]</span>
-                  <span
-                    className={cn(
-                      'flex-shrink-0 text-[9px] opacity-40',
-                      selectedFolder === null && 'opacity-80'
-                    )}
-                  >
-                    ({totalClipCount})
-                  </span>
-                </button>
-              </Tooltip>
-              {folders.map((folder) => {
-                const Icon = IconMap[folder.icon || 'Folder'] || FolderIcon;
-                const isSelected = highlightedFolderId === folder.id;
-                return (
-                  <React.Fragment key={folder.id}>
-                    {folderReorderTargetId === folder.id && folderReorderTargetPosition === 'before' && (
-                      <div className="mx-2 h-0.5 flex-shrink-0 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)] animate-pulse" />
-                    )}
-                    <Tooltip label={folder.name} placement="right">
-                      <button
-                        data-folder-id={folder.id}
-                        onMouseDown={(e) => handleFolderMouseDown(e, folder.id)}
-                        onMouseMove={(e) => handleFolderMouseMove(e, folder.id, true)}
-                        onMouseLeave={() => {
-                          handleFolderMouseLeave();
-                          onDragLeave();
-                        }}
-                        onClick={() => {
-                          if (wasFolderDraggingRef.current) return;
-                          onSelectFolder(folder.id);
-                        }}
-                        data-selected={isSelected}
-                        onContextMenu={(e) => onFolderContextMenu?.(e, folder.id)}
-                        className={cn(
-                          'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-lg border px-2 py-1.5 text-[10px] font-medium transition-all',
-                          isSelected && dragTargetFolderId === undefined
-                            ? 'border-indigo-500/40 bg-indigo-500/15 shadow-[0_0_12px_rgba(99,102,241,0.2)] text-white/90'
-                            : dragTargetFolderId === folder.id && isDragging
-                              ? 'border-cyan-400 bg-cyan-500/30 text-white'
-                              : 'border-transparent bg-white/5 opacity-75 hover:bg-white/10 hover:opacity-100',
-                          draggingFolderId === folder.id && 'opacity-40 scale-95 pointer-events-none'
-                        )}
-                        onMouseEnter={() => isDragging && onDragHover(folder.id)}
-                      >
-                        <Icon
-                          size={10}
-                          style={{ color: folder.color || undefined }}
-                          className={isSelected ? 'text-primary' : 'flex-shrink-0 text-white/30'}
-                        />
-                        <span className="flex-1 truncate text-left">{folder.name}</span>
-                        <span
-                          className={cn(
-                            'flex-shrink-0 text-[9px] opacity-40',
-                            isSelected && 'opacity-80'
-                          )}
-                        >
-                          ({folder.item_count || 0})
-                        </span>
-                      </button>
-                    </Tooltip>
-                    {folderReorderTargetId === folder.id && folderReorderTargetPosition === 'after' && (
-                      <div className="mx-2 h-0.5 flex-shrink-0 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)] animate-pulse" />
-                    )}
-                  </React.Fragment>
-                );
-              })}
-              {onAddFolder && (
-                <Tooltip label={t('folders.addFolderBtn')} placement="right">
+            {compactSidebarCollapsed ? (
+              onToggleSidebar && (
+                <Tooltip label={t('common.expandSidebar')} placement="right">
                   <button
-                    onClick={onAddFolder}
-                    className="mx-1.5 flex flex-row items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-dashed border-white/20 bg-white/5 px-2 py-1.5 text-[10px] font-medium text-white/40 transition-all hover:bg-white/10 hover:text-white/80"
+                    onClick={onToggleSidebar}
+                    className="flex h-full w-full items-center justify-center text-white/25 transition-colors hover:text-cyan-400/80"
+                    aria-label={t('common.expandSidebar')}
                   >
-                    <Plus size={10} />
-                    <span className="flex-1 truncate text-left">{t('folders.newFolder')}</span>
+                    <ChevronRight size={12} strokeWidth={2} />
                   </button>
                 </Tooltip>
-              )}
-            </div>
+              )
+            ) : (
+              <>
+                <div
+                  ref={folderScrollRef}
+                  onWheel={handleWheel}
+                  className="no-scrollbar flex h-full flex-col gap-1 overflow-y-auto py-2"
+                  style={{ width: SIDEBAR_EXPANDED_W }}
+                >
+                  <Tooltip label={t('folders.all') || '[Clipboard]'} placement="right">
+                    <button
+                      onClick={() => onSelectFolder(null)}
+                      data-folder-id="clipboard"
+                      data-selected={highlightedFolderId === null}
+                      className={cn(
+                        'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-md border px-2 py-1.5 text-[11px] font-medium transition-all',
+                        highlightedFolderId === null && dragTargetFolderId === undefined
+                          ? 'border-indigo-500/35 bg-indigo-500/12 text-white/90'
+                          : dragTargetFolderId === null && isDragging
+                            ? 'border-cyan-400 bg-cyan-500/30 text-white'
+                            : 'border-transparent opacity-70 hover:bg-white/[0.06] hover:opacity-100'
+                      )}
+                      onMouseEnter={() => isDragging && onDragHover(null)}
+                      onMouseLeave={onDragLeave}
+                    >
+                      <Clock size={11} className="flex-shrink-0" />
+                      <span className="min-w-0 flex-1 truncate text-left">[Clipboard]</span>
+                      <span
+                        className={cn(
+                          'flex-shrink-0 text-[10px] tabular-nums opacity-35',
+                          selectedFolder === null && 'opacity-70'
+                        )}
+                      >
+                        ({totalClipCount})
+                      </span>
+                    </button>
+                  </Tooltip>
+                  {folders.map((folder) => {
+                    const Icon = IconMap[folder.icon || 'Folder'] || FolderIcon;
+                    const isSelected = highlightedFolderId === folder.id;
+                    return (
+                      <React.Fragment key={folder.id}>
+                        {folderReorderTargetId === folder.id && folderReorderTargetPosition === 'before' && (
+                          <div className="mx-2 h-0.5 flex-shrink-0 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)] animate-pulse" />
+                        )}
+                        <Tooltip label={folder.name} placement="right">
+                          <button
+                            data-folder-id={folder.id}
+                            onMouseDown={(e) => handleFolderMouseDown(e, folder.id)}
+                            onMouseMove={(e) => handleFolderMouseMove(e, folder.id, true)}
+                            onMouseLeave={() => {
+                              handleFolderMouseLeave();
+                              onDragLeave();
+                            }}
+                            onClick={() => {
+                              if (wasFolderDraggingRef.current) return;
+                              onSelectFolder(folder.id);
+                            }}
+                            data-selected={isSelected}
+                            onContextMenu={(e) => onFolderContextMenu?.(e, folder.id)}
+                            className={cn(
+                              'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-md border px-2 py-1.5 text-[11px] font-medium transition-all',
+                              isSelected && dragTargetFolderId === undefined
+                                ? 'border-indigo-500/35 bg-indigo-500/12 text-white/90'
+                                : dragTargetFolderId === folder.id && isDragging
+                                  ? 'border-cyan-400 bg-cyan-500/30 text-white'
+                                  : 'border-transparent opacity-70 hover:bg-white/[0.06] hover:opacity-100',
+                              draggingFolderId === folder.id && 'opacity-40 scale-95 pointer-events-none'
+                            )}
+                            onMouseEnter={() => isDragging && onDragHover(folder.id)}
+                          >
+                            <Icon
+                              size={11}
+                              style={{ color: folder.color || undefined }}
+                              className={isSelected ? 'text-primary' : 'flex-shrink-0 text-white/30'}
+                            />
+                            <span className="min-w-0 flex-1 truncate text-left">{folder.name}</span>
+                            <span
+                              className={cn(
+                                'flex-shrink-0 text-[10px] tabular-nums opacity-35',
+                                isSelected && 'opacity-70'
+                              )}
+                            >
+                              ({folder.item_count || 0})
+                            </span>
+                          </button>
+                        </Tooltip>
+                        {folderReorderTargetId === folder.id && folderReorderTargetPosition === 'after' && (
+                          <div className="mx-2 h-0.5 flex-shrink-0 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)] animate-pulse" />
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                  {onAddFolder && (
+                    <Tooltip label={t('folders.addFolderBtn')} placement="right">
+                      <button
+                        onClick={onAddFolder}
+                        className="mx-1.5 flex flex-row items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-dashed border-white/15 bg-transparent px-2 py-1.5 text-[11px] font-medium text-white/35 transition-all hover:border-white/25 hover:text-white/70"
+                      >
+                        <Plus size={11} />
+                        <span className="min-w-0 flex-1 truncate text-left">{t('folders.newFolder')}</span>
+                      </button>
+                    </Tooltip>
+                  )}
+                </div>
+
+                {/* Tiny edge chevron — no full-height rail */}
+                {onToggleSidebar && (
+                  <Tooltip label={t('common.collapseSidebar')} placement="right">
+                    <button
+                      onClick={onToggleSidebar}
+                      className="absolute right-0 top-1/2 z-10 flex h-6 w-3 -translate-y-1/2 items-center justify-center rounded-l-sm text-white/0 opacity-0 transition-opacity duration-150 hover:text-cyan-400 group-hover/sidebar:opacity-100 group-hover/sidebar:text-white/40"
+                      aria-label={t('common.collapseSidebar')}
+                    >
+                      <ChevronLeft size={12} strokeWidth={2} />
+                    </button>
+                  </Tooltip>
+                )}
+              </>
+            )}
           </div>
 
           {/* Content Area */}
