@@ -199,7 +199,7 @@ export const ClipCard = memo(
       } else if (clip.clip_type === 'html' || clip.clip_type === 'rtf') {
         return (
           <pre className="whitespace-pre-wrap break-all font-mono text-[13px] leading-tight text-foreground/80">
-            <span>{(clip.content || clip.preview).substring(0, PREVIEW_CHAR_LIMIT)}</span>
+            <span>{(clip.preview || clip.content).substring(0, PREVIEW_CHAR_LIMIT)}</span>
           </pre>
         );
       } else {

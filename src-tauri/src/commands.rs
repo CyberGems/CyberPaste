@@ -2248,10 +2248,19 @@ pub async fn update_clip_content(
 ) -> Result<(), String> {
     let pool = &db.pool;
 
-    // Update both content and text_preview
+    // Update both content and text_preview (strip RTF if the saved blob is still RTF)
+    let preview = if new_content.trim_start().starts_with("{\\rtf") {
+        crate::clipboard::strip_rtf_tags(&new_content)
+            .chars()
+            .take(200)
+            .collect::<String>()
+    } else {
+        new_content.chars().take(200).collect::<String>()
+    };
+
     sqlx::query("UPDATE clips SET content = ?, text_preview = ? WHERE uuid = ?")
         .bind(new_content.as_bytes())
-        .bind(new_content.chars().take(200).collect::<String>())
+        .bind(preview)
         .bind(&clip_id)
         .execute(pool)
         .await

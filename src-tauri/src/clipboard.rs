@@ -395,26 +395,9 @@ async fn process_clipboard_change(
                 }
             }
 
-            // 3. Try RTF (rich text format from Word etc.)
-            if !found_content && ctx.has(ContentFormat::Rtf) {
-                if let Ok(rtf) = ctx.get_rich_text() {
-                    let trimmed = rtf.trim();
-                    if !trimmed.is_empty() {
-                        clip_content = trimmed.as_bytes().to_vec();
-                        clip_hash = calculate_hash(&clip_content);
-                        clip_type = "rtf";
-                        clip_preview = strip_rtf_tags(trimmed)
-                            .chars()
-                            .take(200)
-                            .collect::<String>();
-                        metadata = serde_json::json!({"format": "rtf"}).to_string();
-                        found_content = true;
-                        log::debug!("CLIPBOARD: Found RTF: {}", clip_preview);
-                    }
-                }
-            }
-
-            // 4. Try plain text via context (fallback — only if no rich format was captured)
+            // 3. Prefer plain text when available.
+            // Terminals/editors often put RTF+TEXT together; TEXT is the real snippet.
+            // Word/rich docs usually also offer HTML (handled above).
             if !found_content && ctx.has(ContentFormat::Text) {
                 if let Ok(text) = ctx.get_text() {
                     let trimmed = text.trim().to_string();
@@ -431,6 +414,32 @@ async fn process_clipboard_change(
                         clip_preview = trimmed.chars().take(200).collect::<String>();
                         found_content = true;
                         log::debug!("CLIPBOARD: Found text: {} (type={})", clip_preview, clip_type);
+                    }
+                }
+            }
+
+            // 4. RTF only when no plain text was available
+            if !found_content && ctx.has(ContentFormat::Rtf) {
+                if let Ok(rtf) = ctx.get_rich_text() {
+                    let trimmed = rtf.trim();
+                    if !trimmed.is_empty() {
+                        let stripped = strip_rtf_tags(trimmed);
+                        if is_code_snippet(&stripped) {
+                            // Code that arrived as RTF-only — store the readable snippet
+                            clip_content = stripped.as_bytes().to_vec();
+                            clip_hash = calculate_hash(&clip_content);
+                            clip_type = "code";
+                            clip_preview = stripped.chars().take(200).collect::<String>();
+                            metadata = serde_json::json!({"format": "rtf", "converted": true}).to_string();
+                        } else {
+                            clip_content = trimmed.as_bytes().to_vec();
+                            clip_hash = calculate_hash(&clip_content);
+                            clip_type = "rtf";
+                            clip_preview = stripped.chars().take(200).collect::<String>();
+                            metadata = serde_json::json!({"format": "rtf"}).to_string();
+                        }
+                        found_content = true;
+                        log::debug!("CLIPBOARD: Found RTF: {} (type={})", clip_preview, clip_type);
                     }
                 }
             }
@@ -1335,6 +1344,16 @@ pub fn is_code_snippet(text: &str) -> bool {
         return true;
     }
 
+    // Shebang / PowerShell / common shell markers
+    if trimmed.starts_with("#!")
+        || trimmed.starts_with("$ ")
+        || trimmed.starts_with("PS ")
+        || trimmed.contains("$env:")
+        || trimmed.contains("$_")
+    {
+        return true;
+    }
+
     let mut score = 0;
 
     // Check line endings and indentation
@@ -1378,6 +1397,11 @@ pub fn is_code_snippet(text: &str) -> bool {
         score += 3;
     }
 
+    // Square brackets with quotes often indicate JSON / config
+    if trimmed.contains("\":") || trimmed.contains("\": ") {
+        score += 2;
+    }
+
     // Common operators / code symbols
     let operators = [
         "=>", "->", "::", "&&", "||", "!=", "==", "===", "!==", "+=", "-=", "++", "--",
@@ -1387,7 +1411,8 @@ pub fn is_code_snippet(text: &str) -> bool {
         "#include", "#define", "#ifdef", "using namespace", "public class ",
         "console.log", "println!", "print(", "std::", "import {", "import *",
         "className=", "onClick=", "onChange=", "style={{",
-        "<!DOCTYPE html>", "<html", "<body", "<head", "</html", "</body"
+        "<!DOCTYPE html>", "<html", "<body", "<head", "</html", "</body",
+        "Get-", "Write-Host", "New-Object", "Invoke-",
     ];
 
     for op in &operators {
@@ -1396,11 +1421,12 @@ pub fn is_code_snippet(text: &str) -> bool {
         }
     }
 
-    // Check for SQL keywords
+    // Check for SQL keywords (uppercase once)
+    let upper = trimmed.to_uppercase();
     let sql_keywords = ["SELECT ", "INSERT INTO ", "UPDATE ", "DELETE FROM ", " WHERE ", " JOIN ", " FROM "];
     let mut sql_matches = 0;
     for kw in &sql_keywords {
-        if trimmed.to_uppercase().contains(kw) {
+        if upper.contains(kw) {
             sql_matches += 1;
         }
     }
@@ -1409,7 +1435,10 @@ pub fn is_code_snippet(text: &str) -> bool {
     }
 
     // CLI Commands check
-    let cli_prefixes = ["npm run ", "cargo run", "git commit ", "docker run ", "npm install ", "pip install "];
+    let cli_prefixes = [
+        "npm run ", "cargo run", "git commit ", "docker run ", "npm install ", "pip install ",
+        "pnpm ", "yarn ", "kubectl ", "aws ", "gh ",
+    ];
     for prefix in &cli_prefixes {
         if trimmed.starts_with(prefix) {
             score += 7;
@@ -1417,19 +1446,121 @@ pub fn is_code_snippet(text: &str) -> bool {
     }
 
     // Single line threshold is higher to prevent conversational lines matching
-    let threshold = if total_lines == 1 {
-        7
-    } else {
-        5
-    };
+    let threshold = if total_lines == 1 { 7 } else { 5 };
 
     score >= threshold
+}
+
+/// Skip an RTF group starting at `i` (which must point at `{`), respecting nesting.
+fn skip_rtf_group(bytes: &[u8], i: &mut usize) {
+    if *i >= bytes.len() || bytes[*i] != b'{' {
+        return;
+    }
+    let mut depth = 0usize;
+    while *i < bytes.len() {
+        match bytes[*i] {
+            b'\\' => {
+                *i += 1;
+                if *i < bytes.len() {
+                    // Skip escaped char or \'hh
+                    if bytes[*i] == b'\'' && *i + 2 < bytes.len() {
+                        *i += 3;
+                    } else {
+                        *i += 1;
+                    }
+                }
+            }
+            b'{' => {
+                depth += 1;
+                *i += 1;
+            }
+            b'}' => {
+                *i += 1;
+                depth = depth.saturating_sub(1);
+                if depth == 0 {
+                    return;
+                }
+            }
+            _ => *i += 1,
+        }
+    }
+}
+
+fn rtf_destination_at(bytes: &[u8], i: usize) -> bool {
+    // i points at '{'
+    if i + 1 >= bytes.len() {
+        return false;
+    }
+    // {\* ...} — ignorable destination
+    if bytes[i + 1] == b'\\' && i + 2 < bytes.len() && bytes[i + 2] == b'*' {
+        return true;
+    }
+    if bytes[i + 1] != b'\\' {
+        return false;
+    }
+    let mut j = i + 2;
+    while j < bytes.len() && bytes[j].is_ascii_alphabetic() {
+        j += 1;
+    }
+    let word = std::str::from_utf8(&bytes[i + 2..j]).unwrap_or("").to_ascii_lowercase();
+    matches!(
+        word.as_str(),
+        "fonttbl"
+            | "colortbl"
+            | "stylesheet"
+            | "info"
+            | "pict"
+            | "object"
+            | "xe"
+            | "tc"
+            | "header"
+            | "footer"
+            | "footnote"
+            | "annotation"
+            | "field"
+            | "fldinst"
+            | "datafield"
+            | "listtable"
+            | "listoverridetable"
+            | "rsidtbl"
+            | "generator"
+            | "themedata"
+            | "colorschememapping"
+            | "latentstyles"
+            | "datastore"
+            | "filetbl"
+            | "stylesheet"
+    )
 }
 
 pub fn strip_rtf_tags(rtf: &str) -> String {
     let mut out = String::new();
     let bytes = rtf.as_bytes();
     let mut i = 0;
+    let mut last_was_space = true;
+
+    let push_char = |out: &mut String, last_was_space: &mut bool, ch: char| {
+        if ch == '\r' {
+            return;
+        }
+        if ch == '\n' || ch == '\t' {
+            if !*last_was_space && !out.is_empty() {
+                out.push('\n');
+                *last_was_space = true;
+            }
+            return;
+        }
+        if ch.is_whitespace() {
+            if !*last_was_space {
+                out.push(' ');
+                *last_was_space = true;
+            }
+            return;
+        }
+        out.push(ch);
+        *last_was_space = false;
+    };
+
     while i < bytes.len() {
         match bytes[i] {
             b'\\' => {
@@ -1441,53 +1572,58 @@ pub fn strip_rtf_tags(rtf: &str) -> String {
                     b'\'' if i + 2 < bytes.len() => {
                         let hex = std::str::from_utf8(&bytes[i + 1..i + 3]).unwrap_or("20");
                         if let Ok(code) = u8::from_str_radix(hex, 16) {
-                            out.push(if code >= 32 && code != 127 {
+                            let ch = if code >= 32 && code != 127 {
                                 code as char
                             } else {
                                 ' '
-                            });
+                            };
+                            push_char(&mut out, &mut last_was_space, ch);
                         }
                         i += 3;
                     }
                     b'\'' => {
                         i += 1;
                     }
-                    b'\\' => {
-                        out.push('\\');
-                        i += 1;
-                    }
-                    b'{' => {
-                        out.push('{');
-                        i += 1;
-                    }
-                    b'}' => {
-                        out.push('}');
+                    b'\\' | b'{' | b'}' => {
+                        push_char(&mut out, &mut last_was_space, bytes[i] as char);
                         i += 1;
                     }
                     b'~' => {
-                        out.push(' ');
+                        push_char(&mut out, &mut last_was_space, ' ');
                         i += 1;
                     }
                     b'_' => {
-                        out.push('-');
+                        push_char(&mut out, &mut last_was_space, '-');
                         i += 1;
                     }
                     b'*' => {
                         i += 1;
                     }
                     b'\n' | b'\r' => {
+                        // Soft line break in RTF source — ignore
                         i += 1;
                     }
                     _ if bytes[i].is_ascii_alphabetic() => {
+                        let start = i;
                         i += 1;
                         while i < bytes.len() && bytes[i].is_ascii_alphabetic() {
                             i += 1;
                         }
+                        let word =
+                            std::str::from_utf8(&bytes[start..i]).unwrap_or("").to_ascii_lowercase();
+                        // Numeric argument
                         while i < bytes.len() && (bytes[i] == b'-' || bytes[i].is_ascii_digit()) {
                             i += 1;
                         }
+                        // Control-word delimiter space
                         if i < bytes.len() && bytes[i] == b' ' {
                             i += 1;
+                        }
+                        // Paragraph / line breaks become newlines in plain text
+                        if matches!(word.as_str(), "par" | "line" | "softline") {
+                            push_char(&mut out, &mut last_was_space, '\n');
+                        } else if word == "tab" {
+                            push_char(&mut out, &mut last_was_space, '\t');
                         }
                     }
                     _ => {
@@ -1495,17 +1631,66 @@ pub fn strip_rtf_tags(rtf: &str) -> String {
                     }
                 }
             }
-            b'{' | b'}' => {
+            b'{' => {
+                if rtf_destination_at(bytes, i) {
+                    skip_rtf_group(bytes, &mut i);
+                } else {
+                    i += 1;
+                }
+            }
+            b'}' => {
                 i += 1;
             }
-            b'\r' | b'\n' => {
+            b'\r' => {
+                i += 1;
+            }
+            b'\n' => {
                 i += 1;
             }
             _ => {
-                out.push(bytes[i] as char);
+                push_char(&mut out, &mut last_was_space, bytes[i] as char);
                 i += 1;
             }
         }
     }
-    out.trim().to_string()
+
+    // Collapse runs of blank lines
+    let cleaned: String = out
+        .lines()
+        .map(str::trim_end)
+        .filter(|l| !l.is_empty())
+        .collect::<Vec<_>>()
+        .join("\n");
+    cleaned.trim().to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn strip_rtf_skips_font_table() {
+        let rtf = r#"{\rtf1\ansi\deff0{\fonttbl{\f0\fmodern\fprq1 Lucida Console;}}\f0\fs18{\colortbl;\red191\green191\blue191;\red0\green0\blue0;}\cf2 \highlight1 fn main() {\par     println!("hi");\par }}"#;
+        let plain = strip_rtf_tags(rtf);
+        assert!(!plain.contains("Lucida Console"), "got: {plain}");
+        assert!(plain.contains("fn main"), "got: {plain}");
+        assert!(plain.contains("println"), "got: {plain}");
+    }
+
+    #[test]
+    fn strip_rtf_empty_font_only() {
+        let rtf = r#"{\rtf1\ansi\deff0{\fonttbl{\f0\fmodern\fprq1 Lucida Console;}}\f0\fs18}"#;
+        let plain = strip_rtf_tags(rtf);
+        assert!(!plain.contains("Lucida"), "got: {plain}");
+    }
+
+    #[test]
+    fn detects_rust_snippet() {
+        assert!(is_code_snippet("fn main() {\n    println!(\"hi\");\n}"));
+    }
+
+    #[test]
+    fn rejects_short_prose() {
+        assert!(!is_code_snippet("Hello there"));
+    }
 }
