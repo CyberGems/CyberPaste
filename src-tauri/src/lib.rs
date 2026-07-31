@@ -321,11 +321,25 @@ pub fn run_app() {
                             button: MouseButton::Right,
                             button_state: MouseButtonState::Up,
                             position,
+                            rect,
                             ..
                         } => {
                             let app = tray.app_handle().clone();
-                            let x = position.x.round() as i32;
-                            let y = position.y.round() as i32;
+                            // Prefer tray-icon rect (top-center); fall back to cursor
+                            let (x, y) = {
+                                use tauri::{Position, Size};
+                                match (rect.position, rect.size) {
+                                    (Position::Physical(p), Size::Physical(s)) => {
+                                        (p.x + (s.width as i32) / 2, p.y)
+                                    }
+                                    (Position::Logical(p), Size::Logical(s)) => {
+                                        // PhysicalPosition from click is more reliable if scale unknown
+                                        let _ = (p, s);
+                                        (position.x.round() as i32, position.y.round() as i32)
+                                    }
+                                    _ => (position.x.round() as i32, position.y.round() as i32),
+                                }
+                            };
                             tauri::async_runtime::spawn(async move {
                                 if let Err(e) = commands::show_tray_menu_at(app, x, y).await {
                                     log::error!("show_tray_menu_at failed: {e}");

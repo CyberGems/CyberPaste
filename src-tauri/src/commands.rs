@@ -2937,6 +2937,23 @@ pub async fn show_tray_menu_at(app: AppHandle, anchor_x: i32, anchor_y: i32) -> 
         }
     });
 
+    // First-open race: tray-menu-show was emitted before the webview could listen.
+    // Re-emit after a short delay so a cold start still opens on the first click.
+    let app_retry = app.clone();
+    tauri::async_runtime::spawn(async move {
+        for delay_ms in [80u64, 160, 280, 450] {
+            tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
+            if let Some(w) = app_retry.get_webview_window("tray_menu") {
+                if w.is_visible().unwrap_or(false) {
+                    break;
+                }
+                let _ = app_retry.emit("tray-menu-show", ());
+            } else {
+                break;
+            }
+        }
+    });
+
     Ok(())
 }
 
@@ -2985,15 +3002,18 @@ pub async fn tray_menu_ready(app: AppHandle, width: f64, height: f64) -> Result<
         (0, 0, 1920, 1080)
     };
 
-    // Center horizontally on anchor; place above the tray icon with a small gap
-    let gap = (8.0 * scale).round() as i32;
+    // Center horizontally on anchor; place above the tray icon.
+    // Pull window down by the transparent shadow pad so the *card* (not the
+    // empty bleed) sits close to the icon — matches SHADOW_PAD in TrayMenuWindow.
+    let gap = (4.0 * scale).round() as i32;
+    let shadow_pad_px = (28.0 * scale).round() as i32;
     let mut x = anchor_x - width_px / 2;
-    let mut y = anchor_y - height_px - gap;
+    let mut y = anchor_y - height_px - gap + shadow_pad_px;
 
     x = x.clamp(min_x + 4, (max_x - width_px - 4).max(min_x + 4));
-    if y < min_y + 4 {
+    if y + height_px - shadow_pad_px < min_y + 4 {
         // Not enough room above — open below the icon
-        y = anchor_y + gap;
+        y = anchor_y + gap - shadow_pad_px;
     }
     y = y.clamp(min_y + 4, (max_y - height_px - 4).max(min_y + 4));
 

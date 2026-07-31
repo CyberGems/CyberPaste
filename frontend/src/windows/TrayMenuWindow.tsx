@@ -100,10 +100,17 @@ export function TrayMenuWindow() {
       openRef.current = false;
     });
 
+    // First open: window is created after the tray-menu-show emit, so that event
+    // is often missed. On mount we always measure+show (this window only exists to pop up).
     invoke<TrayMenuState>('get_tray_menu_state')
       .then((s) => {
         setState(s);
         if (s.language) i18n.changeLanguage(s.language);
+        openRef.current = true;
+        closingRef.current = false;
+        requestAnimationFrame(() => {
+          requestAnimationFrame(reportSize);
+        });
       })
       .catch(console.error);
 
@@ -196,7 +203,7 @@ export function TrayMenuWindow() {
 
         <div className="p-1.5 pb-2">
           <TrayItem
-            icon={<LogOut size={15} strokeWidth={1.75} className="text-[#e8796a]" />}
+            icon={<LogOut size={15} strokeWidth={1.75} className="-scale-x-100 text-[#e8796a]" />}
             label={t('tray.quit', { defaultValue: 'Exit' })}
             onClick={() => runAction('quit')}
           />
