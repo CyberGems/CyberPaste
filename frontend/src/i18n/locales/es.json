@@ -87,19 +87,20 @@
     "rename": "Renombrar"
   },
   "contextMenu": {
-    "view": "Ver",
+    "view": "Ver imagen",
+    "edit": "Editar",
     "copy": "Copiar",
     "paste": "Pegar",
     "delete": "Eliminar",
     "rename": "Renombrar",
-    "moveToFolder": "Mover a Carpeta...",
-    "pin": "Fijar Clip",
-    "unpin": "Desfijar Clip",
+    "moveToFolder": "Mover a carpeta...",
+    "pin": "Fijar clip",
+    "unpin": "Desfijar clip",
     "summarize": "Resumir (IA)",
     "translate": "Traducir (IA)",
-    "explainCode": "Explicar Código (IA)",
-    "fixGrammar": "Corregir Gramática (IA)",
-    "extractText": "Extraer Texto (OCR)"
+    "explainCode": "Explicar código (IA)",
+    "fixGrammar": "Corregir gramática (IA)",
+    "extractText": "Extraer texto (OCR)"
   },
   "settings": {
     "title": "Ajustes",
@@ -343,10 +344,12 @@
     "clipMoveFailed": "Error al mover el clip"
   },
   "viewer": {
+    "title": "Visor de imágenes",
     "fitToWindow": "Ajustar a la Ventana",
     "originalSize": "Tamaño Original",
     "edit": "Editar",
     "copy": "Copiar al Portapapeles",
+    "copied": "Copiado al portapapeles",
     "close": "Cerrar",
     "extractText": "Extraer Texto (OCR)",
     "extractingText": "Extrayendo texto...",
@@ -355,8 +358,22 @@
     "noTextDetected": "No se detectó texto en la imagen",
     "autoCopyOcr": "Copiar automáticamente al portapapeles",
     "closeDrawer": "Cerrar Panel",
+    "resizeDrawer": "Arrastra para redimensionar",
     "loadingImage": "CARGANDO_SISTEMA_DE_IMAGEN...",
     "clipNotFound": "ERROR::CLIP_NO_ENCONTRADO",
-    "loadingImageAria": "Cargando imagen"
+    "loadingImageAria": "Cargando imagen",
+    "zoomIn": "Acercar",
+    "zoomOut": "Alejar",
+    "previousImage": "Imagen anterior",
+    "nextImage": "Imagen siguiente",
+    "pinOnTop": "Mantener encima",
+    "unpinOnTop": "No mantener encima",
+    "pinnedOnTop": "Siempre encima",
+    "unpinnedOnTop": "Ventana normal",
+    "pinFailed": "No se pudo cambiar mantener encima",
+    "noEditorConfigured": "Configura un editor de imagen en Ajustes primero",
+    "noImagePath": "El archivo de imagen aún no está disponible",
+    "fitShort": "Ajuste",
+    "originalShort": "1:1"
   }
 }

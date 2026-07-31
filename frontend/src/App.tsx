@@ -9,7 +9,8 @@ import { ClipboardItem as AppClipboardItem, FolderItem, Settings } from './types
 import { ClipList } from './components/ClipList';
 import { ControlBar } from './components/ControlBar';
 import { CompactView } from './components/CompactView';
-import { ContextMenu } from './components/ContextMenu';
+import { ContextMenuHost, ContextMenuHostHandle } from './components/ContextMenuHost';
+import type { ContextMenuOption } from './components/ContextMenu';
 import { FolderModal } from './components/FolderModal';
 import { AiResultDialog } from './components/AiResultDialog';
 import { OcrResultModal } from './components/OcrResultModal';
@@ -65,6 +66,8 @@ function App() {
   const clipsRef = useRef(clips);
   clipsRef.current = clips;
   const [folders, setFolders] = useState<FolderItem[]>([]);
+  const foldersRef = useRef(folders);
+  foldersRef.current = folders;
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
@@ -1028,13 +1031,8 @@ function App() {
     }
   };
 
-  // Context Menu State
-  const [contextMenu, setContextMenu] = useState<{
-    type: 'card' | 'folder';
-    x: number;
-    y: number;
-    itemId: string;
-  } | null>(null);
+  // Context menu lives in an isolated host so opening it doesn't re-render App/Compact list
+  const contextMenuRef = useRef<ContextMenuHostHandle>(null);
 
   // New Folder Modal Rename Mode
   const [folderModalMode, setFolderModalMode] = useState<'create' | 'rename'>('create');
@@ -1108,19 +1106,181 @@ function App() {
   const handleContextMenu = useCallback(
     (e: React.MouseEvent, type: 'card' | 'folder', itemId: string) => {
       e.preventDefault();
-      setContextMenu({
-        type,
+      e.stopPropagation();
+      // Abort pending/active drag so the grabbing cursor doesn't flash on right-click
+      if (dragStateRef.current.pendingDrag || dragStateRef.current.isDragging) {
+        finishDrag(true);
+      } else {
+        document.body.classList.remove('is-dragging');
+        dragStateRef.current.pendingDrag = null;
+      }
+
+      const settings = settingsRef.current;
+      const aiLabel = (custom: string | undefined, englishDefault: string, key: string) =>
+        custom && custom.trim() && custom.trim() !== englishDefault
+          ? custom.trim()
+          : t(key);
+
+      let options: ContextMenuOption[] = [];
+
+      if (type === 'card') {
+        const clip = clipsRef.current.find((c) => c.id === itemId);
+        const opts: ContextMenuOption[] = [];
+
+        if (clip?.clip_type === 'image') {
+          opts.push({
+            label: t('contextMenu.view'),
+            onClick: () => {
+              if (settings?.show_action_messages) {
+                toast.info(t('toasts.openingViewer'));
+              }
+              invoke('open_image_viewer', { clipId: clip.id }).catch(console.error);
+            },
+          });
+
+          opts.push({
+            label: t('contextMenu.extractText'),
+            onClick: async () => {
+              const loadingToast = toast.loading(t('viewer.extractingText'));
+              try {
+                const text = await invoke<string>('run_ocr_for_clip', { clipId: clip.id });
+                toast.dismiss(loadingToast);
+                if (text && text.trim().length > 0) {
+                  setOcrModal({
+                    isOpen: true,
+                    content: text,
+                    clipId: clip.id,
+                  });
+                } else {
+                  toast.info(t('viewer.noTextDetected'));
+                }
+              } catch (err) {
+                toast.dismiss(loadingToast);
+                toast.error(t('toasts.ocrError', { error: err }));
+              }
+            },
+          });
+        }
+
+        opts.push({
+          label: t('contextMenu.edit'),
+          onClick: () => {
+            if (!clip) return;
+            if (clip.clip_type === 'image') {
+              if (settings?.image_editor_path) {
+                invoke('open_with', {
+                  appPath: settings.image_editor_path,
+                  filePath: clip.image_path || clip.content,
+                })
+                  .then(() => {
+                    invoke('hide_window');
+                    toast.success(t('toasts.imageEditorLaunched'));
+                  })
+                  .catch((err) => toast.error(t('toasts.editorOpenFailed', { error: err })));
+              } else {
+                toast.info(t('toasts.configureEditor'));
+              }
+            } else {
+              invoke<AppClipboardItem>('get_clip', { clipId: clip.id })
+                .then((fullClip) => {
+                  setEditClip({
+                    isOpen: true,
+                    clipId: (fullClip as any).id || (fullClip as any).uuid,
+                    content: (fullClip as any).content,
+                  });
+                })
+                .catch((err) => {
+                  console.error('Failed to fetch clip content:', err);
+                  setEditClip({
+                    isOpen: true,
+                    clipId: clip.id,
+                    content: clip.content || clip.preview,
+                  });
+                });
+            }
+          },
+        });
+
+        opts.push({
+          label: t('contextMenu.copy'),
+          onClick: () => handlePaste(itemId),
+        });
+
+        opts.push({
+          label: clip?.is_pinned ? t('contextMenu.unpin') : t('contextMenu.pin'),
+          onClick: () => handleToggleClipPin(itemId),
+        });
+
+        opts.push({
+          label: t('contextMenu.moveToFolder'),
+          onClick: () => setMoveToFolderClipId(itemId),
+        });
+
+        opts.push({
+          label: aiLabel(settings?.ai_title_summarize, 'Summarize', 'contextMenu.summarize'),
+          onClick: () => handleAiAction(itemId, 'summarize', t('ai.summary')),
+        });
+
+        opts.push({
+          label: aiLabel(settings?.ai_title_translate, 'Translate', 'contextMenu.translate'),
+          onClick: () => handleAiAction(itemId, 'translate', t('ai.translation')),
+        });
+
+        opts.push({
+          label: aiLabel(
+            settings?.ai_title_explain_code,
+            'Explain Code',
+            'contextMenu.explainCode'
+          ),
+          onClick: () => handleAiAction(itemId, 'explain_code', t('ai.codeExplanation')),
+        });
+
+        opts.push({
+          label: aiLabel(
+            settings?.ai_title_fix_grammar,
+            'Fix Grammar',
+            'contextMenu.fixGrammar'
+          ),
+          onClick: () => handleAiAction(itemId, 'fix_grammar', t('ai.grammarCheck')),
+        });
+
+        opts.push({
+          label: t('contextMenu.delete'),
+          danger: true,
+          onClick: () => handleDelete(itemId),
+        });
+
+        options = opts;
+      } else {
+        options = [
+          {
+            label: t('common.rename'),
+            onClick: () => {
+              setFolderModalMode('rename');
+              setEditingFolderId(itemId);
+              const folder = foldersRef.current.find((f) => f.id === itemId);
+              setNewFolderName(folder ? folder.name : '');
+              setShowAddFolderModal(true);
+            },
+          },
+          {
+            label: t('contextMenu.delete'),
+            danger: true,
+            onClick: () => handleDeleteFolder(itemId),
+          },
+        ];
+      }
+
+      // Isolated host update — does not re-render App / Compact clip list
+      contextMenuRef.current?.open({
         x: e.clientX,
         y: e.clientY,
-        itemId,
+        options,
+        highlightId: type === 'card' ? itemId : null,
       });
     },
-    []
+    [t, handleToggleClipPin]
   );
-
-  const handleCloseContextMenu = useCallback(() => {
-    setContextMenu(null);
-  }, []);
 
   // Updated Create Folder to handle Rename
   const handleCreateOrRenameFolder = async (name: string, icon?: string, color?: string) => {
@@ -1381,162 +1541,7 @@ function App() {
           </div>
         )}
 
-        {contextMenu && (
-          <ContextMenu
-            x={contextMenu.x}
-            y={contextMenu.y}
-            onClose={handleCloseContextMenu}
-            options={
-              contextMenu.type === 'card'
-                ? (() => {
-                    const clip = clips.find((c) => c.id === contextMenu.itemId);
-                    const opts = [];
-
-                    if (clip?.clip_type === 'image') {
-                      opts.push({
-                        label: t('contextMenu.view'),
-                        onClick: () => {
-                          if (settings?.show_action_messages) {
-                            toast.info(t('toasts.openingViewer'));
-                          }
-                          invoke('open_image_viewer', { clipId: clip.id }).catch(console.error);
-                        },
-                      });
-
-                      opts.push({
-                        label: t('contextMenu.extractText') || 'Extract Text (OCR)',
-                        onClick: async () => {
-                          const loadingToast = toast.loading(t('viewer.extractingText') || 'Extracting text...');
-                          try {
-                            const text = await invoke<string>('run_ocr_for_clip', { clipId: clip.id });
-                            toast.dismiss(loadingToast);
-                            if (text && text.trim().length > 0) {
-                              setOcrModal({
-                                isOpen: true,
-                                content: text,
-                                clipId: clip.id,
-                              });
-                            } else {
-                              toast.info(t('viewer.noTextDetected') || 'No text detected in image');
-                            }
-                          } catch (err) {
-                            toast.dismiss(loadingToast);
-                            toast.error(t('toasts.ocrError', { error: err }));
-                          }
-                        },
-                      });
-                    }
-
-                    opts.push({
-                      label: t('viewer.edit') || 'Edit',
-                      onClick: () => {
-                        if (clip) {
-                          if (clip.clip_type === 'image') {
-                            if (settings?.image_editor_path) {
-                              invoke('open_with', {
-                                appPath: settings.image_editor_path,
-                                filePath: clip.image_path || clip.content,
-                              })
-                                .then(() => {
-                                  // Auto-hide after successful launch
-                                  invoke('hide_window');
-                                  toast.success(t('toasts.imageEditorLaunched'));
-                                })
-                                .catch((e) => toast.error(t('toasts.editorOpenFailed', { error: e })));
-                            } else {
-                              toast.info(t('toasts.configureEditor'));
-                            }
-                          } else {
-                            // Fetch full content before editing since get_clips uses preview_only
-                            invoke<AppClipboardItem>('get_clip', { clipId: clip.id })
-                              .then((fullClip) => {
-                                setEditClip({
-                                  isOpen: true,
-                                  clipId: (fullClip as any).id || (fullClip as any).uuid,
-                                  content: (fullClip as any).content,
-                                });
-                              })
-                              .catch((err) => {
-                                console.error('Failed to fetch clip content:', err);
-                                // Fallback to preview if fetch fails
-                                setEditClip({
-                                  isOpen: true,
-                                  clipId: clip.id,
-                                  content: clip.content || clip.preview,
-                                });
-                              });
-                          }
-                        }
-                      },
-                    });
-
-                    opts.push({
-                      label: t('contextMenu.copy') || 'Copy',
-                      onClick: () => handlePaste(contextMenu.itemId),
-                    });
-
-                    opts.push({
-                      label: clip?.is_pinned ? (t('contextMenu.unpin') || 'Unpin Clip') : (t('contextMenu.pin') || 'Pin Clip'),
-                      onClick: () => handleToggleClipPin(contextMenu.itemId),
-                    });
-
-                    opts.push({
-                      label: t('contextMenu.moveToFolder') || 'Move to Folder...',
-                      onClick: () => setMoveToFolderClipId(contextMenu.itemId),
-                    });
-
-                    opts.push({
-                      label: `${settings?.ai_title_summarize || t('contextMenu.summarize')}`,
-                      onClick: () =>
-                        handleAiAction(contextMenu.itemId, 'summarize', t('ai.summary')),
-                    });
-
-                    opts.push({
-                      label: `${settings?.ai_title_translate || t('contextMenu.translate')}`,
-                      onClick: () =>
-                        handleAiAction(contextMenu.itemId, 'translate', t('ai.translation')),
-                    });
-
-                    opts.push({
-                      label: `${settings?.ai_title_explain_code || t('contextMenu.explainCode')}`,
-                      onClick: () =>
-                        handleAiAction(contextMenu.itemId, 'explain_code', t('ai.codeExplanation')),
-                    });
-
-                    opts.push({
-                      label: `${settings?.ai_title_fix_grammar || t('contextMenu.fixGrammar')}`,
-                      onClick: () =>
-                        handleAiAction(contextMenu.itemId, 'fix_grammar', t('ai.grammarCheck')),
-                    });
-
-                    opts.push({
-                      label: t('contextMenu.delete') || 'Delete',
-                      danger: true,
-                      onClick: () => handleDelete(contextMenu.itemId),
-                    });
-
-                    return opts;
-                  })()
-                : [
-                    {
-                      label: t('common.rename') || 'Edit',
-                      onClick: () => {
-                        setFolderModalMode('rename');
-                        setEditingFolderId(contextMenu.itemId);
-                        const folder = folders.find((f) => f.id === contextMenu.itemId);
-                        setNewFolderName(folder ? folder.name : '');
-                        setShowAddFolderModal(true);
-                      },
-                    },
-                    {
-                      label: t('contextMenu.delete') || 'Delete',
-                      danger: true,
-                      onClick: () => handleDeleteFolder(contextMenu.itemId),
-                    },
-                  ]
-            }
-          />
-        )}
+        <ContextMenuHost ref={contextMenuRef} />
 
         {/* Add/Rename Folder Modal Overlay */}
         <FolderModal

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useMemo, useState } from 'react';
+import React, { useRef, useEffect, useMemo, useState, memo, useCallback } from 'react';
 import { ClipboardItem as AppClip, FolderItem } from '../types';
 import {
   Search,
@@ -71,6 +71,14 @@ import { twMerge } from 'tailwind-merge';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import Tooltip from './Tooltip';
 import { de, enUS, es, fr, ja, zhCN } from 'date-fns/locale';
+import { List, useListRef, type RowComponentProps } from 'react-window';
+import {
+  CONTEXT_MENU_EVENT,
+  type ContextMenuEventDetail,
+} from '../utils/contextMenuEvents';
+import { LAYOUT } from '../constants';
+
+const COMPACT_ROW_HEIGHT = 44;
 
 const localeMap: Record<string, any> = {
   de,
@@ -370,7 +378,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
 }) => {
   const { t } = useTranslation();
   const folderScrollRef = useRef<HTMLDivElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
+  const clipListApiRef = useListRef(null);
   const isVertical = compactFolderLayout === 'vertical';
   const searchInputRef = useRef<HTMLInputElement>(null);
   const didFocusRef = useRef(false);
@@ -603,7 +611,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
     }
   }, [selectedFolder, isVertical]);
 
-  const getClipImageSrc = (content: string) => {
+  const getClipImageSrc = useCallback((content: string) => {
     if (!content) return '';
     const isAbsolutePath = content.startsWith('/') || /^[A-Za-z]:[\\/]/.test(content);
     if (
@@ -619,7 +627,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
       return convertFileSrc(content);
     }
     return `data:image/png;base64,${content}`;
-  };
+  }, []);
 
   const handleResetSize = async () => {
     try {
@@ -629,28 +637,28 @@ export const CompactView: React.FC<CompactViewProps> = ({
     }
   };
 
-  // Auto-scroll to selected clip
+  // Auto-scroll to selected clip in the virtualized list
   useEffect(() => {
-    if (selectedClipId && listRef.current) {
-      const el = listRef.current.querySelector(`[data-clip-id="${selectedClipId}"]`);
-      if (el) {
-        el.scrollIntoView({ block: 'nearest' });
-      }
+    if (!selectedClipId) return;
+    const idx = filteredClips.findIndex((c) => c.id === selectedClipId);
+    if (idx >= 0) {
+      clipListApiRef.current?.scrollToRow({ index: idx, align: 'smart', behavior: 'smooth' });
     }
-  }, [selectedClipId]);
+  }, [selectedClipId, filteredClips, clipListApiRef]);
 
-  // Load more clips when scrolling near the bottom
-  const handleListScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    if (!onLoadMore) return;
-    const el = e.currentTarget;
-    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 100) {
-      onLoadMore();
-    }
-  };
+  const handleRowsRendered = useCallback(
+    (visible: { startIndex: number; stopIndex: number }) => {
+      if (!onLoadMore) return;
+      if (visible.stopIndex >= filteredClips.length - 15) {
+        onLoadMore();
+      }
+    },
+    [onLoadMore, filteredClips.length]
+  );
 
   const folderPillClass = (_folderId: string | null, isSelected: boolean, isDragTarget: boolean) =>
     cn(
-      'px-3 py-1 rounded-full text-[10px] font-medium transition-all whitespace-nowrap flex items-center gap-1.5 border',
+      'px-3 py-1 rounded-full text-[10px] font-medium transition-colors whitespace-nowrap flex items-center gap-1.5 border',
       isSelected && dragTargetFolderId === undefined
         ? 'border-indigo-500/40 bg-indigo-500/15 shadow-[0_0_12px_rgba(99,102,241,0.2)] text-white/90'
         : isDragTarget && isDragging
@@ -665,7 +673,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
     _color?: string | null
   ) =>
     cn(
-      'px-3 py-1 rounded-full text-[10px] font-medium transition-all whitespace-nowrap flex items-center gap-1.5 border',
+      'px-3 py-1 rounded-full text-[10px] font-medium transition-colors whitespace-nowrap flex items-center gap-1.5 border',
       isSelected && dragTargetFolderId === undefined
         ? 'border-indigo-500/40 bg-indigo-500/15 shadow-[0_0_12px_rgba(99,102,241,0.2)] text-white/90'
         : isDragTarget && isDragging
@@ -692,7 +700,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
       {/* Header */}
       <div
         data-tauri-drag-region
-        className="relative flex flex-shrink-0 cursor-move items-center justify-between overflow-hidden border-b border-white/10 bg-white/5 p-3 backdrop-blur-md"
+        className="relative flex flex-shrink-0 cursor-move items-center justify-between overflow-hidden border-b border-white/10 bg-white/5 p-3 backdrop-blur-sm"
       >
         {/* Scan-line sweep (CSS-only, GPU-composited) - 50% opacity of full view */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -952,50 +960,34 @@ export const CompactView: React.FC<CompactViewProps> = ({
             </div>
 
             {/* List */}
-            <div
-              ref={listRef}
-              data-clip-list="true"
-              className="no-scrollbar flex-1 space-y-1 overflow-y-auto px-2 pb-2"
-              onScroll={handleListScroll}
-            >
-              {filteredClips.length === 0 && !isLoading ? (
-                <div className="flex h-full flex-col items-center justify-center text-sm italic opacity-30">
-                  <p>
-                    {isFiltering && clips.length > 0
-                      ? t('compact.noMatchFilter') === 'compact.noMatchFilter'
-                        ? 'No clips match this filter'
-                        : t('compact.noMatchFilter')
-                      : t('clipList.empty')}
-                  </p>
-                </div>
-              ) : (
-                filteredClips.map((clip, index) => (
-                  <ClipRow
-                    key={clip.id}
-                    clip={clip}
-                    index={index}
-                    clips={clips}
-                    selectedClipId={selectedClipId}
-                    selectedFolder={selectedFolder}
-                    onPaste={onPaste}
-                    onDelete={onDelete}
-                    onContextMenu={onContextMenu}
-                    onDragStart={onDragStart}
-                    reorderEnabled={reorderEnabled}
-                    reorderTargetClipId={reorderTargetClipId}
-                    reorderTargetPosition={reorderTargetPosition}
-                    getClipImageSrc={getClipImageSrc}
-                    t={t}
-                    isDragging={clip.id === draggingClipId}
-                    clipNumbering={clipNumbering}
-                  />
-                ))
-              )}
-              {isLoading && (
-                <div className="flex justify-center p-4">
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-cyan-500/30 border-t-cyan-500" />
-                </div>
-              )}
+            <div data-clip-list="true" className="min-h-0 flex-1 overflow-hidden px-0 pb-0">
+              <CompactClipList
+                clips={filteredClips}
+                listRef={clipListApiRef}
+                selectedClipId={selectedClipId}
+                selectedFolder={selectedFolder}
+                onPaste={onPaste}
+                onDelete={onDelete}
+                onContextMenu={onContextMenu}
+                onDragStart={onDragStart}
+                reorderEnabled={reorderEnabled}
+                reorderTargetClipId={reorderTargetClipId}
+                reorderTargetPosition={reorderTargetPosition}
+                getClipImageSrc={getClipImageSrc}
+                t={t}
+                draggingClipId={draggingClipId}
+                clipNumbering={clipNumbering}
+                isLoading={isLoading}
+                isFiltering={isFiltering}
+                emptyLabel={
+                  isFiltering && clips.length > 0
+                    ? t('compact.noMatchFilter') === 'compact.noMatchFilter'
+                      ? 'No clips match this filter'
+                      : t('compact.noMatchFilter')
+                    : t('clipList.empty')
+                }
+                onRowsRendered={handleRowsRendered}
+              />
             </div>
 
             {/* Footer */}
@@ -1138,50 +1130,34 @@ export const CompactView: React.FC<CompactViewProps> = ({
             </div>
           </div>
 
-          <div
-            ref={listRef}
-            data-clip-list="true"
-            className="no-scrollbar flex-1 space-y-1 overflow-y-auto px-2 pb-2"
-            onScroll={handleListScroll}
-          >
-            {filteredClips.length === 0 && !isLoading ? (
-              <div className="flex h-full flex-col items-center justify-center text-sm italic opacity-30">
-                <p>
-                  {isFiltering && clips.length > 0
-                    ? t('compact.noMatchFilter') === 'compact.noMatchFilter'
-                      ? 'No clips match this filter'
-                      : t('compact.noMatchFilter')
-                    : t('clipList.empty')}
-                </p>
-              </div>
-            ) : (
-              filteredClips.map((clip, index) => (
-                <ClipRow
-                  key={clip.id}
-                  clip={clip}
-                  index={index}
-                  clips={clips}
-                  selectedClipId={selectedClipId}
-                  selectedFolder={selectedFolder}
-                  onPaste={onPaste}
-                  onDelete={onDelete}
-                  onContextMenu={onContextMenu}
-                  onDragStart={onDragStart}
-                  reorderEnabled={reorderEnabled}
-                  reorderTargetClipId={reorderTargetClipId}
-                  reorderTargetPosition={reorderTargetPosition}
-                  getClipImageSrc={getClipImageSrc}
-                  t={t}
-                  isDragging={clip.id === draggingClipId}
-                  clipNumbering={clipNumbering}
-                />
-              ))
-            )}
-            {isLoading && (
-              <div className="flex justify-center p-4">
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-cyan-500/30 border-t-cyan-500" />
-              </div>
-            )}
+          <div data-clip-list="true" className="min-h-0 flex-1 overflow-hidden">
+            <CompactClipList
+              clips={filteredClips}
+              listRef={clipListApiRef}
+              selectedClipId={selectedClipId}
+              selectedFolder={selectedFolder}
+              onPaste={onPaste}
+              onDelete={onDelete}
+              onContextMenu={onContextMenu}
+              onDragStart={onDragStart}
+              reorderEnabled={reorderEnabled}
+              reorderTargetClipId={reorderTargetClipId}
+              reorderTargetPosition={reorderTargetPosition}
+              getClipImageSrc={getClipImageSrc}
+              t={t}
+              draggingClipId={draggingClipId}
+              clipNumbering={clipNumbering}
+              isLoading={isLoading}
+              isFiltering={isFiltering}
+              emptyLabel={
+                isFiltering && clips.length > 0
+                  ? t('compact.noMatchFilter') === 'compact.noMatchFilter'
+                    ? 'No clips match this filter'
+                    : t('compact.noMatchFilter')
+                  : t('clipList.empty')
+              }
+              onRowsRendered={handleRowsRendered}
+            />
           </div>
 
           <div className="flex flex-shrink-0 items-center justify-between border-t border-white/5 bg-black/10 p-2 font-mono text-[9px] tracking-tighter opacity-40">
@@ -1196,27 +1172,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
 };
 
 // Extracted clip row component to avoid duplication between horizontal and vertical layouts
-const ClipRow: React.FC<{
-  clip: AppClip;
-  index: number;
-  clips: AppClip[];
-  selectedClipId: string | null;
-  selectedFolder: string | null;
-  onPaste: (id: string) => void;
-  onDelete: (id: string) => void;
-  onContextMenu?: (e: React.MouseEvent, id: string) => void;
-  onDragStart: (clipId: string, startX: number, startY: number) => void;
-  reorderEnabled?: boolean;
-  reorderTargetClipId?: string | null;
-  reorderTargetPosition?: 'before' | 'after' | null;
-  getClipImageSrc: (content: string) => string;
-  t: (key: string) => string;
-  isDragging?: boolean;
-  clipNumbering?: 'positional' | 'countdown';
-}> = ({
+const ClipRow = memo(function ClipRow({
   clip,
   index,
-  clips,
+  totalCount,
   selectedClipId,
   selectedFolder,
   onPaste,
@@ -1230,7 +1189,24 @@ const ClipRow: React.FC<{
   t,
   isDragging,
   clipNumbering,
-}) => {
+}: {
+  clip: AppClip;
+  index: number;
+  totalCount: number;
+  selectedClipId: string | null;
+  selectedFolder: string | null;
+  onPaste: (id: string) => void;
+  onDelete: (id: string) => void;
+  onContextMenu?: (e: React.MouseEvent, id: string) => void;
+  onDragStart: (clipId: string, startX: number, startY: number) => void;
+  reorderEnabled?: boolean;
+  reorderTargetClipId?: string | null;
+  reorderTargetPosition?: 'before' | 'after' | null;
+  getClipImageSrc: (content: string) => string;
+  t: (key: string) => string;
+  isDragging?: boolean;
+  clipNumbering?: 'positional' | 'countdown';
+}) {
   const { i18n } = useTranslation();
   const typeLabel = useMemo(() => {
     if (clip.clip_type === 'image') return t('common.image') || 'Image';
@@ -1240,32 +1216,97 @@ const ClipRow: React.FC<{
     return t('compact.filterText') === 'compact.filterText' ? 'Text' : t('compact.filterText');
   }, [clip.clip_type, t]);
 
+  const imageMeta = useMemo(() => {
+    if (clip.clip_type !== 'image' || !clip.metadata) return null;
+    try {
+      return JSON.parse(clip.metadata) as {
+        size_bytes?: number;
+        width?: number;
+        height?: number;
+      };
+    } catch {
+      return null;
+    }
+  }, [clip.clip_type, clip.metadata]);
+
+  const absoluteTimeLabel = useMemo(
+    () =>
+      new Date(clip.created_at).toLocaleString(i18n.language || undefined, {
+        dateStyle: 'full',
+        timeStyle: 'medium',
+      }),
+    [clip.created_at, i18n.language]
+  );
+
+  const relativeTimeLabel = useMemo(
+    () => getRelativeTime(clip.created_at, i18n.language),
+    [clip.created_at, i18n.language]
+  );
+
+  const [hovered, setHovered] = useState(false);
+  const [menuHighlight, setMenuHighlight] = useState(false);
+  const menuHighlightRef = useRef(false);
+  const leftWhileMenuRef = useRef(false);
+  menuHighlightRef.current = menuHighlight;
+  const showHover = hovered || menuHighlight || selectedClipId === clip.id;
+
+  useEffect(() => {
+    const onMenu = (e: Event) => {
+      const detail = (e as CustomEvent<ContextMenuEventDetail>).detail;
+      if (!detail) return;
+      if (detail.open && detail.highlightId === clip.id) {
+        leftWhileMenuRef.current = false;
+        setMenuHighlight(true);
+        setHovered(true);
+      } else {
+        setMenuHighlight(false);
+        if (leftWhileMenuRef.current) setHovered(false);
+      }
+    };
+    window.addEventListener(CONTEXT_MENU_EVENT, onMenu);
+    return () => window.removeEventListener(CONTEXT_MENU_EVENT, onMenu);
+  }, [clip.id]);
+
   return (
-    <React.Fragment>
+    <div className="relative h-full">
       {reorderEnabled && reorderTargetClipId === clip.id && reorderTargetPosition === 'before' && (
-        <div className="mx-2 h-0.5 flex-shrink-0 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
+        <div className="absolute left-2 right-2 top-0 z-30 h-0.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
       )}
       <div
         data-clip-id={clip.id}
         onClick={() => onPaste(clip.id)}
-        onContextMenu={(e) => onContextMenu?.(e, clip.id)}
+        onContextMenu={(e) => {
+          setMenuHighlight(true);
+          setHovered(true);
+          onContextMenu?.(e, clip.id);
+        }}
         onMouseDown={(e) => {
           if (e.button === 0) {
             onDragStart(clip.id, e.clientX, e.clientY);
           }
         }}
+        onMouseEnter={() => {
+          leftWhileMenuRef.current = false;
+          setHovered(true);
+        }}
+        onMouseLeave={() => {
+          if (menuHighlightRef.current) leftWhileMenuRef.current = true;
+          else setHovered(false);
+        }}
         draggable="false"
         className={clsx(
-          'group relative flex h-10 flex-shrink-0 cursor-pointer items-center gap-3 overflow-hidden rounded-lg border px-2 py-1.5 transition-all',
+          'group relative flex h-10 w-full cursor-pointer items-center gap-3 overflow-hidden rounded-lg border px-2 py-1.5 transition-colors',
           selectedClipId === clip.id
             ? 'border-indigo-500/40 bg-indigo-500/15 shadow-[0_0_12px_rgba(99,102,241,0.2)]'
-            : 'border-white/5 bg-white/5 hover:border-cyan-500/30 hover:bg-white/10',
-          reorderEnabled && 'cursor-grab active:cursor-grabbing',
-          isDragging && 'opacity-40 scale-95 pointer-events-none'
+            : showHover
+              ? 'border-cyan-500/30 bg-white/10'
+              : 'border-white/5 bg-white/5',
+          reorderEnabled && !isDragging && 'cursor-grab',
+          isDragging && 'cursor-grabbing opacity-40 scale-95 pointer-events-none'
         )}
       >
         <div className="flex w-8 flex-shrink-0 items-center justify-center">
-          <span className="font-mono text-[10px] opacity-30">#{clipNumbering === 'positional' ? index + 1 : clips.length - index}</span>
+          <span className="font-mono text-[10px] opacity-30">#{clipNumbering === 'positional' ? index + 1 : totalCount - index}</span>
         </div>
         <div className="flex min-w-0 flex-1 items-center gap-3">
           {clip.clip_type === 'image' ? (
@@ -1283,36 +1324,25 @@ const ClipRow: React.FC<{
                 )}
               </div>
               {(() => {
-                try {
-                  const parsed = clip.metadata
-                    ? (JSON.parse(clip.metadata) as {
-                        size_bytes?: number;
-                        width?: number;
-                        height?: number;
-                      })
-                    : null;
-                  const w = parsed?.width || 0;
-                  const h = parsed?.height || 0;
-                  const kb = parsed?.size_bytes ? Math.round(parsed.size_bytes / 1024) : 0;
-                  if (w && h && kb) {
-                    return (
-                      <span className="flex items-center gap-1.5 whitespace-nowrap text-[10px] opacity-40">
-                        <span className="flex items-center gap-0.5">
-                          <MoveHorizontal size={9} />
-                          {w}
-                        </span>
-                        <span className="opacity-50">×</span>
-                        <span className="flex items-center gap-0.5">
-                          <MoveVertical size={9} />
-                          {h}
-                        </span>
-                        <span className="opacity-50">•</span>
-                        <span>{kb}KB</span>
+                const w = imageMeta?.width || 0;
+                const h = imageMeta?.height || 0;
+                const kb = imageMeta?.size_bytes ? Math.round(imageMeta.size_bytes / 1024) : 0;
+                if (w && h && kb) {
+                  return (
+                    <span className="flex items-center gap-1.5 whitespace-nowrap text-[10px] opacity-40">
+                      <span className="flex items-center gap-0.5">
+                        <MoveHorizontal size={9} />
+                        {w}
                       </span>
-                    );
-                  }
-                } catch {
-                  /* empty */
+                      <span className="opacity-50">×</span>
+                      <span className="flex items-center gap-0.5">
+                        <MoveVertical size={9} />
+                        {h}
+                      </span>
+                      <span className="opacity-50">•</span>
+                      <span>{kb}KB</span>
+                    </span>
+                  );
                 }
                 return null;
               })()}
@@ -1378,15 +1408,20 @@ const ClipRow: React.FC<{
                 />
               </Tooltip>
             )}
-            <Tooltip label={new Date(clip.created_at).toLocaleString(i18n.language || undefined, { dateStyle: 'full', timeStyle: 'medium' })} placement="left">
+            <Tooltip label={absoluteTimeLabel} placement="left">
               <span className="flex items-center gap-1">
                 <Clock size={10} className="text-current" />
-                {getRelativeTime(clip.created_at, i18n.language)}
+                {relativeTimeLabel}
               </span>
             </Tooltip>
           </span>
 
-          <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+          <div
+            className={clsx(
+              'flex gap-1 transition-opacity',
+              showHover ? 'opacity-100' : 'opacity-0'
+            )}
+          >
             <Tooltip label={t('common.delete') || 'Delete'} placement="left">
               <button
                 onClick={(e) => {
@@ -1402,8 +1437,215 @@ const ClipRow: React.FC<{
         </div>
       </div>
       {reorderEnabled && reorderTargetClipId === clip.id && reorderTargetPosition === 'after' && (
-        <div className="mx-2 h-0.5 flex-shrink-0 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
+        <div className="absolute bottom-0 left-2 right-2 z-30 h-0.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
       )}
-    </React.Fragment>
+    </div>
   );
+});
+
+type CompactListRowProps = {
+  clips: AppClip[];
+  selectedClipId: string | null;
+  selectedFolder: string | null;
+  onPaste: (id: string) => void;
+  onDelete: (id: string) => void;
+  onContextMenu?: (e: React.MouseEvent, id: string) => void;
+  onDragStart: (clipId: string, startX: number, startY: number) => void;
+  reorderEnabled?: boolean;
+  reorderTargetClipId?: string | null;
+  reorderTargetPosition?: 'before' | 'after' | null;
+  getClipImageSrc: (content: string) => string;
+  t: (key: string) => string;
+  draggingClipId?: string | null;
+  clipNumbering?: 'positional' | 'countdown';
 };
+
+function CompactListRow({
+  index,
+  style,
+  ariaAttributes,
+  clips,
+  selectedClipId,
+  selectedFolder,
+  onPaste,
+  onDelete,
+  onContextMenu,
+  onDragStart,
+  reorderEnabled,
+  reorderTargetClipId,
+  reorderTargetPosition,
+  getClipImageSrc,
+  t,
+  draggingClipId,
+  clipNumbering,
+}: RowComponentProps<CompactListRowProps>) {
+  const clip = clips[index];
+  if (!clip) return null;
+  return (
+    <div style={style} {...ariaAttributes} className="box-border px-2">
+      <ClipRow
+        clip={clip}
+        index={index}
+        totalCount={clips.length}
+        selectedClipId={selectedClipId}
+        selectedFolder={selectedFolder}
+        onPaste={onPaste}
+        onDelete={onDelete}
+        onContextMenu={onContextMenu}
+        onDragStart={onDragStart}
+        reorderEnabled={reorderEnabled}
+        reorderTargetClipId={reorderTargetClipId}
+        reorderTargetPosition={reorderTargetPosition}
+        getClipImageSrc={getClipImageSrc}
+        t={t}
+        isDragging={clip.id === draggingClipId}
+        clipNumbering={clipNumbering}
+      />
+    </div>
+  );
+}
+
+function CompactClipList({
+  clips,
+  listRef,
+  selectedClipId,
+  selectedFolder,
+  onPaste,
+  onDelete,
+  onContextMenu,
+  onDragStart,
+  reorderEnabled,
+  reorderTargetClipId,
+  reorderTargetPosition,
+  getClipImageSrc,
+  t,
+  draggingClipId,
+  clipNumbering,
+  isLoading,
+  emptyLabel,
+  onRowsRendered,
+}: {
+  clips: AppClip[];
+  listRef: React.Ref<import('react-window').ListImperativeAPI>;
+  selectedClipId: string | null;
+  selectedFolder: string | null;
+  onPaste: (id: string) => void;
+  onDelete: (id: string) => void;
+  onContextMenu?: (e: React.MouseEvent, id: string) => void;
+  onDragStart: (clipId: string, startX: number, startY: number) => void;
+  reorderEnabled?: boolean;
+  reorderTargetClipId?: string | null;
+  reorderTargetPosition?: 'before' | 'after' | null;
+  getClipImageSrc: (content: string) => string;
+  t: (key: string) => string;
+  draggingClipId?: string | null;
+  clipNumbering?: 'positional' | 'countdown';
+  isLoading: boolean;
+  isFiltering?: boolean;
+  emptyLabel: string;
+  onRowsRendered?: (
+    visible: { startIndex: number; stopIndex: number },
+    all: { startIndex: number; stopIndex: number }
+  ) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  // Start with a sensible fallback so the list paints before the first ResizeObserver tick
+  // (Tauri windows often measure as 0px on the initial hidden/layout frame).
+  const [height, setHeight] = useState(() => Math.max(120, LAYOUT.COMPACT_HEIGHT - 140));
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    let raf1 = 0;
+    let raf2 = 0;
+    const update = () => {
+      const next = el.clientHeight;
+      if (next > 0) {
+        setHeight((prev) => (prev === next ? prev : next));
+      }
+    };
+
+    update();
+    raf1 = requestAnimationFrame(() => {
+      update();
+      raf2 = requestAnimationFrame(update);
+    });
+
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    window.addEventListener('resize', update);
+
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      ro.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, [clips.length]);
+
+  const rowProps = useMemo(
+    () => ({
+      clips,
+      selectedClipId,
+      selectedFolder,
+      onPaste,
+      onDelete,
+      onContextMenu,
+      onDragStart,
+      reorderEnabled,
+      reorderTargetClipId,
+      reorderTargetPosition,
+      getClipImageSrc,
+      t,
+      draggingClipId,
+      clipNumbering,
+    }),
+    [
+      clips,
+      selectedClipId,
+      selectedFolder,
+      onPaste,
+      onDelete,
+      onContextMenu,
+      onDragStart,
+      reorderEnabled,
+      reorderTargetClipId,
+      reorderTargetPosition,
+      getClipImageSrc,
+      t,
+      draggingClipId,
+      clipNumbering,
+    ]
+  );
+
+  if (clips.length === 0 && !isLoading) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center px-2 text-sm italic opacity-30">
+        <p>{emptyLabel}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={containerRef} className="relative h-full w-full min-h-0">
+      <List
+        className="no-scrollbar"
+        rowComponent={CompactListRow}
+        rowCount={clips.length}
+        rowHeight={COMPACT_ROW_HEIGHT}
+        rowProps={rowProps}
+        listRef={listRef}
+        style={{ height: Math.max(height, 1), width: '100%' }}
+        defaultHeight={Math.max(height, 120)}
+        overscanCount={12}
+        onRowsRendered={onRowsRendered}
+      />
+      {isLoading && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-cyan-500/30 border-t-cyan-500" />
+        </div>
+      )}
+    </div>
+  );
+}

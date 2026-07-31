@@ -1,6 +1,6 @@
 import { ClipboardItem } from '../types';
 import { clsx } from 'clsx';
-import { useMemo, memo, useState, forwardRef } from 'react';
+import { useMemo, memo, useState, forwardRef, useEffect, useRef } from 'react';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 import { LAYOUT, PREVIEW_CHAR_LIMIT } from '../constants';
@@ -20,6 +20,10 @@ import { useMotionValue, useMotionTemplate, motion } from 'framer-motion';
 import Tooltip from './Tooltip';
 import { formatDistanceToNow } from 'date-fns';
 import { de, enUS, es, fr, ja, zhCN } from 'date-fns/locale';
+import {
+  CONTEXT_MENU_EVENT,
+  type ContextMenuEventDetail,
+} from '../utils/contextMenuEvents';
 
 const localeMap: Record<string, any> = {
   de,
@@ -224,8 +228,32 @@ export const ClipCard = memo(
 
     const glowBackground = useMotionTemplate`radial-gradient(180px circle at ${mouseX}px ${mouseY}px, hsl(${appHue} 65% 55% / 0.7), transparent 65%)`;
 
+    const [menuHighlight, setMenuHighlight] = useState(false);
+    const menuHighlightRef = useRef(false);
+    const leftWhileMenuRef = useRef(false);
+    menuHighlightRef.current = menuHighlight;
+
+    useEffect(() => {
+      const onMenu = (e: Event) => {
+        const detail = (e as CustomEvent<ContextMenuEventDetail>).detail;
+        if (!detail) return;
+        if (detail.open && detail.highlightId === clip.id) {
+          leftWhileMenuRef.current = false;
+          setMenuHighlight(true);
+          setHovered(true);
+        } else {
+          setMenuHighlight(false);
+          if (leftWhileMenuRef.current) setHovered(false);
+        }
+      };
+      window.addEventListener(CONTEXT_MENU_EVENT, onMenu);
+      return () => window.removeEventListener(CONTEXT_MENU_EVENT, onMenu);
+    }, [clip.id]);
+
     const handleContextMenu = (e: React.MouseEvent) => {
       e.preventDefault();
+      setMenuHighlight(true);
+      setHovered(true);
       onContextMenu?.(e);
     };
 
@@ -260,14 +288,21 @@ export const ClipCard = memo(
         <div
           data-el="clip-card-inner"
           onMouseDown={(e) => {
+            // Left button only — right-click must not arm drag / grabbing cursor
             if (e.button === 0) {
               onDragStart(clip.id, e.clientX, e.clientY);
             }
           }}
           draggable="false"
           onMouseMove={handleMouseMove}
-          onMouseEnter={() => setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
+          onMouseEnter={() => {
+            leftWhileMenuRef.current = false;
+            setHovered(true);
+          }}
+          onMouseLeave={() => {
+            if (menuHighlightRef.current) leftWhileMenuRef.current = true;
+            else setHovered(false);
+          }}
           onClick={onPaste}
           onContextMenu={handleContextMenu}
           style={
@@ -281,9 +316,9 @@ export const ClipCard = memo(
             } as React.CSSProperties
           }
           className={clsx(
-            'relative flex h-full w-full cursor-pointer select-none flex-col overflow-hidden rounded-2xl bg-card/80 shadow-lg transition-all',
+            'relative flex h-full w-full cursor-pointer select-none flex-col overflow-hidden rounded-2xl bg-card/80 shadow-lg transition-[border-color,box-shadow,opacity,transform] duration-150',
             isSelected ? 'z-10 scale-[1.02] transform' : 'border hover:-translate-y-1',
-            isDragging && 'opacity-40 scale-95 pointer-events-none',
+            isDragging && 'cursor-grabbing opacity-40 scale-95 pointer-events-none',
             'group'
           )}
         >
@@ -297,7 +332,7 @@ export const ClipCard = memo(
                 WebkitMask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
                 WebkitMaskComposite: 'xor',
                 maskComposite: 'exclude',
-                opacity: hovered ? 1 : 0,
+                opacity: hovered || menuHighlight ? 1 : 0,
                 transition: 'opacity 200ms',
               }}
             />

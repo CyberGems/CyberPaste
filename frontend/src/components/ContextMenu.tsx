@@ -1,7 +1,7 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { clsx } from 'clsx';
 
-interface ContextMenuOption {
+export interface ContextMenuOption {
   label: string;
   onClick: () => void;
   danger?: boolean;
@@ -17,87 +17,99 @@ interface ContextMenuProps {
 
 export function ContextMenu({ x, y, options, onClose }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
-  const [coords, setCoords] = useState({ x, y });
 
+  // Position before paint — mutate DOM directly to avoid a second React render.
   useLayoutEffect(() => {
-    if (!menuRef.current) return;
+    const el = menuRef.current;
+    if (!el) return;
 
-    const menuRect = menuRef.current.getBoundingClientRect();
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
+    const { width, height } = el.getBoundingClientRect();
+    const pad = 5;
+    let left = x;
+    let top = y;
 
-    let newX = x;
-    let newY = y;
+    if (left + width > window.innerWidth - pad) left = x - width;
+    if (top + height > window.innerHeight - pad) top = y - height;
 
-    // Flip horizontally if overflow
-    if (x + menuRect.width > windowWidth) {
-      newX = x - menuRect.width;
-    }
+    left = Math.max(pad, Math.min(left, window.innerWidth - width - pad));
+    top = Math.max(pad, Math.min(top, window.innerHeight - height - pad));
 
-    // Flip vertically if overflow
-    if (y + menuRect.height > windowHeight) {
-      newY = y - menuRect.height;
-    }
+    el.style.left = `${left}px`;
+    el.style.top = `${top}px`;
+    el.style.visibility = 'visible';
+  }, [x, y, options.length]);
 
-    // Boundary check (never go off screen at all)
-    newX = Math.max(5, Math.min(newX, windowWidth - menuRect.width - 5));
-    newY = Math.max(5, Math.min(newY, windowHeight - menuRect.height - 5));
+  // Close on outside pointer / Escape without a full-screen overlay
+  // (overlay steals hover from the clip and makes the menu feel laggy).
+  useEffect(() => {
+    const onPointerDown = (e: PointerEvent) => {
+      const el = menuRef.current;
+      if (!el) return;
+      if (!el.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    const onBlur = () => onClose();
 
-    setCoords({ x: newX, y: newY });
-  }, [x, y]);
+    window.addEventListener('pointerdown', onPointerDown, true);
+    window.addEventListener('keydown', onKeyDown, true);
+    window.addEventListener('blur', onBlur);
+    return () => {
+      window.removeEventListener('pointerdown', onPointerDown, true);
+      window.removeEventListener('keydown', onKeyDown, true);
+      window.removeEventListener('blur', onBlur);
+    };
+  }, [onClose]);
 
   return (
-    <>
-      <div
-        className="fixed inset-0 z-[190] bg-transparent"
-        onClick={onClose}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          onClose();
-        }}
-      />
-      <div
-        ref={menuRef}
-        className="animate-in fade-in zoom-in-95 fixed z-[200] min-w-[180px] overflow-hidden rounded-xl border border-white/10 bg-card/95 p-1.5 shadow-2xl backdrop-blur-xl duration-150"
-        style={{
-          left: coords.x,
-          top: coords.y,
-          boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)',
-        }}
-      >
-        <div className="flex flex-col gap-0.5">
-          {options.map((option, index) => (
-            <button
-              key={index}
-              disabled={option.disabled}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (!option.disabled) {
-                  option.onClick();
-                  onClose();
-                }
-              }}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (!option.disabled) {
-                  option.onClick();
-                  onClose();
-                }
-              }}
-              className={clsx(
-                'flex w-full items-center rounded-lg px-3 py-2 text-left text-sm font-medium transition-all duration-100',
-                option.disabled ? 'pointer-events-none opacity-40' : '',
-                option.danger
-                  ? 'text-red-500 hover:bg-red-500/10'
-                  : 'text-foreground/90 hover:bg-white/10 hover:text-primary'
-              )}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+    <div
+      ref={menuRef}
+      className="fixed z-[200] min-w-[180px] overflow-hidden rounded-xl border border-white/10 bg-zinc-900/95 p-1.5 shadow-2xl"
+      style={{
+        left: x,
+        top: y,
+        visibility: 'hidden',
+        boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)',
+      }}
+      role="menu"
+    >
+      <div className="flex flex-col gap-0.5">
+        {options.map((option, index) => (
+          <button
+            key={index}
+            type="button"
+            role="menuitem"
+            disabled={option.disabled}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!option.disabled) {
+                option.onClick();
+                onClose();
+              }
+            }}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!option.disabled) {
+                option.onClick();
+                onClose();
+              }
+            }}
+            className={clsx(
+              'flex w-full items-center rounded-lg px-3 py-2 text-left text-sm font-medium',
+              option.disabled ? 'pointer-events-none opacity-40' : '',
+              option.danger
+                ? 'text-red-500 hover:bg-red-500/10'
+                : 'text-foreground/90 hover:bg-white/10 hover:text-primary'
+            )}
+          >
+            {option.label}
+          </button>
+        ))}
       </div>
-    </>
+    </div>
   );
 }

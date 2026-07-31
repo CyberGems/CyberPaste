@@ -2631,6 +2631,25 @@ pub async fn set_toast_position(app: AppHandle, width: f64, height: f64) -> Resu
     Ok(())
 }
 
+/// Present the image viewer above the main clipboard UI.
+///
+/// The main window is frequently always-on-top (float-above-taskbar / pinned),
+/// so a non-pinned viewer would otherwise open behind it. We dismiss the main
+/// window first, then show + focus the viewer without forcing always-on-top.
+fn present_image_viewer(app: &AppHandle, win: &tauri::WebviewWindow) {
+    if let Some(main) = app.get_webview_window("main") {
+        match main.is_visible() {
+            Ok(true) => crate::animate_window_hide(&main, None),
+            Ok(false) => {}
+            Err(e) => log::warn!("Could not read main window visibility: {}", e),
+        }
+    }
+
+    let _ = win.unminimize();
+    let _ = win.show();
+    let _ = win.set_focus();
+}
+
 #[tauri::command]
 pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), String> {
     log::info!("open_image_viewer called for clip_id: {}", clip_id);
@@ -2638,10 +2657,7 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
     if let Some(win) = app.get_webview_window(window_label) {
         log::info!("Reusing existing image-viewer window");
         win.emit("update-viewer-clip", clip_id).ok();
-        win.unminimize().ok();
-        win.show().ok();
-        win.set_focus().ok();
-        win.set_always_on_top(true).ok();
+        present_image_viewer(&app, &win);
         return Ok(());
     }
 
@@ -2654,12 +2670,12 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
         window_label,
         tauri::WebviewUrl::App(format!("index.html?clip_id={}", clip_id).into()),
     )
-    .title("CyberPaste Viewer")
+    .title("Image Viewer")
     .inner_size(settings.viewer_window_width, settings.viewer_window_height)
     .min_inner_size(300.0, 200.0)
     .decorations(false)
     .transparent(true)
-    .always_on_top(true)
+    .always_on_top(false)
     .shadow(true)
     .visible(false);
 
@@ -2685,8 +2701,8 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
     let round_corners = settings.round_corners;
     crate::apply_window_effect(&win, &mica_effect, &current_theme, round_corners);
 
-    // Fail-safe: Show window from Rust side after a small delay to ensure it appears
-    // even if JS fails to call show() on the first boot.
+    // Dismiss main first, then show viewer. Small delay remains as fail-safe for first paint.
+    present_image_viewer(&app, &win);
     let win_clone = win.clone();
     tauri::async_runtime::spawn(async move {
         tokio::time::sleep(std::time::Duration::from_millis(200)).await;

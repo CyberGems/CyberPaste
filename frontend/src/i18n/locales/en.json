@@ -87,7 +87,8 @@
     "rename": "Rename"
   },
   "contextMenu": {
-    "view": "View",
+    "view": "View Image",
+    "edit": "Edit",
     "copy": "Copy",
     "paste": "Paste",
     "delete": "Delete",
@@ -343,10 +344,12 @@
     "clipMoveFailed": "Failed to move clip"
   },
   "viewer": {
+    "title": "Image Viewer",
     "fitToWindow": "Fit to Window",
     "originalSize": "Original Size",
     "edit": "Edit",
     "copy": "Copy to Clipboard",
+    "copied": "Copied to clipboard",
     "close": "Close",
     "extractText": "Extract Text (OCR)",
     "extractingText": "Extracting text...",
@@ -355,8 +358,22 @@
     "noTextDetected": "No text detected in image",
     "autoCopyOcr": "Auto-copy to clipboard immediately",
     "closeDrawer": "Close Drawer",
+    "resizeDrawer": "Drag to resize",
     "loadingImage": "LOADING_IMAGE_SYSTEM...",
     "clipNotFound": "ERROR::CLIP_NOT_FOUND",
-    "loadingImageAria": "Loading image"
+    "loadingImageAria": "Loading image",
+    "zoomIn": "Zoom In",
+    "zoomOut": "Zoom Out",
+    "previousImage": "Previous image",
+    "nextImage": "Next image",
+    "pinOnTop": "Keep on top",
+    "unpinOnTop": "Don't keep on top",
+    "pinnedOnTop": "Always on top",
+    "unpinnedOnTop": "Floating normally",
+    "pinFailed": "Could not change always-on-top",
+    "noEditorConfigured": "Set an image editor in Settings first",
+    "noImagePath": "Image file is not available yet",
+    "fitShort": "Fit",
+    "originalShort": "1:1"
   }
 }
