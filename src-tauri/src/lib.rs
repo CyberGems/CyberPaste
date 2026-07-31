@@ -5,7 +5,6 @@ use std::sync::atomic::{AtomicBool, AtomicI64, Ordering};
 use std::sync::Arc;
 use tauri::{
     image::Image,
-    menu::{Menu, MenuItem, PredefinedMenuItem, IconMenuItemBuilder},
     tray::{TrayIcon, TrayIconBuilder},
     Emitter, Manager,
 };
@@ -28,23 +27,44 @@ mod ocr;
 mod settings_commands;
 mod settings_manager;
 
+/// Force Win11 immersive dark popup menus (rounded corners, soft chrome).
+/// Kept for any remaining native menus; tray uses a custom HTML popup.
 #[cfg(target_os = "windows")]
 fn setup_menu_theme() {
-    use once_cell::sync::Lazy;
-    static UXTHEME: Lazy<Option<libloading::Library>> = Lazy::new(|| {
-        unsafe { libloading::Library::new("uxtheme.dll").ok() }
-    });
-    if let Some(ref lib) = *UXTHEME {
-        unsafe {
-            if let Ok(set_preferred_app_mode) = lib.get::<unsafe extern "system" fn(i32) -> i32>(b"#135") {
-                set_preferred_app_mode(2);
-            }
-            if let Ok(flush_menu_themes) = lib.get::<unsafe extern "system" fn()>(b"#136") {
-                flush_menu_themes();
-            }
+    use windows::core::PCSTR;
+    use windows::Win32::System::LibraryLoader::{GetProcAddress, LoadLibraryA};
+    use windows::core::s;
+
+    unsafe {
+        let Ok(uxtheme) = LoadLibraryA(s!("uxtheme.dll")) else {
+            return;
+        };
+
+        // Ordinal 135: SetPreferredAppMode (Win10 1903+) — 2 = ForceDark
+        type SetPreferredAppMode = unsafe extern "system" fn(i32) -> i32;
+        if let Some(ptr) = GetProcAddress(uxtheme, PCSTR::from_raw(135usize as *const u8)) {
+            let f: SetPreferredAppMode = std::mem::transmute(ptr);
+            f(2);
+        }
+
+        // Ordinal 136: FlushMenuThemes — drop cached classic menu chrome
+        type FlushMenuThemes = unsafe extern "system" fn();
+        if let Some(ptr) = GetProcAddress(uxtheme, PCSTR::from_raw(136usize as *const u8)) {
+            let f: FlushMenuThemes = std::mem::transmute(ptr);
+            f();
+        }
+
+        // Ordinal 104: RefreshImmersiveColorPolicyState
+        type RefreshImmersive = unsafe extern "system" fn();
+        if let Some(ptr) = GetProcAddress(uxtheme, PCSTR::from_raw(104usize as *const u8)) {
+            let f: RefreshImmersive = std::mem::transmute(ptr);
+            f();
         }
     }
 }
+
+#[cfg(not(target_os = "windows"))]
+fn setup_menu_theme() {}
 
 use database::Database;
 use models::get_runtime;
@@ -273,80 +293,46 @@ pub fn run_app() {
 
             let _tray = tray_builder
                 .tooltip("CyberPaste")
-                .on_menu_event(move |app, event| {
-                    if event.id.as_ref() == "quit" {
-                        app.exit(0);
-                    } else if event.id.as_ref() == "show" {
-                        if let Some(win) = app.get_webview_window("main") {
-                            position_window_at_bottom(&win);
-                        }
-                    } else if event.id.as_ref() == "toggle_pause" {
-                        use std::sync::atomic::Ordering;
-                        let current = crate::clipboard::CLIPBOARD_MONITORING_PAUSED.load(Ordering::SeqCst);
-                        let new_val = !current;
-                        crate::clipboard::CLIPBOARD_MONITORING_PAUSED.store(new_val, Ordering::SeqCst);
-                        let _ = rebuild_tray_menu(app);
-                        let _ = app.emit("clipboard-monitoring-state-changed", new_val);
-                    } else if event.id.as_ref() == "settings" {
-                        // Open settings window directly without showing the main window
-                        if let Some(settings_win) = app.get_webview_window("settings") {
-                            let _ = settings_win.unminimize();
-                            let _ = settings_win.show();
-                            let _ = settings_win.set_focus();
-                        } else {
-                            let _ = tauri::WebviewWindowBuilder::new(
-                                app,
-                                "settings",
-                                tauri::WebviewUrl::App("index.html?window=settings".into()),
-                            )
-                            .title("Settings")
-                            .inner_size(800.0, 700.0)
-                            .resizable(true)
-                            .maximizable(true)
-                            .decorations(false)
-                            .transparent(false)
-                            .center()
-                            .build();
-                        }
-                    } else if event.id.as_ref() == "about" {
-                        if let Some(settings_win) = app.get_webview_window("settings") {
-                            let _ = settings_win.unminimize();
-                            let _ = settings_win.show();
-                            let _ = settings_win.set_focus();
-                            let _ = settings_win.emit("open-tab", "about");
-                        } else {
-                            let _ = tauri::WebviewWindowBuilder::new(
-                                app,
-                                "settings",
-                                tauri::WebviewUrl::App("index.html?window=settings".into()),
-                            )
-                            .title("Settings")
-                            .inner_size(800.0, 700.0)
-                            .resizable(true)
-                            .maximizable(true)
-                            .decorations(false)
-                            .transparent(false)
-                            .center()
-                            .build();
-                            let app_clone = app.clone();
+                .on_tray_icon_event(|tray, event| {
+                    use tauri::tray::{MouseButton, MouseButtonState, TrayIconEvent};
+
+                    match event {
+                        TrayIconEvent::Click {
+                            button: MouseButton::Left,
+                            button_state: MouseButtonState::Up,
+                            ..
+                        } => {
+                            let app = tray.app_handle().clone();
+                            // Dismiss HTML tray popup before toggling the main window
                             tauri::async_runtime::spawn(async move {
-                                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-                                if let Some(settings_win) = app_clone.get_webview_window("settings") {
-                                    let _ = settings_win.emit("open-tab", "about");
+                                let _ = commands::hide_tray_menu(app).await;
+                            });
+                            if let Some(win) = tray.app_handle().get_webview_window("main") {
+                                if win.is_visible().unwrap_or(false)
+                                    && win.is_focused().unwrap_or(false)
+                                {
+                                    crate::animate_window_hide(&win, None);
+                                } else {
+                                    position_window_at_bottom(&win);
+                                }
+                            }
+                        }
+                        TrayIconEvent::Click {
+                            button: MouseButton::Right,
+                            button_state: MouseButtonState::Up,
+                            position,
+                            ..
+                        } => {
+                            let app = tray.app_handle().clone();
+                            let x = position.x.round() as i32;
+                            let y = position.y.round() as i32;
+                            tauri::async_runtime::spawn(async move {
+                                if let Err(e) = commands::show_tray_menu_at(app, x, y).await {
+                                    log::error!("show_tray_menu_at failed: {e}");
                                 }
                             });
                         }
-                    }
-                })
-                .on_tray_icon_event(|tray, event| {
-                    if let tauri::tray::TrayIconEvent::Click { button: tauri::tray::MouseButton::Left, .. } = event {
-                        if let Some(win) = tray.app_handle().get_webview_window("main") {
-                            if win.is_visible().unwrap_or(false) && win.is_focused().unwrap_or(false) {
-                                crate::animate_window_hide(&win, None);
-                            } else {
-                                position_window_at_bottom(&win);
-                            }
-                        }
+                        _ => {}
                     }
                 })
                 .build(app)?;
@@ -519,7 +505,11 @@ pub fn run_app() {
             commands::run_ocr_for_clip,
             commands::update_ocr_text,
             commands::toggle_clipboard_monitoring,
-            commands::is_clipboard_monitoring_paused
+            commands::is_clipboard_monitoring_paused,
+            commands::get_tray_menu_state,
+            commands::hide_tray_menu,
+            commands::tray_menu_ready,
+            commands::tray_menu_action
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -1319,127 +1309,14 @@ fn generate_activation_sound_wav() -> Vec<u8> {
     wav
 }
 
-fn generate_pause_icon() -> Vec<u8> {
-    use image::{ImageBuffer, Rgba};
-    let mut img = ImageBuffer::from_pixel(16, 16, Rgba([255_u8, 255_u8, 255_u8, 0_u8]));
-    for y in 3..13 {
-        for x in 4..7 {
-            img.put_pixel(x, y, Rgba([255_u8, 255_u8, 255_u8, 255_u8]));
-        }
-        for x in 9..12 {
-            img.put_pixel(x, y, Rgba([255_u8, 255_u8, 255_u8, 255_u8]));
-        }
-    }
-    let mut bytes = Vec::new();
-    let mut cursor = std::io::Cursor::new(&mut bytes);
-    let _ = img.write_to(&mut cursor, image::ImageFormat::Png);
-    bytes
-}
-
-fn generate_play_icon() -> Vec<u8> {
-    use image::{ImageBuffer, Rgba};
-    let mut img = ImageBuffer::from_pixel(16, 16, Rgba([255_u8, 255_u8, 255_u8, 0_u8]));
-    for x in 5..13 {
-        let offset = x - 5;
-        for y in (3 + offset)..(13 - offset) {
-            img.put_pixel(x as u32, y as u32, Rgba([255_u8, 255_u8, 255_u8, 255_u8]));
-        }
-    }
-    let mut bytes = Vec::new();
-    let mut cursor = std::io::Cursor::new(&mut bytes);
-    let _ = img.write_to(&mut cursor, image::ImageFormat::Png);
-    bytes
-}
-
+/// Refresh tray tooltip + push state to the HTML tray popup (no native Win32 menu).
 pub fn rebuild_tray_menu(app: &tauri::AppHandle) -> Result<(), tauri::Error> {
-    let manager = app.state::<Arc<SettingsManager>>();
-    let settings = manager.get();
-    let lang = settings.language.as_str();
-
-    let (show_hide_label, settings_label, about_label, quit_label) = if lang == "es" {
-        ("Mostrar / Ocultar", "Configuración...", "Acerca de...", "Salir")
-    } else {
-        ("Show / Hide", "Settings...", "About...", "Exit")
-    };
-
-    let is_paused = crate::clipboard::CLIPBOARD_MONITORING_PAUSED.load(std::sync::atomic::Ordering::SeqCst);
-    let pause_resume_label = if lang == "es" {
-        if is_paused { "Reanudar monitoreo" } else { "Pausar monitoreo" }
-    } else {
-        if is_paused { "Resume Monitoring" } else { "Pause Monitoring" }
-    };
-
-    let version = env!("CARGO_PKG_VERSION");
-    let app_title = format!("CyberPaste v{}", version);
-
-    let is_visible = app.get_webview_window("main")
-        .and_then(|w| w.is_visible().ok())
-        .unwrap_or(false);
-
-    let parts: Vec<&str> = show_hide_label.split(" / ").collect();
-    let dynamic_label = if is_visible {
-        parts.get(1).copied().unwrap_or("Hide")
-    } else {
-        parts.get(0).copied().unwrap_or("Show")
-    };
-
-    let show_icon_data = include_bytes!("../icons/show-hide.png");
-    let settings_icon_data = include_bytes!("../icons/settings.png");
-    let about_icon_data = include_bytes!("../icons/about.png");
-    let quit_icon_data = include_bytes!("../icons/quit.png");
-
-    let show_icon = Image::from_bytes(show_icon_data).expect("failed to load show-hide icon");
-    let settings_icon = Image::from_bytes(settings_icon_data).expect("failed to load settings icon");
-    let about_icon = Image::from_bytes(about_icon_data).expect("failed to load about icon");
-    let quit_icon = Image::from_bytes(quit_icon_data).expect("failed to load quit icon");
-
-    let pause_icon_bytes = if is_paused {
-        generate_play_icon()
-    } else {
-        generate_pause_icon()
-    };
-    let pause_icon = Image::from_bytes(&pause_icon_bytes).expect("failed to load pause icon");
-
-    let title_i = MenuItem::with_id(app, "title", &app_title, false, None::<&str>)?;
-    
-    let show_i = IconMenuItemBuilder::new(dynamic_label)
-        .id("show")
-        .icon(show_icon)
-        .accelerator(settings.hotkey.clone())
-        .build(app)?;
-
-    let pause_i = IconMenuItemBuilder::new(pause_resume_label)
-        .id("toggle_pause")
-        .icon(pause_icon)
-        .build(app)?;
-
-    let settings_i = IconMenuItemBuilder::new(settings_label)
-        .id("settings")
-        .icon(settings_icon)
-        .build(app)?;
-
-    let about_i = IconMenuItemBuilder::new(about_label)
-        .id("about")
-        .icon(about_icon)
-        .build(app)?;
-
-    let quit_i = IconMenuItemBuilder::new(quit_label)
-        .id("quit")
-        .icon(quit_icon)
-        .build(app)?;
-
-    let separator1 = PredefinedMenuItem::separator(app)?;
-    let separator2 = PredefinedMenuItem::separator(app)?;
-
-    let menu = Menu::with_items(
-        app,
-        &[&title_i, &separator1, &show_i, &pause_i, &settings_i, &about_i, &separator2, &quit_i],
-    )?;
-
+    let state = commands::collect_tray_menu_state(app);
     if let Some(tray) = app.tray_by_id("main") {
-        let _ = tray.set_menu(Some(menu));
-        let _ = tray.set_tooltip(Some(format!("CyberPaste v{}", version)));
+        // Ensure no native context menu is attached — we own the right-click popup.
+        let _ = tray.set_menu(None::<tauri::menu::Menu<tauri::Wry>>);
+        let _ = tray.set_tooltip(Some(format!("CyberPaste v{}", state.version)));
     }
-
+    let _ = app.emit("tray-menu-state", &state);
     Ok(())
 }

@@ -2832,4 +2832,315 @@ pub fn is_clipboard_monitoring_paused() -> bool {
     crate::clipboard::CLIPBOARD_MONITORING_PAUSED.load(Ordering::SeqCst)
 }
 
+// ── Custom HTML tray menu ──────────────────────────────────────────────
+
+#[derive(Clone, serde::Serialize)]
+pub struct TrayMenuState {
+    pub version: String,
+    pub hotkey: String,
+    pub is_visible: bool,
+    pub is_paused: bool,
+    pub language: String,
+}
+
+static TRAY_MENU_ANCHOR: std::sync::Mutex<Option<(i32, i32)>> = std::sync::Mutex::new(None);
+static TRAY_MENU_WATCH_GEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+pub fn collect_tray_menu_state(app: &AppHandle) -> TrayMenuState {
+    let manager = app.state::<Arc<SettingsManager>>();
+    let settings = manager.get();
+    let is_visible = app
+        .get_webview_window("main")
+        .and_then(|w| w.is_visible().ok())
+        .unwrap_or(false);
+    let is_paused =
+        crate::clipboard::CLIPBOARD_MONITORING_PAUSED.load(std::sync::atomic::Ordering::SeqCst);
+
+    TrayMenuState {
+        version: env!("CARGO_PKG_VERSION").to_string(),
+        hotkey: settings.hotkey.clone(),
+        is_visible,
+        is_paused,
+        language: settings.language.clone(),
+    }
+}
+
+#[tauri::command]
+pub fn get_tray_menu_state(app: AppHandle) -> TrayMenuState {
+    collect_tray_menu_state(&app)
+}
+
+#[tauri::command]
+pub async fn hide_tray_menu(app: AppHandle) -> Result<(), String> {
+    if let Some(win) = app.get_webview_window("tray_menu") {
+        let _ = win.hide();
+        let _ = app.emit("tray-menu-hide", ());
+    }
+    Ok(())
+}
+
+/// Position + show the HTML tray popup near the given physical cursor/icon point.
+pub async fn show_tray_menu_at(app: AppHandle, anchor_x: i32, anchor_y: i32) -> Result<(), String> {
+    if let Ok(mut slot) = TRAY_MENU_ANCHOR.lock() {
+        *slot = Some((anchor_x, anchor_y));
+    }
+
+    let state = collect_tray_menu_state(&app);
+    let _ = app.emit("tray-menu-state", &state);
+    let _ = app.emit("tray-menu-show", ());
+
+    let window_label = "tray_menu";
+    if let Some(win) = app.get_webview_window(window_label) {
+        // Stay hidden until tray_menu_ready measures + positions
+        let _ = win.hide();
+        let _ = win.set_size(tauri::Size::Logical(tauri::LogicalSize {
+            width: 340.0,
+            height: 340.0,
+        }));
+        return Ok(());
+    }
+
+    let win = tauri::WebviewWindowBuilder::new(
+        &app,
+        window_label,
+        tauri::WebviewUrl::App("index.html?window=tray_menu".into()),
+    )
+    .title("CyberPaste Tray Menu")
+    .inner_size(340.0, 340.0)
+    .decorations(false)
+    .transparent(true)
+    .always_on_top(true)
+    .skip_taskbar(true)
+    .resizable(false)
+    .shadow(false) // CSS box-shadow on the menu card (transparent chrome)
+    .focused(true)
+    .visible(false)
+    .build()
+    .map_err(|e| format!("Failed to create tray menu window: {}", e))?;
+
+    // Native focus-loss dismiss (more reliable than webview blur alone)
+    let win_blur = win.clone();
+    let app_blur = app.clone();
+    win.on_window_event(move |event| {
+        if let tauri::WindowEvent::Focused(false) = event {
+            let win = win_blur.clone();
+            let app = app_blur.clone();
+            // Defer so menu item actions can run first
+            tauri::async_runtime::spawn(async move {
+                tokio::time::sleep(std::time::Duration::from_millis(80)).await;
+                // Only hide if we still don't have focus (action may have focused another window)
+                if !win.is_focused().unwrap_or(false) {
+                    let _ = win.hide();
+                    let _ = app.emit("tray-menu-hide", ());
+                }
+            });
+        }
+    });
+
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn tray_menu_ready(app: AppHandle, width: f64, height: f64) -> Result<(), String> {
+    let Some(win) = app.get_webview_window("tray_menu") else {
+        return Ok(());
+    };
+
+    let (anchor_x, anchor_y) = TRAY_MENU_ANCHOR
+        .lock()
+        .ok()
+        .and_then(|g| *g)
+        .unwrap_or((100, 100));
+
+    let scale = win.scale_factor().unwrap_or(1.0);
+    let width_px = (width * scale).round() as i32;
+    let height_px = (height * scale).round() as i32;
+
+    // Prefer the monitor under the tray icon / cursor
+    let monitor = win
+        .available_monitors()
+        .unwrap_or_default()
+        .into_iter()
+        .find(|m| {
+            let pos = m.position();
+            let size = m.size();
+            anchor_x >= pos.x
+                && anchor_x < pos.x + size.width as i32
+                && anchor_y >= pos.y
+                && anchor_y < pos.y + size.height as i32
+        })
+        .or_else(|| win.primary_monitor().ok().flatten())
+        .or_else(|| win.current_monitor().ok().flatten());
+
+    let (min_x, min_y, max_x, max_y) = if let Some(m) = monitor {
+        let pos = m.position();
+        let size = m.size();
+        (
+            pos.x,
+            pos.y,
+            pos.x + size.width as i32,
+            pos.y + size.height as i32,
+        )
+    } else {
+        (0, 0, 1920, 1080)
+    };
+
+    // Center horizontally on anchor; place above the tray icon with a small gap
+    let gap = (8.0 * scale).round() as i32;
+    let mut x = anchor_x - width_px / 2;
+    let mut y = anchor_y - height_px - gap;
+
+    x = x.clamp(min_x + 4, (max_x - width_px - 4).max(min_x + 4));
+    if y < min_y + 4 {
+        // Not enough room above — open below the icon
+        y = anchor_y + gap;
+    }
+    y = y.clamp(min_y + 4, (max_y - height_px - 4).max(min_y + 4));
+
+    let _ = win.set_size(tauri::Size::Physical(tauri::PhysicalSize {
+        width: width_px.max(1) as u32,
+        height: height_px.max(1) as u32,
+    }));
+    let _ = win.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
+    let _ = win.show();
+    let _ = win.set_focus();
+
+    // Dismiss on outside click — always-on-top webviews often keep focus when
+    // clicking the desktop, so Focused(false) alone is not enough on Windows.
+    start_tray_menu_outside_click_watcher(app.clone(), win.clone());
+
+    Ok(())
+}
+
+fn start_tray_menu_outside_click_watcher(app: AppHandle, win: tauri::WebviewWindow) {
+    let gen = TRAY_MENU_WATCH_GEN.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
+    tauri::async_runtime::spawn(async move {
+        // Ignore the opening click
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+
+        #[cfg(target_os = "windows")]
+        {
+            use windows::Win32::Foundation::POINT;
+            use windows::Win32::UI::Input::KeyboardAndMouse::{
+                GetAsyncKeyState, VK_LBUTTON, VK_RBUTTON,
+            };
+            use windows::Win32::UI::WindowsAndMessaging::GetCursorPos;
+
+            let mut prev_down = false;
+            for _ in 0..400 {
+                // Superseded by a newer open
+                if TRAY_MENU_WATCH_GEN.load(std::sync::atomic::Ordering::SeqCst) != gen {
+                    break;
+                }
+                if !win.is_visible().unwrap_or(false) {
+                    break;
+                }
+
+                let down = unsafe {
+                    (GetAsyncKeyState(VK_LBUTTON.0 as i32) as u16 & 0x8000) != 0
+                        || (GetAsyncKeyState(VK_RBUTTON.0 as i32) as u16 & 0x8000) != 0
+                };
+
+                if down && !prev_down {
+                    let mut pt = POINT { x: 0, y: 0 };
+                    if unsafe { GetCursorPos(&mut pt).is_ok() } {
+                        let inside = match (win.outer_position(), win.outer_size()) {
+                            (Ok(pos), Ok(size)) => {
+                                pt.x >= pos.x
+                                    && pt.x < pos.x + size.width as i32
+                                    && pt.y >= pos.y
+                                    && pt.y < pos.y + size.height as i32
+                            }
+                            _ => true,
+                        };
+                        if !inside {
+                            let _ = win.hide();
+                            let _ = app.emit("tray-menu-hide", ());
+                            break;
+                        }
+                    }
+                }
+                prev_down = down;
+                tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+            }
+        }
+
+        #[cfg(not(target_os = "windows"))]
+        {
+            let _ = (app, win, gen);
+        }
+    });
+}
+
+fn open_settings_window(app: &AppHandle, about_tab: bool) {
+    if let Some(settings_win) = app.get_webview_window("settings") {
+        let _ = settings_win.unminimize();
+        let _ = settings_win.show();
+        let _ = settings_win.set_focus();
+        if about_tab {
+            let _ = settings_win.emit("open-tab", "about");
+        }
+        return;
+    }
+
+    let _ = tauri::WebviewWindowBuilder::new(
+        app,
+        "settings",
+        tauri::WebviewUrl::App("index.html?window=settings".into()),
+    )
+    .title("Settings")
+    .inner_size(800.0, 700.0)
+    .resizable(true)
+    .maximizable(true)
+    .decorations(false)
+    .transparent(false)
+    .center()
+    .build();
+
+    if about_tab {
+        let app_clone = app.clone();
+        tauri::async_runtime::spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+            if let Some(settings_win) = app_clone.get_webview_window("settings") {
+                let _ = settings_win.emit("open-tab", "about");
+            }
+        });
+    }
+}
+
+#[tauri::command]
+pub async fn tray_menu_action(app: AppHandle, action: String) -> Result<(), String> {
+    // Hide popup first so it doesn't sit over the next UI
+    if let Some(win) = app.get_webview_window("tray_menu") {
+        let _ = win.hide();
+    }
+
+    match action.as_str() {
+        "show" => {
+            if let Some(win) = app.get_webview_window("main") {
+                if win.is_visible().unwrap_or(false) {
+                    crate::animate_window_hide(&win, None);
+                } else {
+                    crate::position_window_at_bottom(&win);
+                }
+            }
+        }
+        "toggle_pause" => {
+            use std::sync::atomic::Ordering;
+            let current = crate::clipboard::CLIPBOARD_MONITORING_PAUSED.load(Ordering::SeqCst);
+            let new_val = !current;
+            crate::clipboard::CLIPBOARD_MONITORING_PAUSED.store(new_val, Ordering::SeqCst);
+            let _ = crate::rebuild_tray_menu(&app);
+            let _ = app.emit("clipboard-monitoring-state-changed", new_val);
+        }
+        "settings" => open_settings_window(&app, false),
+        "about" => open_settings_window(&app, true),
+        "quit" => {
+            app.exit(0);
+        }
+        _ => return Err(format!("Unknown tray action: {action}")),
+    }
+
+    Ok(())
+}
 

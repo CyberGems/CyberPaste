@@ -3,6 +3,7 @@ import App from './App';
 import { SettingsWindow } from './windows/SettingsWindow';
 import { ToastWindow } from './windows/ToastWindow';
 import { ImageViewerWindow } from './windows/ImageViewerWindow';
+import { TrayMenuWindow } from './windows/TrayMenuWindow';
 import { attachConsole } from '@tauri-apps/plugin-log';
 import './i18n/config'; // Initialize i18n
 import './index.css';
@@ -22,6 +23,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <ToastWindow />
   ) : windowLabel === 'image_viewer' ? (
     <ImageViewerWindow />
+  ) : windowLabel === 'tray_menu' ? (
+    <TrayMenuWindow />
   ) : (
     <App />
   )

@@ -43,6 +43,15 @@
     "disabled": "desactivado",
     "updated": "actualizado"
   },
+  "tray": {
+    "show": "Mostrar",
+    "hide": "Ocultar",
+    "pauseMonitoring": "Pausar monitoreo",
+    "resumeMonitoring": "Reanudar monitoreo",
+    "settings": "Configuración...",
+    "about": "Acerca de...",
+    "quit": "Salir"
+  },
   "compact": {
     "enterToPaste": "ENTER PARA PEGAR",
     "arrowsFolders": "←→ CARPETAS",

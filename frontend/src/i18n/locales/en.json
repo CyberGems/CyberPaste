@@ -43,6 +43,15 @@
     "disabled": "disabled",
     "updated": "updated"
   },
+  "tray": {
+    "show": "Show",
+    "hide": "Hide",
+    "pauseMonitoring": "Pause Monitoring",
+    "resumeMonitoring": "Resume Monitoring",
+    "settings": "Settings...",
+    "about": "About...",
+    "quit": "Exit"
+  },
   "compact": {
     "enterToPaste": "ENTER TO PASTE",
     "arrowsFolders": "←→ FOLDERS",
