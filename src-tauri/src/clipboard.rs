@@ -398,22 +398,58 @@ async fn process_clipboard_change(
             // 3. Prefer plain text when available.
             // Terminals/editors often put RTF+TEXT together; TEXT is the real snippet.
             // Word/rich docs usually also offer HTML (handled above).
+            // Also handle CF_TEXT that is itself an RTF document (e.g. re-copied from edit modal).
             if !found_content && ctx.has(ContentFormat::Text) {
                 if let Ok(text) = ctx.get_text() {
                     let trimmed = text.trim().to_string();
                     if !trimmed.is_empty() {
-                        clip_content = trimmed.as_bytes().to_vec();
-                        clip_hash = calculate_hash(&clip_content);
-                        clip_type = if is_url(&trimmed) {
-                            "url"
-                        } else if is_code_snippet(&trimmed) {
-                            "code"
+                        let looks_like_rtf = trimmed.starts_with("{\\rtf");
+                        if looks_like_rtf {
+                            let plain = strip_rtf_tags(&trimmed);
+                            if is_trivial_rtf_plain(&trimmed, &plain) {
+                                // Empty/noise RTF body (e.g. fonttbl + a stray quote) — skip
+                                log::debug!(
+                                    "CLIPBOARD: Skipping trivial RTF-as-text (stripped={:?})",
+                                    plain
+                                );
+                            } else {
+                                clip_content = plain.as_bytes().to_vec();
+                                clip_hash = calculate_hash(&clip_content);
+                                clip_type = if is_url(&plain) {
+                                    "url"
+                                } else if is_code_snippet(&plain) {
+                                    "code"
+                                } else {
+                                    "text"
+                                };
+                                clip_preview = plain.chars().take(200).collect::<String>();
+                                metadata = serde_json::json!({"format": "rtf", "converted": true})
+                                    .to_string();
+                                found_content = true;
+                                log::debug!(
+                                    "CLIPBOARD: Found text from RTF: {} (type={})",
+                                    clip_preview,
+                                    clip_type
+                                );
+                            }
                         } else {
-                            "text"
-                        };
-                        clip_preview = trimmed.chars().take(200).collect::<String>();
-                        found_content = true;
-                        log::debug!("CLIPBOARD: Found text: {} (type={})", clip_preview, clip_type);
+                            clip_content = trimmed.as_bytes().to_vec();
+                            clip_hash = calculate_hash(&clip_content);
+                            clip_type = if is_url(&trimmed) {
+                                "url"
+                            } else if is_code_snippet(&trimmed) {
+                                "code"
+                            } else {
+                                "text"
+                            };
+                            clip_preview = trimmed.chars().take(200).collect::<String>();
+                            found_content = true;
+                            log::debug!(
+                                "CLIPBOARD: Found text: {} (type={})",
+                                clip_preview,
+                                clip_type
+                            );
+                        }
                     }
                 }
             }
@@ -424,22 +460,38 @@ async fn process_clipboard_change(
                     let trimmed = rtf.trim();
                     if !trimmed.is_empty() {
                         let stripped = strip_rtf_tags(trimmed);
-                        if is_code_snippet(&stripped) {
+                        if is_trivial_rtf_plain(trimmed, &stripped) {
+                            log::debug!(
+                                "CLIPBOARD: Skipping trivial RTF clip (stripped={:?})",
+                                stripped
+                            );
+                        } else if is_code_snippet(&stripped) {
                             // Code that arrived as RTF-only — store the readable snippet
                             clip_content = stripped.as_bytes().to_vec();
                             clip_hash = calculate_hash(&clip_content);
                             clip_type = "code";
                             clip_preview = stripped.chars().take(200).collect::<String>();
-                            metadata = serde_json::json!({"format": "rtf", "converted": true}).to_string();
+                            metadata =
+                                serde_json::json!({"format": "rtf", "converted": true}).to_string();
+                            found_content = true;
+                            log::debug!(
+                                "CLIPBOARD: Found RTF code: {} (type={})",
+                                clip_preview,
+                                clip_type
+                            );
                         } else {
                             clip_content = trimmed.as_bytes().to_vec();
                             clip_hash = calculate_hash(&clip_content);
                             clip_type = "rtf";
                             clip_preview = stripped.chars().take(200).collect::<String>();
                             metadata = serde_json::json!({"format": "rtf"}).to_string();
+                            found_content = true;
+                            log::debug!(
+                                "CLIPBOARD: Found RTF: {} (type={})",
+                                clip_preview,
+                                clip_type
+                            );
                         }
-                        found_content = true;
-                        log::debug!("CLIPBOARD: Found RTF: {} (type={})", clip_preview, clip_type);
                     }
                 }
             }
@@ -450,18 +502,35 @@ async fn process_clipboard_change(
             if let Ok(text) = read_text().await {
                 let trimmed = text.trim().to_string();
                 if !trimmed.is_empty() {
-                    clip_content = trimmed.as_bytes().to_vec();
-                    clip_hash = calculate_hash(&clip_content);
-                    clip_type = if is_url(&trimmed) {
-                        "url"
-                    } else if is_code_snippet(&trimmed) {
-                        "code"
+                    let looks_like_rtf = trimmed.starts_with("{\\rtf");
+                    let usable = if looks_like_rtf {
+                        let plain = strip_rtf_tags(&trimmed);
+                        if is_trivial_rtf_plain(&trimmed, &plain) {
+                            String::new()
+                        } else {
+                            plain
+                        }
                     } else {
-                        "text"
+                        trimmed
                     };
-                    clip_preview = trimmed.chars().take(200).collect::<String>();
-                    found_content = true;
-                    log::debug!("CLIPBOARD: Found text (fallback): {} (type={})", clip_preview, clip_type);
+                    if !usable.is_empty() {
+                        clip_content = usable.as_bytes().to_vec();
+                        clip_hash = calculate_hash(&clip_content);
+                        clip_type = if is_url(&usable) {
+                            "url"
+                        } else if is_code_snippet(&usable) {
+                            "code"
+                        } else {
+                            "text"
+                        };
+                        clip_preview = usable.chars().take(200).collect::<String>();
+                        found_content = true;
+                        log::debug!(
+                            "CLIPBOARD: Found text (fallback): {} (type={})",
+                            clip_preview,
+                            clip_type
+                        );
+                    }
                 }
             }
         }
@@ -1333,6 +1402,24 @@ pub fn is_url(text: &str) -> bool {
     false
 }
 
+/// True when an RTF blob strips down to empty/noise (e.g. font table + a stray quote).
+pub fn is_trivial_rtf_plain(original_rtf: &str, stripped: &str) -> bool {
+    let t = stripped.trim();
+    if t.is_empty() {
+        return true;
+    }
+    let chars = t.chars().count();
+    // Fat RTF envelope with almost no readable body
+    if original_rtf.len() > 40 && chars <= 2 {
+        return true;
+    }
+    // Tiny non-alphanumeric residue
+    if chars < 8 && !t.chars().any(|c| c.is_alphanumeric()) {
+        return true;
+    }
+    false
+}
+
 pub fn is_code_snippet(text: &str) -> bool {
     let trimmed = text.trim();
     if trimmed.len() < 8 {
@@ -1529,7 +1616,6 @@ fn rtf_destination_at(bytes: &[u8], i: usize) -> bool {
             | "latentstyles"
             | "datastore"
             | "filetbl"
-            | "stylesheet"
     )
 }
 
@@ -1692,5 +1778,28 @@ mod tests {
     #[test]
     fn rejects_short_prose() {
         assert!(!is_code_snippet("Hello there"));
+    }
+
+    #[test]
+    fn trivial_rtf_quote_only_is_skipped() {
+        let rtf = r#"{\rtf1\ansi\deff0{\fonttbl{\f0\fmodern\fprq1 Lucida Console;}}\f0\fs18{\colortbl;\red191\green191\blue191;\red0\green0\blue0;}\cf2 \highlight1 "}"#;
+        let plain = strip_rtf_tags(rtf);
+        assert!(is_trivial_rtf_plain(rtf, &plain), "plain={plain:?}");
+    }
+
+    #[test]
+    fn strip_rtf_user_fonttbl_garbage() {
+        let rtf = r#"{\rtf1\ansi\deff0{\fonttbl{\f0\fmodern\fprq1 Lucida Console;}}\f0\fs18{\colortbl;\red191\green191\blue191;\red0\green0\blue0;}\cf2 \highlight1 "}"#;
+        let plain = strip_rtf_tags(rtf);
+        assert!(!plain.contains("Lucida Console"), "got: {plain}");
+        assert!(!plain.contains("fonttbl"), "got: {plain}");
+    }
+
+    #[test]
+    fn rtf_markup_as_plain_text_is_stripped_before_classify() {
+        let rtf = r#"{\rtf1\ansi\deff0{\fonttbl{\f0\fmodern Lucida Console;}}\f0 fn main() {\par     println!("x");\par }}"#;
+        assert!(rtf.starts_with("{\\rtf"));
+        let plain = strip_rtf_tags(rtf);
+        assert!(is_code_snippet(&plain), "plain={plain}");
     }
 }

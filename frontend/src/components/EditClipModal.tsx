@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Save, Edit3 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { ContextMenu } from './ContextMenu';
+import { useTextFieldContextMenu } from '../hooks/useTextFieldContextMenu';
 
 interface EditClipModalProps {
   isOpen: boolean;
@@ -17,17 +19,31 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
 }) => {
   const [editedContent, setEditedContent] = useState(content);
   const { t } = useTranslation();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const {
+    menuPos,
+    options,
+    closeMenu,
+    onContextMenu,
+    handleChange,
+    resetHistory,
+  } = useTextFieldContextMenu(textareaRef, editedContent, setEditedContent);
 
   useEffect(() => {
     if (isOpen) {
       setEditedContent(content);
+      resetHistory(content);
     }
-  }, [isOpen, content]);
+  }, [isOpen, content, resetHistory]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
+        if (menuPos) {
+          closeMenu();
+          return;
+        }
         onClose();
       }
     };
@@ -35,7 +51,7 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
       window.addEventListener('keydown', handleKeyDown, true);
     }
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, menuPos, closeMenu]);
 
   if (!isOpen) return null;
 
@@ -62,8 +78,10 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
         {/* Editor Area */}
         <div className="scrollbar-thin flex-1 overflow-y-auto bg-black/20 p-4">
           <textarea
+            ref={textareaRef}
             value={editedContent}
-            onChange={(e) => setEditedContent(e.target.value)}
+            onChange={handleChange}
+            onContextMenu={onContextMenu}
             className="scrollbar-thin h-40 w-full resize-none rounded-xl border border-border bg-background/50 p-3 font-mono text-xs leading-relaxed transition-all focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
             spellCheck={false}
             autoFocus
@@ -87,6 +105,10 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
           </button>
         </div>
       </div>
+
+      {menuPos && (
+        <ContextMenu x={menuPos.x} y={menuPos.y} options={options} onClose={closeMenu} />
+      )}
     </div>
   );
 };

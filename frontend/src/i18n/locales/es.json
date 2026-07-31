@@ -98,8 +98,12 @@
   "contextMenu": {
     "view": "Ver imagen",
     "edit": "Editar",
+    "undo": "Deshacer",
+    "redo": "Rehacer",
     "copy": "Copiar",
+    "cut": "Cortar",
     "paste": "Pegar",
+    "selectAll": "Seleccionar todo",
     "delete": "Eliminar",
     "rename": "Renombrar",
     "moveToFolder": "Mover a carpeta...",

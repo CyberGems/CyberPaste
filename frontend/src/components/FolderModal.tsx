@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   Check,
@@ -46,6 +46,8 @@ import {
 import { FOLDER_ICONS } from '../constants';
 import { clsx } from 'clsx';
 import { useTranslation } from 'react-i18next';
+import { ContextMenu } from './ContextMenu';
+import { useTextFieldContextMenu } from '../hooks/useTextFieldContextMenu';
 
 const IconMap: Record<string, any> = {
   Zap,
@@ -113,14 +115,24 @@ export const FolderModal: React.FC<FolderModalProps> = ({
   const [name, setName] = useState(initialName);
   const [selectedIcon, setSelectedIcon] = useState(initialIcon);
   const [selectedColor, setSelectedColor] = useState(initialColor);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const {
+    menuPos,
+    options,
+    closeMenu,
+    onContextMenu,
+    handleChange,
+    resetHistory,
+  } = useTextFieldContextMenu(nameInputRef, name, setName);
 
   useEffect(() => {
     if (isOpen) {
       setName(initialName);
+      resetHistory(initialName);
       setSelectedIcon(initialIcon || 'Folder');
       setSelectedColor(initialColor || '');
     }
-  }, [isOpen, initialName, initialIcon, initialColor]);
+  }, [isOpen, initialName, initialIcon, initialColor, resetHistory]);
 
   if (!isOpen) return null;
 
@@ -147,10 +159,12 @@ export const FolderModal: React.FC<FolderModalProps> = ({
               {t('folders.folderName')}
             </label>
             <input
+              ref={nameInputRef}
               autoFocus
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={handleChange}
+              onContextMenu={onContextMenu}
               placeholder="e.g. Work Projects"
               className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-white transition-all focus:border-cyan-500/50 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
             />
@@ -251,6 +265,10 @@ export const FolderModal: React.FC<FolderModalProps> = ({
           </button>
         </div>
       </div>
+
+      {menuPos && (
+        <ContextMenu x={menuPos.x} y={menuPos.y} options={options} onClose={closeMenu} />
+      )}
     </div>
   );
 };
