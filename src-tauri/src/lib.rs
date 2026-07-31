@@ -529,6 +529,211 @@ pub fn position_window_at_bottom(window: &tauri::WebviewWindow) {
     animate_window_show(window);
 }
 
+/// Smooth morph between compact ↔ full while the window stays visible.
+/// Uses Win32 SetWindowPos (size+pos in one call) with time-based ease-out (~200ms).
+/// Compact target stays centered on the current window (no cursor jump).
+/// Runs synchronously — call from a blocking thread / spawn_blocking.
+pub fn animate_view_mode_transition(window: &tauri::WebviewWindow) {
+    struct AnimationGuard;
+    impl Drop for AnimationGuard {
+        fn drop(&mut self) {
+            IS_ANIMATING.store(false, Ordering::SeqCst);
+        }
+    }
+
+    let mut retries = 0;
+    let mut acquired = false;
+    while retries < 50 {
+        if IS_ANIMATING
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_ok()
+        {
+            acquired = true;
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        retries += 1;
+    }
+    if !acquired {
+        log::warn!("Animation lock acquire timeout in view-mode transition, forcing lock");
+        IS_ANIMATING.store(true, Ordering::SeqCst);
+    }
+    let _guard = AnimationGuard;
+
+    let (side_margin, bottom_margin, float_above_taskbar, view_mode, saved_width, saved_height) = {
+        let manager = window.state::<Arc<crate::settings_manager::SettingsManager>>();
+        let s = manager.get();
+        let is_mica = s.mica_effect != "clear";
+        let no_corners = !s.round_corners;
+        let side = if is_mica && no_corners {
+            0.0
+        } else {
+            constants::WINDOW_MARGIN
+        };
+        let bottom = if is_mica && no_corners {
+            0.0
+        } else {
+            constants::WINDOW_MARGIN
+        };
+        (
+            side,
+            bottom,
+            s.float_above_taskbar,
+            s.view_mode,
+            s.window_width,
+            s.window_height,
+        )
+    };
+
+    let Some(monitor) = window.current_monitor().ok().flatten() else {
+        log::warn!("No monitor in view-mode transition; applying size without morph");
+        return;
+    };
+
+    let scale_factor = monitor.scale_factor();
+    let monitor_pos = monitor.position();
+    let monitor_size = monitor.size();
+    let work_area = monitor.work_area();
+
+    let start_size = window.outer_size().ok();
+    let start_pos = window.outer_position().ok();
+    let (Some(start_size), Some(start_pos)) = (start_size, start_pos) else {
+        log::warn!("Could not read window rect for view-mode transition");
+        return;
+    };
+
+    let (target_w, target_h, target_x, target_y) = if view_mode == "compact" {
+        let logical_w = if saved_width > 100.0 {
+            saved_width
+        } else {
+            constants::COMPACT_WIDTH
+        };
+        let logical_h = if saved_height > 100.0 {
+            saved_height
+        } else {
+            constants::COMPACT_HEIGHT
+        };
+        let tw = (logical_w * scale_factor) as u32;
+        let th = (logical_h * scale_factor) as u32;
+
+        // Shrink toward the center of the current window — avoid jumping to cursor.
+        let center_x = start_pos.x + (start_size.width as i32) / 2;
+        let center_y = start_pos.y + (start_size.height as i32) / 2;
+        let tx = (center_x - (tw as i32) / 2).clamp(
+            monitor_pos.x,
+            monitor_pos.x + monitor_size.width as i32 - tw as i32,
+        );
+        let ty = (center_y - (th as i32) / 2).clamp(
+            monitor_pos.y,
+            monitor_pos.y + monitor_size.height as i32 - th as i32,
+        );
+        (tw, th, tx, ty)
+    } else {
+        let side_margin_px = (side_margin * scale_factor) as i32;
+        let bottom_margin_px = (bottom_margin * scale_factor) as i32;
+        let reference_bottom = if float_above_taskbar {
+            monitor_pos.y + monitor_size.height as i32
+        } else {
+            work_area.position.y + work_area.size.height as i32
+        };
+        let logical_h = if saved_height > 100.0 {
+            saved_height
+        } else {
+            constants::FULL_HEIGHT
+        };
+        let tw = work_area.size.width - (side_margin_px as u32 * 2);
+        let th = (logical_h * scale_factor) as u32;
+        let tx = work_area.position.x + side_margin_px;
+        let ty = reference_bottom - th as i32 - bottom_margin_px;
+        (tw, th, tx, ty)
+    };
+
+    let start_w = start_size.width as f64;
+    let start_h = start_size.height as f64;
+    let start_x = start_pos.x as f64;
+    let start_y = start_pos.y as f64;
+    let end_w = target_w as f64;
+    let end_h = target_h as f64;
+    let end_x = target_x as f64;
+    let end_y = target_y as f64;
+
+    // Skip morph if already at target (within 2px).
+    let already_there = (start_w - end_w).abs() < 2.0
+        && (start_h - end_h).abs() < 2.0
+        && (start_x - end_x).abs() < 2.0
+        && (start_y - end_y).abs() < 2.0;
+
+    // One Win32 call per frame (size+pos together) — avoids double DWM redraw stutter.
+    let set_rect = |x: i32, y: i32, w: u32, h: u32| {
+        if let Ok(handle) = window.hwnd() {
+            use windows::Win32::Foundation::HWND;
+            use windows::Win32::UI::WindowsAndMessaging::{
+                SetWindowPos, SWP_NOACTIVATE, SWP_NOCOPYBITS, SWP_NOZORDER,
+            };
+            let hwnd = HWND(handle.0 as _);
+            unsafe {
+                let _ = SetWindowPos(
+                    hwnd,
+                    None,
+                    x,
+                    y,
+                    w as i32,
+                    h as i32,
+                    SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS,
+                );
+            }
+        } else {
+            let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
+                width: w,
+                height: h,
+            }));
+            let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
+                x,
+                y,
+            }));
+        }
+    };
+
+    if !already_there {
+        // Time-based: real ~200ms regardless of how long each SetWindowPos takes.
+        // Cap frame sleep so slow DWM frames don't stack artificial delays on top.
+        const DURATION_MS: f64 = 200.0;
+        const FRAME_MS: f64 = 8.0; // ~120Hz max; DWM coalesces anyway
+        let anim_start = std::time::Instant::now();
+
+        loop {
+            let elapsed_ms = anim_start.elapsed().as_secs_f64() * 1000.0;
+            let t = (elapsed_ms / DURATION_MS).min(1.0);
+            // Ease-out cubic — fast start, soft landing
+            let e = 1.0 - (1.0 - t).powi(3);
+            let w = (start_w + (end_w - start_w) * e).round().max(1.0) as u32;
+            let h = (start_h + (end_h - start_h) * e).round().max(1.0) as u32;
+            let x = (start_x + (end_x - start_x) * e).round() as i32;
+            let y = (start_y + (end_y - start_y) * e).round() as i32;
+            set_rect(x, y, w, h);
+
+            if t >= 1.0 {
+                break;
+            }
+
+            // Only sleep the remainder of the frame budget (never add delay on top of slow frames)
+            let frame_elapsed = anim_start.elapsed().as_secs_f64() * 1000.0 - elapsed_ms;
+            let remaining = FRAME_MS - frame_elapsed;
+            if remaining > 0.5 {
+                std::thread::sleep(std::time::Duration::from_secs_f64(remaining / 1000.0));
+            }
+        }
+    }
+
+    set_rect(target_x, target_y, target_w, target_h);
+
+    if float_above_taskbar {
+        let _ = window.set_always_on_top(true);
+    }
+
+    let _ = window.set_focus();
+}
+
 pub fn animate_window_show(window: &tauri::WebviewWindow) {
     let _ = window.emit("window-visibility", true);
     let _ = rebuild_tray_menu(window.app_handle());

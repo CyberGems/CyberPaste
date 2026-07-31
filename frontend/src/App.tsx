@@ -83,6 +83,7 @@ function App() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const settingsRef = useRef<Settings | null>(null);
   const isTogglingRef = useRef(false);
+  const [viewModeFading, setViewModeFading] = useState(false);
 
   const [isWindowActive, setIsWindowActive] = useState(true);
 
@@ -1052,15 +1053,25 @@ function App() {
   const [moveToFolderClipId, setMoveToFolderClipId] = useState<string | null>(null);
 
   const toggleViewMode = useCallback(async () => {
+    if (isTogglingRef.current) return;
     isTogglingRef.current = true;
+
+    // Fade out current UI before the window morph
+    setViewModeFading(true);
+    await new Promise<void>((r) => setTimeout(r, 90));
+
     try {
       await invoke('toggle_view_mode');
+      // Morph done + settings emitted — wait two frames for React to paint the new view
+      await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+      setViewModeFading(false);
     } catch (e) {
       console.error('Failed to toggle view mode:', e);
+      setViewModeFading(false);
     } finally {
       setTimeout(() => {
         isTogglingRef.current = false;
-      }, 2500);
+      }, 800);
     }
   }, []);
 
@@ -1401,6 +1412,19 @@ function App() {
         data-el="app-window"
         className={`relative h-full w-full overflow-hidden ${settings?.mica_effect === 'clear' ? 'bg-background/95' : ''}`}
       >
+        {/* View layer fades during compact ↔ full morph (keeps window chrome opaque) */}
+        <div
+          className="h-full w-full"
+          style={{
+            opacity: viewModeFading ? 0 : 1,
+            transform: viewModeFading ? 'scale(0.985) translateY(2px)' : 'scale(1) translateY(0)',
+            transition: viewModeFading
+              ? 'opacity 90ms cubic-bezier(0.4, 0, 1, 1), transform 90ms cubic-bezier(0.4, 0, 1, 1)'
+              : 'opacity 160ms cubic-bezier(0.16, 1, 0.3, 1), transform 160ms cubic-bezier(0.16, 1, 0.3, 1)',
+            willChange: 'opacity, transform',
+            pointerEvents: viewModeFading ? 'none' : undefined,
+          }}
+        >
         {settings?.view_mode === 'compact' ? (
           <CompactView
             isWindowActive={isWindowActive}
@@ -1540,6 +1564,7 @@ function App() {
             </main>
           </div>
         )}
+        </div>
 
         <ContextMenuHost ref={contextMenuRef} />
 

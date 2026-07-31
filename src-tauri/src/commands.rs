@@ -1861,10 +1861,15 @@ pub async fn toggle_view_mode(
     settings.view_mode = new_mode.clone();
     manager.save(settings.clone())?;
 
-    // Reposition window based on new mode
-    crate::animate_window_show(&window);
+    // Morph FIRST while content is faded and the old React tree is still mounted.
+    // Emitting settings mid-morph caused a heavy remount fighting DWM (~2–3s lag).
+    let win = window.clone();
+    let _ = tauri::async_runtime::spawn_blocking(move || {
+        crate::animate_view_mode_transition(&win);
+    })
+    .await;
 
-    // Notify frontend that settings changed
+    // Swap Compact ↔ Full only after the window has settled
     let _ = app.emit("settings-changed", manager.get());
 
     Ok(new_mode)
