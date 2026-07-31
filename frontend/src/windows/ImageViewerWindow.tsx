@@ -92,8 +92,7 @@ function mimeFromPath(path: string | null | undefined): string | null {
 
 function getImageSrc(clip: ClipboardItem): string {
   if (clip.image_path) {
-    const isAbsolute =
-      clip.image_path.startsWith('/') || /^[A-Za-z]:[\\/]/.test(clip.image_path);
+    const isAbsolute = clip.image_path.startsWith('/') || /^[A-Za-z]:[\\/]/.test(clip.image_path);
     if (isAbsolute) {
       try {
         return convertFileSrc(clip.image_path);
@@ -331,7 +330,10 @@ export function ImageViewerWindow() {
     }
 
     appWindow.isMaximized().then(setIsMaximized);
-    appWindow.isAlwaysOnTop().then(setAlwaysOnTop).catch(() => {});
+    appWindow
+      .isAlwaysOnTop()
+      .then(setAlwaysOnTop)
+      .catch(() => {});
 
     invoke<Settings>('get_settings')
       .then((s) => {
@@ -429,7 +431,10 @@ export function ImageViewerWindow() {
       setAlwaysOnTop(next);
       showStatus(next ? t('viewer.pinnedOnTop') : t('viewer.unpinnedOnTop'));
       // Confirm asynchronously; some platforms lag on isAlwaysOnTop()
-      appWindow.isAlwaysOnTop().then(setAlwaysOnTop).catch(() => {});
+      appWindow
+        .isAlwaysOnTop()
+        .then(setAlwaysOnTop)
+        .catch(() => {});
     } catch (err) {
       console.error('Failed to toggle always-on-top:', err);
       showStatus(t('viewer.pinFailed'));
@@ -564,7 +569,10 @@ export function ImageViewerWindow() {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+      if (
+        target &&
+        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+      ) {
         return;
       }
 
@@ -589,7 +597,7 @@ export function ImageViewerWindow() {
         return;
       }
 
-      if (e.key === '+' || e.key === '=' ) {
+      if (e.key === '+' || e.key === '=') {
         e.preventDefault();
         zoomBy(ZOOM_STEP);
         return;
@@ -736,9 +744,7 @@ export function ImageViewerWindow() {
   const footerBg = isDark
     ? 'border-white/5 bg-zinc-900/80 text-zinc-400'
     : 'border-zinc-200 bg-white/80 text-zinc-500';
-  const drawerBg = isDark
-    ? 'border-white/10 bg-zinc-900/95'
-    : 'border-zinc-200 bg-white/95';
+  const drawerBg = isDark ? 'border-white/10 bg-zinc-900/95' : 'border-zinc-200 bg-white/95';
 
   if (loading && !clip) {
     return (
@@ -832,10 +838,7 @@ export function ImageViewerWindow() {
 
       {/* Header — drag region only on the title side so toolbar clicks aren't swallowed */}
       <div className={`z-10 flex items-center justify-between border-b px-3 py-2 ${headerBg}`}>
-        <div
-          className="flex min-w-0 flex-1 items-center gap-2.5 pr-2"
-          data-tauri-drag-region
-        >
+        <div className="flex min-w-0 flex-1 items-center gap-2.5 pr-2" data-tauri-drag-region>
           <img
             src="/logo.png"
             alt=""
@@ -943,9 +946,7 @@ export function ImageViewerWindow() {
                 type="button"
                 onClick={handleEdit}
                 className={`rounded-md p-1.5 transition-colors ${btnHover} ${
-                  canEdit
-                    ? `${textMuted} hover:text-indigo-500`
-                    : 'cursor-not-allowed opacity-35'
+                  canEdit ? `${textMuted} hover:text-indigo-500` : 'cursor-not-allowed opacity-35'
                 }`}
                 aria-disabled={!canEdit}
               >
@@ -1104,8 +1105,8 @@ export function ImageViewerWindow() {
             <div
               className={`absolute bottom-3 left-1/2 z-30 -translate-x-1/2 rounded-md px-3 py-1.5 font-mono text-[11px] shadow-lg ${
                 isDark
-                  ? 'bg-zinc-900/90 text-cyan-300 border border-white/10'
-                  : 'bg-white/95 text-zinc-700 border border-zinc-200'
+                  ? 'border border-white/10 bg-zinc-900/90 text-cyan-300'
+                  : 'border border-zinc-200 bg-white/95 text-zinc-700'
               }`}
             >
               {statusMessage}
@@ -1116,7 +1117,7 @@ export function ImageViewerWindow() {
         {/* OCR Drawer — overlay, resizable */}
         {showOcrDrawer && (
           <div
-            className={`absolute right-0 top-0 z-20 flex h-full flex-col shadow-2xl backdrop-blur-md border-l ${drawerBg}`}
+            className={`absolute right-0 top-0 z-20 flex h-full flex-col border-l shadow-2xl backdrop-blur-md ${drawerBg}`}
             style={{ width: ocrDrawerWidth }}
           >
             <div
@@ -1184,7 +1185,7 @@ export function ImageViewerWindow() {
                 </div>
               ) : ocrText ? (
                 <pre
-                  className={`whitespace-pre-wrap break-all font-mono select-text ${isDark ? 'selection:bg-[#7A00FF]/30 selection:text-white' : 'selection:bg-indigo-200'}`}
+                  className={`select-text whitespace-pre-wrap break-all font-mono ${isDark ? 'selection:bg-[#7A00FF]/30 selection:text-white' : 'selection:bg-indigo-200'}`}
                 >
                   {ocrText}
                 </pre>
@@ -1217,7 +1218,11 @@ export function ImageViewerWindow() {
           <span className={`shrink-0 ${isDark ? 'text-zinc-600' : 'text-zinc-300'}`}>·</span>
           <span className={`shrink-0 ${isDark ? 'text-cyan-400/70' : 'text-cyan-700'}`}>
             {zoomPercent}%
-            {isFitMode ? ` · ${t('viewer.fitShort')}` : isOriginalMode ? ` · ${t('viewer.originalShort')}` : ''}
+            {isFitMode
+              ? ` · ${t('viewer.fitShort')}`
+              : isOriginalMode
+                ? ` · ${t('viewer.originalShort')}`
+                : ''}
           </span>
         </div>
         <div className="flex shrink-0 items-center gap-2">

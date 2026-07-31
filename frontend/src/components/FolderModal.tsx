@@ -116,14 +116,8 @@ export const FolderModal: React.FC<FolderModalProps> = ({
   const [selectedIcon, setSelectedIcon] = useState(initialIcon);
   const [selectedColor, setSelectedColor] = useState(initialColor);
   const nameInputRef = useRef<HTMLInputElement>(null);
-  const {
-    menuPos,
-    options,
-    closeMenu,
-    onContextMenu,
-    handleChange,
-    resetHistory,
-  } = useTextFieldContextMenu(nameInputRef, name, setName);
+  const { menuPos, options, closeMenu, onContextMenu, handleChange, resetHistory } =
+    useTextFieldContextMenu(nameInputRef, name, setName);
 
   useEffect(() => {
     if (isOpen) {
@@ -266,9 +260,7 @@ export const FolderModal: React.FC<FolderModalProps> = ({
         </div>
       </div>
 
-      {menuPos && (
-        <ContextMenu x={menuPos.x} y={menuPos.y} options={options} onClose={closeMenu} />
-      )}
+      {menuPos && <ContextMenu x={menuPos.x} y={menuPos.y} options={options} onClose={closeMenu} />}
     </div>
   );
 };

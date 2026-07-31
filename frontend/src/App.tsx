@@ -21,13 +21,7 @@ import { useTranslation } from 'react-i18next';
 import { systemToast as toast } from './utils/toast';
 import { LAYOUT } from './constants';
 import { generateDemoClips } from './debug/demoData';
-import {
-  FileText,
-  Code,
-  Link,
-  File as LucideFile,
-  Image as ImageIcon,
-} from 'lucide-react';
+import { FileText, Code, Link, File as LucideFile, Image as ImageIcon } from 'lucide-react';
 
 const base64ToBlob = (base64: string, mimeType: string = 'image/png'): Blob => {
   const byteCharacters = atob(base64);
@@ -138,7 +132,9 @@ function App() {
 
   // Simulated Drag State
   const [draggingClipId, setDraggingClipId] = useState<string | null>(null);
-  const [dragTargetFolderId, setDragTargetFolderId] = useState<string | null | undefined>(undefined);
+  const [dragTargetFolderId, setDragTargetFolderId] = useState<string | null | undefined>(
+    undefined
+  );
 
   // Reorder state
   const [reorderTargetClipId, setReorderTargetClipId] = useState<string | null>(null);
@@ -516,7 +512,7 @@ function App() {
         if (folderBtn) {
           const folderId = folderBtn.getAttribute('data-folder-id');
           const targetId = folderId === 'clipboard' ? null : folderId;
-          
+
           // Allow dropping to any folder as long as it's different from the currently viewed folder
           if (targetId !== selectedFolderRef.current) {
             if (dragStateRef.current.targetFolderId !== targetId) {
@@ -543,33 +539,33 @@ function App() {
         // Detect reorder target using clips state for reliable lookup
         const isOverClipList = elem?.closest('[data-clip-list="true"]');
         if (isOverClipList && !folderBtn && clipsRef.current.length > 0) {
-            let closestId: string | null = null;
-            let closestDist = Infinity;
-            let closestCenterY = 0;
+          let closestId: string | null = null;
+          let closestDist = Infinity;
+          let closestCenterY = 0;
 
-            const cached = dragStateRef.current.cachedRects || [];
-            for (let i = 0; i < cached.length; i++) {
-              const entry = cached[i];
-              const dist = Math.abs(e.clientY - entry.centerY);
-              if (dist < closestDist) {
-                closestDist = dist;
-                closestId = entry.id;
-                closestCenterY = entry.centerY;
-              }
+          const cached = dragStateRef.current.cachedRects || [];
+          for (let i = 0; i < cached.length; i++) {
+            const entry = cached[i];
+            const dist = Math.abs(e.clientY - entry.centerY);
+            if (dist < closestDist) {
+              closestDist = dist;
+              closestId = entry.id;
+              closestCenterY = entry.centerY;
             }
+          }
 
-            if (closestId && closestDist < 300) {
-              const position = e.clientY < closestCenterY ? 'before' : 'after';
-              if (
-                dragStateRef.current.reorderTargetClipId !== closestId ||
-                dragStateRef.current.reorderTargetPosition !== position
-              ) {
-                setReorderTargetClipId(closestId);
-                setReorderTargetPosition(position);
-                dragStateRef.current.reorderTargetClipId = closestId;
-                dragStateRef.current.reorderTargetPosition = position;
-              }
+          if (closestId && closestDist < 300) {
+            const position = e.clientY < closestCenterY ? 'before' : 'after';
+            if (
+              dragStateRef.current.reorderTargetClipId !== closestId ||
+              dragStateRef.current.reorderTargetPosition !== position
+            ) {
+              setReorderTargetClipId(closestId);
+              setReorderTargetPosition(position);
+              dragStateRef.current.reorderTargetClipId = closestId;
+              dragStateRef.current.reorderTargetPosition = position;
             }
+          }
         } else {
           if (dragStateRef.current.reorderTargetClipId !== null) {
             setReorderTargetClipId(null);
@@ -591,28 +587,32 @@ function App() {
           const clipId = state.pendingDrag.clipId;
           // Start actual drag
           setDraggingClipId(clipId);
-          
+
           if (dragIndicatorRef.current) {
             const draggingClip = clipsRef.current.find((c) => c.id === clipId);
             const clipType = draggingClip?.clip_type || 'text';
-            
+
             // Hide all sub-icons
             const icons = dragIndicatorRef.current.querySelectorAll('[data-drag-icon]');
             icons.forEach((el) => el.classList.add('hidden'));
-            
+
             // Show matching sub-icon
-            const matchingIcon = dragIndicatorRef.current.querySelector(`[data-drag-icon="${clipType}"]`);
+            const matchingIcon = dragIndicatorRef.current.querySelector(
+              `[data-drag-icon="${clipType}"]`
+            );
             if (matchingIcon) {
               matchingIcon.classList.remove('hidden');
             } else {
-              dragIndicatorRef.current.querySelector('[data-drag-icon="text"]')?.classList.remove('hidden');
+              dragIndicatorRef.current
+                .querySelector('[data-drag-icon="text"]')
+                ?.classList.remove('hidden');
             }
-            
+
             // Show indicator
             dragIndicatorRef.current.classList.remove('hidden');
             dragIndicatorRef.current.classList.add('flex');
           }
-          
+
           // Cache card rects to avoid layout thrashing during mousemove
           const cards = document.querySelectorAll('[data-clip-id]');
           const rects: { id: string; rect: DOMRect; centerY: number }[] = [];
@@ -842,21 +842,24 @@ function App() {
     }
   };
 
-  const handleToggleClipPin = useCallback(async (clipId: string | null) => {
-    if (!clipId) return;
-    try {
-      const newPinnedState = await invoke<boolean>('toggle_clip_pin', { uuid: clipId });
-      setClips((prevClips) =>
-        prevClips.map((c) => (c.id === clipId ? { ...c, is_pinned: newPinnedState } : c))
-      );
-      // Since changing pin status changes order, refresh the current folder/clipboard list to get correct new sorting!
-      refreshCurrentFolder();
-      toast.success(newPinnedState ? t('toasts.clipPinned') : t('toasts.clipUnpinned'));
-    } catch (error) {
-      console.error('Failed to toggle clip pin:', error);
-      toast.error(t('toasts.togglePinFailed'));
-    }
-  }, [refreshCurrentFolder]);
+  const handleToggleClipPin = useCallback(
+    async (clipId: string | null) => {
+      if (!clipId) return;
+      try {
+        const newPinnedState = await invoke<boolean>('toggle_clip_pin', { uuid: clipId });
+        setClips((prevClips) =>
+          prevClips.map((c) => (c.id === clipId ? { ...c, is_pinned: newPinnedState } : c))
+        );
+        // Since changing pin status changes order, refresh the current folder/clipboard list to get correct new sorting!
+        refreshCurrentFolder();
+        toast.success(newPinnedState ? t('toasts.clipPinned') : t('toasts.clipUnpinned'));
+      } catch (error) {
+        console.error('Failed to toggle clip pin:', error);
+        toast.error(t('toasts.togglePinFailed'));
+      }
+    },
+    [refreshCurrentFolder]
+  );
 
   const getFullImageBlob = useCallback(
     async (clipId: string, fallbackClip: AppClipboardItem): Promise<Blob> => {
@@ -1022,7 +1025,11 @@ function App() {
     }
   };
 
-  const handleReorderFolder = async (folderId: string, targetId: string, position: 'before' | 'after') => {
+  const handleReorderFolder = async (
+    folderId: string,
+    targetId: string,
+    position: 'before' | 'after'
+  ) => {
     try {
       await invoke('reorder_folder', { folderId, targetId, position });
       loadFolders();
@@ -1128,9 +1135,7 @@ function App() {
 
       const settings = settingsRef.current;
       const aiLabel = (custom: string | undefined, englishDefault: string, key: string) =>
-        custom && custom.trim() && custom.trim() !== englishDefault
-          ? custom.trim()
-          : t(key);
+        custom && custom.trim() && custom.trim() !== englishDefault ? custom.trim() : t(key);
 
       let options: ContextMenuOption[] = [];
 
@@ -1247,11 +1252,7 @@ function App() {
         });
 
         opts.push({
-          label: aiLabel(
-            settings?.ai_title_fix_grammar,
-            'Fix Grammar',
-            'contextMenu.fixGrammar'
-          ),
+          label: aiLabel(settings?.ai_title_fix_grammar, 'Fix Grammar', 'contextMenu.fixGrammar'),
           onClick: () => handleAiAction(itemId, 'fix_grammar', t('ai.grammarCheck')),
         });
 
@@ -1425,145 +1426,148 @@ function App() {
             pointerEvents: viewModeFading ? 'none' : undefined,
           }}
         >
-        {settings?.view_mode === 'compact' ? (
-          <CompactView
-            isWindowActive={isWindowActive}
-            clips={clips}
-            folders={folders}
-            selectedFolder={selectedFolder}
-            selectedClipId={selectedClipId}
-            onSelectFolder={handleSelectFolder}
-            searchQuery={searchQuery}
-            onSearchChange={handleSearch}
-            onPaste={handlePaste}
-            onDelete={handleDelete}
-            onToggleMode={toggleViewMode}
-            onOpenSettings={openSettings}
-            isLoading={isLoading}
-            theme={effectiveTheme}
-            isPinned={settings?.pinned}
-            onTogglePin={handleTogglePin}
-            totalClipCount={totalClipCount}
-            onFolderContextMenu={(e, folderId) => {
-              if (folderId) handleContextMenu(e, 'folder', folderId);
-            }}
-            onContextMenu={(e, clipId) => {
-              if (clipId) handleContextMenu(e, 'card', clipId);
-            }}
-            onDragStart={startDrag}
-            onDragHover={handleDragHover}
-            onDragLeave={handleDragLeave}
-            isDragging={!!draggingClipId}
-            draggingClipId={draggingClipId}
-            dragTargetFolderId={dragTargetFolderId}
-            reorderTargetClipId={reorderTargetClipId}
-            reorderTargetPosition={reorderTargetPosition}
-            reorderEnabled={true}
-            compactFolderLayout={settings?.compact_folder_layout || 'vertical'}
-            compactSidebarCollapsed={settings?.compact_sidebar_collapsed ?? false}
-            onToggleSidebar={async () => {
-              if (!settings) return;
-              const newCollapsed = !settings.compact_sidebar_collapsed;
-              const newSettings = { ...settings, compact_sidebar_collapsed: newCollapsed };
-              await invoke('save_settings', { settings: newSettings });
-              setSettings(newSettings);
-            }}
-            onToggleLayout={async () => {
-              if (!settings) return;
-              const newLayout: 'horizontal' | 'vertical' =
-                settings.compact_folder_layout === 'vertical' ? 'horizontal' : 'vertical';
-              const newSettings = { ...settings, compact_folder_layout: newLayout };
-              await invoke('save_settings', { settings: newSettings });
-              setSettings(newSettings);
-            }}
-            onAddFolder={() => {
-              setShowAddFolderModal(true);
-            }}
-            onLoadMore={loadMore}
-            onReorderFolder={handleReorderFolder}
-            typeFilter={compactTypeFilter}
-            onTypeFilterChange={setCompactTypeFilter}
-            searchFocusToken={searchFocusToken}
-            clipNumbering={settings?.clip_numbering || 'positional'}
-          />
-        ) : (
-          <div
-            data-el="app-frame"
-            className="flex h-full w-full flex-col pt-1.5 font-sans text-foreground"
-          >
-            <ControlBar
+          {settings?.view_mode === 'compact' ? (
+            <CompactView
               isWindowActive={isWindowActive}
-              style={{ height: LAYOUT.CONTROL_BAR_HEIGHT, flexShrink: 0 }}
+              clips={clips}
               folders={folders}
               selectedFolder={selectedFolder}
+              selectedClipId={selectedClipId}
               onSelectFolder={handleSelectFolder}
-              showSearch={showSearch}
               searchQuery={searchQuery}
               onSearchChange={handleSearch}
-              onSearchClick={() => {
-                if (showSearch) {
-                  handleSearch(''); // Clear search when closing
-                }
-                setShowSearch(!showSearch);
-              }}
-              onAddClick={() => {
-                setFolderModalMode('create');
-                setNewFolderName('');
-                setShowAddFolderModal(true);
-              }}
-              onMoreClick={openSettings}
-              onMoveClip={handleMoveClip} // Legacy, but kept for interface
-              // Simulated Drag Props
-              isDragging={!!draggingClipId}
-              dragTargetFolderId={dragTargetFolderId}
-              onDragHover={handleDragHover}
-              onDragLeave={handleDragLeave}
+              onPaste={handlePaste}
+              onDelete={handleDelete}
+              onToggleMode={toggleViewMode}
+              onOpenSettings={openSettings}
+              isLoading={isLoading}
+              theme={effectiveTheme}
+              isPinned={settings?.pinned}
+              onTogglePin={handleTogglePin}
               totalClipCount={totalClipCount}
-              imageCount={imageCount}
-              textCount={textCount}
-              codeCount={codeCount}
-              fileCount={fileCount}
-              htmlCount={htmlCount}
-              rtfCount={rtfCount}
               onFolderContextMenu={(e, folderId) => {
                 if (folderId) handleContextMenu(e, 'folder', folderId);
               }}
-              theme={effectiveTheme}
-              // Add toggle button to ControlBar
-              onToggleMode={toggleViewMode}
-              viewMode={settings?.view_mode || 'compact'}
-              isPinned={settings?.pinned ?? false}
-              onTogglePin={handleTogglePin}
-              onResetSize={handleResetSize}
-              hotkey={settings?.hotkey}
-              lastClipTime={clips[0]?.created_at ?? null}
-              dbSizeBytes={dbSizeBytes}
+              onContextMenu={(e, clipId) => {
+                if (clipId) handleContextMenu(e, 'card', clipId);
+              }}
+              onDragStart={startDrag}
+              onDragHover={handleDragHover}
+              onDragLeave={handleDragLeave}
+              isDragging={!!draggingClipId}
+              draggingClipId={draggingClipId}
+              dragTargetFolderId={dragTargetFolderId}
+              reorderTargetClipId={reorderTargetClipId}
+              reorderTargetPosition={reorderTargetPosition}
+              reorderEnabled={true}
+              compactFolderLayout={settings?.compact_folder_layout || 'vertical'}
+              compactSidebarCollapsed={settings?.compact_sidebar_collapsed ?? false}
+              onToggleSidebar={async () => {
+                if (!settings) return;
+                const newCollapsed = !settings.compact_sidebar_collapsed;
+                const newSettings = { ...settings, compact_sidebar_collapsed: newCollapsed };
+                await invoke('save_settings', { settings: newSettings });
+                setSettings(newSettings);
+              }}
+              onToggleLayout={async () => {
+                if (!settings) return;
+                const newLayout: 'horizontal' | 'vertical' =
+                  settings.compact_folder_layout === 'vertical' ? 'horizontal' : 'vertical';
+                const newSettings = { ...settings, compact_folder_layout: newLayout };
+                await invoke('save_settings', { settings: newSettings });
+                setSettings(newSettings);
+              }}
+              onAddFolder={() => {
+                setShowAddFolderModal(true);
+              }}
+              onLoadMore={loadMore}
               onReorderFolder={handleReorderFolder}
+              typeFilter={compactTypeFilter}
+              onTypeFilterChange={setCompactTypeFilter}
+              searchFocusToken={searchFocusToken}
+              clipNumbering={settings?.clip_numbering || 'positional'}
             />
-
-            <main data-el="clip-list-area" className="no-scrollbar relative flex-1 overflow-hidden">
-              <ClipList
-                clips={clips}
-                isLoading={isLoading}
-                hasMore={hasMore}
-                resetToken={clipListResetToken}
-                selectedClipId={selectedClipId}
+          ) : (
+            <div
+              data-el="app-frame"
+              className="flex h-full w-full flex-col pt-1.5 font-sans text-foreground"
+            >
+              <ControlBar
+                isWindowActive={isWindowActive}
+                style={{ height: LAYOUT.CONTROL_BAR_HEIGHT, flexShrink: 0 }}
+                folders={folders}
                 selectedFolder={selectedFolder}
-                onPaste={handlePaste}
-                onCopy={handleCopy}
-                onLoadMore={loadMore}
-                onDragStart={startDrag}
-                onCardContextMenu={(e, clipId) => handleContextMenu(e, 'card', clipId)}
-                scrollDirection={settings?.scroll_direction || 'vertical'}
-                reorderTargetClipId={reorderTargetClipId}
-                reorderTargetPosition={reorderTargetPosition}
-                reorderEnabled={true}
-                draggingClipId={draggingClipId}
-                clipNumbering={settings?.clip_numbering || 'positional'}
+                onSelectFolder={handleSelectFolder}
+                showSearch={showSearch}
+                searchQuery={searchQuery}
+                onSearchChange={handleSearch}
+                onSearchClick={() => {
+                  if (showSearch) {
+                    handleSearch(''); // Clear search when closing
+                  }
+                  setShowSearch(!showSearch);
+                }}
+                onAddClick={() => {
+                  setFolderModalMode('create');
+                  setNewFolderName('');
+                  setShowAddFolderModal(true);
+                }}
+                onMoreClick={openSettings}
+                onMoveClip={handleMoveClip} // Legacy, but kept for interface
+                // Simulated Drag Props
+                isDragging={!!draggingClipId}
+                dragTargetFolderId={dragTargetFolderId}
+                onDragHover={handleDragHover}
+                onDragLeave={handleDragLeave}
+                totalClipCount={totalClipCount}
+                imageCount={imageCount}
+                textCount={textCount}
+                codeCount={codeCount}
+                fileCount={fileCount}
+                htmlCount={htmlCount}
+                rtfCount={rtfCount}
+                onFolderContextMenu={(e, folderId) => {
+                  if (folderId) handleContextMenu(e, 'folder', folderId);
+                }}
+                theme={effectiveTheme}
+                // Add toggle button to ControlBar
+                onToggleMode={toggleViewMode}
+                viewMode={settings?.view_mode || 'compact'}
+                isPinned={settings?.pinned ?? false}
+                onTogglePin={handleTogglePin}
+                onResetSize={handleResetSize}
+                hotkey={settings?.hotkey}
+                lastClipTime={clips[0]?.created_at ?? null}
+                dbSizeBytes={dbSizeBytes}
+                onReorderFolder={handleReorderFolder}
               />
-            </main>
-          </div>
-        )}
+
+              <main
+                data-el="clip-list-area"
+                className="no-scrollbar relative flex-1 overflow-hidden"
+              >
+                <ClipList
+                  clips={clips}
+                  isLoading={isLoading}
+                  hasMore={hasMore}
+                  resetToken={clipListResetToken}
+                  selectedClipId={selectedClipId}
+                  selectedFolder={selectedFolder}
+                  onPaste={handlePaste}
+                  onCopy={handleCopy}
+                  onLoadMore={loadMore}
+                  onDragStart={startDrag}
+                  onCardContextMenu={(e, clipId) => handleContextMenu(e, 'card', clipId)}
+                  scrollDirection={settings?.scroll_direction || 'vertical'}
+                  reorderTargetClipId={reorderTargetClipId}
+                  reorderTargetPosition={reorderTargetPosition}
+                  reorderEnabled={true}
+                  draggingClipId={draggingClipId}
+                  clipNumbering={settings?.clip_numbering || 'positional'}
+                />
+              </main>
+            </div>
+          )}
         </div>
 
         <ContextMenuHost ref={contextMenuRef} />
@@ -1637,9 +1641,10 @@ function App() {
 
         <div
           ref={dragIndicatorRef}
-          className="pointer-events-none fixed left-0 top-0 z-[9999] hidden h-7 w-7 flex items-center justify-center rounded-full border border-cyan-500/30 bg-black/85 shadow-[0_0_12px_rgba(34,211,238,0.5)] backdrop-blur-md"
+          className="pointer-events-none fixed left-0 top-0 z-[9999] flex hidden h-7 w-7 items-center justify-center rounded-full border border-cyan-500/30 bg-black/85 shadow-[0_0_12px_rgba(34,211,238,0.5)] backdrop-blur-md"
           style={{
-            transform: 'translate3d(calc(var(--mouse-x, 0px) + 16px), calc(var(--mouse-y, 0px) + 16px), 0)',
+            transform:
+              'translate3d(calc(var(--mouse-x, 0px) + 16px), calc(var(--mouse-y, 0px) + 16px), 0)',
             willChange: 'transform',
           }}
         >

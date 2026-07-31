@@ -159,7 +159,10 @@ export function ToastWindow() {
     });
 
     // Notify backend that toast window is ready, and request any pending toast payload
-    invoke<ToastPayload | null>('toast_ready', { width: window.innerWidth, height: window.innerHeight })
+    invoke<ToastPayload | null>('toast_ready', {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    })
       .then((pending) => {
         if (pending) {
           handleToastUpdate(pending);

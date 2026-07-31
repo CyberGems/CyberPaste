@@ -20,14 +20,8 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
   const [editedContent, setEditedContent] = useState(content);
   const { t } = useTranslation();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const {
-    menuPos,
-    options,
-    closeMenu,
-    onContextMenu,
-    handleChange,
-    resetHistory,
-  } = useTextFieldContextMenu(textareaRef, editedContent, setEditedContent);
+  const { menuPos, options, closeMenu, onContextMenu, handleChange, resetHistory } =
+    useTextFieldContextMenu(textareaRef, editedContent, setEditedContent);
 
   useEffect(() => {
     if (isOpen) {
@@ -106,9 +100,7 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
         </div>
       </div>
 
-      {menuPos && (
-        <ContextMenu x={menuPos.x} y={menuPos.y} options={options} onClose={closeMenu} />
-      )}
+      {menuPos && <ContextMenu x={menuPos.x} y={menuPos.y} options={options} onClose={closeMenu} />}
     </div>
   );
 };

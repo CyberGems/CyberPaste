@@ -105,7 +105,7 @@ function PromptEditor({
           }
         }}
         placeholder={placeholder}
-        className="min-h-[60px] w-full resize-none rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] transition-all focus:outline-none focus:border-white/20 focus:ring-0 placeholder:text-white/30"
+        className="min-h-[60px] w-full resize-none rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] transition-all placeholder:text-white/30 focus:border-white/20 focus:outline-none focus:ring-0"
       />
     </div>
   );
@@ -118,29 +118,27 @@ const PROVIDER_MODELS: Record<string, { value: string; label: string }[]> = {
     { value: 'o1', label: 'o1 (Reasoning)' },
     { value: 'o1-mini', label: 'o1-mini (Reasoning)' },
     { value: 'o3-mini', label: 'o3-mini (Recent Reasoning)' },
-    { value: 'custom', label: 'Custom Model...' }
+    { value: 'custom', label: 'Custom Model...' },
   ],
   deepseek: [
     { value: 'deepseek-chat', label: 'deepseek-chat (V3 / R1)' },
     { value: 'deepseek-reasoner', label: 'deepseek-reasoner (R1)' },
-    { value: 'custom', label: 'Custom Model...' }
+    { value: 'custom', label: 'Custom Model...' },
   ],
   kimi: [
     { value: 'moonshot-v1-8k', label: 'moonshot-v1-8k' },
     { value: 'moonshot-v1-32k', label: 'moonshot-v1-32k' },
     { value: 'moonshot-v1-128k', label: 'moonshot-v1-128k' },
-    { value: 'custom', label: 'Custom Model...' }
+    { value: 'custom', label: 'Custom Model...' },
   ],
   gemini: [
     { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
     { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
     { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
     { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
-    { value: 'custom', label: 'Custom Model...' }
+    { value: 'custom', label: 'Custom Model...' },
   ],
-  custom: [
-    { value: 'custom', label: 'Custom Model...' }
-  ]
+  custom: [{ value: 'custom', label: 'Custom Model...' }],
 };
 
 export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPanelProps) {
@@ -364,9 +362,12 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     loadFolders();
 
     // Auto-migrate Kimi legacy base URL from .cn to .ai if currently set
-    if (initialSettings.ai_provider === 'kimi' && initialSettings.ai_base_url === 'https://api.moonshot.cn/v1') {
+    if (
+      initialSettings.ai_provider === 'kimi' &&
+      initialSettings.ai_base_url === 'https://api.moonshot.cn/v1'
+    ) {
       updateSettings({
-        ai_base_url: 'https://api.moonshot.ai/v1'
+        ai_base_url: 'https://api.moonshot.ai/v1',
       });
       setLocalBaseUrl('https://api.moonshot.ai/v1');
     }
@@ -515,7 +516,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         {/* Header */}
         <div
           data-tauri-drag-region
-          className="flex cursor-default items-center justify-between border-b border-border bg-transparent py-3 px-4"
+          className="flex cursor-default items-center justify-between border-b border-border bg-transparent px-4 py-3"
         >
           <div data-tauri-drag-region className="pointer-events-none flex items-center gap-3">
             <img src="/logo.png" alt="CyberPaste" className="h-5 w-5 object-contain" />
@@ -546,9 +547,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
         <div className="flex flex-1 overflow-hidden">
           {/* Sidebar */}
-          <div className="w-[150px] flex-shrink-0 border-r border-white/[0.05] bg-transparent py-3.5 px-2.5">
-            <div className="px-2.5 mb-4">
-              <h1 className="text-[18px] font-bold tracking-tight text-white">{t('settings.title')}</h1>
+          <div className="w-[150px] flex-shrink-0 border-r border-white/[0.05] bg-transparent px-2.5 py-3.5">
+            <div className="mb-4 px-2.5">
+              <h1 className="text-[18px] font-bold tracking-tight text-white">
+                {t('settings.title')}
+              </h1>
             </div>
             <div className="flex flex-col gap-1">
               <button
@@ -556,7 +559,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 className={clsx(
                   'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'general'
-                    ? 'bg-white/10 text-white shadow-none border-l-[3px] border-cyan-400'
+                    ? 'border-l-[3px] border-cyan-400 bg-white/10 text-white shadow-none'
                     : 'text-white/70 hover:bg-white/[0.05] hover:text-white'
                 )}
               >
@@ -568,7 +571,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 className={clsx(
                   'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'ai'
-                    ? 'bg-white/10 text-white shadow-none border-l-[3px] border-cyan-400'
+                    ? 'border-l-[3px] border-cyan-400 bg-white/10 text-white shadow-none'
                     : 'text-white/70 hover:bg-white/[0.05] hover:text-white'
                 )}
               >
@@ -580,7 +583,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 className={clsx(
                   'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'notifications'
-                    ? 'bg-white/10 text-white shadow-none border-l-[3px] border-cyan-400'
+                    ? 'border-l-[3px] border-cyan-400 bg-white/10 text-white shadow-none'
                     : 'text-white/70 hover:bg-white/[0.05] hover:text-white'
                 )}
               >
@@ -592,7 +595,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 className={clsx(
                   'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'maintenance'
-                    ? 'bg-white/10 text-white shadow-none border-l-[3px] border-cyan-400'
+                    ? 'border-l-[3px] border-cyan-400 bg-white/10 text-white shadow-none'
                     : 'text-white/70 hover:bg-white/[0.05] hover:text-white'
                 )}
               >
@@ -605,7 +608,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   className={clsx(
                     'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                     activeTab === 'about'
-                      ? 'bg-white/10 text-white shadow-none border-l-[3px] border-cyan-400'
+                      ? 'border-l-[3px] border-cyan-400 bg-white/10 text-white shadow-none'
                       : 'text-white/70 hover:bg-white/[0.05] hover:text-white'
                   )}
                 >
@@ -617,7 +620,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+          <div className="custom-scrollbar flex-1 overflow-y-auto p-6">
             <div className="mx-auto max-w-2xl space-y-8">
               {/* --- GENERAL TAB --- */}
               {activeTab === 'general' && (
@@ -831,7 +834,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                 if (e !== 'No file selected') console.error(e);
                               }
                             }}
-                            className="btn btn-secondary flex-shrink-0 text-xs rounded-[4px]"
+                            className="btn btn-secondary flex-shrink-0 rounded-[4px] text-xs"
                           >
                             {t('common.browse')}
                           </button>
@@ -848,7 +851,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               }
                             }}
                             disabled={!settings.clipboard_sound_path}
-                            className="btn btn-secondary flex-shrink-0 text-xs disabled:opacity-50 rounded-[4px]"
+                            className="btn btn-secondary flex-shrink-0 rounded-[4px] text-xs disabled:opacity-50"
                             title={t('settings.previewSound')}
                           >
                             <Volume2 size={14} />
@@ -892,7 +895,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     </div>
                     <div className="flex items-center justify-between rounded-[4px] border border-white/[0.08] bg-[#2D2D2D] p-3">
                       <div>
-                        <span className="text-sm font-medium">{t('settings.resetViewOnPaste')}</span>
+                        <span className="text-sm font-medium">
+                          {t('settings.resetViewOnPaste')}
+                        </span>
                         <p className="text-sm text-muted-foreground/80">
                           {t('settings.resetViewOnPasteDesc')}
                         </p>
@@ -923,7 +928,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           value={settings.image_editor_path || ''}
                           onChange={(e) => updateSetting('image_editor_path', e.target.value)}
                           placeholder="C:\Path\To\Editor.exe"
-                          className="flex-1 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] placeholder:text-white/30 focus:outline-none focus:border-white/20 focus:ring-0"
+                          className="flex-1 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] placeholder:text-white/30 focus:border-white/20 focus:outline-none focus:ring-0"
                         />
                         <button
                           onClick={async () => {
@@ -1030,9 +1035,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     </div>
                     <div className="flex items-center justify-between rounded-[4px] border border-white/[0.08] bg-[#2D2D2D] p-3">
                       <div>
-                        <span className="text-sm font-medium">
-                          {t('settings.typeToSearch')}
-                        </span>
+                        <span className="text-sm font-medium">{t('settings.typeToSearch')}</span>
                         <p className="text-xs text-muted-foreground">
                           {t('settings.typeToSearchDesc')}
                         </p>
@@ -1050,9 +1053,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     </div>
                     <div className="space-y-3">
                       <label className="block">
-                        <span className="text-base font-medium">
-                          {t('settings.clipNumbering')}
-                        </span>
+                        <span className="text-base font-medium">{t('settings.clipNumbering')}</span>
                         <p className="text-xs text-muted-foreground">
                           {t('settings.clipNumberingDesc')}
                         </p>
@@ -1080,20 +1081,20 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           value={newFolderName}
                           onChange={(e) => setNewFolderName(e.target.value)}
                           placeholder={t('settings.newFolderPlaceholder')}
-                          className="flex-1 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] placeholder:text-white/30 focus:outline-none focus:border-white/20 focus:ring-0"
+                          className="flex-1 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] placeholder:text-white/30 focus:border-white/20 focus:outline-none focus:ring-0"
                           onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
                         />
                         <button
                           onClick={handleCreateFolder}
                           disabled={!newFolderName.trim()}
-                          className="btn btn-secondary px-3 py-1.5 text-xs flex items-center gap-1 rounded-[4px]"
+                          className="btn btn-secondary flex items-center gap-1 rounded-[4px] px-3 py-1.5 text-xs"
                         >
                           <Plus size={14} />
                           {t('settings.add')}
                         </button>
                       </div>
 
-                      <div className="max-h-40 space-y-1.5 overflow-y-auto pr-1 custom-scrollbar">
+                      <div className="custom-scrollbar max-h-40 space-y-1.5 overflow-y-auto pr-1">
                         {folders.filter((f) => !f.is_system).length === 0 ? (
                           <p className="rounded-lg border border-dashed border-border py-3 text-center text-xs text-muted-foreground">
                             {t('settings.noFolders')}
@@ -1104,7 +1105,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             .map((folder) => (
                               <div
                                 key={folder.id}
-                                className="flex items-center justify-between rounded-lg border border-border/40 bg-card/30 px-3 py-1.5 text-xs hover:border-border hover:bg-card/50 transition-colors"
+                                className="flex items-center justify-between rounded-lg border border-border/40 bg-card/30 px-3 py-1.5 text-xs transition-colors hover:border-border hover:bg-card/50"
                               >
                                 {editingFolderId === folder.id ? (
                                   <div className="flex flex-1 items-center gap-2">
@@ -1121,7 +1122,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                     />
                                     <button
                                       onClick={saveRenameFolder}
-                                      className="text-xs text-primary hover:underline font-semibold"
+                                      className="text-xs font-semibold text-primary hover:underline"
                                     >
                                       {t('common.save')}
                                     </button>
@@ -1134,24 +1135,27 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                   </div>
                                 ) : (
                                   <>
-                                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                                      <FolderIcon size={14} className="text-blue-400 flex-shrink-0" />
+                                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                                      <FolderIcon
+                                        size={14}
+                                        className="flex-shrink-0 text-blue-400"
+                                      />
                                       <span className="truncate font-medium">{folder.name}</span>
-                                      <span className="text-[10px] text-muted-foreground flex-shrink-0">
+                                      <span className="flex-shrink-0 text-[10px] text-muted-foreground">
                                         {t('folders.itemCount', { count: folder.item_count })}
                                       </span>
                                     </div>
-                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                    <div className="flex flex-shrink-0 items-center gap-1">
                                       <button
                                         onClick={() => startRenameFolder(folder)}
-                                        className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                                        className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                                         title={t('folders.rename')}
                                       >
                                         <MoreHorizontal size={13} />
                                       </button>
                                       <button
                                         onClick={() => handleDeleteFolder(folder.id)}
-                                        className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                                        className="rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                                         title={t('common.delete')}
                                       >
                                         <Trash2 size={13} />
@@ -1209,7 +1213,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         ) : (
                           <button
                             onClick={() => handleStartRecording('hotkey')}
-                            className="group flex w-full items-center gap-2 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] focus:outline-none focus:border-white/20 focus:ring-0 transition-colors hover:border-white/20"
+                            className="group flex w-full items-center gap-2 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] transition-colors hover:border-white/20 focus:border-white/20 focus:outline-none focus:ring-0"
                           >
                             <span className="rounded bg-accent px-2 py-0.5 font-mono text-xs font-medium transition-colors group-hover:text-primary">
                               {settings.hotkey}
@@ -1259,7 +1263,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         ) : (
                           <button
                             onClick={() => handleStartRecording('view_mode_hotkey')}
-                            className="group flex w-full items-center gap-2 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] focus:outline-none focus:border-white/20 focus:ring-0 transition-colors hover:border-white/20"
+                            className="group flex w-full items-center gap-2 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] transition-colors hover:border-white/20 focus:border-white/20 focus:outline-none focus:ring-0"
                           >
                             <span className="rounded bg-accent px-2 py-0.5 font-mono text-xs font-medium transition-colors group-hover:text-primary">
                               {settings.view_mode_hotkey || 'Ctrl+M'}
@@ -1292,12 +1296,12 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           value={newIgnoredApp}
                           onChange={(e) => setNewIgnoredApp(e.target.value)}
                           placeholder={t('settings.ignoredAppPlaceholder')}
-                          className="flex-1 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] placeholder:text-white/30 focus:outline-none focus:border-white/20 focus:ring-0"
+                          className="flex-1 rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] placeholder:text-white/30 focus:border-white/20 focus:outline-none focus:ring-0"
                           onKeyDown={(e) => e.key === 'Enter' && handleAddIgnoredApp()}
                         />
                         <button
                           onClick={handleBrowseFile}
-                          className="btn btn-secondary px-3 rounded-[4px]"
+                          className="btn btn-secondary rounded-[4px] px-3"
                           title={t('settings.browseExecutable')}
                         >
                           <FolderOpen size={16} />
@@ -1305,14 +1309,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         <button
                           onClick={handleAddIgnoredApp}
                           disabled={!newIgnoredApp.trim()}
-                          className="btn btn-secondary px-3 rounded-[4px]"
+                          className="btn btn-secondary rounded-[4px] px-3"
                           title={t('settings.addToList')}
                         >
                           <Plus size={16} />
                         </button>
                       </div>
 
-                      <div className="max-h-40 space-y-1 overflow-y-auto pr-1 custom-scrollbar">
+                      <div className="custom-scrollbar max-h-40 space-y-1 overflow-y-auto pr-1">
                         {ignoredApps.length === 0 ? (
                           <div className="rounded-lg border border-dashed border-border p-4 text-center">
                             <p className="text-sm text-muted-foreground/80">
@@ -1342,189 +1346,196 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               )}
 
               {/* --- AI PROCESSING TAB --- */}
-              {activeTab === 'ai' && (() => {
-                const currentProvider = settings.ai_provider || 'openai';
-                const modelsForProvider = PROVIDER_MODELS[currentProvider] || PROVIDER_MODELS.custom;
-                const isPredefinedModel = modelsForProvider.some((m) => m.value === settings.ai_model);
-                const selectedModelValue = isPredefinedModel ? (settings.ai_model || '') : 'custom';
+              {activeTab === 'ai' &&
+                (() => {
+                  const currentProvider = settings.ai_provider || 'openai';
+                  const modelsForProvider =
+                    PROVIDER_MODELS[currentProvider] || PROVIDER_MODELS.custom;
+                  const isPredefinedModel = modelsForProvider.some(
+                    (m) => m.value === settings.ai_model
+                  );
+                  const selectedModelValue = isPredefinedModel ? settings.ai_model || '' : 'custom';
 
-                return (
-                  <>
-                    <section className="space-y-4">
-                      <h3 className="text-sm font-medium text-muted-foreground">
-                        {t('settings.aiConfiguration')}
-                      </h3>
+                  return (
+                    <>
+                      <section className="space-y-4">
+                        <h3 className="text-sm font-medium text-muted-foreground">
+                          {t('settings.aiConfiguration')}
+                        </h3>
 
-                      <div className="space-y-3">
-                        <label className="block">
-                          <span className="text-sm font-medium">{t('settings.provider')}</span>
-                        </label>
-                        <Select
-                          value={settings.ai_provider || 'openai'}
-                          onChange={(newProvider) => {
-                            const updates: Partial<Settings> = { ai_provider: newProvider };
+                        <div className="space-y-3">
+                          <label className="block">
+                            <span className="text-sm font-medium">{t('settings.provider')}</span>
+                          </label>
+                          <Select
+                            value={settings.ai_provider || 'openai'}
+                            onChange={(newProvider) => {
+                              const updates: Partial<Settings> = { ai_provider: newProvider };
 
-                            // Auto-fill Base URL and Model based on provider
-                            if (newProvider === 'openai') {
-                              updates.ai_base_url = 'https://api.openai.com/v1';
-                              updates.ai_model = 'gpt-4o-mini';
-                              setLocalBaseUrl('https://api.openai.com/v1');
-                              setLocalModel('gpt-4o-mini');
-                              setIsCustomModel(false);
-                            } else if (newProvider === 'deepseek') {
-                              updates.ai_base_url = 'https://api.deepseek.com';
-                              updates.ai_model = 'deepseek-chat';
-                              setLocalBaseUrl('https://api.deepseek.com');
-                              setLocalModel('deepseek-chat');
-                              setIsCustomModel(false);
-                            } else if (newProvider === 'kimi') {
-                              updates.ai_base_url = 'https://api.moonshot.ai/v1';
-                              updates.ai_model = 'moonshot-v1-8k';
-                              setLocalBaseUrl('https://api.moonshot.ai/v1');
-                              setLocalModel('moonshot-v1-8k');
-                              setIsCustomModel(false);
-                            } else if (newProvider === 'gemini') {
-                              updates.ai_base_url = 'https://generativelanguage.googleapis.com/v1beta/openai';
-                              updates.ai_model = 'gemini-2.5-flash';
-                              setLocalBaseUrl('https://generativelanguage.googleapis.com/v1beta/openai');
-                              setLocalModel('gemini-2.5-flash');
-                              setIsCustomModel(false);
-                            } else {
-                              setIsCustomModel(true);
-                            }
+                              // Auto-fill Base URL and Model based on provider
+                              if (newProvider === 'openai') {
+                                updates.ai_base_url = 'https://api.openai.com/v1';
+                                updates.ai_model = 'gpt-4o-mini';
+                                setLocalBaseUrl('https://api.openai.com/v1');
+                                setLocalModel('gpt-4o-mini');
+                                setIsCustomModel(false);
+                              } else if (newProvider === 'deepseek') {
+                                updates.ai_base_url = 'https://api.deepseek.com';
+                                updates.ai_model = 'deepseek-chat';
+                                setLocalBaseUrl('https://api.deepseek.com');
+                                setLocalModel('deepseek-chat');
+                                setIsCustomModel(false);
+                              } else if (newProvider === 'kimi') {
+                                updates.ai_base_url = 'https://api.moonshot.ai/v1';
+                                updates.ai_model = 'moonshot-v1-8k';
+                                setLocalBaseUrl('https://api.moonshot.ai/v1');
+                                setLocalModel('moonshot-v1-8k');
+                                setIsCustomModel(false);
+                              } else if (newProvider === 'gemini') {
+                                updates.ai_base_url =
+                                  'https://generativelanguage.googleapis.com/v1beta/openai';
+                                updates.ai_model = 'gemini-2.5-flash';
+                                setLocalBaseUrl(
+                                  'https://generativelanguage.googleapis.com/v1beta/openai'
+                                );
+                                setLocalModel('gemini-2.5-flash');
+                                setIsCustomModel(false);
+                              } else {
+                                setIsCustomModel(true);
+                              }
 
-                            updateSettings(updates);
-                          }}
-                          options={[
-                            { value: 'openai', label: t('settings.providerOpenAI') },
-                            { value: 'deepseek', label: t('settings.providerDeepSeek') },
-                            { value: 'kimi', label: t('settings.providerKimi') },
-                            { value: 'gemini', label: t('settings.providerGemini') },
-                            { value: 'custom', label: t('settings.providerCustom') },
-                          ]}
-                        />
-                      </div>
-
-                      <div className="space-y-3">
-                        <label className="block">
-                          <span className="text-sm font-medium">{t('settings.apiKey')}</span>
-                        </label>
-                        <div className="relative">
-                          <input
-                            type={showApiKey ? 'text' : 'password'}
-                            value={localApiKey}
-                            onChange={(e) => setLocalApiKey(e.target.value)}
-                            onBlur={() => {
-                              const trimmed = localApiKey.trim();
-                              setLocalApiKey(trimmed);
-                              updateSetting('ai_api_key', trimmed);
+                              updateSettings(updates);
                             }}
-                            placeholder={t('settings.apiKeyPlaceholder')}
-                            className="w-full rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] py-1.5 pl-2.5 pr-10 text-[12px] text-[#F0F0F0] placeholder:text-white/30 focus:outline-none focus:border-white/20 focus:ring-0"
+                            options={[
+                              { value: 'openai', label: t('settings.providerOpenAI') },
+                              { value: 'deepseek', label: t('settings.providerDeepSeek') },
+                              { value: 'kimi', label: t('settings.providerKimi') },
+                              { value: 'gemini', label: t('settings.providerGemini') },
+                              { value: 'custom', label: t('settings.providerCustom') },
+                            ]}
                           />
-                          <button
-                            type="button"
-                            onClick={() => setShowApiKey(!showApiKey)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-                          >
-                            {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                          </button>
                         </div>
-                      </div>
 
-                      <div className="space-y-3">
-                        <label className="block">
-                          <span className="text-sm font-medium">{t('settings.model')}</span>
-                        </label>
-                        <Select
-                          value={isCustomModel ? 'custom' : selectedModelValue}
-                          onChange={(val) => {
-                            if (val === 'custom') {
-                              setIsCustomModel(true);
-                            } else {
-                              setIsCustomModel(false);
-                              updateSetting('ai_model', val);
-                              setLocalModel(val);
-                            }
-                          }}
-                          options={modelsForProvider}
-                        />
-                        {(isCustomModel || currentProvider === 'custom') && (
+                        <div className="space-y-3">
+                          <label className="block">
+                            <span className="text-sm font-medium">{t('settings.apiKey')}</span>
+                          </label>
+                          <div className="relative">
+                            <input
+                              type={showApiKey ? 'text' : 'password'}
+                              value={localApiKey}
+                              onChange={(e) => setLocalApiKey(e.target.value)}
+                              onBlur={() => {
+                                const trimmed = localApiKey.trim();
+                                setLocalApiKey(trimmed);
+                                updateSetting('ai_api_key', trimmed);
+                              }}
+                              placeholder={t('settings.apiKeyPlaceholder')}
+                              className="w-full rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] py-1.5 pl-2.5 pr-10 text-[12px] text-[#F0F0F0] placeholder:text-white/30 focus:border-white/20 focus:outline-none focus:ring-0"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowApiKey(!showApiKey)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                            >
+                              {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <label className="block">
+                            <span className="text-sm font-medium">{t('settings.model')}</span>
+                          </label>
+                          <Select
+                            value={isCustomModel ? 'custom' : selectedModelValue}
+                            onChange={(val) => {
+                              if (val === 'custom') {
+                                setIsCustomModel(true);
+                              } else {
+                                setIsCustomModel(false);
+                                updateSetting('ai_model', val);
+                                setLocalModel(val);
+                              }
+                            }}
+                            options={modelsForProvider}
+                          />
+                          {(isCustomModel || currentProvider === 'custom') && (
+                            <input
+                              type="text"
+                              value={localModel}
+                              onChange={(e) => setLocalModel(e.target.value)}
+                              onBlur={() => updateSetting('ai_model', localModel)}
+                              placeholder={t('settings.modelPlaceholder')}
+                              className="mt-2 w-full rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] placeholder:text-white/30 focus:border-white/20 focus:outline-none focus:ring-0"
+                            />
+                          )}
+                        </div>
+
+                        <div className="space-y-3">
+                          <label className="block">
+                            <span className="text-sm font-medium">{t('settings.baseUrl')}</span>
+                          </label>
                           <input
                             type="text"
-                            value={localModel}
-                            onChange={(e) => setLocalModel(e.target.value)}
-                            onBlur={() => updateSetting('ai_model', localModel)}
-                            placeholder={t('settings.modelPlaceholder')}
-                            className="w-full rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] placeholder:text-white/30 focus:outline-none focus:border-white/20 focus:ring-0 mt-2"
+                            value={localBaseUrl}
+                            onChange={(e) => setLocalBaseUrl(e.target.value)}
+                            onBlur={() => updateSetting('ai_base_url', localBaseUrl)}
+                            placeholder={t('settings.baseUrlPlaceholder')}
+                            className="w-full rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] placeholder:text-white/30 focus:border-white/20 focus:outline-none focus:ring-0"
                           />
-                        )}
-                      </div>
+                        </div>
+                      </section>
 
-                      <div className="space-y-3">
-                        <label className="block">
-                          <span className="text-sm font-medium">{t('settings.baseUrl')}</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={localBaseUrl}
-                          onChange={(e) => setLocalBaseUrl(e.target.value)}
-                          onBlur={() => updateSetting('ai_base_url', localBaseUrl)}
-                          placeholder={t('settings.baseUrlPlaceholder')}
-                          className="w-full rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] px-2.5 py-1.5 text-[12px] text-[#F0F0F0] placeholder:text-white/30 focus:outline-none focus:border-white/20 focus:ring-0"
-                        />
-                      </div>
-                    </section>
+                      <section className="space-y-4 border-t border-white/[0.05] pt-4">
+                        <h3 className="text-sm font-medium text-muted-foreground">
+                          {t('settings.customPrompts')}
+                        </h3>
+                        <p className="text-xs italic text-muted-foreground">
+                          {t('settings.customPromptsDesc')}
+                        </p>
 
-                    <section className="space-y-4 border-t border-white/[0.05] pt-4">
-                      <h3 className="text-sm font-medium text-muted-foreground">
-                        {t('settings.customPrompts')}
-                      </h3>
-                      <p className="text-xs italic text-muted-foreground">
-                        {t('settings.customPromptsDesc')}
-                      </p>
+                        <div className="space-y-4">
+                          <PromptEditor
+                            label={t('settings.aiSummarize')}
+                            value={settings.ai_prompt_summarize || ''}
+                            titleValue={settings.ai_title_summarize}
+                            onSave={(val) => updateSetting('ai_prompt_summarize', val)}
+                            onSaveTitle={(val) => updateSetting('ai_title_summarize', val)}
+                            placeholder={t('settings.aiSummarizePlaceholder')}
+                          />
 
-                      <div className="space-y-4">
-                        <PromptEditor
-                          label={t('settings.aiSummarize')}
-                          value={settings.ai_prompt_summarize || ''}
-                          titleValue={settings.ai_title_summarize}
-                          onSave={(val) => updateSetting('ai_prompt_summarize', val)}
-                          onSaveTitle={(val) => updateSetting('ai_title_summarize', val)}
-                          placeholder={t('settings.aiSummarizePlaceholder')}
-                        />
+                          <PromptEditor
+                            label={t('settings.aiTranslate')}
+                            value={settings.ai_prompt_translate || ''}
+                            titleValue={settings.ai_title_translate}
+                            onSave={(val) => updateSetting('ai_prompt_translate', val)}
+                            onSaveTitle={(val) => updateSetting('ai_title_translate', val)}
+                            placeholder={t('settings.aiTranslatePlaceholder')}
+                          />
 
-                        <PromptEditor
-                          label={t('settings.aiTranslate')}
-                          value={settings.ai_prompt_translate || ''}
-                          titleValue={settings.ai_title_translate}
-                          onSave={(val) => updateSetting('ai_prompt_translate', val)}
-                          onSaveTitle={(val) => updateSetting('ai_title_translate', val)}
-                          placeholder={t('settings.aiTranslatePlaceholder')}
-                        />
+                          <PromptEditor
+                            label={t('settings.aiExplainCode')}
+                            value={settings.ai_prompt_explain_code || ''}
+                            titleValue={settings.ai_title_explain_code}
+                            onSave={(val) => updateSetting('ai_prompt_explain_code', val)}
+                            onSaveTitle={(val) => updateSetting('ai_title_explain_code', val)}
+                            placeholder={t('settings.aiExplainCodePlaceholder')}
+                          />
 
-                        <PromptEditor
-                          label={t('settings.aiExplainCode')}
-                          value={settings.ai_prompt_explain_code || ''}
-                          titleValue={settings.ai_title_explain_code}
-                          onSave={(val) => updateSetting('ai_prompt_explain_code', val)}
-                          onSaveTitle={(val) => updateSetting('ai_title_explain_code', val)}
-                          placeholder={t('settings.aiExplainCodePlaceholder')}
-                        />
-
-                        <PromptEditor
-                          label={t('settings.aiFixGrammar')}
-                          value={settings.ai_prompt_fix_grammar || ''}
-                          titleValue={settings.ai_title_fix_grammar}
-                          onSave={(val) => updateSetting('ai_prompt_fix_grammar', val)}
-                          onSaveTitle={(val) => updateSetting('ai_title_fix_grammar', val)}
-                          placeholder={t('settings.aiFixGrammarPlaceholder')}
-                        />
-                      </div>
-                    </section>
-                  </>
-                );
-              })()}
+                          <PromptEditor
+                            label={t('settings.aiFixGrammar')}
+                            value={settings.ai_prompt_fix_grammar || ''}
+                            titleValue={settings.ai_title_fix_grammar}
+                            onSave={(val) => updateSetting('ai_prompt_fix_grammar', val)}
+                            onSaveTitle={(val) => updateSetting('ai_title_fix_grammar', val)}
+                            placeholder={t('settings.aiFixGrammarPlaceholder')}
+                          />
+                        </div>
+                      </section>
+                    </>
+                  );
+                })()}
 
               {/* --- NOTIFICATIONS TAB --- */}
               {activeTab === 'notifications' && (
@@ -1652,9 +1663,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       className="btn btn-primary w-full rounded-[4px] border border-white/[0.08]"
                     >
                       {t('settings.testToast')}
-                      </button>
-                    </div>
-                  </section>
+                    </button>
+                  </div>
+                </section>
               )}
 
               {/* --- MAINTENANCE TAB --- */}
@@ -1667,12 +1678,19 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     </h3>
                     <div className="flex items-center justify-between rounded-[4px] border border-white/[0.08] bg-[#2D2D2D] p-3">
                       <div>
-                        <span className="text-sm font-medium">{t('settings.autoCheckUpdates')}</span>
-                        <p className="text-xs text-muted-foreground">{t('settings.autoCheckUpdatesDesc')}</p>
+                        <span className="text-sm font-medium">
+                          {t('settings.autoCheckUpdates')}
+                        </span>
+                        <p className="text-xs text-muted-foreground">
+                          {t('settings.autoCheckUpdatesDesc')}
+                        </p>
                       </div>
                       <button
                         onClick={() =>
-                          updateSetting('auto_check_updates', !(settings.auto_check_updates ?? false))
+                          updateSetting(
+                            'auto_check_updates',
+                            !(settings.auto_check_updates ?? false)
+                          )
                         }
                         className={`h-6 w-11 rounded-full transition-colors ${(settings.auto_check_updates ?? false) ? 'bg-primary' : 'bg-white/10'}`}
                       >
@@ -1688,7 +1706,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           const update = await check({ timeout: 15000 });
                           toast.dismiss(loadingToast);
                           if (update) {
-                            toast.success(t('settings.updateAvailable', { version: update.version }));
+                            toast.success(
+                              t('settings.updateAvailable', { version: update.version })
+                            );
                           } else {
                             toast.info(t('settings.noUpdates'));
                           }
@@ -1704,7 +1724,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           console.error('Update check failed:', err);
                         }
                       }}
-                      className="btn border border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 rounded-[4px] w-full"
+                      className="btn w-full rounded-[4px] border border-primary/20 bg-primary/10 text-primary hover:bg-primary/20"
                     >
                       <RotateCcw size={16} className="mr-2" />
                       {t('settings.checkForUpdates')}
@@ -1719,7 +1739,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         onClick={confirmClearHistory}
-                        className="btn border border-destructive/20 bg-destructive/10 text-destructive hover:bg-destructive/20 rounded-[4px]"
+                        className="btn rounded-[4px] border border-destructive/20 bg-destructive/10 text-destructive hover:bg-destructive/20"
                       >
                         <Trash2 size={16} className="mr-2" />
                         {t('settings.clearHistory')}
@@ -1736,7 +1756,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             toast.error(t('settings.failedToRemoveDuplicates', { error }));
                           }
                         }}
-                        className="btn btn-secondary text-xs rounded-[4px]"
+                        className="btn btn-secondary rounded-[4px] text-xs"
                       >
                         {t('settings.removeDuplicates')}
                       </button>
@@ -1749,9 +1769,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <Flame size={14} /> {t('settings.panicRoom')}
                     </h3>
                     <div className="flex flex-col gap-3 rounded-[4px] border border-rose-500/20 bg-rose-500/5 p-4">
-                      <p className="text-xs text-muted-foreground">
-                        {t('settings.panicRoomDesc')}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{t('settings.panicRoomDesc')}</p>
                       <button
                         onClick={handleResetLayout}
                         className="flex w-full items-center justify-center gap-2 rounded-[4px] bg-rose-500 py-2.5 font-bold text-white shadow-lg shadow-rose-500/20 transition-all hover:bg-rose-600"
@@ -1764,7 +1782,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
                   {/* Backup & Restore */}
                   <section className="space-y-4">
-                    <h3 className="text-[13px] font-semibold text-primary/80">{t('settings.backupRestore')}</h3>
+                    <h3 className="text-[13px] font-semibold text-primary/80">
+                      {t('settings.backupRestore')}
+                    </h3>
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         onClick={async () => {
@@ -1780,7 +1800,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             }
                           }
                         }}
-                        className="btn border border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 rounded-[4px]"
+                        className="btn rounded-[4px] border border-primary/20 bg-primary/10 text-primary hover:bg-primary/20"
                       >
                         <FolderOpen size={16} className="mr-2" />
                         {t('settings.exportBackup')}
@@ -1810,7 +1830,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             },
                           });
                         }}
-                        className="btn border border-orange-500/20 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 rounded-[4px]"
+                        className="btn rounded-[4px] border border-orange-500/20 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20"
                       >
                         <Plus size={16} className="mr-2" />
                         {t('settings.importBackup')}
@@ -1832,7 +1852,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           emit('load-demo-data');
                           toast.info(t('settings.demoClipsLoaded'));
                         }}
-                        className="btn border border-white/[0.08] bg-[#1E1E1E] text-white/70 hover:bg-white/10 rounded-[4px] text-xs"
+                        className="btn rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] text-xs text-white/70 hover:bg-white/10"
                       >
                         {t('settings.loadDemoClips')}
                       </button>
@@ -1841,7 +1861,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           emit('restore-actual-data');
                           toast.info(t('settings.dataRestored'));
                         }}
-                        className="btn border border-white/[0.08] bg-[#1E1E1E] text-white/70 hover:bg-white/10 rounded-[4px] text-xs"
+                        className="btn rounded-[4px] border border-white/[0.08] bg-[#1E1E1E] text-xs text-white/70 hover:bg-white/10"
                       >
                         {t('settings.restoreActualData')}
                       </button>

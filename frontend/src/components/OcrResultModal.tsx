@@ -22,14 +22,8 @@ export const OcrResultModal: React.FC<OcrResultModalProps> = ({
   const [editedText, setEditedText] = useState(content);
   const [copied, setCopied] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const {
-    menuPos,
-    options,
-    closeMenu,
-    onContextMenu,
-    handleChange,
-    resetHistory,
-  } = useTextFieldContextMenu(textareaRef, editedText, setEditedText);
+  const { menuPos, options, closeMenu, onContextMenu, handleChange, resetHistory } =
+    useTextFieldContextMenu(textareaRef, editedText, setEditedText);
   const [autoCopy, setAutoCopy] = useState(() => {
     const saved = localStorage.getItem('cyberpaste_ocr_auto_copy');
     return saved !== null ? saved === 'true' : true;
@@ -95,9 +89,9 @@ export const OcrResultModal: React.FC<OcrResultModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="animate-in fade-in fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm duration-200">
       <div
-        className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-primary/20 bg-card shadow-[0_0_50px_rgba(var(--primary-rgb),0.15)] duration-300 animate-in zoom-in-95"
+        className="animate-in zoom-in-95 flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-primary/20 bg-card shadow-[0_0_50px_rgba(var(--primary-rgb),0.15)] duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="h-[2px] w-full bg-gradient-to-r from-cyan-500 via-primary to-purple-600" />
@@ -129,11 +123,11 @@ export const OcrResultModal: React.FC<OcrResultModalProps> = ({
           />
         </div>
 
-        <div className="flex flex-shrink-0 flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-border bg-muted/30 px-5 py-3">
+        <div className="flex flex-shrink-0 flex-col items-stretch justify-between gap-3 border-t border-border bg-muted/30 px-5 py-3 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setAutoCopy((prev) => !prev)}
-              className={`h-6 w-11 rounded-full transition-colors flex items-center px-0.5 ${autoCopy ? 'bg-primary' : 'bg-zinc-700'}`}
+              className={`flex h-6 w-11 items-center rounded-full px-0.5 transition-colors ${autoCopy ? 'bg-primary' : 'bg-zinc-700'}`}
             >
               <div
                 className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${autoCopy ? 'translate-x-5' : 'translate-x-0'}`}
@@ -147,7 +141,7 @@ export const OcrResultModal: React.FC<OcrResultModalProps> = ({
           <div className="flex items-center justify-end gap-2">
             <button
               onClick={handleCopy}
-              className="flex items-center gap-2 rounded-lg border border-border bg-background/50 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-white/5 transition-all"
+              className="flex items-center gap-2 rounded-lg border border-border bg-background/50 px-3 py-1.5 text-xs font-medium text-foreground transition-all hover:bg-white/5"
             >
               {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
               {t('viewer.copyOcrText') || 'Copy'}
@@ -169,9 +163,7 @@ export const OcrResultModal: React.FC<OcrResultModalProps> = ({
         </div>
       </div>
 
-      {menuPos && (
-        <ContextMenu x={menuPos.x} y={menuPos.y} options={options} onClose={closeMenu} />
-      )}
+      {menuPos && <ContextMenu x={menuPos.x} y={menuPos.y} options={options} onClose={closeMenu} />}
     </div>
   );
 };

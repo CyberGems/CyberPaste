@@ -133,8 +133,7 @@ export function generateDemoClips(): ClipboardItem[] {
     {
       id: 'demo-12',
       clip_type: 'text',
-      content:
-        'Hi,\n\nthank you for choosing CyberGems products!',
+      content: 'Hi,\n\nthank you for choosing CyberGems products!',
       preview: 'Hi, thank you for choosing CyberGems products',
       folder_id: null,
       created_at: ago(50),

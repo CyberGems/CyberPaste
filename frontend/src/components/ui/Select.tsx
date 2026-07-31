@@ -69,7 +69,7 @@ export function Select({
         <ChevronDown
           size={12}
           className={clsx(
-            'ml-2 opacity-50 text-muted-foreground transition-transform duration-200',
+            'ml-2 text-muted-foreground opacity-50 transition-transform duration-200',
             isOpen && 'rotate-180'
           )}
         />

@@ -19,39 +19,36 @@ export interface ContextMenuHostHandle {
  * Owns context-menu state in an isolated subtree so opening the menu does NOT
  * re-render App / CompactView / the full clip list (critical for Compact lag).
  */
-export const ContextMenuHost = forwardRef<ContextMenuHostHandle>(function ContextMenuHost(
-  _props,
-  ref
-) {
-  const [menu, setMenu] = useState<ContextMenuOpenPayload | null>(null);
+export const ContextMenuHost = forwardRef<ContextMenuHostHandle>(
+  function ContextMenuHost(_props, ref) {
+    const [menu, setMenu] = useState<ContextMenuOpenPayload | null>(null);
 
-  const close = useCallback(() => {
-    setMenu((prev) => {
-      if (prev) {
-        dispatchContextMenuEvent({ open: false, highlightId: null });
-      }
-      return null;
-    });
-  }, []);
+    const close = useCallback(() => {
+      setMenu((prev) => {
+        if (prev) {
+          dispatchContextMenuEvent({ open: false, highlightId: null });
+        }
+        return null;
+      });
+    }, []);
 
-  useImperativeHandle(
-    ref,
-    () => ({
-      open: (payload: ContextMenuOpenPayload) => {
-        dispatchContextMenuEvent({
-          open: true,
-          highlightId: payload.highlightId ?? null,
-        });
-        setMenu(payload);
-      },
-      close,
-    }),
-    [close]
-  );
+    useImperativeHandle(
+      ref,
+      () => ({
+        open: (payload: ContextMenuOpenPayload) => {
+          dispatchContextMenuEvent({
+            open: true,
+            highlightId: payload.highlightId ?? null,
+          });
+          setMenu(payload);
+        },
+        close,
+      }),
+      [close]
+    );
 
-  if (!menu) return null;
+    if (!menu) return null;
 
-  return (
-    <ContextMenu x={menu.x} y={menu.y} options={menu.options} onClose={close} />
-  );
-});
+    return <ContextMenu x={menu.x} y={menu.y} options={menu.options} onClose={close} />;
+  }
+);

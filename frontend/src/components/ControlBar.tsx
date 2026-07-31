@@ -48,7 +48,6 @@ import {
   Smile,
   Sun,
   Pin,
-  PinOff,
   RotateCcw,
   FileText,
   Image as ImageIcon,
@@ -187,13 +186,17 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   // Folder Reorder Drag State (Simulated)
   const [draggingFolderId, setDraggingFolderId] = React.useState<string | null>(null);
   const [folderReorderTargetId, setFolderReorderTargetId] = React.useState<string | null>(null);
-  const [folderReorderTargetPosition, setFolderReorderTargetPosition] = React.useState<'before' | 'after' | null>(null);
+  const [folderReorderTargetPosition, setFolderReorderTargetPosition] = React.useState<
+    'before' | 'after' | null
+  >(null);
 
   const pendingFolderDragRef = useRef<{ id: string; startX: number; startY: number } | null>(null);
   const wasFolderDraggingRef = useRef<boolean>(false);
 
   // Highlighted folder for smooth wheel navigation
-  const [highlightedFolderId, setHighlightedFolderId] = React.useState<string | null>(selectedFolder);
+  const [highlightedFolderId, setHighlightedFolderId] = React.useState<string | null>(
+    selectedFolder
+  );
   const isWheelNavigatingRef = useRef(false);
   const wheelTimeoutRef = useRef<any>(null);
   const wheelCooldownRef = useRef(false);
@@ -217,7 +220,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
-    
+
     if (wheelCooldownRef.current) return;
 
     // Accumulate delta
@@ -235,20 +238,20 @@ export const ControlBar: React.FC<ControlBarProps> = ({
     const direction = wheelAccumulatorRef.current > 0 ? 1 : -1;
     wheelAccumulatorRef.current = 0; // Reset accumulator immediately upon step
     if (wheelResetTimeoutRef.current) clearTimeout(wheelResetTimeoutRef.current);
-    
+
     const allFolderIds = [null, ...folders.map((f) => f.id)];
     const currentIndex = allFolderIds.indexOf(highlightedFolderId);
-    
+
     let nextIndex = currentIndex + direction;
     if (nextIndex < 0) nextIndex = 0;
     if (nextIndex > allFolderIds.length - 1) nextIndex = allFolderIds.length - 1;
-    
+
     if (nextIndex === currentIndex) return;
-    
+
     isWheelNavigatingRef.current = true;
     const targetFolderId = allFolderIds[nextIndex];
     setHighlightedFolderId(targetFolderId);
-    
+
     // Auto-scroll folder button into view
     setTimeout(() => {
       const targetIdAttr = targetFolderId === null ? 'clipboard' : targetFolderId;
@@ -261,13 +264,13 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         });
       }
     }, 0);
-    
+
     // Cooldown spacing (100ms) to prevent too fast successive transitions
     wheelCooldownRef.current = true;
     setTimeout(() => {
       wheelCooldownRef.current = false;
     }, 100);
-    
+
     // Debounce the actual selectedFolder transition (300ms)
     if (wheelTimeoutRef.current) clearTimeout(wheelTimeoutRef.current);
     wheelTimeoutRef.current = setTimeout(() => {
@@ -335,7 +338,12 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   }, [draggingFolderId, folderReorderTargetId, folderReorderTargetPosition, onReorderFolder]);
 
   const handleFolderMouseMove = (e: React.MouseEvent, folderId: string) => {
-    if (!wasFolderDraggingRef.current || !pendingFolderDragRef.current || pendingFolderDragRef.current.id === folderId) return;
+    if (
+      !wasFolderDraggingRef.current ||
+      !pendingFolderDragRef.current ||
+      pendingFolderDragRef.current.id === folderId
+    )
+      return;
 
     const rect = e.currentTarget.getBoundingClientRect();
     const midX = rect.left + rect.width / 2;
@@ -419,7 +427,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
     >
       {/* ═══ HUD Status Strip — matches compact header style ═══ */}
       <div
-        className="relative flex shrink-0 select-none items-center justify-between overflow-hidden border-t border-white/10 border-b border-white/10 bg-white/5 px-3 backdrop-blur-md"
+        className="relative flex shrink-0 select-none items-center justify-between overflow-hidden border-b border-t border-white/10 bg-white/5 px-3 backdrop-blur-md"
         style={{ height: '34px' }}
       >
         <HudKeyframes />
@@ -491,7 +499,9 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               <span className="relative flex h-1.5 w-1.5">
                 <span
                   className="absolute inset-0 rounded-full bg-cyan-400"
-                  style={{ animation: isWindowActive ? 'hud-breathe 3s ease-in-out infinite' : 'none' }}
+                  style={{
+                    animation: isWindowActive ? 'hud-breathe 3s ease-in-out infinite' : 'none',
+                  }}
                 />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-cyan-500" />
               </span>
@@ -610,14 +620,17 @@ export const ControlBar: React.FC<ControlBarProps> = ({
 
       {/* ── Main Toolbar ── */}
       <div className="flex min-w-0 flex-1 items-center gap-1 px-4">
-        <Tooltip label={t('common.searchPlaceholder')?.replace('... (Ctrl+F)', '') || 'Search'} placement="top">
+        <Tooltip
+          label={t('common.searchPlaceholder')?.replace('... (Ctrl+F)', '') || 'Search'}
+          placement="top"
+        >
           <button
             onClick={onSearchClick}
             className={clsx(
               'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all',
               showSearch
-                ? 'bg-primary border-primary text-white shadow-lg'
-                : 'border-transparent hover:border-white/10 hover:bg-white/10 text-white/30 hover:text-white/90 active:bg-white/15'
+                ? 'border-primary bg-primary text-white shadow-lg'
+                : 'border-transparent text-white/30 hover:border-white/10 hover:bg-white/10 hover:text-white/90 active:bg-white/15'
             )}
           >
             <Search size={16} />
@@ -649,7 +662,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                 highlightedFolderId === null && dragTargetFolderId === undefined
                   ? 'border border-indigo-500/60 bg-indigo-500/30 text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.5)] ring-1 ring-indigo-500/40'
                   : dragTargetFolderId === null && isDragging
-                    ? 'border-transparent bg-primary/40 ring-2 ring-primary text-white'
+                    ? 'border-transparent bg-primary/40 text-white ring-2 ring-primary'
                     : 'border border-transparent bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60'
               )}
             >
@@ -695,18 +708,25 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               const Icon = IconMap[folder.icon || 'FolderIcon'] || FolderIcon;
               const folderColor = folder.color || '#22d3ee';
 
-              const activeStyle = isSelected && dragTargetFolderId === undefined ? {
-                borderColor: `${folderColor}80`,
-                backgroundColor: `${folderColor}20`,
-                boxShadow: `0 0 20px ${folderColor}40, inset 0 0 10px ${folderColor}15`,
-                color: folderColor,
-              } : undefined;
+              const activeStyle =
+                isSelected && dragTargetFolderId === undefined
+                  ? {
+                      borderColor: `${folderColor}80`,
+                      backgroundColor: `${folderColor}20`,
+                      boxShadow: `0 0 20px ${folderColor}40, inset 0 0 10px ${folderColor}15`,
+                      color: folderColor,
+                    }
+                  : undefined;
 
               return (
                 <React.Fragment key={folder.id}>
-                  {folderReorderTargetId === folder.id && folderReorderTargetPosition === 'before' && (
-                    <div className="mx-0.5 w-0.5 h-6 flex-shrink-0 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)] animate-pulse" style={{ alignSelf: 'center' }} />
-                  )}
+                  {folderReorderTargetId === folder.id &&
+                    folderReorderTargetPosition === 'before' && (
+                      <div
+                        className="mx-0.5 h-6 w-0.5 flex-shrink-0 animate-pulse rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]"
+                        style={{ alignSelf: 'center' }}
+                      />
+                    )}
                   <button
                     data-folder-id={folder.id}
                     onMouseDown={(e) => handleFolderMouseDown(e, folder.id)}
@@ -728,9 +748,9 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                       isSelected && dragTargetFolderId === undefined
                         ? 'border ring-1 ring-white/10'
                         : isDragTarget
-                          ? 'border-transparent bg-primary/40 ring-2 ring-primary text-white'
+                          ? 'border-transparent bg-primary/40 text-white ring-2 ring-primary'
                           : 'border border-transparent bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60',
-                      draggingFolderId === folder.id && 'opacity-40 scale-95 pointer-events-none'
+                      draggingFolderId === folder.id && 'pointer-events-none scale-95 opacity-40'
                     )}
                   >
                     <div
@@ -757,9 +777,13 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                       {folder.item_count}
                     </span>
                   </button>
-                  {folderReorderTargetId === folder.id && folderReorderTargetPosition === 'after' && (
-                    <div className="mx-0.5 w-0.5 h-6 flex-shrink-0 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)] animate-pulse" style={{ alignSelf: 'center' }} />
-                  )}
+                  {folderReorderTargetId === folder.id &&
+                    folderReorderTargetPosition === 'after' && (
+                      <div
+                        className="mx-0.5 h-6 w-0.5 flex-shrink-0 animate-pulse rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]"
+                        style={{ alignSelf: 'center' }}
+                      />
+                    )}
                 </React.Fragment>
               );
             })}
@@ -821,7 +845,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             <Tooltip label={t('common.resetWindowSize')} placement="top">
               <button
                 onClick={onResetSize}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent hover:border-white/10 hover:bg-white/10 text-white/30 hover:text-white/90 active:bg-white/15 transition-all"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-white/30 transition-all hover:border-white/10 hover:bg-white/10 hover:text-white/90 active:bg-white/15"
               >
                 <RotateCcw size={15} />
               </button>
@@ -829,17 +853,26 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           )}
 
           {onTogglePin && (
-            <Tooltip label={isPinned ? t('common.unpinWindow') : t('common.pinWindow')} placement="top">
+            <Tooltip
+              label={isPinned ? t('common.unpinWindow') : t('common.pinWindow')}
+              placement="top"
+            >
               <button
                 onClick={onTogglePin}
                 className={clsx(
-                  'flex h-8 w-8 items-center justify-center rounded-lg border transition-all',
+                  'flex h-8 w-8 items-center justify-center rounded-lg border transition-all focus:outline-none',
                   isPinned
-                    ? 'border-indigo-500/40 bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/20'
-                    : 'border-transparent hover:border-white/10 hover:bg-white/10 text-white/30 hover:text-white/90 active:bg-white/15'
+                    ? 'border-cyan-500/30 bg-cyan-500/20 text-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.4)]'
+                    : 'border-transparent text-white/30 hover:border-white/10 hover:bg-white/10 hover:text-white/90 active:bg-white/15'
                 )}
               >
-                {isPinned ? <PinOff size={15} /> : <Pin size={15} />}
+                <Pin
+                  size={15}
+                  className={clsx(
+                    'transition-transform duration-300',
+                    isPinned ? 'fill-cyan-400 text-cyan-400' : 'rotate-45'
+                  )}
+                />
               </button>
             </Tooltip>
           )}
@@ -847,14 +880,17 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           <Tooltip label={t('settings.title')} placement="top">
             <button
               onClick={onMoreClick}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent hover:border-white/10 hover:bg-white/10 text-white/30 hover:text-white/90 active:bg-white/15 transition-all"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-white/30 transition-all hover:border-white/10 hover:bg-white/10 hover:text-white/90 active:bg-white/15"
             >
               <Settings size={15} />
             </button>
           </Tooltip>
 
           {/* View-toggle — compact pill */}
-          <Tooltip label={viewMode === 'full' ? t('common.switchToCompact') : t('common.switchToFull')} placement="top">
+          <Tooltip
+            label={viewMode === 'full' ? t('common.switchToCompact') : t('common.switchToFull')}
+            placement="top"
+          >
             <button
               onClick={onToggleMode}
               className="group relative ml-1 flex h-8 items-center gap-1.5 overflow-hidden rounded-lg border border-cyan-500/40 bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 px-2 text-cyan-300 shadow-[0_0_8px_rgba(6,182,212,0.15)] transition-all duration-200 hover:border-cyan-400/70 hover:from-cyan-500/30 hover:to-indigo-500/30 hover:shadow-[0_0_16px_rgba(6,182,212,0.4)] active:scale-[0.98]"
@@ -872,7 +908,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           <Tooltip label={t('common.closeWindow')} placement="top">
             <button
               onClick={() => (window as any).__TAURI_INTERNALS__.invoke('hide_window')}
-              className="hover:bg-rose-500/15 border border-transparent hover:border-rose-500/20 ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg text-white/25 transition-all hover:text-rose-400 active:bg-rose-500/25"
+              className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-white/25 transition-all hover:border-rose-500/20 hover:bg-rose-500/15 hover:text-rose-400 active:bg-rose-500/25"
             >
               <X size={15} />
             </button>

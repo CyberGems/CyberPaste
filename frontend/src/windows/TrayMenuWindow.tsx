@@ -3,14 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useTranslation } from 'react-i18next';
-import {
-  AppWindow,
-  Info,
-  LogOut,
-  Pause,
-  Play,
-  Settings,
-} from 'lucide-react';
+import { AppWindow, Info, LogOut, Pause, Play, Settings } from 'lucide-react';
 import { useLanguage } from '../hooks/useLanguage';
 
 export interface TrayMenuState {

@@ -213,7 +213,12 @@ export const ClipList: React.FC<ClipListProps> = ({
   const gridHeight = containerHeight;
 
   return (
-    <div ref={containerRef} data-clip-list="true" className="h-full w-full flex-1 overflow-hidden" onWheel={handleWheel}>
+    <div
+      ref={containerRef}
+      data-clip-list="true"
+      className="h-full w-full flex-1 overflow-hidden"
+      onWheel={handleWheel}
+    >
       <Grid
         data-el="clip-list"
         cellComponent={Cell}
@@ -231,7 +236,11 @@ export const ClipList: React.FC<ClipListProps> = ({
         rowCount={rowCount}
         rowHeight={isVertical ? 230 : 180}
         columnCount={columnCount}
-        columnWidth={isVertical ? (containerWidth - SIDE_PADDING) / columnCount : (containerWidth - SIDE_PADDING) / 6}
+        columnWidth={
+          isVertical
+            ? (containerWidth - SIDE_PADDING) / columnCount
+            : (containerWidth - SIDE_PADDING) / 6
+        }
         overscanCount={4}
         onCellsRendered={handleCellsRendered}
       />

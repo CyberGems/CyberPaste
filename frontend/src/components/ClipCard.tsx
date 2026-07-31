@@ -20,10 +20,7 @@ import { useMotionValue, useMotionTemplate, motion } from 'framer-motion';
 import Tooltip from './Tooltip';
 import { formatDistanceToNow } from 'date-fns';
 import { de, enUS, es, fr, ja, zhCN } from 'date-fns/locale';
-import {
-  CONTEXT_MENU_EVENT,
-  type ContextMenuEventDetail,
-} from '../utils/contextMenuEvents';
+import { CONTEXT_MENU_EVENT, type ContextMenuEventDetail } from '../utils/contextMenuEvents';
 
 const localeMap: Record<string, any> = {
   de,
@@ -83,8 +80,10 @@ export const ClipCard = memo(
     const typeLabel = useMemo(() => {
       if (clip.clip_type === 'image') return t('common.image') || 'Image';
       if (clip.clip_type === 'file') return t('common.file') || 'File';
-      if (clip.clip_type === 'url') return t('compact.filterUrl') === 'compact.filterUrl' ? 'URL' : t('compact.filterUrl');
-      if (clip.clip_type === 'code' || clip.clip_type === 'html' || clip.clip_type === 'rtf') return t('compact.filterCode') === 'compact.filterCode' ? 'Code' : t('compact.filterCode');
+      if (clip.clip_type === 'url')
+        return t('compact.filterUrl') === 'compact.filterUrl' ? 'URL' : t('compact.filterUrl');
+      if (clip.clip_type === 'code' || clip.clip_type === 'html' || clip.clip_type === 'rtf')
+        return t('compact.filterCode') === 'compact.filterCode' ? 'Code' : t('compact.filterCode');
       return t('compact.filterText') === 'compact.filterText' ? 'Text' : t('compact.filterText');
     }, [clip.clip_type, t]);
     const [copied, setCopied] = useState(false);
@@ -318,7 +317,7 @@ export const ClipCard = memo(
           className={clsx(
             'relative flex h-full w-full cursor-pointer select-none flex-col overflow-hidden rounded-2xl bg-card/80 shadow-lg transition-[border-color,box-shadow,opacity,transform] duration-150',
             isSelected ? 'z-10 scale-[1.02] transform' : 'border hover:-translate-y-1',
-            isDragging && 'cursor-grabbing opacity-40 scale-95 pointer-events-none',
+            isDragging && 'pointer-events-none scale-95 cursor-grabbing opacity-40',
             'group'
           )}
         >
@@ -355,14 +354,17 @@ export const ClipCard = memo(
               </Tooltip>
             )}
             {clip.is_pinned && (
-              <span className="flex items-center text-cyan-400 opacity-80" title={t('common.pinnedClip')}>
-                <Pin size={10} className="fill-cyan-400/20 -rotate-45" />
+              <span
+                className="flex items-center text-cyan-400 opacity-80"
+                title={t('common.pinnedClip')}
+              >
+                <Pin size={10} className="-rotate-45 fill-cyan-400/20" />
               </span>
             )}
             {clipIndex !== undefined && (
               <span className="select-none font-mono text-[9px] opacity-20">#{clipIndex}</span>
             )}
-            <div className="relative flex-1 overflow-hidden flex items-center gap-1.5">
+            <div className="relative flex flex-1 items-center gap-1.5 overflow-hidden">
               <span
                 className="inline-block whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.1em]"
                 style={{
@@ -379,8 +381,14 @@ export const ClipCard = memo(
                   </>
                 )}
               </span>
-              <Tooltip label={new Date(clip.created_at).toLocaleString(i18n.language || undefined, { dateStyle: 'full', timeStyle: 'medium' })} placement="top">
-                <span className="whitespace-nowrap text-[9px] text-muted-foreground/50 hover:text-cyan-300 transition-colors font-medium">
+              <Tooltip
+                label={new Date(clip.created_at).toLocaleString(i18n.language || undefined, {
+                  dateStyle: 'full',
+                  timeStyle: 'medium',
+                })}
+                placement="top"
+              >
+                <span className="whitespace-nowrap text-[9px] font-medium text-muted-foreground/50 transition-colors hover:text-cyan-300">
                   • {getRelativeTime(clip.created_at, i18n.language)}
                 </span>
               </Tooltip>
@@ -471,7 +479,9 @@ export const ClipCard = memo(
                 const TypeIcon =
                   clip.clip_type === 'image'
                     ? ImageIcon
-                    : clip.clip_type === 'html' || clip.clip_type === 'rtf' || clip.clip_type === 'code'
+                    : clip.clip_type === 'html' ||
+                        clip.clip_type === 'rtf' ||
+                        clip.clip_type === 'code'
                       ? Code
                       : clip.clip_type === 'url'
                         ? Link

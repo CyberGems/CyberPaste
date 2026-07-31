@@ -49,10 +49,10 @@ export function AiResultDialog({ isOpen, title, content, onClose }: AiResultDial
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="flex h-[80vh] w-[90vw] max-w-2xl flex-col rounded-2xl border border-primary/30 bg-background/95 shadow-[0_0_30px_rgba(109,40,217,0.15)] backdrop-blur-md overflow-hidden">
+      <div className="flex h-[80vh] w-[90vw] max-w-2xl flex-col overflow-hidden rounded-2xl border border-primary/30 bg-background/95 shadow-[0_0_30px_rgba(109,40,217,0.15)] backdrop-blur-md">
         {/* Top Cyber Accent Line */}
         <div className="h-[2px] w-full bg-gradient-to-r from-cyan-500 via-primary to-purple-600" />
-        
+
         <div className="flex items-center justify-between border-b border-primary/10 p-4">
           <h2 className="text-lg font-semibold">{title}</h2>
           <div className="flex items-center gap-2">
@@ -71,7 +71,7 @@ export function AiResultDialog({ isOpen, title, content, onClose }: AiResultDial
             </button>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+        <div className="custom-scrollbar flex-1 overflow-y-auto p-6">
           <div className="prose dark:prose-invert max-w-none whitespace-pre-wrap text-sm leading-relaxed">
             {content}
           </div>

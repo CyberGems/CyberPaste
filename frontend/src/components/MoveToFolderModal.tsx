@@ -84,7 +84,9 @@ export const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
             ))}
 
           {folders.filter((f) => !f.is_system).length === 0 && (
-            <div className="p-8 text-center text-sm italic opacity-30">{t('folders.noFoldersCreated')}</div>
+            <div className="p-8 text-center text-sm italic opacity-30">
+              {t('folders.noFoldersCreated')}
+            </div>
           )}
         </div>
       </div>
