@@ -14,7 +14,11 @@
     "browse": "浏览",
     "zoom": "网格缩放",
     "zoomIn": "放大",
-    "zoomOut": "缩小"
+    "zoomOut": "缩小",
+    "showHud": "显示信息栏",
+    "hideHud": "隐藏信息栏",
+    "yes": "是",
+    "clipDetails": "剪辑详情"
   },
   "bulk": {
     "selectedSingle": "已选",
@@ -30,6 +34,16 @@
     "file": "文件",
     "html": "HTML",
     "rtf": "富文本"
+  },
+  "detailPanel": {
+    "title": "剪辑详情",
+    "type": "类型",
+    "sourceApp": "来源应用",
+    "created": "创建时间",
+    "folder": "文件夹",
+    "size": "大小",
+    "pinned": "已固定",
+    "extractedText": "提取的文本"
   },
   "clipList": {
     "empty": "暂无剪贴",

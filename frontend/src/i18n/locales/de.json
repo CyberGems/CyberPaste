@@ -14,7 +14,11 @@
     "browse": "Durchsuchen",
     "zoom": "Raster-Zoom",
     "zoomIn": "Vergrößern",
-    "zoomOut": "Verkleinern"
+    "zoomOut": "Verkleinern",
+    "showHud": "Infoleiste anzeigen",
+    "hideHud": "Infoleiste ausblenden",
+    "yes": "Ja",
+    "clipDetails": "Clip-Details"
   },
   "bulk": {
     "selectedSingle": "ausgewählt",
@@ -30,6 +34,16 @@
     "file": "Datei",
     "html": "HTML",
     "rtf": "Rich Text"
+  },
+  "detailPanel": {
+    "title": "Clip-Details",
+    "type": "Typ",
+    "sourceApp": "Quell-App",
+    "created": "Erstellt",
+    "folder": "Ordner",
+    "size": "Größe",
+    "pinned": "Angeheftet",
+    "extractedText": "Erkannter Text"
   },
   "clipList": {
     "empty": "Noch keine Einträge",

@@ -44,7 +44,11 @@
     "updated": "updated",
     "zoom": "Grid Zoom",
     "zoomIn": "Zoom In",
-    "zoomOut": "Zoom Out"
+    "zoomOut": "Zoom Out",
+    "showHud": "Show info bar",
+    "hideHud": "Hide info bar",
+    "yes": "Yes",
+    "clipDetails": "Clip details"
   },
   "bulk": {
     "selectedSingle": "selected",
@@ -60,6 +64,16 @@
     "file": "File",
     "html": "HTML",
     "rtf": "Rich Text"
+  },
+  "detailPanel": {
+    "title": "Clip Details",
+    "type": "Type",
+    "sourceApp": "Source App",
+    "created": "Created",
+    "folder": "Folder",
+    "size": "Size",
+    "pinned": "Pinned",
+    "extractedText": "Extracted text"
   },
   "tray": {
     "show": "Show",

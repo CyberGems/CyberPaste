@@ -44,7 +44,11 @@
     "updated": "actualizado",
     "zoom": "Zoom de la cuadrícula",
     "zoomIn": "Ampliar",
-    "zoomOut": "Reducir"
+    "zoomOut": "Reducir",
+    "showHud": "Mostrar barra de información",
+    "hideHud": "Ocultar barra de información",
+    "yes": "Sí",
+    "clipDetails": "Detalles del clip"
   },
   "bulk": {
     "selectedSingle": "seleccionado",
@@ -60,6 +64,16 @@
     "file": "Archivo",
     "html": "HTML",
     "rtf": "Texto enriquecido"
+  },
+  "detailPanel": {
+    "title": "Detalles del clip",
+    "type": "Tipo",
+    "sourceApp": "App de origen",
+    "created": "Creado",
+    "folder": "Carpeta",
+    "size": "Tamaño",
+    "pinned": "Fijado",
+    "extractedText": "Texto extraído"
   },
   "tray": {
     "show": "Mostrar",

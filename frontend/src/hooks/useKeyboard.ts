@@ -16,6 +16,8 @@ interface KeyboardOptions {
   onCopyPlainText?: () => void;
   /** Enter with Shift — opens the full-screen preview for the selected clip */
   onPreviewSelected?: () => void;
+  /** "i" — toggles the clip detail sidebar */
+  onToggleDetailPanel?: () => void;
   onToggleMode?: () => void;
   toggleModeHotkey?: string; // e.g. "Ctrl+M"
   onStartTypingSearch?: (char: string) => void;
@@ -90,6 +92,17 @@ export function useKeyboard(options: KeyboardOptions) {
         }
         e.preventDefault();
         options.onDelete();
+      }
+
+      // 'i' toggles the detail panel (plain key, not while typing).
+      // Runs BEFORE type-to-search so it doesn't get swallowed by search activation.
+      if (e.key.toLowerCase() === 'i' && !isTyping && options.onToggleDetailPanel) {
+        if (!e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          options.onToggleDetailPanel();
+          return;
+        }
       }
 
       // Type-to-search: activate search when user types a printable character

@@ -11,6 +11,7 @@ import { ControlBar } from './components/ControlBar';
 import { TypeFilterChipRow, type FullTypeFilter } from './components/TypeFilterChips';
 import { ClipPreviewModal } from './components/ClipPreviewModal';
 import { BulkActionBar } from './components/BulkActionBar';
+import { ClipDetailPanel } from './components/ClipDetailPanel';
 import { CompactView } from './components/CompactView';
 import { ContextMenuHost, ContextMenuHostHandle } from './components/ContextMenuHost';
 import type { ContextMenuOption } from './components/ContextMenu';
@@ -74,6 +75,7 @@ function App() {
   const [fullTypeFilter, setFullTypeFilter] = useState<FullTypeFilter>('all');
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [selectedClipIds, setSelectedClipIds] = useState<Set<string>>(new Set());
+  const [detailPanelOpen, setDetailPanelOpen] = useState(false);
   const [clipListResetToken, setClipListResetToken] = useState(0);
   const [searchFocusToken, setSearchFocusToken] = useState(0);
   const [previewClip, setPreviewClip] = useState<AppClipboardItem | null>(null);
@@ -1195,6 +1197,21 @@ function App() {
     });
   }, []);
 
+  // Toggle the HUD strip (persisted so it survives restarts)
+  const handleToggleHud = useCallback(() => {
+    setSettings((prev) => {
+      if (!prev) return prev;
+      const newSettings = { ...prev, full_show_hud: !(prev.full_show_hud ?? true) };
+      invoke('save_settings', { settings: newSettings }).catch(console.error);
+      return newSettings;
+    });
+  }, []);
+
+  // Toggle the right-side detail panel (state only, not persisted)
+  const handleToggleDetailPanel = useCallback(() => {
+    setDetailPanelOpen((prev) => !prev);
+  }, []);
+
   const handleMoveClip = async (clipId: string, folderId: string | null) => {
     try {
       await invoke('move_to_folder', { clipId, folderId });
@@ -1637,6 +1654,7 @@ function App() {
     onPaste: handlePasteSelected,
     onCopyPlainText: handleCopyPlainTextSelected,
     onPreviewSelected: handlePreviewSelected,
+    onToggleDetailPanel: handleToggleDetailPanel,
     onToggleMode: toggleViewMode,
     toggleModeHotkey: settings?.view_mode_hotkey,
     onStartTypingSearch: handleStartTypingSearch,
@@ -1783,6 +1801,8 @@ function App() {
                 onReorderFolder={handleReorderFolder}
                 gridScale={settings?.full_grid_scale ?? 1}
                 onGridScaleChange={handleGridScaleChange}
+                showHud={settings?.full_show_hud ?? true}
+                onToggleHud={handleToggleHud}
               />
 
               {/* Type filter chips (Full mode) */}
@@ -1828,6 +1848,17 @@ function App() {
                   onMoveToFolder={handleBulkMove}
                   onClear={handleClearBulkSelection}
                 />
+                {detailPanelOpen && (
+                  <ClipDetailPanel
+                    clip={clips.find((c) => c.id === selectedClipId) || null}
+                    folders={folders}
+                    onClose={() => setDetailPanelOpen(false)}
+                    onCopy={handleCopy}
+                    onPin={handleToggleClipPin}
+                    onDelete={handleDelete}
+                    onPreview={handleOpenPreview}
+                  />
+                )}
               </main>
             </div>
           )}
