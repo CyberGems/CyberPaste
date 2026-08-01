@@ -621,7 +621,7 @@ async fn process_clipboard_change(
 
     let db_lookup_started = std::time::Instant::now();
     let existing_uuid: Option<String> =
-        sqlx::query_scalar::<_, String>(r#"SELECT uuid FROM clips WHERE content_hash = ?"#)
+        sqlx::query_scalar::<_, String>(r#"SELECT uuid FROM clips WHERE content_hash = ? AND folder_id IS NULL"#)
             .bind(&clip_hash)
             .fetch_optional(pool)
             .await
