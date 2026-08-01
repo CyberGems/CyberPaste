@@ -483,12 +483,36 @@ async fn load_full_image_content(pool: &SqlitePool, clip: &mut Clip) -> Result<V
     Err("Image content missing".to_string())
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ClipTypeFilter {
+    All,
+    Text,
+    Code,
+    Image,
+    Url,
+    File,
+}
+
+/// Types matched by the filter. `code` groups code+html+rtf (matches frontend semantics).
+fn type_matches_filter(filter: &Option<ClipTypeFilter>) -> Vec<&'static str> {
+    match filter {
+        None | Some(ClipTypeFilter::All) => Vec::new(),
+        Some(ClipTypeFilter::Text) => vec!["text"],
+        Some(ClipTypeFilter::Code) => vec!["code", "html", "rtf"],
+        Some(ClipTypeFilter::Image) => vec!["image"],
+        Some(ClipTypeFilter::Url) => vec!["url"],
+        Some(ClipTypeFilter::File) => vec!["file"],
+    }
+}
+
 #[tauri::command]
 pub async fn get_clips(
     filter_id: Option<String>,
     limit: i64,
     offset: i64,
     preview_only: Option<bool>,
+    type_filter: Option<ClipTypeFilter>,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<Vec<ClipboardItem>, String> {
     let pool = &db.pool;
@@ -496,10 +520,22 @@ pub async fn get_clips(
     let started = Instant::now();
 
     log::info!(
-        "get_clips called with filter_id: {:?}, preview_only: {}",
+        "get_clips called with filter_id: {:?}, preview_only: {}, type_filter: {:?}",
         filter_id,
-        preview_only
+        preview_only,
+        type_filter.as_ref().map(|_| "set")
     );
+
+    let type_clause = type_matches_filter(&type_filter);
+    let has_type_filter = !type_clause.is_empty();
+    let in_placeholders = if has_type_filter {
+        format!(
+            "AND clip_type IN ({})",
+            type_clause.iter().map(|_| "?").collect::<Vec<_>>().join(",")
+        )
+    } else {
+        String::new()
+    };
 
     let sql_started = Instant::now();
     let clips: Vec<Clip> = match filter_id.as_deref() {
@@ -507,18 +543,22 @@ pub async fn get_clips(
             let folder_id_num = id.parse::<i64>().ok();
             if let Some(numeric_id) = folder_id_num {
                 log::info!("Querying for folder_id: {}", numeric_id);
-                sqlx::query_as(
+                let sql = format!(
                     r#"
-                    SELECT * FROM clips WHERE is_deleted = 0 AND folder_id = ?
+                    SELECT * FROM clips WHERE is_deleted = 0 AND folder_id = ? {}
                     ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?
                 "#,
-                )
-                .bind(numeric_id)
-                .bind(limit)
-                .bind(offset)
-                .fetch_all(pool)
-                .await
-                .map_err(|e| e.to_string())?
+                    in_placeholders
+                );
+                let mut q = sqlx::query_as(&sql).bind(numeric_id);
+                for t in &type_clause {
+                    q = q.bind(t);
+                }
+                q.bind(limit)
+                    .bind(offset)
+                    .fetch_all(pool)
+                    .await
+                    .map_err(|e| e.to_string())?
             } else {
                 log::info!("Unknown folder_id, returning empty");
                 Vec::new()
@@ -526,17 +566,22 @@ pub async fn get_clips(
         }
         None => {
             log::info!("Querying for items, offset: {}, limit: {}", offset, limit);
-            sqlx::query_as(
+            let sql = format!(
                 r#"
-                SELECT * FROM clips WHERE is_deleted = 0 AND folder_id IS NULL
+                SELECT * FROM clips WHERE is_deleted = 0 AND folder_id IS NULL {}
                 ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?
             "#,
-            )
-            .bind(limit)
-            .bind(offset)
-            .fetch_all(pool)
-            .await
-            .map_err(|e| e.to_string())?
+                in_placeholders
+            );
+            let mut q = sqlx::query_as(&sql);
+            for t in &type_clause {
+                q = q.bind(t);
+            }
+            q.bind(limit)
+                .bind(offset)
+                .fetch_all(pool)
+                .await
+                .map_err(|e| e.to_string())?
         }
     };
     let sql_ms = sql_started.elapsed().as_millis();
@@ -1479,6 +1524,7 @@ pub async fn search_clips(
     filter_id: Option<String>,
     limit: i64,
     offset: i64,
+    type_filter: Option<ClipTypeFilter>,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<Vec<ClipboardItem>, String> {
     let pool = &db.pool;
@@ -1486,38 +1532,65 @@ pub async fn search_clips(
 
     let search_pattern = format!("%{}%", query);
 
+    let type_clause = type_matches_filter(&type_filter);
+    let has_type_filter = !type_clause.is_empty();
+    let in_placeholders = if has_type_filter {
+        format!(
+            "AND clip_type IN ({})",
+            type_clause.iter().map(|_| "?").collect::<Vec<_>>().join(",")
+        )
+    } else {
+        String::new()
+    };
+
     let sql_started = Instant::now();
     let clips: Vec<Clip> = match filter_id.as_deref() {
         Some(id) => {
             let folder_id_num = id.parse::<i64>().ok();
             if let Some(numeric_id) = folder_id_num {
-                sqlx::query_as(r#"
-                    SELECT * FROM clips WHERE is_deleted = 0 AND folder_id = ? AND (text_preview LIKE ? OR content LIKE ?)
+                let sql = format!(
+                    r#"
+                    SELECT * FROM clips WHERE is_deleted = 0 AND folder_id = ? AND (text_preview LIKE ? OR content LIKE ?) {}
                     ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?
-                "#)
-                .bind(numeric_id)
-                .bind(&search_pattern)
-                .bind(&search_pattern)
-                .bind(limit)
-                .bind(offset)
-                .fetch_all(pool).await.map_err(|e| e.to_string())?
+                "#,
+                    in_placeholders
+                );
+                let mut q = sqlx::query_as(&sql)
+                    .bind(numeric_id)
+                    .bind(&search_pattern)
+                    .bind(&search_pattern);
+                for t in &type_clause {
+                    q = q.bind(t);
+                }
+                q.bind(limit)
+                    .bind(offset)
+                    .fetch_all(pool)
+                    .await
+                    .map_err(|e| e.to_string())?
             } else {
                 Vec::new()
             }
         }
-        None => sqlx::query_as(
-            r#"
-                SELECT * FROM clips WHERE is_deleted = 0 AND folder_id IS NULL AND (text_preview LIKE ? OR content LIKE ?)
+        None => {
+            let sql = format!(
+                r#"
+                SELECT * FROM clips WHERE is_deleted = 0 AND folder_id IS NULL AND (text_preview LIKE ? OR content LIKE ?) {}
                 ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?
             "#,
-        )
-        .bind(&search_pattern)
-        .bind(&search_pattern)
-        .bind(limit)
-        .bind(offset)
-        .fetch_all(pool)
-        .await
-        .map_err(|e| e.to_string())?,
+                in_placeholders
+            );
+            let mut q = sqlx::query_as(&sql)
+                .bind(&search_pattern)
+                .bind(&search_pattern);
+            for t in &type_clause {
+                q = q.bind(t);
+            }
+            q.bind(limit)
+                .bind(offset)
+                .fetch_all(pool)
+                .await
+                .map_err(|e| e.to_string())?
+        }
     };
     let sql_ms = sql_started.elapsed().as_millis();
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { EditClipModal } from './components/EditClipModal';
@@ -8,6 +8,7 @@ import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { ClipboardItem as AppClipboardItem, FolderItem, Settings } from './types';
 import { ClipList } from './components/ClipList';
 import { ControlBar } from './components/ControlBar';
+import { TypeFilterChipRow, type FullTypeFilter } from './components/TypeFilterChips';
 import { CompactView } from './components/CompactView';
 import { ContextMenuHost, ContextMenuHostHandle } from './components/ContextMenuHost';
 import type { ContextMenuOption } from './components/ContextMenu';
@@ -68,6 +69,7 @@ function App() {
   const [compactTypeFilter, setCompactTypeFilter] = useState<
     'all' | 'text' | 'code' | 'image' | 'url' | 'file'
   >('all');
+  const [fullTypeFilter, setFullTypeFilter] = useState<FullTypeFilter>('all');
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [clipListResetToken, setClipListResetToken] = useState(0);
   const [searchFocusToken, setSearchFocusToken] = useState(0);
@@ -332,12 +334,17 @@ function App() {
       folderId: string | null,
       append: boolean = false,
       searchQuery: string = '',
-      limit: number = 20
+      limit: number = 20,
+      typeFilter: FullTypeFilter = 'all'
     ) => {
       const perfId = ++loadPerfIdRef.current;
       const loadStart = perfLogEnabled ? performance.now() : 0;
       let invokeStart = 0;
       let invokeEnd = 0;
+
+      // Type filter only applies server-side in full mode; compact filters client-side
+      const effectiveTypeFilter = settingsRef.current?.view_mode === 'compact' ? 'all' : typeFilter;
+      const typeFilterParam = effectiveTypeFilter === 'all' ? null : effectiveTypeFilter;
 
       try {
         setIsLoading(true);
@@ -353,6 +360,7 @@ function App() {
             filterId: folderId,
             limit,
             offset: currentOffset,
+            typeFilter: typeFilterParam,
           });
           if (perfLogEnabled) invokeEnd = performance.now();
         } else {
@@ -362,6 +370,7 @@ function App() {
             limit,
             offset: currentOffset,
             previewOnly: true,
+            typeFilter: typeFilterParam,
           });
           if (perfLogEnabled) invokeEnd = performance.now();
         }
@@ -396,7 +405,7 @@ function App() {
         }
 
         // If we got fewer than limit, no more clips
-        setHasMore(data.length === 20);
+        setHasMore(data.length === limit);
 
         if (perfLogEnabled) {
           const stateQueuedAt = performance.now();
@@ -441,8 +450,8 @@ function App() {
 
   const refreshCurrentFolder = useCallback(() => {
     const clipLimit = settingsRef.current?.view_mode === 'compact' ? 9999 : 20;
-    loadClips(selectedFolderRef.current, false, searchQuery, clipLimit);
-  }, [loadClips, searchQuery]);
+    loadClips(selectedFolderRef.current, false, searchQuery, clipLimit, fullTypeFilter);
+  }, [loadClips, searchQuery, fullTypeFilter]);
 
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
@@ -474,12 +483,12 @@ function App() {
     // Load all clips for compact view, paginate for full view
     const clipLimit = settings?.view_mode === 'compact' ? 9999 : 20;
     if (searchQuery.trim()) {
-      loadClips(selectedFolder, false, searchQuery, clipLimit);
+      loadClips(selectedFolder, false, searchQuery, clipLimit, fullTypeFilter);
     } else {
-      loadClips(selectedFolder, false, '', clipLimit);
+      loadClips(selectedFolder, false, '', clipLimit, fullTypeFilter);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedFolder, searchQuery, clipListResetToken, settings?.view_mode]);
+  }, [selectedFolder, searchQuery, clipListResetToken, settings?.view_mode, fullTypeFilter]);
 
   // Handle global mouse events for simulated drag
   useEffect(() => {
@@ -779,6 +788,22 @@ function App() {
     }
   }, []);
 
+  // Counts for the Full-mode type filter chips
+  const typeFilterCounts = useMemo(() => {
+    const codeTotal = (codeCount || 0) + (htmlCount || 0) + (rtfCount || 0);
+    const perType: Record<Exclude<FullTypeFilter, 'all'>, number> = {
+      text: textCount,
+      code: codeTotal,
+      image: imageCount,
+      url: clipsRef.current.filter((c) => c.clip_type === 'url').length,
+      file: fileCount,
+    };
+    return {
+      ...perType,
+      all: perType.text + perType.code + perType.image + perType.url + perType.file,
+    };
+  }, [textCount, codeCount, htmlCount, rtfCount, imageCount, fileCount, clips]);
+
   useEffect(() => {
     refreshTotalCount();
   }, [refreshTotalCount]);
@@ -1005,9 +1030,9 @@ function App() {
 
   const loadMore = useCallback(() => {
     if (hasMore && !isLoading) {
-      loadClips(selectedFolder, true, searchQuery);
+      loadClips(selectedFolder, true, searchQuery, 20, fullTypeFilter);
     }
-  }, [hasMore, isLoading, selectedFolder, loadClips, searchQuery]);
+  }, [hasMore, isLoading, selectedFolder, loadClips, searchQuery, fullTypeFilter]);
 
   const handleMoveClip = async (clipId: string, folderId: string | null) => {
     try {
@@ -1556,6 +1581,13 @@ function App() {
                 lastClipTime={clips[0]?.created_at ?? null}
                 dbSizeBytes={dbSizeBytes}
                 onReorderFolder={handleReorderFolder}
+              />
+
+              {/* Type filter chips (Full mode) */}
+              <TypeFilterChipRow
+                value={fullTypeFilter}
+                onChange={setFullTypeFilter}
+                counts={typeFilterCounts}
               />
 
               <main
