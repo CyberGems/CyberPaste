@@ -43,6 +43,15 @@
     "disabled": "desactivado",
     "updated": "actualizado"
   },
+  "clipType": {
+    "text": "Texto",
+    "code": "Código",
+    "image": "Imagen",
+    "url": "URL",
+    "file": "Archivo",
+    "html": "HTML",
+    "rtf": "Texto enriquecido"
+  },
   "tray": {
     "show": "Mostrar",
     "hide": "Ocultar",
@@ -101,6 +110,7 @@
     "undo": "Deshacer",
     "redo": "Rehacer",
     "copy": "Copiar",
+    "copyPlainText": "Copiar como texto plano",
     "cut": "Cortar",
     "paste": "Pegar",
     "selectAll": "Seleccionar todo",
@@ -266,10 +276,8 @@
     "externalImageEditor": "Editor de Imágenes Externo",
     "externalImageEditorDesc": "Ruta a tu editor favorito (ej. CyberViewer). Se abre al editar clips de imagen.",
     "historyLimitDesc": "Número máximo de clips en el historial (excluye carpetas).",
-    "shortcuts": "Atajos",
     "privacy": "Privacidad",
     "updates": "Actualizaciones",
-    "dataManagement": "Gestión de Datos",
     "panicRoom": "Sala de Pánico",
     "panicRoomDesc": "Si la ventana se deforma, sale de la pantalla o se comporta erráticamente, usa esto para restaurar el diseño y la visibilidad a los valores de fábrica.",
     "resetLayoutVisibility": "Restablecer Diseño y Visibilidad",

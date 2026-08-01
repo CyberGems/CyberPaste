@@ -13,6 +13,15 @@
     "pasteSuccess": "Erfolgreich eingefügt",
     "browse": "Durchsuchen"
   },
+  "clipType": {
+    "text": "Text",
+    "code": "Code",
+    "image": "Bild",
+    "url": "URL",
+    "file": "Datei",
+    "html": "HTML",
+    "rtf": "Rich Text"
+  },
   "clipList": {
     "empty": "Noch keine Einträge",
     "emptyDesc": "Kopieren Sie etwas in Ihre Zwischenablage, dann erscheint es hier.",
@@ -33,6 +42,7 @@
   },
   "contextMenu": {
     "copy": "Kopieren",
+    "copyPlainText": "Als Klartext kopieren",
     "paste": "Einfügen",
     "delete": "Löschen",
     "rename": "Umbenennen",
@@ -89,10 +99,10 @@
     "startupWithWindowsDesc": "Automatisch starten, wenn Windows hochfährt",
     "roundCorners": "Abgerundete Ecken",
     "roundCornersDesc": "Fensterecken über DWM abrunden (Windows 11). Kein Effekt im Clear-Modus.",
-"autoPaste": "Automatisch einfügen",
-     "autoPasteDesc": "Inhalt nach der Auswahl automatisch einfügen",
-     "autoInjectPaste": "Automatisch injizieren",
-     "autoInjectPasteDesc": "Strg+V statt Umschalt+Einfügen simulieren",
+    "autoPaste": "Automatisch einfügen",
+    "autoPasteDesc": "Inhalt nach der Auswahl automatisch einfügen",
+    "autoInjectPaste": "Automatisch injizieren",
+    "autoInjectPasteDesc": "Strg+V statt Umschalt+Einfügen simulieren",
     "ignoreGhostClips": "Geistereinträge ignorieren",
     "ignoreGhostClipsDesc": "Temporäre Zwischenablageeinträge ignorieren",
     "hotkey": "Globale Tastenkombination",

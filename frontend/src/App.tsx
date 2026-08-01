@@ -1222,6 +1222,22 @@ function App() {
           onClick: () => handlePaste(itemId),
         });
 
+        // Copy as plain text — only meaningful for formatted types
+        if (clip && clip.clip_type !== 'image' && clip.clip_type !== 'file') {
+          opts.push({
+            label: t('contextMenu.copyPlainText'),
+            onClick: async () => {
+              try {
+                await invoke('copy_clip_text', { clipId: itemId });
+                toast.success(t('common.copied'));
+              } catch (err) {
+                console.error('Failed to copy plain text:', err);
+                toast.error(t('notifications.copyFailed'));
+              }
+            },
+          });
+        }
+
         opts.push({
           label: clip?.is_pinned ? t('contextMenu.unpin') : t('contextMenu.pin'),
           onClick: () => handleToggleClipPin(itemId),

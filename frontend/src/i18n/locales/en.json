@@ -43,6 +43,15 @@
     "disabled": "disabled",
     "updated": "updated"
   },
+  "clipType": {
+    "text": "Text",
+    "code": "Code",
+    "image": "Image",
+    "url": "URL",
+    "file": "File",
+    "html": "HTML",
+    "rtf": "Rich Text"
+  },
   "tray": {
     "show": "Show",
     "hide": "Hide",
@@ -101,6 +110,7 @@
     "undo": "Undo",
     "redo": "Redo",
     "copy": "Copy",
+    "copyPlainText": "Copy as Plain Text",
     "cut": "Cut",
     "paste": "Paste",
     "selectAll": "Select All",
@@ -266,10 +276,8 @@
     "externalImageEditor": "External Image Editor",
     "externalImageEditorDesc": "Path to your favorite editor (e.g., CyberViewer). Opens when editing image clips.",
     "historyLimitDesc": "Maximum number of clips to keep in history (excludes folders).",
-    "shortcuts": "Shortcuts",
     "privacy": "Privacy",
     "updates": "Updates",
-    "dataManagement": "Data Management",
     "panicRoom": "Panic Room",
     "panicRoomDesc": "If the window becomes deformed, off-screen, or behaves erratically, use this to restore all layout and visibility settings to factory defaults.",
     "resetLayoutVisibility": "Reset Layout & Visibility",

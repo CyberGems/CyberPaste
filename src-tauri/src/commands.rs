@@ -34,6 +34,74 @@ pub async fn write_clipboard_text(text: String) -> Result<(), String> {
     write_text(text).await.map_err(|e| e.to_string())
 }
 
+/// Copy a clip to the clipboard as plain text only (strips HTML/RTF formatting).
+/// Does not auto-paste or hide the window — used for "copy as plain text" actions.
+#[tauri::command]
+pub async fn copy_clip_text(
+    clip_id: String,
+    app: AppHandle,
+    db: tauri::State<'_, Arc<Database>>,
+) -> Result<(), String> {
+    let pool = &db.pool;
+
+    let clip: Option<Clip> = sqlx::query_as(r#"SELECT * FROM clips WHERE uuid = ?"#)
+        .bind(&clip_id)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    match clip {
+        Some(clip) => {
+            let plain_text = match clip.clip_type.as_str() {
+                "image" | "file" => return Err("Clip has no text content".to_string()),
+                "html" => crate::clipboard::strip_html_tags(&String::from_utf8_lossy(&clip.content)),
+                "rtf" => crate::clipboard::strip_rtf_tags(&String::from_utf8_lossy(&clip.content)),
+                _ => String::from_utf8_lossy(&clip.content).to_string(),
+            };
+
+            // Synchronize clipboard access across the app
+            let _guard = crate::clipboard::CLIPBOARD_SYNC.lock().await;
+
+            if let Err(e) = stop_listening().await {
+                log::error!("Failed to stop listener: {}", e);
+            }
+
+            crate::clipboard::set_ignore_hash(clip.content_hash.clone());
+
+            let mut final_res = Ok(());
+            let mut last_err = String::new();
+            for i in 0..5 {
+                match write_text(plain_text.clone()).await {
+                    Ok(_) => {
+                        last_err.clear();
+                        break;
+                    }
+                    Err(e) => {
+                        last_err = e.to_string();
+                        log::warn!(
+                            "Clipboard write (plain text) attempt {} failed: {}. Retrying...",
+                            i + 1,
+                            last_err
+                        );
+                        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                    }
+                }
+            }
+            if !last_err.is_empty() {
+                final_res = Err(format!("Failed to set clipboard text: {}", last_err));
+            }
+
+            let app_clone = app.clone();
+            if let Err(e) = start_listening(app_clone).await {
+                log::error!("Failed to restart listener: {}", e);
+            }
+
+            final_res
+        }
+        None => Err("Clip not found".to_string()),
+    }
+}
+
 #[tauri::command]
 pub async fn ai_process_clip(
     app: AppHandle,

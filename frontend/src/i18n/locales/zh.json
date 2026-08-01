@@ -13,6 +13,15 @@
     "pasteSuccess": "粘贴成功",
     "browse": "浏览"
   },
+  "clipType": {
+    "text": "文本",
+    "code": "代码",
+    "image": "图片",
+    "url": "链接",
+    "file": "文件",
+    "html": "HTML",
+    "rtf": "富文本"
+  },
   "clipList": {
     "empty": "暂无剪贴",
     "emptyDesc": "复制内容后将显示在这里",
@@ -33,6 +42,7 @@
   },
   "contextMenu": {
     "copy": "复制",
+    "copyPlainText": "复制为纯文本",
     "paste": "粘贴",
     "delete": "删除",
     "rename": "重命名",
@@ -89,10 +99,10 @@
     "startupWithWindowsDesc": "Windows 启动时自动运行",
     "roundCorners": "圆角窗口",
     "roundCornersDesc": "通过 DWM 实现窗口圆角（仅 Windows 11）。对 Clear 模式无效。",
-"autoPaste": "自动粘贴",
-     "autoPasteDesc": "双击或者回车自动粘贴内容",
-     "autoInjectPaste": "自动注入粘贴",
-     "autoInjectPasteDesc": "使用 Ctrl+V 模拟粘贴，而非 Shift+Insert",
+    "autoPaste": "自动粘贴",
+    "autoPasteDesc": "双击或者回车自动粘贴内容",
+    "autoInjectPaste": "自动注入粘贴",
+    "autoInjectPasteDesc": "使用 Ctrl+V 模拟粘贴，而非 Shift+Insert",
     "ignoreGhostClips": "忽略临时剪贴",
     "ignoreGhostClipsDesc": "忽略临时剪贴板项目",
     "hotkey": "全局快捷键",

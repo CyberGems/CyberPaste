@@ -512,6 +512,7 @@ pub fn run_app() {
             commands::update_clip_content,
             commands::read_clipboard_text,
             commands::write_clipboard_text,
+            commands::copy_clip_text,
             commands::open_with,
             commands::reset_window_size,
             commands::center_window,

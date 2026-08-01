@@ -38,8 +38,8 @@ const getRelativeTime = (dateStr: string, lang: string) => {
     let formatted = formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale });
     formatted = formatted.replace(/\b(alrededor de|about|environ|ca\.?|etwa|almost|casi)\b/gi, '~');
     formatted = formatted.replace(/~\s+/g, '~');
-    formatted = formatted.replace("menos de un minuto", "segundos");
-    formatted = formatted.replace("less than a minute", "seconds");
+    formatted = formatted.replace('menos de un minuto', 'segundos');
+    formatted = formatted.replace('less than a minute', 'seconds');
     return formatted;
   } catch (err) {
     console.error(err);
@@ -80,13 +80,17 @@ export const ClipCard = memo(
   ) {
     const { t, i18n } = useTranslation();
     const typeLabel = useMemo(() => {
-      if (clip.clip_type === 'image') return t('common.image') || 'Image';
-      if (clip.clip_type === 'file') return t('common.file') || 'File';
+      if (clip.clip_type === 'image') return t('clipType.image') || 'Image';
+      if (clip.clip_type === 'file') return t('clipType.file') || 'File';
       if (clip.clip_type === 'url')
-        return t('compact.filterUrl') === 'compact.filterUrl' ? 'URL' : t('compact.filterUrl');
-      if (clip.clip_type === 'code' || clip.clip_type === 'html' || clip.clip_type === 'rtf')
-        return t('compact.filterCode') === 'compact.filterCode' ? 'Code' : t('compact.filterCode');
-      return t('compact.filterText') === 'compact.filterText' ? 'Text' : t('compact.filterText');
+        return t('clipType.url') === 'clipType.url' ? 'URL' : t('clipType.url');
+      if (clip.clip_type === 'code')
+        return t('clipType.code') === 'clipType.code' ? 'Code' : t('clipType.code');
+      if (clip.clip_type === 'html')
+        return t('clipType.html') === 'clipType.html' ? 'HTML' : t('clipType.html');
+      if (clip.clip_type === 'rtf')
+        return t('clipType.rtf') === 'clipType.rtf' ? 'Rich Text' : t('clipType.rtf');
+      return t('clipType.text') === 'clipType.text' ? 'Text' : t('clipType.text');
     }, [clip.clip_type, t]);
     const [copied, setCopied] = useState(false);
     const [hovered, setHovered] = useState(false);
@@ -318,7 +322,7 @@ export const ClipCard = memo(
           }
           className={clsx(
             'relative flex h-full w-full cursor-pointer select-none flex-col overflow-hidden rounded-2xl bg-card/80 shadow-lg transition-[border-color,box-shadow,opacity,transform] duration-150',
-            isSelected ? 'z-10 scale-[1.02] transform' : 'border hover:-translate-y-1',
+            isSelected ? 'z-10 border' : 'border hover:-translate-y-1',
             isDragging && 'pointer-events-none scale-95 cursor-grabbing opacity-40',
             'group'
           )}

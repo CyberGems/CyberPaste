@@ -13,6 +13,15 @@
     "pasteSuccess": "Collé avec succès",
     "browse": "Parcourir"
   },
+  "clipType": {
+    "text": "Texte",
+    "code": "Code",
+    "image": "Image",
+    "url": "URL",
+    "file": "Fichier",
+    "html": "HTML",
+    "rtf": "Texte enrichi"
+  },
   "clipList": {
     "empty": "Aucun élément pour le moment",
     "emptyDesc": "Copiez quelque chose dans votre presse-papiers et cela apparaîtra ici.",
@@ -33,6 +42,7 @@
   },
   "contextMenu": {
     "copy": "Copier",
+    "copyPlainText": "Copier en texte brut",
     "paste": "Coller",
     "delete": "Supprimer",
     "rename": "Renommer",
@@ -89,10 +99,10 @@
     "startupWithWindowsDesc": "Démarrer automatiquement au lancement de Windows",
     "roundCorners": "Coins arrondis",
     "roundCornersDesc": "Arrondir les coins de la fenêtre via DWM (Windows 11). Sans effet en mode Clear.",
-"autoPaste": "Collage automatique",
-     "autoPasteDesc": "Coller automatiquement le contenu après la sélection",
-     "autoInjectPaste": "Collage par injection automatique",
-     "autoInjectPasteDesc": "Simuler Ctrl+V au lieu de Maj+Insert pour le collage",
+    "autoPaste": "Collage automatique",
+    "autoPasteDesc": "Coller automatiquement le contenu après la sélection",
+    "autoInjectPaste": "Collage par injection automatique",
+    "autoInjectPasteDesc": "Simuler Ctrl+V au lieu de Maj+Insert pour le collage",
     "ignoreGhostClips": "Ignorer les éléments fantômes",
     "ignoreGhostClipsDesc": "Ignorer les éléments temporaires du presse-papiers",
     "hotkey": "Raccourci global",

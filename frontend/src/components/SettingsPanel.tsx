@@ -1623,23 +1623,58 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         <span className="text-base font-medium">{t('settings.toastPosition')}</span>
                       </label>
                       <div className="flex items-center gap-4">
-                        <div className="w-[176px] h-[104px] rounded-lg border border-white/[0.08] bg-[#1a1b1f] p-1.5 flex flex-col justify-between">
-                          <div className="grid grid-cols-3 grid-rows-3 gap-1 h-full w-full">
+                        <div className="flex h-[104px] w-[176px] flex-col justify-between rounded-lg border border-white/[0.08] bg-[#1a1b1f] p-1.5">
+                          <div className="grid h-full w-full grid-cols-3 grid-rows-3 gap-1">
                             {[
-                              { value: 'top-left', label: t('settings.posTopLeft'), dotClass: 'top-0.5 left-0.5' },
-                              { value: 'top-center', label: t('settings.posTopCenter'), dotClass: 'top-0.5 left-1/2 -translate-x-1/2' },
-                              { value: 'top-right', label: t('settings.posTopRight'), dotClass: 'top-0.5 right-0.5' },
-                              { value: 'center-left', label: t('settings.posCenterLeft'), dotClass: 'top-1/2 -translate-y-1/2 left-0.5' },
+                              {
+                                value: 'top-left',
+                                label: t('settings.posTopLeft'),
+                                dotClass: 'top-0.5 left-0.5',
+                              },
+                              {
+                                value: 'top-center',
+                                label: t('settings.posTopCenter'),
+                                dotClass: 'top-0.5 left-1/2 -translate-x-1/2',
+                              },
+                              {
+                                value: 'top-right',
+                                label: t('settings.posTopRight'),
+                                dotClass: 'top-0.5 right-0.5',
+                              },
+                              {
+                                value: 'center-left',
+                                label: t('settings.posCenterLeft'),
+                                dotClass: 'top-1/2 -translate-y-1/2 left-0.5',
+                              },
                               { value: 'center', label: '', isCenter: true },
-                              { value: 'center-right', label: t('settings.posCenterRight'), dotClass: 'top-1/2 -translate-y-1/2 right-0.5' },
-                              { value: 'bottom-left', label: t('settings.posBottomLeft'), dotClass: 'bottom-0.5 left-0.5' },
-                              { value: 'bottom-center', label: t('settings.posBottomCenter'), dotClass: 'bottom-0.5 left-1/2 -translate-x-1/2' },
-                              { value: 'bottom-right', label: t('settings.posBottomRight'), dotClass: 'bottom-0.5 right-0.5' }
+                              {
+                                value: 'center-right',
+                                label: t('settings.posCenterRight'),
+                                dotClass: 'top-1/2 -translate-y-1/2 right-0.5',
+                              },
+                              {
+                                value: 'bottom-left',
+                                label: t('settings.posBottomLeft'),
+                                dotClass: 'bottom-0.5 left-0.5',
+                              },
+                              {
+                                value: 'bottom-center',
+                                label: t('settings.posBottomCenter'),
+                                dotClass: 'bottom-0.5 left-1/2 -translate-x-1/2',
+                              },
+                              {
+                                value: 'bottom-right',
+                                label: t('settings.posBottomRight'),
+                                dotClass: 'bottom-0.5 right-0.5',
+                              },
                             ].map((pos, idx) => {
                               if (pos.isCenter) {
                                 return (
-                                  <div key={idx} className="flex items-center justify-center opacity-20 pointer-events-none">
-                                    <div className="w-1.5 h-1.5 rounded-[2px] bg-white/40" />
+                                  <div
+                                    key={idx}
+                                    className="pointer-events-none flex items-center justify-center opacity-20"
+                                  >
+                                    <div className="h-1.5 w-1.5 rounded-[2px] bg-white/40" />
                                   </div>
                                 );
                               }
@@ -1650,10 +1685,12 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                   key={pos.value}
                                   type="button"
                                   onClick={() => updateSetting('toast_position', pos.value)}
-                                  className={`relative rounded-[4px] transition-all hover:bg-white/[0.06] focus:outline-none ${isActive ? 'bg-primary/10 border border-primary' : 'border border-transparent'}`}
+                                  className={`relative rounded-[4px] transition-all hover:bg-white/[0.06] focus:outline-none ${isActive ? 'border border-primary bg-primary/10' : 'border border-transparent'}`}
                                   title={pos.label}
                                 >
-                                  <span className={`absolute w-2 h-2 rounded-[2px] transition-colors ${pos.dotClass} ${isActive ? 'bg-primary shadow-[0_0_8px_var(--primary)]' : 'bg-white/20'}`} />
+                                  <span
+                                    className={`absolute h-2 w-2 rounded-[2px] transition-colors ${pos.dotClass} ${isActive ? 'bg-primary shadow-[0_0_8px_var(--primary)]' : 'bg-white/20'}`}
+                                  />
                                 </button>
                               );
                             })}
@@ -1671,12 +1708,12 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                 { value: 'center-right', label: t('settings.posCenterRight') },
                                 { value: 'bottom-left', label: t('settings.posBottomLeft') },
                                 { value: 'bottom-center', label: t('settings.posBottomCenter') },
-                                { value: 'bottom-right', label: t('settings.posBottomRight') }
-                              ].find(p => p.value === activePosition);
+                                { value: 'bottom-right', label: t('settings.posBottomRight') },
+                              ].find((p) => p.value === activePosition);
                               return found ? found.label : t('settings.posBottomRight');
                             })()}
                           </div>
-                          <div className="text-[10px] text-muted-foreground/80 leading-tight">
+                          <div className="text-[10px] leading-tight text-muted-foreground/80">
                             {t('settings.toastPositionDesc')}
                           </div>
                         </div>
@@ -1702,8 +1739,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-3">
                       <label className="block">
-                        <span className="text-base font-medium">{t('settings.toastClickAction')}</span>
-                        <p className="text-[10px] text-muted-foreground/80 leading-tight mt-0.5">
+                        <span className="text-base font-medium">
+                          {t('settings.toastClickAction')}
+                        </span>
+                        <p className="mt-0.5 text-[10px] leading-tight text-muted-foreground/80">
                           {t('settings.toastClickActionDesc')}
                         </p>
                       </label>

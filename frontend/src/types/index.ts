@@ -78,7 +78,7 @@ export interface Settings {
   auto_check_updates?: boolean;
 }
 
-export type ClipType = 'text' | 'image' | 'html' | 'rtf' | 'file' | 'url';
+export type ClipType = 'text' | 'image' | 'html' | 'rtf' | 'file' | 'url' | 'code';
 
 export const CLIP_TYPE_LABELS: Record<ClipType, string> = {
   text: 'Text',
@@ -87,6 +87,7 @@ export const CLIP_TYPE_LABELS: Record<ClipType, string> = {
   rtf: 'Rich Text',
   file: 'File',
   url: 'URL',
+  code: 'Code',
 };
 
 export const CLIP_TYPE_ICONS: Record<ClipType, string> = {
@@ -96,4 +97,5 @@ export const CLIP_TYPE_ICONS: Record<ClipType, string> = {
   rtf: 'Type',
   file: 'File',
   url: 'Link',
+  code: 'Braces',
 };
