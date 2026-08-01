@@ -41,7 +41,10 @@
     "restore": "Restaurar",
     "enabled": "activado",
     "disabled": "desactivado",
-    "updated": "actualizado"
+    "updated": "actualizado",
+    "zoom": "Zoom de la cuadrícula",
+    "zoomIn": "Ampliar",
+    "zoomOut": "Reducir"
   },
   "clipType": {
     "text": "Texto",

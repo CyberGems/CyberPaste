@@ -66,6 +66,8 @@ pub struct AppSettings {
     pub type_to_search: bool,
     pub clip_numbering: String,
     pub auto_check_updates: bool,
+    pub full_show_hud: bool,
+    pub full_grid_scale: f64,
 }
 
 impl Default for AppSettings {
@@ -131,6 +133,8 @@ impl Default for AppSettings {
             type_to_search: true,
             clip_numbering: "positional".to_string(),
             auto_check_updates: false,
+            full_show_hud: true,
+            full_grid_scale: 1.0,
         }
     }
 }

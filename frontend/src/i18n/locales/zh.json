@@ -11,7 +11,10 @@
     "loading": "加载中...",
     "copied": "已复制到剪贴板",
     "pasteSuccess": "粘贴成功",
-    "browse": "浏览"
+    "browse": "浏览",
+    "zoom": "网格缩放",
+    "zoomIn": "放大",
+    "zoomOut": "缩小"
   },
   "clipType": {
     "text": "文本",

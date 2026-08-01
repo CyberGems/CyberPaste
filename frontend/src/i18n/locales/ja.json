@@ -11,7 +11,10 @@
     "loading": "読み込み中...",
     "copied": "クリップボードにコピーしました",
     "pasteSuccess": "貼り付けに成功しました",
-    "browse": "参照"
+    "browse": "参照",
+    "zoom": "グリッドズーム",
+    "zoomIn": "拡大",
+    "zoomOut": "縮小"
   },
   "clipType": {
     "text": "テキスト",

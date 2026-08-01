@@ -76,6 +76,8 @@ export interface Settings {
   type_to_search?: boolean;
   clip_numbering?: 'positional' | 'countdown';
   auto_check_updates?: boolean;
+  full_show_hud?: boolean;
+  full_grid_scale?: number;
 }
 
 export type ClipType = 'text' | 'image' | 'html' | 'rtf' | 'file' | 'url' | 'code';

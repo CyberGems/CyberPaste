@@ -26,7 +26,13 @@ interface ClipListProps {
   reorderEnabled?: boolean;
   draggingClipId?: string | null;
   clipNumbering?: 'positional' | 'countdown';
+  gridScale?: number;
 }
+
+const BASE_CARD_WIDTH = 230;
+const BASE_ROW_HEIGHT = 230;
+const MIN_COLUMNS = 2;
+const MAX_COLUMNS = 12;
 
 export const ClipList: React.FC<ClipListProps> = ({
   clips,
@@ -45,6 +51,7 @@ export const ClipList: React.FC<ClipListProps> = ({
   reorderEnabled,
   draggingClipId,
   clipNumbering = 'positional',
+  gridScale = 1,
 }) => {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -86,8 +93,13 @@ export const ClipList: React.FC<ClipListProps> = ({
     };
   }, []);
 
-  // Force 6 columns in vertical mode if enough space, or calculate precisely
-  const columnCount = isVertical ? 6 : clips.length;
+  // Adaptive column count: fit as many ~CARD_WIDTH columns as the container allows.
+  // In horizontal mode, every clip is its own column (single scrollable row).
+  const effectiveCardWidth = BASE_CARD_WIDTH * gridScale;
+  const effectiveRowHeight = Math.round(BASE_ROW_HEIGHT * gridScale);
+  const columnCount = isVertical
+    ? Math.min(MAX_COLUMNS, Math.max(MIN_COLUMNS, Math.floor(containerWidth / effectiveCardWidth)))
+    : clips.length;
 
   const rowCount = isVertical ? Math.ceil(clips.length / columnCount) : 1;
 
@@ -137,15 +149,15 @@ export const ClipList: React.FC<ClipListProps> = ({
   };
 
   const SIDE_PADDING = 16; // Align with search and close buttons
+  const usableWidth = containerWidth - SIDE_PADDING;
 
   const Cell = ({ columnIndex, rowIndex, style }: CellComponentProps) => {
     const index = isVertical ? rowIndex * columnCount + columnIndex : columnIndex;
     const clip = clips[index];
     if (!clip) return null;
 
-    // Calculate dynamic padding/width to ensure 6 columns fit perfectly with side padding
-    const usableWidth = containerWidth - SIDE_PADDING;
-    const cellWidth = isVertical ? usableWidth / columnCount : style.width;
+    // Width is derived from the actual column layout (see Grid columnWidth below)
+    const cellWidth = style.width;
 
     const calculatedStyle = {
       ...style,
@@ -234,13 +246,9 @@ export const ClipList: React.FC<ClipListProps> = ({
         defaultWidth={containerWidth}
         gridRef={gridRef}
         rowCount={rowCount}
-        rowHeight={isVertical ? 230 : 180}
+        rowHeight={isVertical ? effectiveRowHeight : Math.round(180 * gridScale)}
         columnCount={columnCount}
-        columnWidth={
-          isVertical
-            ? (containerWidth - SIDE_PADDING) / columnCount
-            : (containerWidth - SIDE_PADDING) / 6
-        }
+        columnWidth={isVertical ? usableWidth / columnCount : effectiveCardWidth}
         overscanCount={4}
         onCellsRendered={handleCellsRendered}
       />

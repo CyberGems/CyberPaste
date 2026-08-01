@@ -50,6 +50,8 @@ import {
   Pin,
   RotateCcw,
   FileText,
+  ZoomIn,
+  ZoomOut,
   Image as ImageIcon,
   FileCode,
   Files,
@@ -139,6 +141,8 @@ interface ControlBarProps {
   dbSizeBytes?: number;
   onReorderFolder?: (folderId: string, targetId: string, position: 'before' | 'after') => void;
   isWindowActive?: boolean;
+  gridScale?: number;
+  onGridScaleChange?: (next: number) => void;
 }
 
 export const ControlBar: React.FC<ControlBarProps> = ({
@@ -175,6 +179,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   dbSizeBytes,
   onReorderFolder,
   isWindowActive = true,
+  gridScale = 1,
+  onGridScaleChange,
 }) => {
   const foldersRef = React.useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
@@ -841,6 +847,45 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         </div>
 
         <div className="flex shrink-0 items-center gap-0.5 pl-2">
+          {/* Grid zoom controls (Full mode) */}
+          {viewMode === 'full' && onGridScaleChange && gridScale !== undefined && (
+            <div className="flex items-center gap-0 rounded-md border border-white/5 bg-black/25 px-0.5">
+              <Tooltip label={t('common.zoomOut')} placement="top">
+                <button
+                  onClick={() =>
+                    onGridScaleChange(Math.max(0.6, Number((gridScale - 0.25).toFixed(2))))
+                  }
+                  disabled={gridScale <= 0.6}
+                  className="flex h-6 w-6 items-center justify-center rounded text-white/40 transition-colors hover:text-cyan-300 disabled:opacity-20"
+                >
+                  <ZoomOut size={12} />
+                </button>
+              </Tooltip>
+              <Tooltip
+                label={`${t('common.zoom')}: ${Math.round(gridScale * 100)}%`}
+                placement="top"
+              >
+                <button
+                  onClick={() => onGridScaleChange(1)}
+                  className="min-w-[38px] cursor-pointer text-center font-mono text-[10px] font-bold tabular-nums text-cyan-300/80 hover:text-cyan-300"
+                >
+                  {Math.round(gridScale * 100)}%
+                </button>
+              </Tooltip>
+              <Tooltip label={t('common.zoomIn')} placement="top">
+                <button
+                  onClick={() =>
+                    onGridScaleChange(Math.min(1.75, Number((gridScale + 0.25).toFixed(2))))
+                  }
+                  disabled={gridScale >= 1.75}
+                  className="flex h-6 w-6 items-center justify-center rounded text-white/40 transition-colors hover:text-cyan-300 disabled:opacity-20"
+                >
+                  <ZoomIn size={12} />
+                </button>
+              </Tooltip>
+            </div>
+          )}
+
           {onResetSize && (
             <Tooltip label={t('common.resetWindowSize')} placement="top">
               <button

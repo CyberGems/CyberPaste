@@ -11,7 +11,10 @@
     "loading": "Chargement...",
     "copied": "Copié dans le presse-papiers",
     "pasteSuccess": "Collé avec succès",
-    "browse": "Parcourir"
+    "browse": "Parcourir",
+    "zoom": "Zoom de la grille",
+    "zoomIn": "Zoom avant",
+    "zoomOut": "Zoom arrière"
   },
   "clipType": {
     "text": "Texte",

@@ -953,6 +953,32 @@ function App() {
     }
   };
 
+  // Ctrl + wheel adjusts the Full-mode grid zoom (0.6x – 1.75x), persisted in settings
+  const GRID_SCALE_MIN = 0.6;
+  const GRID_SCALE_MAX = 1.75;
+  const GRID_SCALE_STEP = 0.1;
+  useEffect(() => {
+    const handleZoomWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      if (settingsRef.current?.view_mode !== 'full') return;
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-el="clip-list-area"]')) return;
+      e.preventDefault();
+      const current = settingsRef.current?.full_grid_scale ?? 1;
+      const direction = e.deltaY < 0 ? 1 : -1;
+      const next = Math.min(
+        GRID_SCALE_MAX,
+        Math.max(GRID_SCALE_MIN, Number((current + direction * GRID_SCALE_STEP).toFixed(2)))
+      );
+      if (next === current || !settingsRef.current) return;
+      const newSettings = { ...settingsRef.current, full_grid_scale: next };
+      setSettings(newSettings);
+      invoke('save_settings', { settings: newSettings }).catch(console.error);
+    };
+    document.addEventListener('wheel', handleZoomWheel, { passive: false });
+    return () => document.removeEventListener('wheel', handleZoomWheel);
+  }, []);
+
   // Keyboard navigation handlers
   const handleNavigatePrev = useCallback(() => {
     if (clips.length === 0) return;
@@ -1033,6 +1059,15 @@ function App() {
       loadClips(selectedFolder, true, searchQuery, 20, fullTypeFilter);
     }
   }, [hasMore, isLoading, selectedFolder, loadClips, searchQuery, fullTypeFilter]);
+
+  const handleGridScaleChange = useCallback((next: number) => {
+    setSettings((prev) => {
+      if (!prev) return prev;
+      const newSettings = { ...prev, full_grid_scale: next };
+      invoke('save_settings', { settings: newSettings }).catch(console.error);
+      return newSettings;
+    });
+  }, []);
 
   const handleMoveClip = async (clipId: string, folderId: string | null) => {
     try {
@@ -1581,6 +1616,8 @@ function App() {
                 lastClipTime={clips[0]?.created_at ?? null}
                 dbSizeBytes={dbSizeBytes}
                 onReorderFolder={handleReorderFolder}
+                gridScale={settings?.full_grid_scale ?? 1}
+                onGridScaleChange={handleGridScaleChange}
               />
 
               {/* Type filter chips (Full mode) */}
@@ -1612,6 +1649,7 @@ function App() {
                   reorderEnabled={true}
                   draggingClipId={draggingClipId}
                   clipNumbering={settings?.clip_numbering || 'positional'}
+                  gridScale={settings?.full_grid_scale ?? 1}
                 />
               </main>
             </div>

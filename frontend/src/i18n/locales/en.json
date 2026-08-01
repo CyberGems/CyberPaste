@@ -41,7 +41,10 @@
     "restore": "Restore",
     "enabled": "enabled",
     "disabled": "disabled",
-    "updated": "updated"
+    "updated": "updated",
+    "zoom": "Grid Zoom",
+    "zoomIn": "Zoom In",
+    "zoomOut": "Zoom Out"
   },
   "clipType": {
     "text": "Text",

@@ -11,7 +11,10 @@
     "loading": "Wird geladen...",
     "copied": "In die Zwischenablage kopiert",
     "pasteSuccess": "Erfolgreich eingefügt",
-    "browse": "Durchsuchen"
+    "browse": "Durchsuchen",
+    "zoom": "Raster-Zoom",
+    "zoomIn": "Vergrößern",
+    "zoomOut": "Verkleinern"
   },
   "clipType": {
     "text": "Text",
