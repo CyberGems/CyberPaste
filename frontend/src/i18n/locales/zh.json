@@ -56,7 +56,8 @@
     "summarize": "总结 (AI)",
     "translate": "翻译 (AI)",
     "explainCode": "解释代码 (AI)",
-    "fixGrammar": "修正语法 (AI)"
+    "fixGrammar": "修正语法 (AI)",
+    "openFullViewer": "打开完整查看器"
   },
   "settings": {
     "title": "设置",

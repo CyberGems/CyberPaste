@@ -27,6 +27,7 @@ interface ClipListProps {
   draggingClipId?: string | null;
   clipNumbering?: 'positional' | 'countdown';
   gridScale?: number;
+  onRequestPreview?: (id: string) => void;
 }
 
 const BASE_CARD_WIDTH = 230;
@@ -52,6 +53,7 @@ export const ClipList: React.FC<ClipListProps> = ({
   draggingClipId,
   clipNumbering = 'positional',
   gridScale = 1,
+  onRequestPreview,
 }) => {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -184,6 +186,7 @@ export const ClipList: React.FC<ClipListProps> = ({
           reorderDropIndicator={reorderTargetClipId === clip.id ? reorderTargetPosition : null}
           reorderEnabled={reorderEnabled}
           isDragging={draggingClipId === clip.id}
+          onPreview={onRequestPreview ? () => onRequestPreview(clip.id) : undefined}
         />
       </div>
     );

@@ -56,7 +56,8 @@
     "summarize": "Résumer (IA)",
     "translate": "Traduire (IA)",
     "explainCode": "Expliquer le code (IA)",
-    "fixGrammar": "Corriger la grammaire (IA)"
+    "fixGrammar": "Corriger la grammaire (IA)",
+    "openFullViewer": "Ouvrir la visionneuse complète"
   },
   "settings": {
     "title": "Paramètres",

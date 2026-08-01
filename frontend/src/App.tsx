@@ -9,6 +9,7 @@ import { ClipboardItem as AppClipboardItem, FolderItem, Settings } from './types
 import { ClipList } from './components/ClipList';
 import { ControlBar } from './components/ControlBar';
 import { TypeFilterChipRow, type FullTypeFilter } from './components/TypeFilterChips';
+import { ClipPreviewModal } from './components/ClipPreviewModal';
 import { CompactView } from './components/CompactView';
 import { ContextMenuHost, ContextMenuHostHandle } from './components/ContextMenuHost';
 import type { ContextMenuOption } from './components/ContextMenu';
@@ -73,6 +74,7 @@ function App() {
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [clipListResetToken, setClipListResetToken] = useState(0);
   const [searchFocusToken, setSearchFocusToken] = useState(0);
+  const [previewClip, setPreviewClip] = useState<AppClipboardItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [theme, setTheme] = useState('system');
@@ -1185,6 +1187,32 @@ function App() {
     }
   }, [settings]);
 
+  const handleOpenPreview = useCallback((id: string) => {
+    const found = clipsRef.current.find((c) => c.id === id);
+    setPreviewClip(found || null);
+  }, []);
+
+  const handleClosePreview = useCallback(() => setPreviewClip(null), []);
+
+  const handleEditFromPreview = useCallback((clipId: string) => {
+    invoke<AppClipboardItem>('get_clip', { clipId })
+      .then((fullClip) => {
+        setEditClip({
+          isOpen: true,
+          clipId: (fullClip as any).id || (fullClip as any).uuid,
+          content: (fullClip as any).content,
+        });
+      })
+      .catch((err) => {
+        console.error('Failed to fetch clip content:', err);
+      });
+  }, []);
+
+  // Shift+Enter opens the full preview for the currently selected card
+  const handlePreviewSelected = useCallback(() => {
+    if (selectedClipId) handleOpenPreview(selectedClipId);
+  }, [selectedClipId, handleOpenPreview]);
+
   const handleAiAction = async (clipId: string, action: string, title: string) => {
     try {
       const toastId = toast.loading(t('ai.processing'));
@@ -1224,9 +1252,15 @@ function App() {
         const clip = clipsRef.current.find((c) => c.id === itemId);
         const opts: ContextMenuOption[] = [];
 
+        // Universal preview — replaces the old image-only "View Image" flow
+        opts.push({
+          label: t('contextMenu.view'),
+          onClick: () => handleOpenPreview(itemId),
+        });
+
         if (clip?.clip_type === 'image') {
           opts.push({
-            label: t('contextMenu.view'),
+            label: t('contextMenu.openFullViewer'),
             onClick: () => {
               if (settings?.show_action_messages) {
                 toast.info(t('toasts.openingViewer'));
@@ -1499,6 +1533,7 @@ function App() {
     onFolderNext: handleFolderNext,
     onPaste: handlePasteSelected,
     onCopyPlainText: handleCopyPlainTextSelected,
+    onPreviewSelected: handlePreviewSelected,
     onToggleMode: toggleViewMode,
     toggleModeHotkey: settings?.view_mode_hotkey,
     onStartTypingSearch: handleStartTypingSearch,
@@ -1677,6 +1712,7 @@ function App() {
                   draggingClipId={draggingClipId}
                   clipNumbering={settings?.clip_numbering || 'positional'}
                   gridScale={settings?.full_grid_scale ?? 1}
+                  onRequestPreview={handleOpenPreview}
                 />
               </main>
             </div>
@@ -1720,6 +1756,14 @@ function App() {
           content={editClip.content}
           onClose={() => setEditClip((prev) => ({ ...prev, isOpen: false }))}
           onSave={(newContent) => handleUpdateClipContent(editClip.clipId, newContent)}
+        />
+
+        <ClipPreviewModal
+          isOpen={!!previewClip}
+          clip={previewClip}
+          onClose={handleClosePreview}
+          onCopy={handleCopy}
+          onEdit={handleEditFromPreview}
         />
 
         <OcrResultModal

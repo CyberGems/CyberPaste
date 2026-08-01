@@ -56,7 +56,8 @@
     "summarize": "要約 (AI)",
     "translate": "翻訳 (AI)",
     "explainCode": "コードを説明 (AI)",
-    "fixGrammar": "文法を修正 (AI)"
+    "fixGrammar": "文法を修正 (AI)",
+    "openFullViewer": "フルビューアを開く"
   },
   "settings": {
     "title": "設定",

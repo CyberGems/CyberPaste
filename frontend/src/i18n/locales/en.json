@@ -109,6 +109,7 @@
   },
   "contextMenu": {
     "view": "View Image",
+    "openFullViewer": "Open Full Viewer",
     "edit": "Edit",
     "undo": "Undo",
     "redo": "Redo",

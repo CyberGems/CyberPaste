@@ -109,6 +109,7 @@
   },
   "contextMenu": {
     "view": "Ver imagen",
+    "openFullViewer": "Abrir visor completo",
     "edit": "Editar",
     "undo": "Deshacer",
     "redo": "Rehacer",

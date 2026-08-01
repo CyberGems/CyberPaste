@@ -9,6 +9,7 @@ import {
   Check,
   MoveHorizontal,
   MoveVertical,
+  Maximize2,
   FileText,
   Code,
   Link,
@@ -59,6 +60,7 @@ interface ClipCardProps {
   clipIndex?: number;
   isLatest?: boolean;
   isDragging?: boolean;
+  onPreview?: () => void;
 }
 
 export const ClipCard = memo(
@@ -75,6 +77,7 @@ export const ClipCard = memo(
       clipIndex,
       isLatest,
       isDragging,
+      onPreview,
     }: ClipCardProps,
     ref
   ) {
@@ -422,7 +425,23 @@ export const ClipCard = memo(
                 />
               </motion.div>
 
-              {/* Copy Button - Slides in on hover */}
+              {/* Preview + Copy buttons - slide in on hover */}
+              {hovered && onPreview && (
+                <motion.button
+                  data-el="clip-card-preview-btn"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPreview();
+                  }}
+                  className="relative z-10 mr-0.5 rounded-md p-1 text-foreground/70 hover:bg-white/10 hover:text-foreground"
+                  title={t('contextMenu.view')}
+                >
+                  <Maximize2 size={12} />
+                </motion.button>
+              )}
               <motion.button
                 data-el="clip-card-copy-btn"
                 initial={{ opacity: 0, x: 20 }}

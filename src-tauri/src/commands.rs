@@ -1987,6 +1987,131 @@ pub fn get_layout_config() -> serde_json::Value {
     })
 }
 
+/// Get a clip's content syntax-highlighted as HTML (for the preview modal).
+/// Results are cached by `content_hash` so repeated opens are instantaneous.
+#[tauri::command]
+pub async fn get_highlighted_clip(
+    clip_id: String,
+    language: Option<String>,
+    db: tauri::State<'_, Arc<Database>>,
+) -> Result<serde_json::Value, String> {
+    let pool = &db.pool;
+
+    let clip: Option<Clip> = sqlx::query_as(r#"SELECT * FROM clips WHERE uuid = ?"#)
+        .bind(&clip_id)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    match clip {
+        Some(clip) => {
+            let content = match clip.clip_type.as_str() {
+                "image" | "file" => return Err("Not a text clip".to_string()),
+                _ => String::from_utf8_lossy(&clip.content).to_string(),
+            };
+
+            // Determine the syntax extension to feed syntect:
+            // 1) explicit param wins
+            // 2) clip metadata (e.g. source file extension)
+            // 3) naive sniffing for common languages
+            let ext = language
+                .or_else(|| detect_extension_from_metadata(&clip))
+                .unwrap_or_else(|| detect_language_by_content(&content));
+
+            let cache_key = format!("{}:{}", clip.content_hash, ext);
+
+            match crate::highlight::highlight_to_html(&content, &ext, &cache_key) {
+                Ok(html) => Ok(serde_json::json!({
+                    "content_html": html,
+                    "detected_language": ext,
+                    "clip_id": clip_id,
+                })),
+                Err(e) => Err(e),
+            }
+        }
+        None => Err("Clip not found".to_string()),
+    }
+}
+
+/// Pull an extension hint out of clip.source_app / metadata (best effort).
+fn detect_extension_from_metadata(clip: &Clip) -> Option<String> {
+    if let Some(meta) = &clip.metadata {
+        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(meta) {
+            if let Some(ext) = parsed.get("extension").and_then(|v| v.as_str()) {
+                return Some(ext.to_string());
+            }
+            if let Some(lang) = parsed.get("language").and_then(|v| v.as_str()) {
+                return Some(lang_to_extension(lang));
+            }
+        }
+    }
+    None
+}
+
+fn lang_to_extension(lang: &str) -> String {
+    match lang.to_lowercase().as_str() {
+        "javascript" | "js" | "jsx" => "js",
+        "typescript" | "ts" | "tsx" => "ts",
+        "python" | "py" => "py",
+        "rust" | "rs" => "rs",
+        "c#" | "csharp" => "cs",
+        "cpp" | "c++" => "cpp",
+        "go" | "golang" => "go",
+        "java" => "java",
+        "html" => "html",
+        "css" | "scss" | "less" => "css",
+        "json" => "json",
+        "yaml" | "yml" => "yaml",
+        "sql" => "sql",
+        "bash" | "shell" | "sh" | "zsh" => "sh",
+        "powershell" | "ps1" => "ps1",
+        "markdown" | "md" => "md",
+        "php" => "php",
+        "ruby" | "rb" => "rb",
+        "swift" => "swift",
+        "kotlin" | "kt" => "kt",
+        "xml" => "xml",
+        "text" | "plain" | "plaintext" | "txt" => "txt",
+        other => other,
+    }
+    .to_string()
+}
+
+/// Cheap content-based sniffing for the languages we see most often.
+/// Not intended to be perfect — syntect falls back to plain text when nothing matches.
+fn detect_language_by_content(content: &str) -> String {
+    let first_line = content.lines().next().unwrap_or("").trim();
+
+    if content.trim_start().starts_with("fn ")
+        || content.contains("impl ")
+        || content.contains("let mut ")
+        || (content.contains("->") && content.contains("println!"))
+    {
+        return "rs".to_string();
+    }
+    if first_line.starts_with('#') && first_line.contains("python") {
+        return "py".to_string();
+    }
+    if content.contains("def ") && content.contains(":") && content.contains("__name__") {
+        return "py".to_string();
+    }
+    if content.contains("function ")
+        || (content.contains("const ") && content.contains("=>"))
+    {
+        return "js".to_string();
+    }
+    if content.contains("interface ") && content.contains(": string") {
+        return "ts".to_string();
+    }
+    if content.trim_start().starts_with('<') && content.trim_end().ends_with('>') {
+        return "html".to_string();
+    }
+    if first_line.starts_with('{') || first_line.starts_with('[') {
+        return "json".to_string();
+    }
+    "txt".to_string()
+}
+
 #[tauri::command]
 pub async fn toggle_view_mode(
     app: AppHandle,

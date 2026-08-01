@@ -14,6 +14,8 @@ interface KeyboardOptions {
   onPaste?: () => void;
   /** Enter with Ctrl/Cmd — copies selected clip as plain text without pasting */
   onCopyPlainText?: () => void;
+  /** Enter with Shift — opens the full-screen preview for the selected clip */
+  onPreviewSelected?: () => void;
   onToggleMode?: () => void;
   toggleModeHotkey?: string; // e.g. "Ctrl+M"
   onStartTypingSearch?: (char: string) => void;
@@ -172,6 +174,8 @@ export function useKeyboard(options: KeyboardOptions) {
         e.preventDefault();
         if ((e.ctrlKey || e.metaKey) && options.onCopyPlainText) {
           options.onCopyPlainText();
+        } else if (e.shiftKey && options.onPreviewSelected) {
+          options.onPreviewSelected();
         } else {
           options.onPaste();
         }

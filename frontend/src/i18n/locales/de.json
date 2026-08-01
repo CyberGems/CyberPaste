@@ -56,7 +56,8 @@
     "summarize": "Zusammenfassen (KI)",
     "translate": "Übersetzen (KI)",
     "explainCode": "Code erklären (KI)",
-    "fixGrammar": "Grammatik korrigieren (KI)"
+    "fixGrammar": "Grammatik korrigieren (KI)",
+    "openFullViewer": "Vollbild-Viewer öffnen"
   },
   "settings": {
     "title": "Einstellungen",
