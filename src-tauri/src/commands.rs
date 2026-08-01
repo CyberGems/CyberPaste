@@ -1132,6 +1132,109 @@ pub async fn toggle_clip_pin(
     Ok(is_pinned)
 }
 
+/// Batch-delete (soft) — single transaction, applies to each UUID. Returns the number of clips actually deleted.
+#[tauri::command]
+pub async fn delete_clips(
+    ids: Vec<String>,
+    db: tauri::State<'_, Arc<Database>>,
+) -> Result<u64, String> {
+    let pool = &db.pool;
+    if ids.is_empty() {
+        return Ok(0);
+    }
+    let mut tx = pool.begin().await.map_err(|e| e.to_string())?;
+    let mut count = 0u64;
+    for id in &ids {
+        // Remove on-disk image assets first (same as hard_delete path on delete_clip)
+        let _ = delete_clip_image_file_by_uuid(pool, id).await;
+        let result = sqlx::query(r#"UPDATE clips SET is_deleted = 1 WHERE uuid = ?"#)
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| e.to_string())?;
+        count += result.rows_affected();
+    }
+    tx.commit().await.map_err(|e| e.to_string())?;
+    Ok(count)
+}
+
+/// Batch-move — moves every listed clip into the target folder in a single transaction.
+/// Skips clips whose content already exists in the folder (same rule as move_to_folder).
+#[tauri::command]
+pub async fn move_clips_to_folder(
+    ids: Vec<String>,
+    folder_id: Option<String>,
+    db: tauri::State<'_, Arc<Database>>,
+) -> Result<u64, String> {
+    let pool = &db.pool;
+    if ids.is_empty() {
+        return Ok(0);
+    }
+
+    let folder_id_parsed = match folder_id.as_deref() {
+        Some("null") | None => None,
+        Some(id) => Some(
+            id.parse::<i64>()
+                .map_err(|e| format!("Invalid folder ID '{}': {}", id, e))?,
+        ),
+    };
+
+    let mut tx = pool.begin().await.map_err(|e| e.to_string())?;
+    let mut moved = 0u64;
+
+    for clip_id in &ids {
+        let clip_info: Option<(String, String)> =
+            sqlx::query_as("SELECT uuid, content_hash FROM clips WHERE uuid = ?")
+                .bind(clip_id)
+                .fetch_optional(&mut *tx)
+                .await
+                .map_err(|e| e.to_string())?;
+
+        let Some((uuid, content_hash)) = clip_info else {
+            continue;
+        };
+
+        // Duplicate-in-target check mirrors the single-clip path
+        if let Some(target_folder) = folder_id_parsed {
+            let existing: Option<String> = sqlx::query_scalar(
+                "SELECT uuid FROM clips WHERE content_hash = ? AND folder_id = ? AND uuid != ? AND is_deleted = 0"
+            )
+            .bind(&content_hash)
+            .bind(target_folder)
+            .bind(&uuid)
+            .fetch_optional(&mut *tx)
+            .await
+            .map_err(|e| e.to_string())?;
+            if existing.is_some() {
+                log::warn!("move_clips_to_folder: {} already exists in folder, skipping", uuid);
+                continue;
+            }
+        }
+
+        let new_sort_order: i64 = sqlx::query_scalar(
+            "SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips WHERE is_deleted = 0 AND uuid IS NOT NULL"
+        )
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        let result = sqlx::query(
+            r#"UPDATE clips SET folder_id = ?, sort_order = ?, created_at = CURRENT_TIMESTAMP WHERE uuid = ?"#,
+        )
+        .bind(folder_id_parsed)
+        .bind(new_sort_order)
+        .bind(&uuid)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        moved += result.rows_affected();
+    }
+
+    tx.commit().await.map_err(|e| e.to_string())?;
+    Ok(moved)
+}
+
 #[tauri::command]
 pub async fn move_to_folder(
     clip_id: String,

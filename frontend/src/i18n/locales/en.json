@@ -46,6 +46,12 @@
     "zoomIn": "Zoom In",
     "zoomOut": "Zoom Out"
   },
+  "bulk": {
+    "selectedSingle": "selected",
+    "selectedPlural": "selected",
+    "moveToFolder": "Move to Folder",
+    "delete": "Delete"
+  },
   "clipType": {
     "text": "Text",
     "code": "Code",
@@ -368,7 +374,10 @@
     "failedToCopyText": "Failed to copy text",
     "tooltipNone": "Notification",
     "tooltipClose": "Click to close",
-    "tooltipOpen": "Click to open window"
+    "tooltipOpen": "Click to open window",
+    "clipsDeleted": "{{count}} clips deleted",
+    "clipsMovedToFolder": "{{count}} clips moved",
+    "clipsMovedToMain": "{{count}} clips moved to clipboard"
   },
   "notifications": {
     "clipDeleted": "Clip deleted",
@@ -410,6 +419,7 @@
     "noEditorConfigured": "Set an image editor in Settings first",
     "noImagePath": "Image file is not available yet",
     "fitShort": "Fit",
-    "originalShort": "1:1"
+    "originalShort": "1:1",
+    "openOcrText": "Show extracted text"
   }
 }

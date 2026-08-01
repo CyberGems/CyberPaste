@@ -16,6 +16,12 @@
     "zoomIn": "拡大",
     "zoomOut": "縮小"
   },
+  "bulk": {
+    "selectedSingle": "件選択中",
+    "selectedPlural": "件選択中",
+    "moveToFolder": "フォルダーに移動",
+    "delete": "削除"
+  },
   "clipType": {
     "text": "テキスト",
     "code": "コード",
@@ -166,5 +172,13 @@
     "folderDeleteFailed": "フォルダーの削除に失敗しました",
     "folderRenameFailed": "フォルダー名の変更に失敗しました",
     "copyFailed": "コピーに失敗しました"
+  },
+  "viewer": {
+    "openOcrText": "抽出されたテキストを表示"
+  },
+  "toasts": {
+    "clipsDeleted": "{{count}} 件を削除しました",
+    "clipsMovedToFolder": "{{count}} 件を移動しました",
+    "clipsMovedToMain": "{{count}} 件をクリップボードに移動しました"
   }
 }

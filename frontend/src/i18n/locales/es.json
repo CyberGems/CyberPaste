@@ -46,6 +46,12 @@
     "zoomIn": "Ampliar",
     "zoomOut": "Reducir"
   },
+  "bulk": {
+    "selectedSingle": "seleccionado",
+    "selectedPlural": "seleccionados",
+    "moveToFolder": "Mover a Carpeta",
+    "delete": "Eliminar"
+  },
   "clipType": {
     "text": "Texto",
     "code": "Código",
@@ -368,7 +374,10 @@
     "failedToCopyText": "Error al copiar texto",
     "tooltipNone": "Notificación",
     "tooltipClose": "Haz clic para cerrar",
-    "tooltipOpen": "Haz clic para abrir la ventana"
+    "tooltipOpen": "Haz clic para abrir la ventana",
+    "clipsDeleted": "{{count}} clips eliminados",
+    "clipsMovedToFolder": "{{count}} clips movidos",
+    "clipsMovedToMain": "{{count}} clips movidos al portapapeles"
   },
   "notifications": {
     "clipDeleted": "Clip eliminado",
@@ -410,6 +419,7 @@
     "noEditorConfigured": "Configura un editor de imagen en Ajustes primero",
     "noImagePath": "El archivo de imagen aún no está disponible",
     "fitShort": "Ajuste",
-    "originalShort": "1:1"
+    "originalShort": "1:1",
+    "openOcrText": "Mostrar texto extraído"
   }
 }

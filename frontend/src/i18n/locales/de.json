@@ -16,6 +16,12 @@
     "zoomIn": "Vergrößern",
     "zoomOut": "Verkleinern"
   },
+  "bulk": {
+    "selectedSingle": "ausgewählt",
+    "selectedPlural": "ausgewählt",
+    "moveToFolder": "In Ordner verschieben",
+    "delete": "Löschen"
+  },
   "clipType": {
     "text": "Text",
     "code": "Code",
@@ -168,5 +174,13 @@
     "copyFailed": "Kopieren fehlgeschlagen",
     "clipMoved": "Clip erfolgreich verschoben",
     "clipMoveFailed": "Fehler beim Verschieben des Clips"
+  },
+  "viewer": {
+    "openOcrText": "Erkannten Text anzeigen"
+  },
+  "toasts": {
+    "clipsDeleted": "{{count}} Elemente gelöscht",
+    "clipsMovedToFolder": "{{count}} Elemente verschoben",
+    "clipsMovedToMain": "{{count}} Elemente in Zwischenablage verschoben"
   }
 }

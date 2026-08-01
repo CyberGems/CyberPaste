@@ -10,6 +10,7 @@ import { ClipList } from './components/ClipList';
 import { ControlBar } from './components/ControlBar';
 import { TypeFilterChipRow, type FullTypeFilter } from './components/TypeFilterChips';
 import { ClipPreviewModal } from './components/ClipPreviewModal';
+import { BulkActionBar } from './components/BulkActionBar';
 import { CompactView } from './components/CompactView';
 import { ContextMenuHost, ContextMenuHostHandle } from './components/ContextMenuHost';
 import type { ContextMenuOption } from './components/ContextMenu';
@@ -72,6 +73,7 @@ function App() {
   >('all');
   const [fullTypeFilter, setFullTypeFilter] = useState<FullTypeFilter>('all');
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
+  const [selectedClipIds, setSelectedClipIds] = useState<Set<string>>(new Set());
   const [clipListResetToken, setClipListResetToken] = useState(0);
   const [searchFocusToken, setSearchFocusToken] = useState(0);
   const [previewClip, setPreviewClip] = useState<AppClipboardItem | null>(null);
@@ -476,6 +478,7 @@ function App() {
   const handleSelectFolder = useCallback((folderId: string | null) => {
     // Reset view-level selection state whenever user switches/re-clicks folders.
     setSelectedClipId(null);
+    setSelectedClipIds(new Set());
     setClipListResetToken((prev) => prev + 1);
     setSelectedFolder(folderId);
   }, []);
@@ -1046,6 +1049,86 @@ function App() {
     }
   }, [selectedClipId, handlePaste]);
 
+  // Toggle single-clip membership in the bulk selection (Ctrl+Click)
+  const handleClipToggleSelect = useCallback((id: string) => {
+    setSelectedClipIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  // Range selection up to `id` using the current `clips` ordering (Shift+Click)
+  const handleClipRangeSelect = useCallback(
+    (id: string) => {
+      const idx = clipsRef.current.findIndex((c) => c.id === id);
+      if (idx < 0) return;
+      const anchorIdx = selectedClipId
+        ? clipsRef.current.findIndex((c) => c.id === selectedClipId)
+        : 0;
+      const [start, end] = anchorIdx <= idx ? [anchorIdx, idx] : [idx, anchorIdx];
+      setSelectedClipIds(new Set(clipsRef.current.slice(start, end + 1).map((c) => c.id)));
+      setSelectedClipId(id);
+    },
+    [selectedClipId]
+  );
+
+  const handleBulkDelete = useCallback(async () => {
+    const ids = Array.from(selectedClipIds);
+    if (ids.length === 0) return;
+    try {
+      await invoke('delete_clips', { ids });
+      setClips((prev) => prev.filter((c) => !selectedClipIds.has(c.id)));
+      setSelectedClipIds(new Set());
+      refreshTotalCount();
+      toast.success(t('toasts.clipsDeleted', { count: ids.length }));
+    } catch (e) {
+      console.error('Bulk delete failed:', e);
+      toast.error(t('notifications.deleteFailed'));
+    }
+  }, [selectedClipIds, refreshTotalCount, t]);
+
+  const handleBulkMove = useCallback(
+    async (folderId: string | null) => {
+      const ids = Array.from(selectedClipIds);
+      if (ids.length === 0) return;
+      try {
+        const moved = await invoke<number>('move_clips_to_folder', { ids, folderId });
+        // Re-fetch the visible list so the moved items disappear from the current folder
+        refreshCurrentFolder();
+        loadFolders();
+        refreshTotalCount();
+        setSelectedClipIds(new Set());
+        toast.success(
+          folderId
+            ? t('toasts.clipsMovedToFolder', { count: moved })
+            : t('toasts.clipsMovedToMain', { count: moved })
+        );
+      } catch (e) {
+        console.error('Bulk move failed:', e);
+        toast.error(typeof e === 'string' ? e : t('toasts.clipMoveFailed'));
+      }
+    },
+    [selectedClipIds, refreshCurrentFolder, loadFolders, refreshTotalCount, t]
+  );
+
+  const handleClipClick = useCallback(
+    (id: string, event: React.MouseEvent) => {
+      if (event.ctrlKey || event.metaKey) {
+        handleClipToggleSelect(id);
+      } else if (event.shiftKey) {
+        handleClipRangeSelect(id);
+      } else {
+        setSelectedClipIds(new Set());
+        setSelectedClipId(id);
+      }
+    },
+    [handleClipToggleSelect, handleClipRangeSelect]
+  );
+
+  const handleClearBulkSelection = useCallback(() => setSelectedClipIds(new Set()), []);
+
   // Left/Right move between cards (identical wrap-around semantics as Up/Down)
   const handleCardPrev = useCallback(() => handleNavigatePrev(), [handleNavigatePrev]);
   const handleCardNext = useCallback(() => handleNavigateNext(), [handleNavigateNext]);
@@ -1066,6 +1149,26 @@ function App() {
       toast.error(t('notifications.copyFailed'));
     }
   }, [selectedClipId, t]);
+
+  // Full-mode card OCR shortcut: runs OCR on demand and shows the result inline
+  const handleOcrRequest = useCallback(
+    async (clipId: string) => {
+      const toastId = toast.loading(t('viewer.extractingText'));
+      try {
+        const text = await invoke<string>('run_ocr_for_clip', { clipId });
+        toast.dismiss(toastId);
+        if (text && text.trim()) {
+          setOcrModal({ isOpen: true, content: text, clipId });
+        } else {
+          toast.info(t('viewer.noTextDetected'));
+        }
+      } catch (err) {
+        toast.dismiss(toastId);
+        toast.error(t('toasts.ocrError', { error: String(err) }));
+      }
+    },
+    [t]
+  );
 
   const handleCreateFolder = async (name: string, icon?: string, color?: string) => {
     try {
@@ -1713,6 +1816,17 @@ function App() {
                   clipNumbering={settings?.clip_numbering || 'positional'}
                   gridScale={settings?.full_grid_scale ?? 1}
                   onRequestPreview={handleOpenPreview}
+                  bulkSelectedIds={selectedClipIds}
+                  onClipClick={handleClipClick}
+                  onToggleBulkSelect={handleClipToggleSelect}
+                  onRequestOcr={handleOcrRequest}
+                />
+                <BulkActionBar
+                  count={selectedClipIds.size}
+                  folders={folders}
+                  onDelete={handleBulkDelete}
+                  onMoveToFolder={handleBulkMove}
+                  onClear={handleClearBulkSelection}
                 />
               </main>
             </div>

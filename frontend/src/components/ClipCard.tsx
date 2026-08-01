@@ -15,6 +15,7 @@ import {
   Link,
   File as LucideFile,
   Image as ImageIcon,
+  ScanText,
   Pin,
 } from 'lucide-react';
 import { useMotionValue, useMotionTemplate, motion } from 'framer-motion';
@@ -61,6 +62,10 @@ interface ClipCardProps {
   isLatest?: boolean;
   isDragging?: boolean;
   onPreview?: () => void;
+  isBulkSelected?: boolean;
+  onToggleBulkSelect?: () => void;
+  onCardClick?: (e: React.MouseEvent) => void;
+  onRunOcr?: () => void;
 }
 
 export const ClipCard = memo(
@@ -78,6 +83,10 @@ export const ClipCard = memo(
       isLatest,
       isDragging,
       onPreview,
+      isBulkSelected = false,
+      onToggleBulkSelect,
+      onCardClick,
+      onRunOcr,
     }: ClipCardProps,
     ref
   ) {
@@ -169,6 +178,17 @@ export const ClipCard = memo(
         // Ignore
       }
       return null;
+    }, [clip.clip_type, clip.metadata]);
+
+    // OCR is available when the clip has a cached ocr_text in metadata
+    const hasOcr = useMemo(() => {
+      if (clip.clip_type !== 'image' || !clip.metadata) return false;
+      try {
+        const parsed = JSON.parse(clip.metadata) as { ocr_text?: string };
+        return Boolean(parsed?.ocr_text?.trim());
+      } catch {
+        return false;
+      }
     }, [clip.clip_type, clip.metadata]);
 
     // Memoize the content rendering
@@ -311,7 +331,13 @@ export const ClipCard = memo(
             if (menuHighlightRef.current) leftWhileMenuRef.current = true;
             else setHovered(false);
           }}
-          onClick={onPaste}
+          onClick={(e) => {
+            if (onCardClick && (e.ctrlKey || e.metaKey || e.shiftKey)) {
+              onCardClick(e);
+              return;
+            }
+            onPaste();
+          }}
           onContextMenu={handleContextMenu}
           style={
             {
@@ -325,11 +351,37 @@ export const ClipCard = memo(
           }
           className={clsx(
             'relative flex h-full w-full cursor-pointer select-none flex-col overflow-hidden rounded-2xl bg-card/80 shadow-lg transition-[border-color,box-shadow,opacity,transform] duration-150',
-            isSelected ? 'z-10 border' : 'border hover:-translate-y-1',
+            isSelected
+              ? 'z-10 border'
+              : isBulkSelected
+                ? 'border-2 border-cyan-400 bg-cyan-500/5'
+                : 'border hover:-translate-y-1',
             isDragging && 'pointer-events-none scale-95 cursor-grabbing opacity-40',
             'group'
           )}
         >
+          {/* Bulk selection checkbox (top-left, visible on hover or when selected) */}
+          {onToggleBulkSelect && (
+            <button
+              data-el="clip-card-bulk-check"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleBulkSelect();
+              }}
+              className={clsx(
+                'absolute left-2 top-2 z-20 flex h-4 w-4 items-center justify-center rounded border transition-all',
+                isBulkSelected
+                  ? 'border-cyan-400 bg-cyan-500 text-black opacity-100'
+                  : hovered
+                    ? 'border-white/30 bg-black/50 opacity-70 hover:border-cyan-400/60'
+                    : 'opacity-0'
+              )}
+              aria-label={isBulkSelected ? 'Deselect clip' : 'Select clip'}
+            >
+              {isBulkSelected && <Check size={10} strokeWidth={3} />}
+            </button>
+          )}
+
           {/* Framer-motion spotlight border glow */}
           {!isSelected && (
             <motion.div
@@ -492,6 +544,21 @@ export const ClipCard = memo(
                     <span className="ml-1 opacity-40">•</span>
                     <span>{imageMetadata.sizeKb}KB</span>
                   </div>
+                  {/* Quick OCR shortcut — pre-cached results open instantly */}
+                  {hasOcr && onRunOcr && (
+                    <Tooltip label={t('viewer.openOcrText')} placement="top">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRunOcr();
+                        }}
+                        className="flex h-5 w-5 items-center justify-center rounded-md border border-cyan-500/25 bg-cyan-500/10 text-cyan-300 transition-colors hover:bg-cyan-500/25"
+                        aria-label="Open OCR text"
+                      >
+                        <ScanText size={10} />
+                      </button>
+                    </Tooltip>
+                  )}
                 </div>
               ) : clip.clip_type === 'file' ? (
                 `${clip.preview || t('common.file')}`

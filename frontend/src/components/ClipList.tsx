@@ -28,6 +28,10 @@ interface ClipListProps {
   clipNumbering?: 'positional' | 'countdown';
   gridScale?: number;
   onRequestPreview?: (id: string) => void;
+  bulkSelectedIds?: Set<string>;
+  onClipClick?: (id: string, e: React.MouseEvent) => void;
+  onToggleBulkSelect?: (id: string) => void;
+  onRequestOcr?: (id: string) => void;
 }
 
 const BASE_CARD_WIDTH = 230;
@@ -54,6 +58,10 @@ export const ClipList: React.FC<ClipListProps> = ({
   clipNumbering = 'positional',
   gridScale = 1,
   onRequestPreview,
+  bulkSelectedIds,
+  onClipClick,
+  onToggleBulkSelect,
+  onRequestOcr,
 }) => {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -179,6 +187,9 @@ export const ClipList: React.FC<ClipListProps> = ({
           clipIndex={clipNumbering === 'positional' ? index + 1 : clips.length - index}
           isLatest={index === 0 && !selectedFolder}
           isSelected={selectedClipId === clip.id}
+          isBulkSelected={bulkSelectedIds?.has(clip.id)}
+          onToggleBulkSelect={onToggleBulkSelect ? () => onToggleBulkSelect(clip.id) : undefined}
+          onCardClick={(e) => onClipClick?.(clip.id, e)}
           onPaste={() => onPaste(clip.id)}
           onCopy={() => onCopy(clip.id)}
           onDragStart={onDragStart}
@@ -187,6 +198,7 @@ export const ClipList: React.FC<ClipListProps> = ({
           reorderEnabled={reorderEnabled}
           isDragging={draggingClipId === clip.id}
           onPreview={onRequestPreview ? () => onRequestPreview(clip.id) : undefined}
+          onRunOcr={onRequestOcr ? () => onRequestOcr(clip.id) : undefined}
         />
       </div>
     );

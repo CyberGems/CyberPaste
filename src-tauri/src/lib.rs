@@ -473,6 +473,8 @@ pub fn run_app() {
             commands::get_clip_detail,
             commands::paste_clip,
             commands::delete_clip,
+            commands::delete_clips,
+            commands::move_clips_to_folder,
             commands::toggle_clip_pin,
             commands::move_to_folder,
             commands::reorder_clip,

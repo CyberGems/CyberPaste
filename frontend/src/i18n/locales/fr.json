@@ -16,6 +16,12 @@
     "zoomIn": "Zoom avant",
     "zoomOut": "Zoom arrière"
   },
+  "bulk": {
+    "selectedSingle": "sélectionné",
+    "selectedPlural": "sélectionnés",
+    "moveToFolder": "Déplacer vers le dossier",
+    "delete": "Supprimer"
+  },
   "clipType": {
     "text": "Texte",
     "code": "Code",
@@ -166,5 +172,13 @@
     "folderDeleteFailed": "Échec de la suppression du dossier",
     "folderRenameFailed": "Échec du renommage du dossier",
     "copyFailed": "Échec de la copie"
+  },
+  "viewer": {
+    "openOcrText": "Afficher le texte extrait"
+  },
+  "toasts": {
+    "clipsDeleted": "{{count}} éléments supprimés",
+    "clipsMovedToFolder": "{{count}} éléments déplacés",
+    "clipsMovedToMain": "{{count}} éléments déplacés vers le presse-papiers"
   }
 }
