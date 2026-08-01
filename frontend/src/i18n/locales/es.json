@@ -114,6 +114,7 @@
     "redo": "Rehacer",
     "copy": "Copiar",
     "copyPlainText": "Copiar como texto plano",
+    "noPlainText": "Sin contenido de texto sin formato",
     "cut": "Cortar",
     "paste": "Pegar",
     "selectAll": "Seleccionar todo",

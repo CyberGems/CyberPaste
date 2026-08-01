@@ -46,6 +46,7 @@
   "contextMenu": {
     "copy": "Copier",
     "copyPlainText": "Copier en texte brut",
+    "noPlainText": "Pas de contenu en texte brut",
     "paste": "Coller",
     "delete": "Supprimer",
     "rename": "Renommer",

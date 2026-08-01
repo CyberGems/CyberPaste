@@ -1044,6 +1044,27 @@ function App() {
     }
   }, [selectedClipId, handlePaste]);
 
+  // Left/Right move between cards (identical wrap-around semantics as Up/Down)
+  const handleCardPrev = useCallback(() => handleNavigatePrev(), [handleNavigatePrev]);
+  const handleCardNext = useCallback(() => handleNavigateNext(), [handleNavigateNext]);
+
+  // Ctrl+Enter — copy the selected clip as plain text, without pasting
+  const handleCopyPlainTextSelected = useCallback(async () => {
+    if (!selectedClipId) return;
+    const clip = clipsRef.current.find((c) => c.id === selectedClipId);
+    if (!clip || clip.clip_type === 'image' || clip.clip_type === 'file') {
+      toast.info(t('contextMenu.noPlainText'));
+      return;
+    }
+    try {
+      await invoke('copy_clip_text', { clipId: selectedClipId });
+      toast.success(t('common.copied'));
+    } catch (err) {
+      console.error('Failed to copy plain text:', err);
+      toast.error(t('notifications.copyFailed'));
+    }
+  }, [selectedClipId, t]);
+
   const handleCreateFolder = async (name: string, icon?: string, color?: string) => {
     try {
       await invoke('create_folder', { name, icon, color });
@@ -1469,9 +1490,15 @@ function App() {
     onPin: () => handleToggleClipPin(selectedClipId),
     onNavigatePrev: handleNavigatePrev,
     onNavigateNext: handleNavigateNext,
-    onFolderPrev: settings?.view_mode === 'compact' ? handleFolderPrev : undefined,
-    onFolderNext: settings?.view_mode === 'compact' ? handleFolderNext : undefined,
+    // Full mode: plain Left/Right moves between cards, Ctrl+Left/Right switches folders.
+    // Compact mode: plain Left/Right switches folders (useKeyboard falls back when
+    // onNavigateLeft/Right are undefined). Ctrl+Left/Right stays consistent in both modes.
+    onNavigateLeft: settings?.view_mode === 'full' ? handleCardPrev : undefined,
+    onNavigateRight: settings?.view_mode === 'full' ? handleCardNext : undefined,
+    onFolderPrev: handleFolderPrev,
+    onFolderNext: handleFolderNext,
     onPaste: handlePasteSelected,
+    onCopyPlainText: handleCopyPlainTextSelected,
     onToggleMode: toggleViewMode,
     toggleModeHotkey: settings?.view_mode_hotkey,
     onStartTypingSearch: handleStartTypingSearch,

@@ -7,9 +7,13 @@ interface KeyboardOptions {
   onPin?: () => void;
   onNavigatePrev?: () => void;
   onNavigateNext?: () => void;
+  onNavigateLeft?: () => void;
+  onNavigateRight?: () => void;
   onFolderPrev?: () => void;
   onFolderNext?: () => void;
   onPaste?: () => void;
+  /** Enter with Ctrl/Cmd — copies selected clip as plain text without pasting */
+  onCopyPlainText?: () => void;
   onToggleMode?: () => void;
   toggleModeHotkey?: string; // e.g. "Ctrl+M"
   onStartTypingSearch?: (char: string) => void;
@@ -122,16 +126,43 @@ export function useKeyboard(options: KeyboardOptions) {
         options.onNavigateNext();
       }
 
-      if (e.key === 'ArrowLeft' && options.onFolderPrev && !isTyping) {
-        e.preventDefault();
-        e.stopPropagation();
-        options.onFolderPrev();
+      // Left/Right: with Ctrl (or Cmd) → switch folders; plain → move between cards.
+      // Full mode passes onNavigateLeft/Right (grid navigation) and uses Ctrl for folders.
+      // Compact mode passes onFolderPrev/Next directly (single-row strip).
+      if (e.key === 'ArrowLeft' && !isTyping) {
+        if (e.ctrlKey || e.metaKey) {
+          if (options.onFolderPrev) {
+            e.preventDefault();
+            e.stopPropagation();
+            options.onFolderPrev();
+          }
+        } else if (options.onNavigateLeft) {
+          e.preventDefault();
+          e.stopPropagation();
+          options.onNavigateLeft();
+        } else if (options.onFolderPrev) {
+          e.preventDefault();
+          e.stopPropagation();
+          options.onFolderPrev();
+        }
       }
 
-      if (e.key === 'ArrowRight' && options.onFolderNext && !isTyping) {
-        e.preventDefault();
-        e.stopPropagation();
-        options.onFolderNext();
+      if (e.key === 'ArrowRight' && !isTyping) {
+        if (e.ctrlKey || e.metaKey) {
+          if (options.onFolderNext) {
+            e.preventDefault();
+            e.stopPropagation();
+            options.onFolderNext();
+          }
+        } else if (options.onNavigateRight) {
+          e.preventDefault();
+          e.stopPropagation();
+          options.onNavigateRight();
+        } else if (options.onFolderNext) {
+          e.preventDefault();
+          e.stopPropagation();
+          options.onFolderNext();
+        }
       }
 
       if (e.key === 'Enter' && options.onPaste) {
@@ -139,7 +170,11 @@ export function useKeyboard(options: KeyboardOptions) {
           return;
         }
         e.preventDefault();
-        options.onPaste();
+        if ((e.ctrlKey || e.metaKey) && options.onCopyPlainText) {
+          options.onCopyPlainText();
+        } else {
+          options.onPaste();
+        }
       }
     };
 

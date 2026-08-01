@@ -46,6 +46,7 @@
   "contextMenu": {
     "copy": "Kopieren",
     "copyPlainText": "Als Klartext kopieren",
+    "noPlainText": "Kein Klartext-Inhalt",
     "paste": "Einfügen",
     "delete": "Löschen",
     "rename": "Umbenennen",
