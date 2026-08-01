@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { useLanguage } from '../hooks/useLanguage';
 import {
   Info,
   CheckCircle2,
@@ -113,6 +114,8 @@ export function ToastWindow() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const { t } = useLanguage(settings?.language);
+
   const closeToast = () => {
     setIsClosing(true);
     setTimeout(() => {
@@ -137,9 +140,43 @@ export function ToastWindow() {
         bar.style.animation = 'none';
         void bar.offsetWidth;
         bar.style.animation = `toast-shrink ${duration}ms linear forwards`;
+        bar.style.transition = 'none';
+        bar.style.transform = '';
       }
     });
 
+    hideTimeoutRef.current = setTimeout(() => {
+      closeToast();
+    }, duration);
+  };
+
+  const handleMouseEnter = () => {
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+    const bar = document.getElementById('toast-progress-bar');
+    if (bar) {
+      const duration = settings?.toast_duration || 3000;
+      const refillDuration = duration / 3;
+      bar.style.animation = 'none';
+      bar.style.transition = `transform ${refillDuration}ms linear`;
+      bar.style.transform = 'scaleX(1)';
+    }
+  };
+
+  const handleMouseLeave = () => {
+    const duration = settings?.toast_duration || 3000;
+    const bar = document.getElementById('toast-progress-bar');
+    if (bar) {
+      bar.style.transition = 'none';
+      bar.style.transform = '';
+      bar.style.animation = 'none';
+      void bar.offsetWidth;
+      bar.style.animation = `toast-shrink ${duration}ms linear forwards`;
+    }
+
+    if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
     hideTimeoutRef.current = setTimeout(() => {
       closeToast();
     }, duration);
@@ -192,10 +229,30 @@ export function ToastWindow() {
       ? 'bg-zinc-950/95 border border-zinc-800 text-white shadow-2xl'
       : 'bg-[#1A1B1F] border border-[rgba(0,200,215,0.627)] text-white shadow-[0_3px_18px_rgba(0,0,0,0.32)]';
 
+  const clickAction = settings?.toast_click_action || 'close';
+  const isClickable = clickAction !== 'none';
+
   const handleToastClick = () => {
-    if (toast && toast.clip_uuid) {
+    if (clickAction === 'none') {
+      return;
+    }
+    if (clickAction === 'close') {
+      closeToast();
+      return;
+    }
+    if (clickAction === 'open' && toast && toast.clip_uuid) {
       invoke('click_toast', { clipUuid: toast.clip_uuid }).catch(console.error);
     }
+  };
+
+  const getTooltip = () => {
+    if (clickAction === 'none') {
+      return t('toasts.tooltipNone');
+    }
+    if (clickAction === 'close') {
+      return t('toasts.tooltipClose');
+    }
+    return t('toasts.tooltipOpen');
   };
 
   const isTopEdge = settings?.toast_position?.startsWith('top-') ?? false;
@@ -205,7 +262,10 @@ export function ToastWindow() {
   return (
     <div
       onClick={handleToastClick}
-      className={`flex h-full w-full items-center ${toast && toast.clip_uuid ? 'cursor-pointer' : ''}`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className={`flex h-full w-full items-center ${isClickable ? 'cursor-pointer' : 'cursor-default'}`}
+      title={getTooltip()}
       data-tauri-drag-region
     >
       <div

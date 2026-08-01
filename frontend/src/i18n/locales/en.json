@@ -231,6 +231,11 @@
     "toasts": "Notifications",
     "enableToasts": "Enable Notifications",
     "enableToastsDesc": "Show notifications on desktop.",
+    "toastClickAction": "Click Action",
+    "toastClickActionDesc": "What happens when you click the notification toast",
+    "toastClickActionNone": "None",
+    "toastClickActionClose": "Close",
+    "toastClickActionOpen": "Open Window",
     "toastMonitor": "Monitor",
     "toastMonitorPrimary": "Primary Monitor",
     "toastStyle": "Visual Style",
@@ -347,7 +352,10 @@
     "ocrTextUpdated": "OCR text updated successfully",
     "ocrTextUpdateFailed": "Failed to update OCR text",
     "ocrError": "OCR Error: {{error}}",
-    "failedToCopyText": "Failed to copy text"
+    "failedToCopyText": "Failed to copy text",
+    "tooltipNone": "Notification",
+    "tooltipClose": "Click to close",
+    "tooltipOpen": "Click to open window"
   },
   "notifications": {
     "clipDeleted": "Clip deleted",

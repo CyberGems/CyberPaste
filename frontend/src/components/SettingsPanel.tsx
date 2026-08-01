@@ -1699,6 +1699,26 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     </div>
                   </div>
 
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <label className="block">
+                        <span className="text-base font-medium">{t('settings.toastClickAction')}</span>
+                        <p className="text-[10px] text-muted-foreground/80 leading-tight mt-0.5">
+                          {t('settings.toastClickActionDesc')}
+                        </p>
+                      </label>
+                      <Select
+                        value={settings.toast_click_action || 'close'}
+                        onChange={(val) => updateSetting('toast_click_action', val)}
+                        options={[
+                          { value: 'none', label: t('settings.toastClickActionNone') },
+                          { value: 'close', label: t('settings.toastClickActionClose') },
+                          { value: 'open', label: t('settings.toastClickActionOpen') },
+                        ]}
+                      />
+                    </div>
+                  </div>
+
                   <div className="pt-4">
                     <button
                       onClick={() => {

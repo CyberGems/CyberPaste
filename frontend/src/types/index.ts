@@ -66,6 +66,7 @@ export interface Settings {
   toast_style?: string;
   toast_enabled?: boolean;
   toast_monitor?: string;
+  toast_click_action?: 'none' | 'close' | 'open';
   compact_view_position_mode?: 'cursor' | 'caret' | 'auto';
   viewer_window_width?: number;
   viewer_window_height?: number;

@@ -231,6 +231,11 @@
     "toasts": "Notificaciones",
     "enableToasts": "Habilitar Notificaciones",
     "enableToastsDesc": "Mostrar notificaciones en el escritorio.",
+    "toastClickAction": "Acción al hacer clic",
+    "toastClickActionDesc": "Qué sucede cuando haces clic en la notificación",
+    "toastClickActionNone": "Nada",
+    "toastClickActionClose": "Cerrar",
+    "toastClickActionOpen": "Abrir ventana",
     "toastMonitor": "Monitor",
     "toastMonitorPrimary": "Monitor Principal",
     "toastStyle": "Estilo Visual",
@@ -347,7 +352,10 @@
     "ocrTextUpdated": "Texto OCR actualizado correctamente",
     "ocrTextUpdateFailed": "Error al actualizar el texto OCR",
     "ocrError": "Error de OCR: {{error}}",
-    "failedToCopyText": "Error al copiar texto"
+    "failedToCopyText": "Error al copiar texto",
+    "tooltipNone": "Notificación",
+    "tooltipClose": "Haz clic para cerrar",
+    "tooltipOpen": "Haz clic para abrir la ventana"
   },
   "notifications": {
     "clipDeleted": "Clip eliminado",

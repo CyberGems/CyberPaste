@@ -446,7 +446,12 @@ pub fn run_app() {
                     }
                 }
 
-                let msg = format!("{} para abrir, Esc para ocultar", saved_hotkey_clone);
+                let lang = settings.language.as_str();
+                let msg = if lang == "es" {
+                    format!("{} para abrir", saved_hotkey_clone)
+                } else {
+                    format!("{} to open", saved_hotkey_clone)
+                };
                 let _ = commands::show_toast(
                     handle_for_toast,
                     msg,

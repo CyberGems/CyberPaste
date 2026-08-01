@@ -56,6 +56,7 @@ pub struct AppSettings {
     pub toast_style: String,
     pub toast_enabled: bool,
     pub toast_monitor: String,
+    pub toast_click_action: String,
     pub compact_view_position_mode: String, // "cursor" or "caret"
     pub viewer_window_width: f64,
     pub viewer_window_height: f64,
@@ -120,6 +121,7 @@ impl Default for AppSettings {
             toast_style: "cyber".to_string(),
             toast_enabled: true,
             toast_monitor: "primary".to_string(),
+            toast_click_action: "close".to_string(),
             compact_view_position_mode: "auto".to_string(),
             viewer_window_width: 800.0,
             viewer_window_height: 600.0,
