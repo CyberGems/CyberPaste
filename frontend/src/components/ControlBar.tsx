@@ -372,7 +372,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
     { keys: 'Ctrl+F', action: 'Search' },
     { keys: 'Enter', action: 'Paste' },
     { keys: 'Del', action: 'Delete' },
-    { keys: 'P', action: 'Pin' },
+    { keys: 'Ctrl+P', action: 'Pin' },
     { keys: 'Esc', action: 'Close' },
   ];
   const [hintIndex, setHintIndex] = useState(0);

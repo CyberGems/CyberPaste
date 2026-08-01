@@ -198,6 +198,10 @@ export function ToastWindow() {
     }
   };
 
+  const isTopEdge = settings?.toast_position?.startsWith('top-') ?? false;
+  const isCentered = settings?.toast_position === 'top-center' || settings?.toast_position === 'bottom-center';
+  const originClass = isCentered ? 'origin-center' : 'origin-left';
+
   return (
     <div
       onClick={handleToastClick}
@@ -239,10 +243,10 @@ export function ToastWindow() {
         </div>
 
         {/* Progress Bar */}
-        <div className="absolute bottom-0 left-0 h-[3px] w-full bg-white/5">
+        <div className={`absolute ${isTopEdge ? 'top-0' : 'bottom-0'} left-0 h-[3px] w-full bg-white/5`}>
           <div
             id="toast-progress-bar"
-            className={`h-full w-full origin-left ${!isMinimal && !isDark ? cyberGradient : 'bg-zinc-600'}`}
+            className={`h-full w-full ${originClass} ${!isMinimal && !isDark ? cyberGradient : 'bg-zinc-600'}`}
             style={{
               boxShadow: !isMinimal && !isDark ? '0 0 8px rgba(122, 0, 255, 0.8)' : 'none',
             }}

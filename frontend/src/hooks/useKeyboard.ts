@@ -93,17 +93,13 @@ export function useKeyboard(options: KeyboardOptions) {
         e.key.length === 1 &&
         !e.ctrlKey &&
         !e.altKey &&
-        !e.metaKey &&
-        e.key !== 'p'
+        !e.metaKey
       ) {
         e.preventDefault();
         options.onStartTypingSearch(e.key);
       }
 
-      if (e.key === 'p' && !e.metaKey && !e.ctrlKey && options.onPin) {
-        if (isTyping) {
-          return;
-        }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'p' && options.onPin) {
         e.preventDefault();
         options.onPin();
       }

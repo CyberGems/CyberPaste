@@ -1622,19 +1622,65 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <label className="block">
                         <span className="text-base font-medium">{t('settings.toastPosition')}</span>
                       </label>
-                      <Select
-                        value={settings.toast_position || 'bottom-right'}
-                        onChange={(val) => updateSetting('toast_position', val)}
-                        options={[
-                          { value: 'bottom-right', label: t('settings.posBottomRight') },
-                          { value: 'bottom-left', label: t('settings.posBottomLeft') },
-                          { value: 'bottom-center', label: t('settings.posBottomCenter') },
-                          { value: 'top-right', label: t('settings.posTopRight') },
-                          { value: 'top-left', label: t('settings.posTopLeft') },
-                          { value: 'center-right', label: t('settings.posCenterRight') },
-                          { value: 'center-left', label: t('settings.posCenterLeft') },
-                        ]}
-                      />
+                      <div className="flex items-center gap-4">
+                        <div className="w-[176px] h-[104px] rounded-lg border border-white/[0.08] bg-[#1a1b1f] p-1.5 flex flex-col justify-between">
+                          <div className="grid grid-cols-3 grid-rows-3 gap-1 h-full w-full">
+                            {[
+                              { value: 'top-left', label: t('settings.posTopLeft'), dotClass: 'top-0.5 left-0.5' },
+                              { value: 'top-center', label: t('settings.posTopCenter'), dotClass: 'top-0.5 left-1/2 -translate-x-1/2' },
+                              { value: 'top-right', label: t('settings.posTopRight'), dotClass: 'top-0.5 right-0.5' },
+                              { value: 'center-left', label: t('settings.posCenterLeft'), dotClass: 'top-1/2 -translate-y-1/2 left-0.5' },
+                              { value: 'center', label: '', isCenter: true },
+                              { value: 'center-right', label: t('settings.posCenterRight'), dotClass: 'top-1/2 -translate-y-1/2 right-0.5' },
+                              { value: 'bottom-left', label: t('settings.posBottomLeft'), dotClass: 'bottom-0.5 left-0.5' },
+                              { value: 'bottom-center', label: t('settings.posBottomCenter'), dotClass: 'bottom-0.5 left-1/2 -translate-x-1/2' },
+                              { value: 'bottom-right', label: t('settings.posBottomRight'), dotClass: 'bottom-0.5 right-0.5' }
+                            ].map((pos, idx) => {
+                              if (pos.isCenter) {
+                                return (
+                                  <div key={idx} className="flex items-center justify-center opacity-20 pointer-events-none">
+                                    <div className="w-1.5 h-1.5 rounded-[2px] bg-white/40" />
+                                  </div>
+                                );
+                              }
+                              const activePosition = settings.toast_position || 'bottom-right';
+                              const isActive = activePosition === pos.value;
+                              return (
+                                <button
+                                  key={pos.value}
+                                  type="button"
+                                  onClick={() => updateSetting('toast_position', pos.value)}
+                                  className={`relative rounded-[4px] transition-all hover:bg-white/[0.06] focus:outline-none ${isActive ? 'bg-primary/10 border border-primary' : 'border border-transparent'}`}
+                                  title={pos.label}
+                                >
+                                  <span className={`absolute w-2 h-2 rounded-[2px] transition-colors ${pos.dotClass} ${isActive ? 'bg-primary shadow-[0_0_8px_var(--primary)]' : 'bg-white/20'}`} />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <div className="text-[12px] font-medium text-white/95">
+                            {(() => {
+                              const activePosition = settings.toast_position || 'bottom-right';
+                              const found = [
+                                { value: 'top-left', label: t('settings.posTopLeft') },
+                                { value: 'top-center', label: t('settings.posTopCenter') },
+                                { value: 'top-right', label: t('settings.posTopRight') },
+                                { value: 'center-left', label: t('settings.posCenterLeft') },
+                                { value: 'center-right', label: t('settings.posCenterRight') },
+                                { value: 'bottom-left', label: t('settings.posBottomLeft') },
+                                { value: 'bottom-center', label: t('settings.posBottomCenter') },
+                                { value: 'bottom-right', label: t('settings.posBottomRight') }
+                              ].find(p => p.value === activePosition);
+                              return found ? found.label : t('settings.posBottomRight');
+                            })()}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground/80 leading-tight">
+                            {t('settings.toastPositionDesc')}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                     <div className="space-y-3">
                       <label className="block">

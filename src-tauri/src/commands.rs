@@ -2632,12 +2632,20 @@ pub async fn set_toast_position(app: AppHandle, width: f64, height: f64) -> Resu
                     work_area.position.y + margin,
                 ),
                 "top-left" => (work_area.position.x + margin, work_area.position.y + margin),
+                "top-center" => (
+                    work_area.position.x + (work_area.size.width as i32 - w_px as i32) / 2,
+                    work_area.position.y + margin,
+                ),
                 "bottom-center" => (
                     work_area.position.x + (work_area.size.width as i32 - w_px as i32) / 2,
                     work_area.position.y + work_area.size.height as i32 - h_px as i32 - margin,
                 ),
                 "bottom-left" => (
                     work_area.position.x + margin,
+                    work_area.position.y + work_area.size.height as i32 - h_px as i32 - margin,
+                ),
+                "bottom-right" => (
+                    work_area.position.x + work_area.size.width as i32 - w_px as i32 - margin,
                     work_area.position.y + work_area.size.height as i32 - h_px as i32 - margin,
                 ),
                 "center-right" => (
