@@ -632,14 +632,14 @@ async fn process_clipboard_change(
     let emitted_id = if let Some(existing_id) = existing_uuid {
         was_existing = true;
 
-        let (is_pinned, clip_folder_id): (bool, Option<i64>) =
-            sqlx::query_as("SELECT is_pinned, folder_id FROM clips WHERE uuid = ?")
+        let is_pinned: bool =
+            sqlx::query_scalar("SELECT is_pinned FROM clips WHERE uuid = ?")
                 .bind(&existing_id)
                 .fetch_one(pool)
                 .await
-                .unwrap_or((false, None));
+                .unwrap_or(false);
 
-        let new_sort_order = if is_pinned || clip_folder_id.is_some() {
+        let new_sort_order = if is_pinned {
             0
         } else {
             sqlx::query_scalar::<_, i64>("SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips")
@@ -652,15 +652,16 @@ async fn process_clipboard_change(
             let _ = sqlx::query(
                 r#"
                 UPDATE clips
-                SET created_at = CASE WHEN is_pinned = 1 OR folder_id IS NOT NULL THEN created_at ELSE CURRENT_TIMESTAMP END,
+                SET created_at = CURRENT_TIMESTAMP,
                     is_deleted = 0,
+                    folder_id = NULL,
                     source_app = ?,
                     source_icon = ?,
                     content = ?,
                     text_preview = ?,
                     metadata = ?,
                     is_thumbnail = 0,
-                    sort_order = CASE WHEN is_pinned = 1 OR folder_id IS NOT NULL THEN sort_order ELSE ? END
+                    sort_order = ?
                 WHERE uuid = ?
                 "#,
             )
@@ -701,9 +702,10 @@ async fn process_clipboard_change(
         } else {
             let _ = sqlx::query(r#"
                 UPDATE clips 
-                SET created_at = CASE WHEN is_pinned = 1 OR folder_id IS NOT NULL THEN created_at ELSE CURRENT_TIMESTAMP END, 
-                    sort_order = CASE WHEN is_pinned = 1 OR folder_id IS NOT NULL THEN sort_order ELSE ? END, 
+                SET created_at = CURRENT_TIMESTAMP, 
+                    sort_order = ?, 
                     is_deleted = 0, 
+                    folder_id = NULL,
                     source_app = ?, 
                     source_icon = ? 
                 WHERE uuid = ?
