@@ -1023,24 +1023,26 @@ pub async fn toggle_clip_pin(
 pub async fn move_to_folder(
     clip_id: String,
     folder_id: Option<String>,
+    app: tauri::AppHandle,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<(), String> {
     let pool = &db.pool;
 
     // First check if clip exists and what type it is
-    let clip_info: Option<(String, String)> =
-        sqlx::query_as("SELECT uuid, clip_type FROM clips WHERE uuid = ?")
+    let clip_info: Option<(String, String, String)> =
+        sqlx::query_as("SELECT uuid, clip_type, content_hash FROM clips WHERE uuid = ?")
             .bind(&clip_id)
             .fetch_optional(pool)
             .await
             .map_err(|e| e.to_string())?;
 
-    log::info!(
-        "move_to_folder: clip_id={}, folder_id={:?}, info={:?}",
-        clip_id,
-        folder_id,
-        clip_info
-    );
+    let (uuid, clip_type, content_hash) = match clip_info {
+        Some(info) => info,
+        None => {
+            log::warn!("move_to_folder: No clip found with uuid={}", clip_id);
+            return Err("Clip not found".to_string());
+        }
+    };
 
     let folder_id_parsed = match folder_id {
         Some(id) if id == "null" => None, // Handle edge case where "null" string is passed
@@ -1051,21 +1053,48 @@ pub async fn move_to_folder(
         None => None,
     };
 
+    // Check if target folder already contains this content
+    if let Some(target_folder) = folder_id_parsed {
+        let existing_in_folder: Option<String> = sqlx::query_scalar(
+            "SELECT uuid FROM clips WHERE content_hash = ? AND folder_id = ? AND uuid != ? AND is_deleted = 0"
+        )
+        .bind(&content_hash)
+        .bind(target_folder)
+        .bind(&uuid)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        if existing_in_folder.is_some() {
+            use crate::settings_manager::SettingsManager;
+            use tauri::Manager;
+            let settings_manager = app.state::<Arc<SettingsManager>>();
+            let settings = settings_manager.get();
+            let lang = settings.language.as_str();
+
+            if lang == "es" {
+                return Err("El clip ya existe en esta carpeta".to_string());
+            } else {
+                return Err("Clip already exists in this folder".to_string());
+            }
+        }
+    }
+
     let new_sort_order = db
-        .get_and_prepare_first_unpinned_slot(folder_id_parsed, Some(&clip_id))
+        .get_and_prepare_first_unpinned_slot(folder_id_parsed, Some(&uuid))
         .await
         .map_err(|e| e.to_string())?;
 
     let result = sqlx::query(r#"UPDATE clips SET folder_id = ?, sort_order = ? WHERE uuid = ?"#)
         .bind(folder_id_parsed)
         .bind(new_sort_order)
-        .bind(&clip_id)
+        .bind(&uuid)
         .execute(pool)
         .await
         .map_err(|e| e.to_string())?;
 
     if result.rows_affected() == 0 {
-        log::warn!("move_to_folder: No clip found with uuid={}", clip_id);
+        log::warn!("move_to_folder: No clip found with uuid={}", uuid);
         return Err("Clip not found".to_string());
     }
 

@@ -1021,7 +1021,7 @@ function App() {
       toast.success(t('notifications.clipMoved'));
     } catch (error) {
       console.error('Failed to move clip:', error);
-      toast.error(t('notifications.clipMoveFailed'));
+      toast.error(typeof error === 'string' ? error : t('notifications.clipMoveFailed'));
     }
   };
 
@@ -1342,7 +1342,7 @@ function App() {
       toast.success(folderId ? t('toasts.movedToFolder') : t('toasts.movedToMainClipboard'));
     } catch (e) {
       console.error('Failed to move clip:', e);
-      toast.error(t('toasts.clipMoveFailed'));
+      toast.error(typeof e === 'string' ? e : t('toasts.clipMoveFailed'));
     }
   };
 
