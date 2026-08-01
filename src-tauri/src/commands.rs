@@ -1036,7 +1036,7 @@ pub async fn move_to_folder(
             .await
             .map_err(|e| e.to_string())?;
 
-    let (uuid, clip_type, content_hash) = match clip_info {
+    let (uuid, _clip_type, content_hash) = match clip_info {
         Some(info) => info,
         None => {
             log::warn!("move_to_folder: No clip found with uuid={}", clip_id);

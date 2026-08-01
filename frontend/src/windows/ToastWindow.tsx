@@ -221,7 +221,9 @@ export function ToastWindow() {
 
   const isMinimal = settings?.toast_style === 'minimal';
   const isDark = settings?.toast_style === 'dark';
-  const cyberGradient = 'bg-gradient-to-r from-[#00F2FF] via-[#7A00FF] to-[#FF00D0]';
+  // Cyan-leaning half of the CyberGems ramp: keeps the suite palette while staying
+  // distinguishable from CyberSnap's toast, which owns the purple->magenta half.
+  const accentGradient = 'bg-gradient-to-r from-[#00F2FF] via-[#00A8FF] to-[#7A00FF]';
 
   const containerClasses = isMinimal
     ? 'bg-zinc-900/95 border border-zinc-700/50 text-white shadow-xl'
@@ -306,9 +308,9 @@ export function ToastWindow() {
         <div className={`absolute ${isTopEdge ? 'top-0' : 'bottom-0'} left-0 h-[3px] w-full bg-white/5`}>
           <div
             id="toast-progress-bar"
-            className={`h-full w-full ${originClass} ${!isMinimal && !isDark ? cyberGradient : 'bg-zinc-600'}`}
+            className={`h-full w-full ${originClass} ${!isMinimal && !isDark ? accentGradient : 'bg-zinc-600'}`}
             style={{
-              boxShadow: !isMinimal && !isDark ? '0 0 8px rgba(122, 0, 255, 0.8)' : 'none',
+              boxShadow: !isMinimal && !isDark ? '0 0 8px rgba(0, 200, 255, 0.75)' : 'none',
             }}
           />
         </div>
