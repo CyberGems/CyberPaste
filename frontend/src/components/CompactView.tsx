@@ -95,6 +95,8 @@ const getRelativeTime = (dateStr: string, lang: string) => {
     formatted = formatted.replace(/\b(alrededor de|about|environ|ca\.?|etwa|almost|casi)\b/gi, '~');
     // Remove extra space after "~"
     formatted = formatted.replace(/~\s+/g, '~');
+    formatted = formatted.replace("menos de un minuto", "segundos");
+    formatted = formatted.replace("less than a minute", "seconds");
     return formatted;
   } catch (err) {
     console.error(err);

@@ -38,6 +38,8 @@ const getRelativeTime = (dateStr: string, lang: string) => {
     let formatted = formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale });
     formatted = formatted.replace(/\b(alrededor de|about|environ|ca\.?|etwa|almost|casi)\b/gi, '~');
     formatted = formatted.replace(/~\s+/g, '~');
+    formatted = formatted.replace("menos de un minuto", "segundos");
+    formatted = formatted.replace("less than a minute", "seconds");
     return formatted;
   } catch (err) {
     console.error(err);
