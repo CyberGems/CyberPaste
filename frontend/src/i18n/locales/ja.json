@@ -24,7 +24,8 @@
     "selectedSingle": "件選択中",
     "selectedPlural": "件選択中",
     "moveToFolder": "フォルダーに移動",
-    "delete": "削除"
+    "delete": "削除",
+    "selectedAll": "全 {{count}} 件を選択しました"
   },
   "clipType": {
     "text": "テキスト",
@@ -43,7 +44,9 @@
     "folder": "フォルダー",
     "size": "サイズ",
     "pinned": "固定済み",
-    "extractedText": "抽出されたテキスト"
+    "extractedText": "抽出されたテキスト",
+    "collapse": "詳細パネルを折りたたむ",
+    "expand": "詳細パネルを展開"
   },
   "clipList": {
     "empty": "まだクリップがありません",

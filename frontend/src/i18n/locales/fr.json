@@ -24,7 +24,8 @@
     "selectedSingle": "sélectionné",
     "selectedPlural": "sélectionnés",
     "moveToFolder": "Déplacer vers le dossier",
-    "delete": "Supprimer"
+    "delete": "Supprimer",
+    "selectedAll": "Tous les {{count}} éléments sélectionnés"
   },
   "clipType": {
     "text": "Texte",
@@ -43,7 +44,9 @@
     "folder": "Dossier",
     "size": "Taille",
     "pinned": "Épinglé",
-    "extractedText": "Texte extrait"
+    "extractedText": "Texte extrait",
+    "collapse": "Replier le panneau de détails",
+    "expand": "Déplier le panneau de détails"
   },
   "clipList": {
     "empty": "Aucun élément pour le moment",

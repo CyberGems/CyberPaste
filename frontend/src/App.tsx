@@ -964,6 +964,16 @@ function App() {
   const GRID_SCALE_MIN = 0.6;
   const GRID_SCALE_MAX = 1.75;
   const GRID_SCALE_STEP = 0.1;
+
+  const [zoomIndicator, setZoomIndicator] = useState<string | null>(null);
+  const zoomIndicatorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showZoomIndicator = useCallback((scale: number) => {
+    setZoomIndicator(`${Math.round(scale * 100)}%`);
+    if (zoomIndicatorTimerRef.current) clearTimeout(zoomIndicatorTimerRef.current);
+    zoomIndicatorTimerRef.current = setTimeout(() => setZoomIndicator(null), 1200);
+  }, []);
+
   useEffect(() => {
     const handleZoomWheel = (e: WheelEvent) => {
       if (!e.ctrlKey && !e.metaKey) return;
@@ -981,10 +991,11 @@ function App() {
       const newSettings = { ...settingsRef.current, full_grid_scale: next };
       setSettings(newSettings);
       invoke('save_settings', { settings: newSettings }).catch(console.error);
+      showZoomIndicator(next);
     };
     document.addEventListener('wheel', handleZoomWheel, { passive: false });
     return () => document.removeEventListener('wheel', handleZoomWheel);
-  }, []);
+  }, [showZoomIndicator]);
 
   // Keyboard navigation handlers
   const handleNavigatePrev = useCallback(() => {
@@ -1130,6 +1141,13 @@ function App() {
   );
 
   const handleClearBulkSelection = useCallback(() => setSelectedClipIds(new Set()), []);
+
+  // Ctrl+A — select every clip currently rendered in Full mode
+  const handleSelectAllClips = useCallback(() => {
+    if (settings?.view_mode !== 'full') return;
+    setSelectedClipIds(new Set(clipsRef.current.map((c) => c.id)));
+    toast.info(t('bulk.selectedAll', { count: clipsRef.current.length }));
+  }, [settings?.view_mode, t]);
 
   // Left/Right move between cards (identical wrap-around semantics as Up/Down)
   const handleCardPrev = useCallback(() => handleNavigatePrev(), [handleNavigatePrev]);
@@ -1655,6 +1673,7 @@ function App() {
     onCopyPlainText: handleCopyPlainTextSelected,
     onPreviewSelected: handlePreviewSelected,
     onToggleDetailPanel: handleToggleDetailPanel,
+    onSelectAll: handleSelectAllClips,
     onToggleMode: toggleViewMode,
     toggleModeHotkey: settings?.view_mode_hotkey,
     onStartTypingSearch: handleStartTypingSearch,
@@ -1848,6 +1867,24 @@ function App() {
                   onMoveToFolder={handleBulkMove}
                   onClear={handleClearBulkSelection}
                 />
+                {/* Zoom indicator + keyframes injected once */}
+                {zoomIndicator && (
+                  <>
+                    <style>{`
+                      @keyframes zoom-fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+                      @keyframes zoom-fade-out { from { opacity: 1; } to { opacity: 0; transform: translateY(-4px); } }
+                    `}</style>
+                    <div
+                      className="pointer-events-none absolute bottom-4 left-4 z-40 rounded-md border border-cyan-500/30 bg-black/85 px-2.5 py-1 font-mono text-xs font-bold text-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.3)]"
+                      style={{
+                        animation:
+                          'zoom-fade-in 120ms ease-out, zoom-fade-out 300ms ease-in 900ms forwards',
+                      }}
+                    >
+                      {zoomIndicator}
+                    </div>
+                  </>
+                )}
                 {detailPanelOpen && (
                   <ClipDetailPanel
                     clip={clips.find((c) => c.id === selectedClipId) || null}

@@ -342,10 +342,10 @@ export const ClipCard = memo(
           style={
             {
               '--app-hue': `${appHue}`,
-              borderColor: isSelected ? `hsl(${appHue} 60% 50%)` : 'rgba(255, 255, 255, 0.1)',
+              borderColor: isSelected ? `hsl(${appHue} 60% 55%)` : 'rgba(255, 255, 255, 0.1)',
               borderWidth: isSelected ? '2px' : '1px',
               boxShadow: isSelected
-                ? `0 0 25px hsl(${appHue} 60% 45% / 0.2), inset 0 0 15px hsl(${appHue} 60% 45% / 0.1)`
+                ? `0 0 25px hsl(${appHue} 60% 45% / 0.35), inset 0 0 15px hsl(${appHue} 60% 45% / 0.15), 0 0 0 3px hsl(${appHue} 60% 55% / 0.25)`
                 : 'none',
             } as React.CSSProperties
           }
@@ -360,6 +360,13 @@ export const ClipCard = memo(
             'group'
           )}
         >
+          {/* Keyboard focus indicator (left edge cyan bar) */}
+          {isSelected && (
+            <div
+              data-el="clip-card-kb-focus"
+              className="pointer-events-none absolute bottom-2 left-0 top-2 w-0.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]"
+            />
+          )}
           {/* Bulk selection checkbox (top-left, visible on hover or when selected) */}
           {onToggleBulkSelect && (
             <button

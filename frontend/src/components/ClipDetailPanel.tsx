@@ -1,5 +1,5 @@
-import React from 'react';
-import { X, Copy, Code, Trash2, Pin, PinOff } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Copy, Code, Trash2, Pin, PinOff, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
@@ -39,6 +39,16 @@ interface ClipDetailPanelProps {
   onPreview: (id: string) => void;
 }
 
+const DetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
+  <div className="flex flex-col gap-0.5">
+    <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/40">
+      {label}
+    </span>
+    {value}
+  </div>
+);
+
+/** Collapsible right-edge clip detail panel: can narrow to a thin vertical tab. */
 export const ClipDetailPanel: React.FC<ClipDetailPanelProps> = ({
   clip,
   folders,
@@ -49,25 +59,39 @@ export const ClipDetailPanel: React.FC<ClipDetailPanelProps> = ({
   onPreview,
 }) => {
   const { t, i18n } = useTranslation();
+  const [expanded, setExpanded] = useState(true);
   const locale = localeMap[(i18n.language || 'en').substring(0, 2)] || enUS;
 
+  if (!clip) return null;
+
   return (
-    <AnimatePresence>
-      {clip && (
+    <AnimatePresence mode="wait">
+      {expanded ? (
         <motion.div
-          key={`detail-${clip.id}`}
+          key={`expanded-${clip.id}`}
           data-el="clip-detail-panel"
           initial={{ x: 280, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: 280, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-          className="absolute right-2 top-16 z-30 flex h-[calc(100%-4.5rem)] w-72 select-none flex-col overflow-hidden rounded-xl border border-white/10 bg-card/95 shadow-2xl backdrop-blur-md"
+          className="absolute right-2 top-16 z-30 flex h-[calc(100%-4.5rem)] w-72 flex-col overflow-hidden rounded-xl border border-white/10 bg-card/95 shadow-2xl backdrop-blur-md"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-white/5 bg-black/25 px-3 py-2">
-            <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-cyan-300/90">
-              {t('detailPanel.title')}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <Tooltip label={t('detailPanel.collapse')} placement="left">
+                <button
+                  onClick={() => setExpanded(false)}
+                  className="rounded-md p-0.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                  aria-label="Collapse detail panel"
+                >
+                  <ChevronRight size={14} />
+                </button>
+              </Tooltip>
+              <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-cyan-300/90">
+                {t('detailPanel.title')}
+              </span>
+            </div>
             <button
               onClick={onClose}
               className="rounded-md p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
@@ -210,16 +234,32 @@ export const ClipDetailPanel: React.FC<ClipDetailPanelProps> = ({
             </Tooltip>
           </div>
         </motion.div>
+      ) : (
+        /* Collapsed state: thin tab on the right edge */
+        <motion.div
+          key={`collapsed-${clip.id}`}
+          initial={{ x: 32, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: 32, opacity: 0 }}
+          transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+        >
+          <Tooltip label={t('detailPanel.expand')} placement="left">
+            <button
+              onClick={() => setExpanded(true)}
+              className="absolute right-2 top-16 z-30 flex h-[calc(100%-4.5rem)] w-8 flex-col items-center justify-center gap-1.5 rounded-l-xl border border-r-0 border-white/10 bg-card/95 text-white/40 shadow-2xl backdrop-blur-md transition-colors hover:bg-white/5 hover:text-cyan-300"
+              aria-label="Expand detail panel"
+            >
+              <ChevronLeft size={14} />
+              <span
+                className="select-none text-[9px] font-bold uppercase tracking-wider opacity-70"
+                style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+              >
+                {t('detailPanel.title')}
+              </span>
+            </button>
+          </Tooltip>
+        </motion.div>
       )}
     </AnimatePresence>
   );
 };
-
-const DetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
-  <div className="flex flex-col gap-0.5">
-    <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/40">
-      {label}
-    </span>
-    {value}
-  </div>
-);

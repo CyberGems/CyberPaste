@@ -54,7 +54,8 @@
     "selectedSingle": "seleccionado",
     "selectedPlural": "seleccionados",
     "moveToFolder": "Mover a Carpeta",
-    "delete": "Eliminar"
+    "delete": "Eliminar",
+    "selectedAll": "Todos los {{count}} clips seleccionados"
   },
   "clipType": {
     "text": "Texto",
@@ -73,7 +74,9 @@
     "folder": "Carpeta",
     "size": "Tamaño",
     "pinned": "Fijado",
-    "extractedText": "Texto extraído"
+    "extractedText": "Texto extraído",
+    "collapse": "Contraer panel de detalles",
+    "expand": "Expandir panel de detalles"
   },
   "tray": {
     "show": "Mostrar",

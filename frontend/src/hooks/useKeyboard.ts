@@ -18,6 +18,8 @@ interface KeyboardOptions {
   onPreviewSelected?: () => void;
   /** "i" — toggles the clip detail sidebar */
   onToggleDetailPanel?: () => void;
+  /** Ctrl/Cmd+A — select all clips (bulk selection) */
+  onSelectAll?: () => void;
   onToggleMode?: () => void;
   toggleModeHotkey?: string; // e.g. "Ctrl+M"
   onStartTypingSearch?: (char: string) => void;
@@ -121,6 +123,15 @@ export function useKeyboard(options: KeyboardOptions) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'p' && options.onPin) {
         e.preventDefault();
         options.onPin();
+      }
+
+      // Ctrl/Cmd+A — select all for bulk actions
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a' && options.onSelectAll) {
+        if (!isTyping) {
+          e.preventDefault();
+          e.stopPropagation();
+          options.onSelectAll();
+        }
       }
 
       if (e.key === 'ArrowUp' && options.onNavigatePrev) {

@@ -54,7 +54,8 @@
     "selectedSingle": "selected",
     "selectedPlural": "selected",
     "moveToFolder": "Move to Folder",
-    "delete": "Delete"
+    "delete": "Delete",
+    "selectedAll": "All {{count}} clips selected"
   },
   "clipType": {
     "text": "Text",
@@ -73,7 +74,9 @@
     "folder": "Folder",
     "size": "Size",
     "pinned": "Pinned",
-    "extractedText": "Extracted text"
+    "extractedText": "Extracted text",
+    "collapse": "Collapse detail panel",
+    "expand": "Expand detail panel"
   },
   "tray": {
     "show": "Show",

@@ -24,7 +24,8 @@
     "selectedSingle": "已选",
     "selectedPlural": "已选",
     "moveToFolder": "移动到文件夹",
-    "delete": "删除"
+    "delete": "删除",
+    "selectedAll": "已选择全部 {{count}} 个剪辑"
   },
   "clipType": {
     "text": "文本",
@@ -43,7 +44,9 @@
     "folder": "文件夹",
     "size": "大小",
     "pinned": "已固定",
-    "extractedText": "提取的文本"
+    "extractedText": "提取的文本",
+    "collapse": "折叠详情面板",
+    "expand": "展开详情面板"
   },
   "clipList": {
     "empty": "暂无剪贴",
