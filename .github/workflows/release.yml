@@ -55,16 +55,9 @@ jobs:
 
       - name: Extract Release Notes
         id: extract_notes
+        shell: pwsh
         run: |
-          node -e "
-            const fs = require('fs');
-            const content = fs.readFileSync('CHANGELOG.md', 'utf8');
-            const version = process.env.GITHUB_REF_NAME.replace(/\\./g, '\\\\.');
-            const regex = new RegExp('^## ' + version + '\\\\r?\\\\n([\\\\s\\\\S]*?)(?:^## |$)', 'im');
-            const match = content.match(regex);
-            const notes = match ? match[1].trim() : 'Release ' + version;
-            fs.writeFileSync('RELEASE_NOTES.txt', notes);
-          "
+          node scripts/extract-release-notes.js "${{ github.ref_name }}"
           $notes = Get-Content RELEASE_NOTES.txt -Raw
           $eof = [Guid]::NewGuid().ToString()
           Add-Content -Path $env:GITHUB_OUTPUT -Value "notes<<$eof"
