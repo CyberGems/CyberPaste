@@ -18,8 +18,9 @@ type TrayAction = 'show' | 'toggle_pause' | 'settings' | 'about' | 'quit';
 
 /** Card width — room for label + Ctrl+Shift+V without clipping */
 const MENU_WIDTH = 268;
-/** Transparent bleed so CSS box-shadow isn't cut by the window */
-const SHADOW_PAD = 28;
+/** Transparent bleed around the card for the CSS box-shadow — must be >= shadow extent
+ *  (offset-y + blur = 6+20 = 26px bottom). Must match TRAY_MENU_SHADOW_PAD in commands.rs */
+const SHADOW_PAD = 26;
 
 export function TrayMenuWindow() {
   useLanguage();
@@ -148,11 +149,12 @@ export function TrayMenuWindow() {
       onContextMenu={(e) => e.preventDefault()}
     >
       <div
-        className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1c1c1e]/[0.97] backdrop-blur-xl"
+        className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1c1c1e]/[0.97]"
         style={{
           width: MENU_WIDTH,
+          // Compact non-clipped shadow, tuned to fit within SHADOW_PAD
           boxShadow:
-            '0 12px 40px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.04)',
+            '0 6px 20px rgba(0,0,0,0.42), 0 1px 4px rgba(0,0,0,0.28), 0 0 0 1px rgba(255,255,255,0.04)',
         }}
         role="menu"
       >

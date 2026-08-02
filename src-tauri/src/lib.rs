@@ -354,6 +354,18 @@ pub fn run_app() {
 
             rebuild_tray_menu(app.handle())?;
 
+            // Pre-create the tray menu webview (hidden) so the first right-click opens instantly
+            // instead of paying the WebView2 creation cost (~300-800ms).
+            {
+                let app_warm = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_millis(1200)).await;
+                    if let Err(e) = commands::warm_tray_menu(app_warm).await {
+                        log::error!("warm_tray_menu failed: {e}");
+                    }
+                });
+            }
+
             let app_handle = handle.clone();
             let win = app_handle.get_webview_window("main").unwrap();
 

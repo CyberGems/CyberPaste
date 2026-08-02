@@ -3279,133 +3279,33 @@ pub struct TrayMenuState {
 
 static TRAY_MENU_ANCHOR: std::sync::Mutex<Option<(i32, i32)>> = std::sync::Mutex::new(None);
 static TRAY_MENU_WATCH_GEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+/// Set when a cold-created window still needs to be positioned+shown by `tray_menu_ready`.
+static TRAY_MENU_PENDING_SHOW: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
 
-pub fn collect_tray_menu_state(app: &AppHandle) -> TrayMenuState {
-    let manager = app.state::<Arc<SettingsManager>>();
-    let settings = manager.get();
-    let is_visible = app
-        .get_webview_window("main")
-        .and_then(|w| w.is_visible().ok())
-        .unwrap_or(false);
-    let is_paused =
-        crate::clipboard::CLIPBOARD_MONITORING_PAUSED.load(std::sync::atomic::Ordering::SeqCst);
+/// Logical width of the menu card (MENU_WIDTH in TrayMenuWindow.tsx).
+const TRAY_MENU_WIDTH: f64 = 268.0;
+/// Transparent bleed around the card for the CSS box-shadow (SHADOW_PAD in TrayMenuWindow.tsx).
+/// Must be >= the shadow's max extent (offset-y 6px + blur 20px = 26px at the bottom).
+const TRAY_MENU_SHADOW_PAD: f64 = 26.0;
+/// Estimated logical height of the card content. Used to show the window instantly on open;
+/// `tray_menu_ready` corrects afterwards only if the measured size differs meaningfully.
+/// Exact sum from TrayMenuWindow.tsx Tailwind classes:
+///   header(14+18+10) + divider(1) + group1[p1.5=12 + 3xgap0.5=6 + 4x36] + divider(1)
+///   + exit-group(6+36+8) + border(2) = 258
+const TRAY_MENU_EST_HEIGHT: f64 = 258.0;
 
-    TrayMenuState {
-        version: env!("CARGO_PKG_VERSION").to_string(),
-        hotkey: settings.hotkey.clone(),
-        is_visible,
-        is_paused,
-        language: settings.language.clone(),
-    }
-}
-
-#[tauri::command]
-pub fn get_tray_menu_state(app: AppHandle) -> TrayMenuState {
-    collect_tray_menu_state(&app)
-}
-
-#[tauri::command]
-pub async fn hide_tray_menu(app: AppHandle) -> Result<(), String> {
-    if let Some(win) = app.get_webview_window("tray_menu") {
-        let _ = win.hide();
-        let _ = app.emit("tray-menu-hide", ());
-    }
-    Ok(())
-}
-
-/// Position + show the HTML tray popup near the given physical cursor/icon point.
-pub async fn show_tray_menu_at(app: AppHandle, anchor_x: i32, anchor_y: i32) -> Result<(), String> {
-    if let Ok(mut slot) = TRAY_MENU_ANCHOR.lock() {
-        *slot = Some((anchor_x, anchor_y));
-    }
-
-    let state = collect_tray_menu_state(&app);
-    let _ = app.emit("tray-menu-state", &state);
-    let _ = app.emit("tray-menu-show", ());
-
-    let window_label = "tray_menu";
-    if let Some(win) = app.get_webview_window(window_label) {
-        // Stay hidden until tray_menu_ready measures + positions
-        let _ = win.hide();
-        let _ = win.set_size(tauri::Size::Logical(tauri::LogicalSize {
-            width: 340.0,
-            height: 340.0,
-        }));
-        return Ok(());
-    }
-
-    let win = tauri::WebviewWindowBuilder::new(
-        &app,
-        window_label,
-        tauri::WebviewUrl::App("index.html?window=tray_menu".into()),
-    )
-    .title("CyberPaste Tray Menu")
-    .inner_size(340.0, 340.0)
-    .decorations(false)
-    .transparent(true)
-    .always_on_top(true)
-    .skip_taskbar(true)
-    .resizable(false)
-    .shadow(false) // CSS box-shadow on the menu card (transparent chrome)
-    .focused(true)
-    .visible(false)
-    .build()
-    .map_err(|e| format!("Failed to create tray menu window: {}", e))?;
-
-    // Native focus-loss dismiss (more reliable than webview blur alone)
-    let win_blur = win.clone();
-    let app_blur = app.clone();
-    win.on_window_event(move |event| {
-        if let tauri::WindowEvent::Focused(false) = event {
-            let win = win_blur.clone();
-            let app = app_blur.clone();
-            // Defer so menu item actions can run first
-            tauri::async_runtime::spawn(async move {
-                tokio::time::sleep(std::time::Duration::from_millis(80)).await;
-                // Only hide if we still don't have focus (action may have focused another window)
-                if !win.is_focused().unwrap_or(false) {
-                    let _ = win.hide();
-                    let _ = app.emit("tray-menu-hide", ());
-                }
-            });
-        }
-    });
-
-    // First-open race: tray-menu-show was emitted before the webview could listen.
-    // Re-emit after a short delay so a cold start still opens on the first click.
-    let app_retry = app.clone();
-    tauri::async_runtime::spawn(async move {
-        for delay_ms in [80u64, 160, 280, 450] {
-            tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
-            if let Some(w) = app_retry.get_webview_window("tray_menu") {
-                if w.is_visible().unwrap_or(false) {
-                    break;
-                }
-                let _ = app_retry.emit("tray-menu-show", ());
-            } else {
-                break;
-            }
-        }
-    });
-
-    Ok(())
-}
-
-#[tauri::command]
-pub async fn tray_menu_ready(app: AppHandle, width: f64, height: f64) -> Result<(), String> {
-    let Some(win) = app.get_webview_window("tray_menu") else {
-        return Ok(());
-    };
-
-    let (anchor_x, anchor_y) = TRAY_MENU_ANCHOR
-        .lock()
-        .ok()
-        .and_then(|g| *g)
-        .unwrap_or((100, 100));
-
+/// Compute window position + physical size for the tray popup near the anchor point.
+fn tray_menu_geometry(
+    win: &tauri::WebviewWindow,
+    anchor_x: i32,
+    anchor_y: i32,
+    logical_w: f64,
+    logical_h: f64,
+) -> (i32, i32, u32, u32) {
     let scale = win.scale_factor().unwrap_or(1.0);
-    let width_px = (width * scale).round() as i32;
-    let height_px = (height * scale).round() as i32;
+    let width_px = (logical_w * scale).round() as i32;
+    let height_px = (logical_h * scale).round() as i32;
 
     // Prefer the monitor under the tray icon / cursor
     let monitor = win
@@ -3440,7 +3340,7 @@ pub async fn tray_menu_ready(app: AppHandle, width: f64, height: f64) -> Result<
     // Pull window down by the transparent shadow pad so the *card* (not the
     // empty bleed) sits close to the icon — matches SHADOW_PAD in TrayMenuWindow.
     let gap = (4.0 * scale).round() as i32;
-    let shadow_pad_px = (28.0 * scale).round() as i32;
+    let shadow_pad_px = (TRAY_MENU_SHADOW_PAD * scale).round() as i32;
     let mut x = anchor_x - width_px / 2;
     let mut y = anchor_y - height_px - gap + shadow_pad_px;
 
@@ -3451,17 +3351,215 @@ pub async fn tray_menu_ready(app: AppHandle, width: f64, height: f64) -> Result<
     }
     y = y.clamp(min_y + 4, (max_y - height_px - 4).max(min_y + 4));
 
+    (
+        x,
+        y,
+        width_px.max(1) as u32,
+        height_px.max(1) as u32,
+    )
+}
+
+pub fn collect_tray_menu_state(app: &AppHandle) -> TrayMenuState {
+    let manager = app.state::<Arc<SettingsManager>>();
+    let settings = manager.get();
+    let is_visible = app
+        .get_webview_window("main")
+        .and_then(|w| w.is_visible().ok())
+        .unwrap_or(false);
+    let is_paused =
+        crate::clipboard::CLIPBOARD_MONITORING_PAUSED.load(std::sync::atomic::Ordering::SeqCst);
+
+    TrayMenuState {
+        version: env!("CARGO_PKG_VERSION").to_string(),
+        hotkey: settings.hotkey.clone(),
+        is_visible,
+        is_paused,
+        language: settings.language.clone(),
+    }
+}
+
+#[tauri::command]
+pub fn get_tray_menu_state(app: AppHandle) -> TrayMenuState {
+    collect_tray_menu_state(&app)
+}
+
+#[tauri::command]
+pub async fn hide_tray_menu(app: AppHandle) -> Result<(), String> {
+    if let Some(win) = app.get_webview_window("tray_menu") {
+        let _ = win.hide();
+        let _ = app.emit("tray-menu-hide", ());
+    }
+    Ok(())
+}
+
+/// Create (or reuse) the hidden tray-menu window, position it at the estimated size and show it
+/// immediately — before the webview round-trip. `tray_menu_ready` only corrects the size if the
+/// measured height differs meaningfully.
+fn show_tray_menu_fast(app: &AppHandle, anchor_x: i32, anchor_y: i32) -> Result<(), String> {
+    let window_label = "tray_menu";
+    let est_w = TRAY_MENU_WIDTH + 2.0 * TRAY_MENU_SHADOW_PAD;
+    let est_h = TRAY_MENU_EST_HEIGHT + 2.0 * TRAY_MENU_SHADOW_PAD;
+
+    let (created_now, win) = if let Some(win) = app.get_webview_window(window_label) {
+        (false, win)
+    } else {
+        let win = tauri::WebviewWindowBuilder::new(
+            app,
+            window_label,
+            tauri::WebviewUrl::App("index.html?window=tray_menu".into()),
+        )
+        .title("CyberPaste Tray Menu")
+        .inner_size(est_w, est_h)
+        .decorations(false)
+        .transparent(true)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .resizable(false)
+        .shadow(false) // CSS box-shadow on the menu card (transparent chrome)
+        .focused(true)
+        .visible(false)
+        .build()
+        .map_err(|e| format!("Failed to create tray menu window: {}", e))?;
+
+        // Native focus-loss dismiss (more reliable than webview blur alone)
+        let win_blur = win.clone();
+        let app_blur = app.clone();
+        win.on_window_event(move |event| {
+            if let tauri::WindowEvent::Focused(false) = event {
+                let win = win_blur.clone();
+                let app = app_blur.clone();
+                // Defer so menu item actions can run first
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_millis(80)).await;
+                    // Only hide if we still don't have focus (action may have focused another window)
+                    if !win.is_focused().unwrap_or(false) {
+                        let _ = win.hide();
+                        let _ = app.emit("tray-menu-hide", ());
+                    }
+                });
+            }
+        });
+        (true, win)
+    };
+
+    let (x, y, w_px, h_px) = tray_menu_geometry(&win, anchor_x, anchor_y, est_w, est_h);
     let _ = win.set_size(tauri::Size::Physical(tauri::PhysicalSize {
-        width: width_px.max(1) as u32,
-        height: height_px.max(1) as u32,
+        width: w_px,
+        height: h_px,
     }));
     let _ = win.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
-    let _ = win.show();
-    let _ = win.set_focus();
+
+    if created_now {
+        // The webview is still booting; it will invoke `tray_menu_ready` on mount, which takes
+        // the pending-show branch to re-position (it already has focus, so show() alone suffices).
+        TRAY_MENU_PENDING_SHOW.store(true, std::sync::atomic::Ordering::SeqCst);
+        let _ = win.show();
+
+        // Cold-start safety: if the mount-time ready call never arrives, force-show anyway.
+        let app_retry = app.clone();
+        tauri::async_runtime::spawn(async move {
+            for delay_ms in [120u64, 300, 600, 1000] {
+                tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
+                if !TRAY_MENU_PENDING_SHOW.load(std::sync::atomic::Ordering::SeqCst) {
+                    break;
+                }
+                match app_retry.get_webview_window("tray_menu") {
+                    Some(w) => {
+                        let _ = w.show();
+                        let _ = w.set_focus();
+                    }
+                    None => break,
+                }
+            }
+        });
+    } else {
+        let _ = win.show();
+        let _ = win.set_focus();
+    }
 
     // Dismiss on outside click — always-on-top webviews often keep focus when
     // clicking the desktop, so Focused(false) alone is not enough on Windows.
     start_tray_menu_outside_click_watcher(app.clone(), win.clone());
+    Ok(())
+}
+
+/// Position + show the HTML tray popup near the given physical cursor/icon point.
+pub async fn show_tray_menu_at(app: AppHandle, anchor_x: i32, anchor_y: i32) -> Result<(), String> {
+    if let Ok(mut slot) = TRAY_MENU_ANCHOR.lock() {
+        *slot = Some((anchor_x, anchor_y));
+    }
+
+    let state = collect_tray_menu_state(&app);
+    let _ = app.emit("tray-menu-state", &state);
+    let _ = app.emit("tray-menu-show", ());
+
+    show_tray_menu_fast(&app, anchor_x, anchor_y)
+}
+
+/// Pre-create the tray menu window (hidden) shortly after app start so the first right-click
+/// doesn't pay the WebView2 creation cost. Safe after suspend/resume: recreates if destroyed.
+pub async fn warm_tray_menu(app: AppHandle) -> Result<(), String> {
+    if app.get_webview_window("tray_menu").is_none() {
+        let (x, y) = TRAY_MENU_ANCHOR.lock().ok().and_then(|g| *g).unwrap_or((100, 100));
+        show_tray_menu_at(app.clone(), x, y).await?;
+        if let Some(win) = app.get_webview_window("tray_menu") {
+            TRAY_MENU_PENDING_SHOW.store(false, std::sync::atomic::Ordering::SeqCst);
+            let _ = win.hide();
+        }
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn tray_menu_ready(app: AppHandle, width: f64, height: f64) -> Result<(), String> {
+    let Some(win) = app.get_webview_window("tray_menu") else {
+        return Ok(());
+    };
+
+    let scale = win.scale_factor().unwrap_or(1.0);
+    let width_px = (width * scale).round() as u32;
+    let height_px = (height * scale).round() as u32;
+
+    if TRAY_MENU_PENDING_SHOW.swap(false, std::sync::atomic::Ordering::SeqCst) {
+        // Cold-created window: the Rust-side show used the estimated geometry; correct with the
+        // measured size now (the webview already holds focus, so plain show is enough).
+        let (anchor_x, anchor_y) = TRAY_MENU_ANCHOR
+            .lock()
+            .ok()
+            .and_then(|g| *g)
+            .unwrap_or((100, 100));
+        let (x, y, w, h) = tray_menu_geometry(&win, anchor_x, anchor_y, width, height);
+        let _ = win.set_size(tauri::Size::Physical(tauri::PhysicalSize {
+            width: w,
+            height: h,
+        }));
+        let _ = win.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
+        let _ = win.show();
+        return Ok(());
+    }
+
+    // Warm window: already shown at the estimated size. Only correct when the measured content
+    // differs meaningfully, to avoid a visible resize jump on every open (labels changing change
+    // width by < 1px in practice).
+    if let Ok(cur) = win.outer_size() {
+        let dw = (cur.width as i64 - width_px as i64).abs();
+        let dh = (cur.height as i64 - height_px as i64).abs();
+        let tol = (6.0 * scale).round() as i64;
+        if dw <= tol && dh <= tol {
+            return Ok(());
+        }
+        let (anchor_x, anchor_y) = TRAY_MENU_ANCHOR
+            .lock()
+            .ok()
+            .and_then(|g| *g)
+            .unwrap_or((100, 100));
+        let (x, y, w, h) = tray_menu_geometry(&win, anchor_x, anchor_y, width, height);
+        let _ = win.set_size(tauri::Size::Physical(tauri::PhysicalSize {
+            width: w,
+            height: h,
+        }));
+        let _ = win.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
+    }
 
     Ok(())
 }
