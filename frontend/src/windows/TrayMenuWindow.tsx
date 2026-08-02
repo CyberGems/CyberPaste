@@ -149,7 +149,7 @@ export function TrayMenuWindow() {
       onContextMenu={(e) => e.preventDefault()}
     >
       <div
-        className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1c1c1e]/[0.97]"
+        className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1c1c1e]"
         style={{
           width: MENU_WIDTH,
           // Compact non-clipped shadow, tuned to fit within SHADOW_PAD
