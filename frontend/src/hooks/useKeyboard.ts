@@ -20,6 +20,10 @@ interface KeyboardOptions {
   onToggleDetailPanel?: () => void;
   /** Ctrl/Cmd+A — select all clips (bulk selection) */
   onSelectAll?: () => void;
+  /** Ctrl/Cmd+1..9 — paste clip #N directly (Compact) */
+  onPasteByIndex?: (n: number) => void;
+  /** Esc pressed while search input is focused and has text */
+  onClearSearch?: () => void;
   onToggleMode?: () => void;
   toggleModeHotkey?: string; // e.g. "Ctrl+M"
   onStartTypingSearch?: (char: string) => void;
@@ -67,8 +71,38 @@ export function useKeyboard(options: KeyboardOptions) {
         if (isTyping && !isSearchInput) {
           return;
         }
+        // Si el search input está enfocado y tiene texto, limpiar primero
+        if (isSearchInput && options.onClearSearch) {
+          const input = e.target as HTMLInputElement;
+          if (input.value.length > 0) {
+            e.preventDefault();
+            options.onClearSearch();
+            return;
+          }
+        }
         e.preventDefault();
         options.onClose();
+      }
+
+      // Ctrl/Cmd+1..9 — paste clip #N directly (sin importar el foco)
+      if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '9') {
+        e.preventDefault();
+        e.stopPropagation();
+        const n = parseInt(e.key, 10);
+        options.onPasteByIndex?.(n);
+        return;
+      }
+
+      // Ctrl/Cmd+Backspace — clear search (si está enfocado)
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.key === 'Backspace' &&
+        isSearchInput &&
+        options.onClearSearch
+      ) {
+        e.preventDefault();
+        options.onClearSearch();
+        return;
       }
 
       if ((e.metaKey || e.ctrlKey) && e.key === 'f' && options.onSearch) {

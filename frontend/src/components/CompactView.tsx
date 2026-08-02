@@ -74,8 +74,8 @@ import { de, enUS, es, fr, ja, zhCN } from 'date-fns/locale';
 import { List, useListRef, type RowComponentProps } from 'react-window';
 import { CONTEXT_MENU_EVENT, type ContextMenuEventDetail } from '../utils/contextMenuEvents';
 import { LAYOUT } from '../constants';
-
-const COMPACT_ROW_HEIGHT = 44;
+import { CompactBulkBar } from './CompactBulkBar';
+import { CompactPeek } from './CompactPeek';
 
 const localeMap: Record<string, any> = {
   de,
@@ -336,6 +336,19 @@ interface CompactViewProps {
   searchFocusToken?: number;
   clipNumbering?: 'positional' | 'countdown';
   isWindowActive?: boolean;
+  // NUEVO: densidad de fila
+  rowHeight?: number;
+  // NUEVO: selección múltiple compact
+  selectedClipIds?: Set<string>;
+  onToggleClipSelect?: (id: string, multi: boolean) => void;
+  onClearSelection?: () => void;
+  onBulkCopy?: () => void;
+  onBulkDelete?: () => void;
+  onBulkMove?: (folderId: string | null) => void;
+  // NUEVO: peek y pin
+  onPinClip?: (id: string) => void;
+  // NUEVO: micro-animación de entrada
+  entranceAnim?: boolean;
 }
 
 export const CompactView: React.FC<CompactViewProps> = ({
@@ -378,6 +391,16 @@ export const CompactView: React.FC<CompactViewProps> = ({
   onTypeFilterChange,
   searchFocusToken,
   clipNumbering = 'positional',
+  // NUEVO
+  rowHeight = 44,
+  selectedClipIds,
+  onToggleClipSelect,
+  onClearSelection,
+  onBulkCopy,
+  onBulkDelete,
+  onBulkMove,
+  onPinClip,
+  entranceAnim = true,
 }) => {
   const { t } = useTranslation();
   const folderScrollRef = useRef<HTMLDivElement>(null);
@@ -385,6 +408,27 @@ export const CompactView: React.FC<CompactViewProps> = ({
   const isVertical = compactFolderLayout === 'vertical';
   const searchInputRef = useRef<HTMLInputElement>(null);
   const didFocusRef = useRef(false);
+
+  // NUEVO: estado para peek popover
+  const [peekClipId, setPeekClipId] = useState<string | null>(null);
+  const [peekAnchor, setPeekAnchor] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
+  const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // NUEVO: micro-animación de entrada
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    if (!entranceAnim) {
+      setMounted(true);
+      return;
+    }
+    const raf = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(raf);
+  }, [entranceAnim]);
 
   useEffect(() => {
     if (!didFocusRef.current) {
@@ -414,6 +458,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
     [clips, typeFilter]
   );
   const isFiltering = typeFilter !== 'all';
+
+  // NUEVO: selección múltiple
+  const selectedCount = selectedClipIds?.size ?? 0;
+  const hasSelection = selectedCount > 0;
 
   const filterCounts = useMemo(() => {
     let all = clips.length;
@@ -675,6 +723,38 @@ export const CompactView: React.FC<CompactViewProps> = ({
       }
     },
     [onLoadMore, filteredClips.length]
+  );
+
+  // NUEVO: handlers para peek popover
+  const handleRowMouseEnter = useCallback((clip: AppClip, e: React.MouseEvent) => {
+    if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    peekTimerRef.current = setTimeout(() => {
+      setPeekClipId(clip.id);
+      setPeekAnchor({ x: rect.left, y: rect.top, width: rect.width, height: rect.height });
+    }, 300); // pequeño delay para no abrir en scroll rápido
+  }, []);
+
+  const handleRowMouseLeave = useCallback(() => {
+    if (peekTimerRef.current) {
+      clearTimeout(peekTimerRef.current);
+      peekTimerRef.current = null;
+    }
+    // No cerrar de inmediato — el popover tiene su propio onMouseLeave
+  }, []);
+
+  const closePeek = useCallback(() => {
+    setPeekClipId(null);
+    setPeekAnchor(null);
+    if (peekTimerRef.current) {
+      clearTimeout(peekTimerRef.current);
+      peekTimerRef.current = null;
+    }
+  }, []);
+
+  const peekClip = useMemo(
+    () => (peekClipId ? (filteredClips.find((c) => c.id === peekClipId) ?? null) : null),
+    [peekClipId, filteredClips]
   );
 
   const folderPillClass = (_folderId: string | null, isSelected: boolean, isDragTarget: boolean) =>
@@ -1062,13 +1142,31 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     : t('clipList.empty')
                 }
                 onRowsRendered={handleRowsRendered}
+                selectedClipIds={selectedClipIds}
+                onToggleClipSelect={onToggleClipSelect}
+                rowHeight={rowHeight}
+                onRowMouseEnter={handleRowMouseEnter}
+                onRowMouseLeave={handleRowMouseLeave}
               />
             </div>
 
             {/* Footer */}
-            <div className="flex flex-shrink-0 items-center justify-between border-t border-white/5 bg-black/10 p-2 font-mono text-[9px] tracking-tighter opacity-40">
-              <span>{t('compact.enterToPaste')}</span>
-              <span>{t('compact.arrowsFolders')}</span>
+            <div
+              className={cn(
+                'flex flex-shrink-0 items-center justify-between border-t border-white/5 bg-black/10 p-2 font-mono text-[9px] tracking-tighter transition-opacity',
+                entranceAnim && !mounted ? 'opacity-0' : 'opacity-40'
+              )}
+            >
+              <span>
+                {hasSelection
+                  ? t('compact.footerWithSelection', { count: selectedCount })
+                  : t('compact.enterToPaste')}
+              </span>
+              <span>
+                {isFiltering
+                  ? `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: t(`compact.filter${typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}`) })}`
+                  : t('compact.footerTotalClips', { count: filteredClips.length })}
+              </span>
               <span>{t('compact.escToHide')}</span>
             </div>
           </div>
@@ -1241,16 +1339,74 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   : t('clipList.empty')
               }
               onRowsRendered={handleRowsRendered}
+              selectedClipIds={selectedClipIds}
+              onToggleClipSelect={onToggleClipSelect}
+              rowHeight={rowHeight}
+              onRowMouseEnter={handleRowMouseEnter}
+              onRowMouseLeave={handleRowMouseLeave}
             />
           </div>
 
-          <div className="flex flex-shrink-0 items-center justify-between border-t border-white/5 bg-black/10 p-2 font-mono text-[9px] tracking-tighter opacity-40">
-            <span>{t('compact.enterToPaste')}</span>
-            <span>{t('compact.arrowsFolders')}</span>
+          {/* Footer */}
+          <div
+            className={cn(
+              'flex flex-shrink-0 items-center justify-between border-t border-white/5 bg-black/10 p-2 font-mono text-[9px] tracking-tighter transition-opacity',
+              entranceAnim && !mounted ? 'opacity-0' : 'opacity-40'
+            )}
+          >
+            <span>
+              {hasSelection
+                ? t('compact.footerWithSelection', { count: selectedCount })
+                : t('compact.enterToPaste')}
+            </span>
+            <span>
+              {isFiltering
+                ? `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: t(`compact.filter${typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}`) })}`
+                : t('compact.footerTotalClips', { count: filteredClips.length })}
+            </span>
             <span>{t('compact.escToHide')}</span>
           </div>
         </>
       )}
+
+      {/* NUEVO: Bulk action bar flotante */}
+      <CompactBulkBar
+        count={selectedCount}
+        folders={folders}
+        onCopy={() => {
+          onBulkCopy?.();
+          onClearSelection?.();
+        }}
+        onMoveToFolder={(folderId) => {
+          onBulkMove?.(folderId);
+          onClearSelection?.();
+        }}
+        onDelete={() => {
+          onBulkDelete?.();
+          onClearSelection?.();
+        }}
+        onClear={() => onClearSelection?.()}
+      />
+
+      {/* NUEVO: Peek popover */}
+      <CompactPeek
+        clip={peekClip}
+        anchorRect={peekAnchor}
+        resolveImageSrc={getClipImageSrc}
+        onCopy={(id) => {
+          onPaste(id);
+          closePeek();
+        }}
+        onPin={(id) => {
+          onPinClip?.(id);
+          closePeek();
+        }}
+        onDelete={(id) => {
+          onDelete(id);
+          closePeek();
+        }}
+        onClose={closePeek}
+      />
     </div>
   );
 };
@@ -1273,6 +1429,8 @@ const ClipRow = memo(function ClipRow({
   t,
   isDragging,
   clipNumbering,
+  isSelected = false,
+  onToggleSelect,
 }: {
   clip: AppClip;
   index: number;
@@ -1290,6 +1448,8 @@ const ClipRow = memo(function ClipRow({
   t: (key: string) => string;
   isDragging?: boolean;
   clipNumbering?: 'positional' | 'countdown';
+  isSelected?: boolean;
+  onToggleSelect?: (id: string, multi: boolean) => void;
 }) {
   const { i18n } = useTranslation();
   const typeLabel = useMemo(() => {
@@ -1360,7 +1520,14 @@ const ClipRow = memo(function ClipRow({
       )}
       <div
         data-clip-id={clip.id}
-        onClick={() => onPaste(clip.id)}
+        onClick={(e) => {
+          if ((e.ctrlKey || e.metaKey) && onToggleSelect) {
+            e.stopPropagation();
+            onToggleSelect(clip.id, true);
+          } else {
+            onPaste(clip.id);
+          }
+        }}
         onContextMenu={(e) => {
           setMenuHighlight(true);
           setHovered(true);
@@ -1382,11 +1549,13 @@ const ClipRow = memo(function ClipRow({
         draggable="false"
         className={clsx(
           'group relative flex h-10 w-full cursor-pointer items-center gap-3 overflow-hidden rounded-lg border px-2 py-1.5 transition-colors',
-          selectedClipId === clip.id
-            ? 'border-indigo-500/40 bg-indigo-500/15 shadow-[0_0_12px_rgba(99,102,241,0.2)]'
-            : showHover
-              ? 'border-cyan-500/30 bg-white/10'
-              : 'border-white/5 bg-white/5',
+          isSelected
+            ? 'border-cyan-500/50 bg-cyan-500/20 shadow-[0_0_12px_rgba(6,182,212,0.3)]'
+            : selectedClipId === clip.id
+              ? 'border-indigo-500/40 bg-indigo-500/15 shadow-[0_0_12px_rgba(99,102,241,0.2)]'
+              : showHover
+                ? 'border-cyan-500/30 bg-white/10'
+                : 'border-white/5 bg-white/5',
           reorderEnabled && !isDragging && 'cursor-grab',
           isDragging && 'pointer-events-none scale-95 cursor-grabbing opacity-40'
         )}
@@ -1545,6 +1714,10 @@ type CompactListRowProps = {
   t: (key: string) => string;
   draggingClipId?: string | null;
   clipNumbering?: 'positional' | 'countdown';
+  selectedClipIds?: Set<string>;
+  onToggleClipSelect?: (id: string, multi: boolean) => void;
+  onRowMouseEnter?: (clip: AppClip, e: React.MouseEvent) => void;
+  onRowMouseLeave?: () => void;
 };
 
 function CompactListRow({
@@ -1565,11 +1738,21 @@ function CompactListRow({
   t,
   draggingClipId,
   clipNumbering,
+  selectedClipIds,
+  onToggleClipSelect,
+  onRowMouseEnter,
+  onRowMouseLeave,
 }: RowComponentProps<CompactListRowProps>) {
   const clip = clips[index];
   if (!clip) return null;
   return (
-    <div style={style} {...ariaAttributes} className="box-border px-2">
+    <div
+      style={style}
+      {...ariaAttributes}
+      className="box-border px-2"
+      onMouseEnter={(e) => onRowMouseEnter?.(clip, e)}
+      onMouseLeave={() => onRowMouseLeave?.()}
+    >
       <ClipRow
         clip={clip}
         index={index}
@@ -1587,6 +1770,8 @@ function CompactListRow({
         t={t}
         isDragging={clip.id === draggingClipId}
         clipNumbering={clipNumbering}
+        isSelected={selectedClipIds?.has(clip.id) ?? false}
+        onToggleSelect={onToggleClipSelect}
       />
     </div>
   );
@@ -1611,6 +1796,11 @@ function CompactClipList({
   isLoading,
   emptyLabel,
   onRowsRendered,
+  selectedClipIds,
+  onToggleClipSelect,
+  rowHeight,
+  onRowMouseEnter,
+  onRowMouseLeave,
 }: {
   clips: AppClip[];
   listRef: React.Ref<import('react-window').ListImperativeAPI>;
@@ -1634,6 +1824,11 @@ function CompactClipList({
     visible: { startIndex: number; stopIndex: number },
     all: { startIndex: number; stopIndex: number }
   ) => void;
+  selectedClipIds?: Set<string>;
+  onToggleClipSelect?: (id: string, multi: boolean) => void;
+  rowHeight?: number;
+  onRowMouseEnter?: (clip: AppClip, e: React.MouseEvent) => void;
+  onRowMouseLeave?: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   // Start with a sensible fallback so the list paints before the first ResizeObserver tick
@@ -1687,6 +1882,10 @@ function CompactClipList({
       t,
       draggingClipId,
       clipNumbering,
+      selectedClipIds,
+      onToggleClipSelect,
+      onRowMouseEnter,
+      onRowMouseLeave,
     }),
     [
       clips,
@@ -1703,6 +1902,10 @@ function CompactClipList({
       t,
       draggingClipId,
       clipNumbering,
+      selectedClipIds,
+      onToggleClipSelect,
+      onRowMouseEnter,
+      onRowMouseLeave,
     ]
   );
 
@@ -1720,7 +1923,7 @@ function CompactClipList({
         className="no-scrollbar"
         rowComponent={CompactListRow}
         rowCount={clips.length}
-        rowHeight={COMPACT_ROW_HEIGHT}
+        rowHeight={rowHeight ?? 44}
         rowProps={rowProps}
         listRef={listRef}
         style={{ height: Math.max(height, 1), width: '100%' }}

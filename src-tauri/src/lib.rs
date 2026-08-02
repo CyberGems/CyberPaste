@@ -807,6 +807,8 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
             mica_effect,
             theme_str,
             round_corners,
+            compact_last_x,
+            compact_last_y,
         ) = {
             let manager = window.state::<Arc<crate::settings_manager::SettingsManager>>();
             let s = manager.get();
@@ -833,6 +835,8 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                 s.mica_effect.clone(),
                 s.theme.clone(),
                 s.round_corners,
+                s.compact_last_position_x,
+                s.compact_last_position_y,
             )
         };
 
@@ -866,6 +870,14 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                             found = true;
                         }
                     }
+                }
+            }
+
+            // If last position is saved for compact mode, use it directly (skip caret/cursor)
+            if view_mode == "compact" && compact_pos_mode == "auto" {
+                if let (Some(lx), Some(ly)) = (compact_last_x, compact_last_y) {
+                    point = POINT { x: lx, y: ly };
+                    found = true;
                 }
             }
 
@@ -1133,6 +1145,14 @@ pub fn animate_window_hide(
             )
         };
         if view_mode == "compact" {
+            // Save last position for potential reuse
+            if let Ok(pos) = window.outer_position() {
+                let manager = window.state::<Arc<crate::settings_manager::SettingsManager>>();
+                let mut s = manager.get();
+                s.compact_last_position_x = Some(pos.x);
+                s.compact_last_position_y = Some(pos.y);
+                let _ = manager.save(s);
+            }
             let _ = window.hide();
         } else {
             if let Some(monitor) = window.current_monitor().ok().flatten() {

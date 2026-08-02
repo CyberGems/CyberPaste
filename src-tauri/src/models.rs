@@ -68,6 +68,11 @@ pub struct AppSettings {
     pub auto_check_updates: bool,
     pub full_show_hud: bool,
     pub full_grid_scale: f64,
+    pub compact_row_height: f64,
+    pub compact_type_filter: String,
+    pub compact_last_position_x: Option<i32>,
+    pub compact_last_position_y: Option<i32>,
+    pub compact_auto_height: bool,
 }
 
 impl Default for AppSettings {
@@ -135,6 +140,11 @@ impl Default for AppSettings {
             auto_check_updates: false,
             full_show_hud: true,
             full_grid_scale: 1.0,
+            compact_row_height: 44.0,
+            compact_type_filter: "all".to_string(),
+            compact_last_position_x: None,
+            compact_last_position_y: None,
+            compact_auto_height: true,
         }
     }
 }

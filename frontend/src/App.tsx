@@ -198,6 +198,10 @@ function App() {
       .then((s) => {
         setTheme(s.theme);
         setSettings(s);
+        // Cargar preferencias compact persistidas
+        if (s.compact_type_filter && s.compact_type_filter !== 'all') {
+          setCompactTypeFilter(s.compact_type_filter as any);
+        }
         clearTimeout(timer);
         setIsLoading(false);
       })
@@ -997,6 +1001,40 @@ function App() {
     return () => document.removeEventListener('wheel', handleZoomWheel);
   }, [showZoomIndicator]);
 
+  // Ctrl + wheel en área de clips del modo Compact: cambia densidad (36/44/52px)
+  useEffect(() => {
+    const ROW_HEIGHTS = [36, 44, 52];
+    const handleCompactZoom = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      if (settingsRef.current?.view_mode !== 'compact') return;
+      const target = e.target as HTMLElement;
+      // Solo si estamos sobre el área de clips (cualquier elemento dentro del div de la lista)
+      if (!target.closest('[data-clip-list="true"]')) return;
+      e.preventDefault();
+      const current = settingsRef.current?.compact_row_height ?? 44;
+      const idx = ROW_HEIGHTS.indexOf(current);
+      const direction = e.deltaY < 0 ? 1 : -1;
+      const nextIdx = Math.min(ROW_HEIGHTS.length - 1, Math.max(0, idx + direction));
+      const next = ROW_HEIGHTS[nextIdx];
+      if (next === current || !settingsRef.current) return;
+      const newSettings = { ...settingsRef.current, compact_row_height: next };
+      setSettings(newSettings);
+      invoke('save_settings', { settings: newSettings }).catch(console.error);
+      // Micro-toast de feedback
+      toast.info(
+        t('settings.compactDensity') +
+          ': ' +
+          (next === 36
+            ? t('compact.densitySmall')
+            : next === 44
+              ? t('compact.densityMedium')
+              : t('compact.densityLarge'))
+      );
+    };
+    document.addEventListener('wheel', handleCompactZoom, { passive: false });
+    return () => document.removeEventListener('wheel', handleCompactZoom);
+  }, [t]);
+
   // Keyboard navigation handlers
   const handleNavigatePrev = useCallback(() => {
     if (clips.length === 0) return;
@@ -1142,12 +1180,60 @@ function App() {
 
   const handleClearBulkSelection = useCallback(() => setSelectedClipIds(new Set()), []);
 
-  // Ctrl+A — select every clip currently rendered in Full mode
+  // Ctrl+A — select every clip currently rendered (Full grid) or filtered list (Compact)
   const handleSelectAllClips = useCallback(() => {
-    if (settings?.view_mode !== 'full') return;
     setSelectedClipIds(new Set(clipsRef.current.map((c) => c.id)));
     toast.info(t('bulk.selectedAll', { count: clipsRef.current.length }));
-  }, [settings?.view_mode, t]);
+  }, [t]);
+
+  const handleToggleClipSelect = useCallback((id: string, multi: boolean) => {
+    setSelectedClipIds((prev) => {
+      const next = new Set(multi ? prev : []);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleBulkCopy = useCallback(async () => {
+    const ids = Array.from(selectedClipIds);
+    if (ids.length === 0) return;
+    // Copiar todos los clips seleccionados concatenados
+    const texts: string[] = [];
+    for (const id of ids) {
+      const clip = clipsRef.current.find((c) => c.id === id);
+      if (clip && clip.clip_type !== 'image' && clip.clip_type !== 'file') {
+        texts.push(clip.content);
+      }
+    }
+    if (texts.length === 0) {
+      toast.info(t('contextMenu.noPlainText'));
+      return;
+    }
+    try {
+      await invoke('write_clipboard_text', { text: texts.join('\n\n') });
+      toast.success(t('common.copied'));
+      handleClearBulkSelection();
+    } catch (err) {
+      toast.error(t('notifications.copyFailed'));
+    }
+  }, [selectedClipIds, t, handleClearBulkSelection]);
+
+  // Ctrl+1 a Ctrl+9 → pegar clip #N usando clipNumbering actual
+  const handlePasteByIndex = useCallback(
+    (n: number) => {
+      const filtered = clipsRef.current;
+      if (filtered.length === 0) return;
+      // Positional: Ctrl+1 = index 0 (clip #1)
+      // Countdown: mostrar #N donde N = totalCount - index, entonces Ctrl+1 corresponde al último visualmente.
+      //    Para countdown Ctrl+1 debe pegar el clip con número #1, que es el último en la lista (index length-1).
+      const targetIndex = settings?.clip_numbering === 'countdown' ? filtered.length - n : n - 1;
+      if (targetIndex < 0 || targetIndex >= filtered.length) return;
+      const clip = filtered[targetIndex];
+      if (clip) handlePaste(clip.id);
+    },
+    [settings?.clip_numbering]
+  );
 
   // Left/Right move between cards (identical wrap-around semantics as Up/Down)
   const handleCardPrev = useCallback(() => handleNavigatePrev(), [handleNavigatePrev]);
@@ -1674,6 +1760,8 @@ function App() {
     onPreviewSelected: handlePreviewSelected,
     onToggleDetailPanel: handleToggleDetailPanel,
     onSelectAll: handleSelectAllClips,
+    onPasteByIndex: handlePasteByIndex,
+    onClearSearch: () => handleSearch(''),
     onToggleMode: toggleViewMode,
     toggleModeHotkey: settings?.view_mode_hotkey,
     onStartTypingSearch: handleStartTypingSearch,
@@ -1761,9 +1849,26 @@ function App() {
               onLoadMore={loadMore}
               onReorderFolder={handleReorderFolder}
               typeFilter={compactTypeFilter}
-              onTypeFilterChange={setCompactTypeFilter}
+              onTypeFilterChange={async (v) => {
+                setCompactTypeFilter(v);
+                if (settings) {
+                  const newSettings = { ...settings, compact_type_filter: v };
+                  await invoke('save_settings', { settings: newSettings });
+                  setSettings(newSettings);
+                }
+              }}
               searchFocusToken={searchFocusToken}
               clipNumbering={settings?.clip_numbering || 'positional'}
+              rowHeight={settings?.compact_row_height ?? 44}
+              selectedClipIds={selectedClipIds}
+              onToggleClipSelect={handleToggleClipSelect}
+              onClearSelection={handleClearBulkSelection}
+              onBulkCopy={handleBulkCopy}
+              onBulkDelete={handleBulkDelete}
+              onBulkMove={handleBulkMove}
+              onPinClip={(id) => {
+                invoke('toggle_clip_pin', { clipId: id }).catch(console.error);
+              }}
             />
           ) : (
             <div

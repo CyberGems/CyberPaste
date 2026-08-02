@@ -78,6 +78,11 @@ export interface Settings {
   auto_check_updates?: boolean;
   full_show_hud?: boolean;
   full_grid_scale?: number;
+  compact_row_height?: number; // 36 | 44 | 52
+  compact_type_filter?: string; // 'all' | 'text' | 'code' | 'image' | 'url' | 'file'
+  compact_last_position_x?: number | null;
+  compact_last_position_y?: number | null;
+  compact_auto_height?: boolean;
 }
 
 export type ClipType = 'text' | 'image' | 'html' | 'rtf' | 'file' | 'url' | 'code';
