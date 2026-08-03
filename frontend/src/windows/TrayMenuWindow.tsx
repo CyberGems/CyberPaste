@@ -5,6 +5,24 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useTranslation } from 'react-i18next';
 import { AppWindow, Info, LogOut, Pause, Play, Settings } from 'lucide-react';
 import { useLanguage } from '../hooks/useLanguage';
+import type { Settings as AppSettings } from '../types';
+
+/** Resolve the effective palette class for the tray menu (mirrors useTheme). */
+function trayThemeClass(theme: string | undefined): 'cyberpaste' | 'dark' | 'light' {
+  const t = theme || 'cyberpaste';
+  if (t === 'dark' || t === 'light') return t;
+  if (t === 'system') {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'cyberpaste' : 'light';
+  }
+  return 'cyberpaste';
+}
+
+function applyTrayTheme(theme: string | undefined) {
+  const cls = trayThemeClass(theme);
+  const root = window.document.documentElement;
+  root.classList.remove('cyberpaste', 'dark', 'light', 'toast-window');
+  root.classList.add(cls);
+}
 
 export interface TrayMenuState {
   version: string;
@@ -40,6 +58,21 @@ export function TrayMenuWindow() {
       (root as HTMLElement).style.background = 'transparent';
       (root as HTMLElement).style.overflow = 'hidden';
     }
+
+    // Apply the global theme to this window and keep it in sync
+    invoke<AppSettings>('get_settings')
+      .then((s) => applyTrayTheme(s.theme))
+      .catch(console.error);
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const onOsTheme = () =>
+      invoke<AppSettings>('get_settings')
+        .then((s) => applyTrayTheme(s.theme))
+        .catch(console.error);
+    media.addEventListener('change', onOsTheme);
+
+    return () => {
+      media.removeEventListener('change', onOsTheme);
+    };
   }, []);
 
   const reportSize = useCallback(() => {
@@ -94,6 +127,11 @@ export function TrayMenuWindow() {
       openRef.current = false;
     });
 
+    // Re-theme live when settings change elsewhere
+    const unlistenSettings = listen<AppSettings>('settings-changed', (event) => {
+      applyTrayTheme(event.payload.theme);
+    });
+
     // First open: window is created after the tray-menu-show emit, so that event
     // is often missed. On mount we always measure+show (this window only exists to pop up).
     invoke<TrayMenuState>('get_tray_menu_state')
@@ -127,6 +165,7 @@ export function TrayMenuWindow() {
       unlistenState.then((f) => f());
       unlistenShow.then((f) => f());
       unlistenHide.then((f) => f());
+      unlistenSettings.then((f) => f());
       unlistenBlur.then((f) => f());
       window.removeEventListener('keydown', onKey);
     };
@@ -158,7 +197,7 @@ export function TrayMenuWindow() {
         }}
         role="menu"
       >
-        <div className="px-3.5 pb-2.5 pt-3.5 text-center text-[12px] font-medium tracking-wide text-white/40">
+        <div className="px-3.5 pb-2.5 pt-3.5 text-center text-[12px] font-medium tracking-wide text-muted-foreground/70">
           CyberPaste v{state?.version ?? '…'}
         </div>
 
@@ -230,14 +269,14 @@ function TrayItem({
       }}
       className="group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors hover:bg-accent active:bg-accent/70"
     >
-      <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center text-white/85 group-hover:text-white">
+      <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center text-foreground/85 group-hover:text-foreground">
         {icon}
       </span>
-      <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-white/90 group-hover:text-white">
+      <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground/90 group-hover:text-foreground">
         {label}
       </span>
       {shortcut ? (
-        <span className="flex-shrink-0 pl-3 text-[11px] font-medium tabular-nums text-white/35">
+        <span className="flex-shrink-0 pl-3 text-[11px] font-medium tabular-nums text-muted-foreground">
           {shortcut}
         </span>
       ) : null}

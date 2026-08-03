@@ -1,7 +1,7 @@
 use crate::settings_manager::SettingsManager;
 use dark_light::Mode;
 use std::sync::Arc;
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager};
 
 #[tauri::command]
 pub async fn get_settings(app: AppHandle) -> Result<serde_json::Value, String> {
@@ -93,6 +93,9 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
     );
     manager.save(new_settings)?;
     let _ = crate::rebuild_tray_menu(&app);
+    // Broadcast so every window (main, settings, toast, tray_menu, image_viewer)
+    // re-applies theme/colors live.
+    let _ = app.emit("settings-changed", crate::models::AppSettings::clone(&manager.get()));
     Ok(())
 }
 
