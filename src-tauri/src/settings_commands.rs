@@ -37,20 +37,22 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
     let current = manager.get();
     new_settings.ignored_apps = current.ignored_apps;
 
-    // Window effect
-    let theme_str = new_settings.theme.clone();
-    let mica_effect = new_settings.mica_effect.clone();
+    // Window effect: derived from the theme (mica_effect is no longer user-selectable)
+    let theme_str = crate::normalize_theme(&new_settings.theme).to_string();
+    new_settings.theme = theme_str.clone();
+    let mica_effect = crate::effect_for_theme(&theme_str).to_string();
+    new_settings.mica_effect = mica_effect.clone();
     let round_corners = new_settings.round_corners;
     log::info!(
-        "save_settings: mica_effect={}, theme={}",
-        mica_effect,
-        theme_str
+        "save_settings: theme={}, effect={}",
+        theme_str,
+        mica_effect
     );
     match app.get_webview_window("main") {
         Some(win) => {
             let current_theme = if theme_str == "light" {
                 tauri::Theme::Light
-            } else if theme_str == "dark" {
+            } else if theme_str == "dark" || theme_str == "cyberpaste" {
                 tauri::Theme::Dark
             } else {
                 let mode = dark_light::detect().map_err(|e| {

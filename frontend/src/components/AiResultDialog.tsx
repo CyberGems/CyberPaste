@@ -72,7 +72,7 @@ export function AiResultDialog({ isOpen, title, content, onClose }: AiResultDial
           </div>
         </div>
         <div className="custom-scrollbar flex-1 overflow-y-auto p-6">
-          <div className="prose dark:prose-invert max-w-none whitespace-pre-wrap text-sm leading-relaxed">
+          <div className="prose dark:prose-invert cyberpaste:prose-invert max-w-none whitespace-pre-wrap text-sm leading-relaxed">
             {content}
           </div>
         </div>

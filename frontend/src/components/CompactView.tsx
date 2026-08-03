@@ -309,7 +309,7 @@ interface CompactViewProps {
   onToggleMode: () => void;
   onOpenSettings: () => void;
   isLoading: boolean;
-  theme: 'light' | 'dark';
+  theme: 'light' | 'dark' | 'cyberpaste';
   totalClipCount: number;
   isPinned?: boolean;
   onTogglePin?: () => void;
@@ -794,7 +794,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
     <div
       className={cn(
         "relative flex h-full w-full select-none flex-col overflow-hidden font-['Segoe_UI',system-ui,sans-serif]",
-        theme === 'dark' ? 'text-white/90' : 'text-slate-800'
+        theme === 'light' ? 'text-slate-800' : 'text-white/90'
       )}
       style={{ border: '1px solid rgba(34, 211, 238, 0.1)' }}
     >
@@ -928,8 +928,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
           {/* Sidebar */}
           <div
             className={cn(
-              'group/sidebar relative flex-shrink-0 overflow-hidden border-r border-white/[0.06] bg-transparent transition-all duration-200',
-              compactSidebarCollapsed && 'hover:bg-white/[0.03]'
+              'group/sidebar relative flex-shrink-0 overflow-hidden border-r border-border bg-transparent transition-all duration-200',
+              compactSidebarCollapsed && 'hover:bg-accent/60'
             )}
             style={{ width: sidebarWidth }}
           >
@@ -964,7 +964,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                           ? 'bg-indigo-500/12 border-indigo-500/35 text-white/90'
                           : dragTargetFolderId === null && isDragging
                             ? 'border-cyan-400 bg-cyan-500/30 text-white'
-                            : 'border-transparent opacity-70 hover:bg-white/[0.06] hover:opacity-100'
+                            : 'border-transparent opacity-70 hover:bg-accent hover:opacity-100'
                       )}
                       onMouseEnter={() => isDragging && onDragHover(null)}
                       onMouseLeave={onDragLeave}
@@ -1011,7 +1011,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                                 ? 'bg-indigo-500/12 border-indigo-500/35 text-white/90'
                                 : dragTargetFolderId === folder.id && isDragging
                                   ? 'border-cyan-400 bg-cyan-500/30 text-white'
-                                  : 'border-transparent opacity-70 hover:bg-white/[0.06] hover:opacity-100',
+                                  : 'border-transparent opacity-70 hover:bg-accent hover:opacity-100',
                               draggingFolderId === folder.id &&
                                 'pointer-events-none scale-95 opacity-40'
                             )}

@@ -104,7 +104,7 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
           onMouseLeave={onClose}
         >
           <div
-            className="flex w-80 flex-col overflow-hidden rounded-xl border border-white/10 bg-[#0B0C0E] shadow-[0_8px_32px_rgba(0,0,0,0.7)]"
+            className="flex w-80 flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-[0_8px_32px_rgba(0,0,0,0.7)]"
             style={{ maxHeight: PEEK_MAX_HEIGHT }}
           >
             {/* Content */}

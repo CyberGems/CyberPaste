@@ -4,11 +4,13 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Settings } from '../types';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { useLanguage } from '../hooks/useLanguage';
+import { useTheme } from '../hooks/useTheme';
 
 export function SettingsWindow() {
   const [settings, setSettings] = useState<Settings | null>(null);
 
   useLanguage(settings?.language);
+  useTheme(settings?.theme ?? 'cyberpaste');
 
   useEffect(() => {
     invoke<Settings>('get_settings').then(setSettings).catch(console.error);

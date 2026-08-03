@@ -176,7 +176,7 @@ pub fn run_app() {
 
                     tauri::async_runtime::spawn(async move {
                         let current_theme = settings.theme;
-                        let mica_effect = settings.mica_effect;
+                        let mica_effect = crate::effect_for_theme(&current_theme).to_string();
                         let round_corners = settings.round_corners;
 
                         if current_theme == "system" {
@@ -376,13 +376,13 @@ pub fn run_app() {
                     if let Some(win) = app_handle_clone.get_webview_window("main") {
                         let manager = win.state::<Arc<SettingsManager>>();
                         let settings = manager.get();
-                        let mica_effect = settings.mica_effect;
-                        let theme = settings.theme;
+                        let mica_effect = crate::effect_for_theme(&settings.theme).to_string();
+                        let theme = crate::normalize_theme(&settings.theme).to_string();
                         let round_corners = settings.round_corners;
 
                         let current_theme = if theme == "light" {
                             tauri::Theme::Light
-                        } else if theme == "dark" {
+                        } else if theme == "dark" || theme == "cyberpaste" {
                             tauri::Theme::Dark
                         } else {
                             win.theme().unwrap_or(tauri::Theme::Light)
@@ -591,7 +591,7 @@ pub fn animate_view_mode_transition(window: &tauri::WebviewWindow) {
     let (side_margin, bottom_margin, float_above_taskbar, view_mode, saved_width, saved_height) = {
         let manager = window.state::<Arc<crate::settings_manager::SettingsManager>>();
         let s = manager.get();
-        let is_mica = s.mica_effect != "clear";
+        let is_mica = crate::effect_for_theme(&s.theme) == "mica";
         let no_corners = !s.round_corners;
         let side = if is_mica && no_corners {
             0.0
@@ -812,7 +812,7 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
         ) = {
             let manager = window.state::<Arc<crate::settings_manager::SettingsManager>>();
             let s = manager.get();
-            let is_mica = s.mica_effect != "clear";
+            let is_mica = crate::effect_for_theme(&s.theme) == "mica";
             let no_corners = !s.round_corners;
             let side = if is_mica && no_corners {
                 0.0
@@ -955,7 +955,7 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                 }));
                 let current_theme = if theme_str == "light" {
                     tauri::Theme::Light
-                } else if theme_str == "dark" {
+                } else if theme_str == "dark" || theme_str == "cyberpaste" {
                     tauri::Theme::Dark
                 } else {
                     window.theme().unwrap_or(tauri::Theme::Light)
@@ -1019,7 +1019,7 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
 
                 let current_theme = if theme_str == "light" {
                     tauri::Theme::Light
-                } else if theme_str == "dark" {
+                } else if theme_str == "dark" || theme_str == "cyberpaste" {
                     tauri::Theme::Dark
                 } else {
                     window.theme().unwrap_or(tauri::Theme::Light)
@@ -1070,7 +1070,7 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
         } else {
             let current_theme = if theme_str == "light" {
                 tauri::Theme::Light
-            } else if theme_str == "dark" {
+            } else if theme_str == "dark" || theme_str == "cyberpaste" {
                 tauri::Theme::Dark
             } else {
                 window.theme().unwrap_or(tauri::Theme::Light)
@@ -1124,7 +1124,7 @@ pub fn animate_window_hide(
         let (side_margin, bottom_margin, float_above_taskbar, view_mode, saved_height) = {
             let manager = window.state::<Arc<crate::settings_manager::SettingsManager>>();
             let s = manager.get();
-            let is_mica = s.mica_effect != "clear";
+            let is_mica = crate::effect_for_theme(&s.theme) == "mica";
             let no_corners = !s.round_corners;
             let side = if is_mica && no_corners {
                 0.0
@@ -1238,24 +1238,40 @@ pub fn get_monitor_at_cursor(window: &tauri::WebviewWindow) -> Option<tauri::Mon
     }
 }
 
+/// Canonical theme id. Maps legacy values and unknowns to the supported set.
+pub fn normalize_theme(theme: &str) -> &str {
+    match theme {
+        "cyberpaste" => "cyberpaste",
+        "dark" => "dark",
+        "light" => "light",
+        "system" => "system",
+        _ => "cyberpaste",
+    }
+}
+
+/// Window material derived from the theme — no longer user-selectable.
+/// Dark is the only Mica-backed theme; everything else is `clear` (opaque).
+pub fn effect_for_theme(theme: &str) -> &'static str {
+    match normalize_theme(theme) {
+        "dark" => "mica",
+        _ => "clear",
+    }
+}
+
 pub fn apply_window_effect(
     window: &tauri::WebviewWindow,
     effect: &str,
     theme: &tauri::Theme,
     round_corners: bool,
 ) {
-    use window_vibrancy::{apply_mica, apply_tabbed, clear_mica};
+    use window_vibrancy::{apply_mica, clear_mica};
     match effect {
-        "clear" => {
-            let _ = clear_mica(window);
-        }
-        "mica" | "dark" => {
+        "mica" => {
             let _ = clear_mica(window);
             let _ = apply_mica(window, Some(matches!(theme, tauri::Theme::Dark)));
         }
-        "mica_alt" | "auto" | _ => {
+        "clear" | _ => {
             let _ = clear_mica(window);
-            let _ = apply_tabbed(window, Some(matches!(theme, tauri::Theme::Dark)));
         }
     }
     let use_rounded = effect == "clear" || round_corners;

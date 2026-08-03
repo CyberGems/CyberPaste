@@ -186,7 +186,7 @@ export function ImageViewerWindow() {
 
   const applyTheme = useCallback((theme: string) => {
     let dark = true;
-    if (theme === 'dark') {
+    if (theme === 'dark' || theme === 'cyberpaste') {
       document.documentElement.classList.add('dark');
       dark = true;
     } else if (theme === 'light') {

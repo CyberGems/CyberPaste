@@ -32,6 +32,19 @@ impl SettingsManager {
             needs_save = true;
         }
 
+        // Normalize legacy theme values to the new theme ids
+        let normalized_theme = crate::normalize_theme(&settings.theme);
+        if normalized_theme != settings.theme {
+            settings.theme = normalized_theme.to_string();
+            needs_save = true;
+        }
+        // mica_effect is derived from the theme (no longer user-selectable)
+        let derived_effect = crate::effect_for_theme(&settings.theme).to_string();
+        if settings.mica_effect != derived_effect {
+            settings.mica_effect = derived_effect;
+            needs_save = true;
+        }
+
         // Ensure we save it once immediately if migrating or updated, so file exists
         let manager = Self {
             file_path: path,

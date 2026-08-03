@@ -34,41 +34,71 @@
 }
 
 @layer base {
+  /* ── Light (CyberSnap light palette) ─────────────────────────────── */
   :root {
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 262.1 83.3% 57.8%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 210 16% 93%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 16% 93%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 16% 93%;
-    --accent-foreground: 222 47% 11%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 262.1 83.3% 57.8%;
+    --background: 220 21% 90%; /* #DFE2EA */
+    --foreground: 0 0% 10%; /* #1A1A1A */
+    --card: 223 36% 94%; /* #ECEFF6 */
+    --card-foreground: 0 0% 10%;
+    --popover: 223 36% 94%;
+    --popover-foreground: 0 0% 10%;
+    --primary: 205 100% 42%; /* #0078D7 windows accent */
+    --primary-foreground: 0 0% 98%;
+    --secondary: 220 22% 87%; /* #D6DAE5 */
+    --secondary-foreground: 0 0% 38%; /* #606060 */
+    --muted: 220 22% 87%;
+    --muted-foreground: 0 0% 50%; /* #808080 */
+    --accent: 220 22% 87%;
+    --accent-foreground: 0 0% 10%;
+    --destructive: 5 75% 44%; /* #C42B1C */
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 11% 82%; /* ~black 9% over #DFE2EA */
+    --input: 220 11% 82%;
+    --ring: 205 100% 42%;
+    --primary-rgb: 0, 120, 215;
 
-    --sidebar-background: 210 20% 98%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-background: 219 23% 88%; /* #DDE0E8 */
+    --sidebar-foreground: 0 0% 10%;
+    --sidebar-border: 220 11% 82%;
   }
 
+  /* ── Dark (CyberSnap dark palette, Mica-backed) ──────────────────── */
   .dark {
-    --background: 240 10% 3.9%; /* #0a0a0b roughly, keeping close to #1E1E1E-ish feel or darker */
+    --background: 228 28% 7%; /* #0D0F17 */
+    --foreground: 216 100% 95%; /* #E6F0FF */
+    --card: 230 27% 12%; /* #171A28 */
+    --card-foreground: 216 100% 95%;
+    --popover: 230 27% 12%;
+    --popover-foreground: 216 100% 95%;
+    --primary: 180 100% 50%; /* #00FFFF cyberpunk cyan */
+    --primary-foreground: 228 28% 7%;
+    --secondary: 228 27% 18%; /* #21263A */
+    --secondary-foreground: 216 36% 72%; /* #A0B4D2 */
+    --muted: 228 27% 18%;
+    --muted-foreground: 216 21% 53%; /* #6E82A0 */
+    --accent: 228 27% 18%;
+    --accent-foreground: 216 100% 95%;
+    --destructive: 340 100% 50%; /* #FF0055 */
+    --destructive-foreground: 216 100% 95%;
+    --border: 225 25% 20%; /* ~cyan 24% over #0D0F17 */
+    --input: 225 20% 16%;
+    --ring: 180 100% 50%;
+    --primary-rgb: 0, 255, 255;
+
+    --sidebar-background: 228 27% 9%; /* #10131D */
+    --sidebar-foreground: 216 100% 95%;
+    --sidebar-border: 225 25% 20%;
+  }
+
+  /* ── CyberPaste (signature legacy dark, opaque) ──────────────────── */
+  .cyberpaste {
     --background: 0 0% 12%; /* #1E1E1E */
     --foreground: 0 0% 98%;
     --card: 0 0% 12%;
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 12%;
     --popover-foreground: 0 0% 98%;
-    --primary: 263.4 70% 50.4%; /* #6d28d9 */
+    --primary: 263.4 70% 50.4%; /* #6d28d9 signature violet */
     --primary-foreground: 210 20% 98%;
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
@@ -81,6 +111,7 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 263.4 70% 50.4%;
+    --primary-rgb: 109, 40, 217;
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
@@ -93,11 +124,18 @@
 
   html,
   #root {
-    @apply m-0 h-full w-full overflow-hidden bg-[#0a0a0b] p-0;
+    @apply m-0 h-full w-full overflow-hidden bg-background p-0;
   }
 
   body {
-    @apply m-0 h-full w-full bg-[#0a0a0b] p-0;
+    @apply m-0 h-full w-full bg-background p-0;
+  }
+
+  .dark body,
+  .dark #root,
+  .dark html {
+    /* Mica shows through — keep the app shell translucent, no forced bg */
+    background-color: transparent;
   }
 
   /* Toast window needs fully transparent background */
@@ -131,12 +169,24 @@
     box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.5);
   }
 
+  /* Light theme: sober card on the CyberSnap light palette */
+  .light .clip-card {
+    @apply border-black/[0.06] from-white/70 to-white/40;
+    box-shadow: 0 4px 16px -5px rgba(0, 0, 0, 0.15);
+  }
+
   .clip-card:hover {
     @apply border-primary/30 bg-white/[0.02];
     box-shadow:
       0 10px 40px -10px rgba(0, 0, 0, 0.7),
       0 0 20px rgba(var(--primary-rgb), 0.1);
     transform: translateY(-2px);
+  }
+
+  .light .clip-card:hover {
+    box-shadow:
+      0 8px 28px -8px rgba(0, 0, 0, 0.25),
+      0 0 20px rgba(var(--primary-rgb), 0.08);
   }
 
   .clip-card.selected {
@@ -235,6 +285,12 @@
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.3);
+  }
+  .light .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.18);
+  }
+  .light .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.32);
   }
 
   .pause-all-animations *,

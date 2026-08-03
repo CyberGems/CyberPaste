@@ -131,7 +131,7 @@ interface ControlBarProps {
   htmlCount?: number;
   rtfCount?: number;
   onFolderContextMenu: (e: React.MouseEvent, folderId: string) => void;
-  theme: 'light' | 'dark';
+  theme: 'light' | 'dark' | 'cyberpaste';
   onToggleMode: () => void;
   viewMode: 'full' | 'compact';
   isPinned: boolean;
@@ -430,7 +430,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
     <div
       className={clsx(
         'relative z-10 flex flex-col bg-card/50 backdrop-blur-md',
-        theme === 'dark' ? 'text-white' : 'text-slate-900'
+        theme === 'light' ? 'text-slate-900' : 'text-white'
       )}
       style={{
         ...style,

@@ -2307,7 +2307,7 @@ pub async fn reset_window_size(app: AppHandle, window: tauri::WebviewWindow) -> 
 
     let settings = manager.get();
     let is_full = settings.view_mode == "full";
-    let is_mica = settings.mica_effect != "clear";
+    let is_mica = crate::effect_for_theme(&settings.theme) == "mica";
     let no_corners = !settings.round_corners;
     let side_margin = if is_mica && no_corners {
         0.0
@@ -3128,8 +3128,8 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
     })?;
 
     // Apply theme and effects immediately to avoid white flash
-    let mica_effect = settings.mica_effect.clone();
-    let current_theme = if settings.theme == "dark" {
+    let mica_effect = crate::effect_for_theme(&settings.theme).to_string();
+    let current_theme = if settings.theme == "dark" || settings.theme == "cyberpaste" {
         tauri::Theme::Dark
     } else if settings.theme == "light" {
         tauri::Theme::Light

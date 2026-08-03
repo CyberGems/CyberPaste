@@ -149,7 +149,7 @@ export function TrayMenuWindow() {
       onContextMenu={(e) => e.preventDefault()}
     >
       <div
-        className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1c1c1e]"
+        className="overflow-hidden rounded-2xl border border-border bg-card"
         style={{
           width: MENU_WIDTH,
           // Compact non-clipped shadow, tuned to fit within SHADOW_PAD
@@ -162,7 +162,7 @@ export function TrayMenuWindow() {
           CyberPaste v{state?.version ?? '…'}
         </div>
 
-        <div className="mx-2.5 h-px bg-white/[0.08]" />
+        <div className="mx-2.5 h-px bg-accent" />
 
         <div className="flex flex-col gap-0.5 p-1.5">
           <TrayItem
@@ -194,7 +194,7 @@ export function TrayMenuWindow() {
           />
         </div>
 
-        <div className="mx-2.5 h-px bg-white/[0.08]" />
+        <div className="mx-2.5 h-px bg-accent" />
 
         <div className="p-1.5 pb-2">
           <TrayItem
@@ -228,7 +228,7 @@ function TrayItem({
         e.stopPropagation();
         onClick();
       }}
-      className="group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors hover:bg-white/[0.08] active:bg-white/[0.12]"
+      className="group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors hover:bg-accent active:bg-accent/70"
     >
       <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center text-white/85 group-hover:text-white">
         {icon}
