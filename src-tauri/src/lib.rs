@@ -209,7 +209,7 @@ pub fn run_app() {
                                          manager.get().pinned
                                      };
 
-                                     // NEW SAFETY: If cursor is inside window, top header area/borders and left mouse button is down, don't hide (fixes dragging/resizing)
+                                     // NEW SAFETY: If cursor is inside/near window bounds and left mouse button is down, don't hide (fixes dragging/resizing)
                                      let is_inside_and_dragging_or_resizing = if let (Ok(pos), Ok(size)) = (win_clone.outer_position(), win_clone.outer_size()) {
                                          use windows::Win32::Foundation::POINT;
                                          use windows::Win32::UI::WindowsAndMessaging::GetCursorPos;
@@ -217,27 +217,11 @@ pub fn run_app() {
                                          let mut point = POINT { x: 0, y: 0 };
                                          let has_cursor = unsafe { GetCursorPos(&mut point).is_ok() };
                                          if has_cursor {
-                                             let cursor_inside = point.x >= pos.x && point.x <= pos.x + size.width as i32 &&
-                                                 point.y >= pos.y && point.y <= pos.y + size.height as i32;
-                                             
+                                             // Allow a 10px margin around the window to capture resize borders
+                                             let cursor_inside_or_near = point.x >= pos.x - 10 && point.x <= pos.x + size.width as i32 + 10 &&
+                                                 point.y >= pos.y - 10 && point.y <= pos.y + size.height as i32 + 10;
                                              let lbutton_down = (unsafe { GetAsyncKeyState(VK_LBUTTON.0 as i32) } as u16 & 0x8000) != 0;
-                                             
-                                             if cursor_inside && lbutton_down {
-                                                 if let Ok(handle) = win_clone.hwnd() {
-                                                     use windows::Win32::Foundation::{HWND, WPARAM, LPARAM};
-                                                     use windows::Win32::UI::WindowsAndMessaging::{DefWindowProcW, WM_NCHITTEST};
-                                                     let hwnd = HWND(handle.0 as _);
-                                                     let lparam = (point.x & 0xffff) as isize | (((point.y & 0xffff) as isize) << 16);
-                                                     let hit = unsafe { DefWindowProcW(hwnd, WM_NCHITTEST, WPARAM(0), LPARAM(lparam)) };
-                                                     let hit_val = hit.0;
-                                                     // HTCAPTION = 2 (header), HTLEFT = 10, HTRIGHT = 11, HTTOP = 12, HTTOPLEFT = 13, HTTOPRIGHT = 14, HTBOTTOM = 15, HTBOTTOMLEFT = 16, HTBOTTOMRIGHT = 17
-                                                     hit_val == 2 || (hit_val >= 10 && hit_val <= 17)
-                                                 } else {
-                                                     false
-                                                 }
-                                             } else {
-                                                 false
-                                             }
+                                             cursor_inside_or_near && lbutton_down
                                          } else {
                                              false
                                          }
