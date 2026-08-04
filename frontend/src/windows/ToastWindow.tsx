@@ -340,7 +340,7 @@ export function ToastWindow() {
               <img
                 src={`data:image/png;base64,${toast.image_preview}`}
                 alt=""
-                className="h-12 w-12 rounded-md border border-white/10 object-cover shadow-md transition-transform duration-200 hover:scale-105"
+                className="max-h-12 max-w-[180px] rounded-md border border-white/10 object-contain shadow-md transition-transform duration-200 hover:scale-105"
               />
             </div>
           ) : (
