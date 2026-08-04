@@ -3,7 +3,19 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { useLanguage } from '../hooks/useLanguage';
 import { getClipIcon } from './toastIcons';
-import { X } from 'lucide-react';
+import {
+  X,
+  Image as ImageIcon,
+  Type as TypeIcon,
+  Code as CodeIcon,
+  FileText as FileTextIcon,
+  FolderOpen as FolderOpenIcon,
+  Link as LinkIcon,
+  Scissors as ScissorsIcon,
+  CheckCircle2 as CheckIcon,
+  AlertTriangle as AlertIcon,
+  Info as InfoIcon,
+} from 'lucide-react';
 import { Settings } from '../types';
 
 interface ToastPayload {
@@ -64,6 +76,43 @@ function getClipTitle(clipType: string | null | undefined, toastType: string | u
       return t('toasts.titles.url_copied');
     default:
       return t('toasts.titles.fallback_copied');
+  }
+}
+
+function getHeaderClipIcon(
+  clipType: string | null | undefined,
+  toastType: string | undefined,
+  color: string
+): React.ReactNode {
+  const cls = 'h-3.5 w-3.5';
+  const pink = '#FF00D0';
+
+  if (toastType === 'cut') {
+    return <ScissorsIcon className={cls} style={{ color: pink }} />;
+  }
+  if (!clipType) {
+    if (toastType === 'success') return <CheckIcon className={cls} style={{ color }} />;
+    if (toastType === 'error') return <AlertIcon className={cls} style={{ color: pink }} />;
+    return <InfoIcon className={cls} style={{ color }} />;
+  }
+  switch (clipType) {
+    case 'welcome':
+      return <CheckIcon className={cls} style={{ color }} />;
+    case 'image':
+      return <ImageIcon className={cls} style={{ color }} />;
+    case 'text':
+      return <TypeIcon className={cls} style={{ color }} />;
+    case 'code':
+    case 'html':
+      return <CodeIcon className={cls} style={{ color }} />;
+    case 'rtf':
+      return <FileTextIcon className={cls} style={{ color }} />;
+    case 'file':
+      return <FolderOpenIcon className={cls} style={{ color }} />;
+    case 'url':
+      return <LinkIcon className={cls} style={{ color }} />;
+    default:
+      return <CheckIcon className={cls} style={{ color }} />;
   }
 }
 
@@ -314,6 +363,11 @@ export function ToastWindow() {
           {/* Header Row: Source Program info or general Title */}
           {toast.source_app ? (
             <div className={`flex items-center gap-1.5 border-b pb-1.5 mb-2 text-xs font-semibold pr-7 ${isMinimal ? 'border-zinc-800 text-zinc-400' : 'border-white/5 text-neutral-400'}`}>
+              <div className="shrink-0 flex items-center">
+                {getHeaderClipIcon(toast.clip_type, toast.toast_type, isMinimal ? '#A1A1AA' : tv.iconColor)}
+              </div>
+              <span className="truncate font-medium">{title}</span>
+              <span className="text-[10px] font-normal text-neutral-500 lowercase px-0.5">{t('toasts.fromApp')}</span>
               {toast.source_icon ? (
                 <img
                   src={`data:image/png;base64,${toast.source_icon}`}
@@ -324,12 +378,13 @@ export function ToastWindow() {
                   }}
                 />
               ) : null}
-              <span className={`truncate max-w-[140px] ${isMinimal ? 'text-zinc-200' : 'text-neutral-200'}`}>{toast.source_app}</span>
-              <span>•</span>
-              <span className="truncate font-medium">{title}</span>
+              <span className={`truncate max-w-[120px] ${isMinimal ? 'text-zinc-200' : 'text-neutral-200'}`}>{toast.source_app}</span>
             </div>
           ) : (
-            <div className="flex items-center justify-between mb-2 pr-7">
+            <div className="flex items-center gap-1.5 mb-2 pr-7">
+              <div className="shrink-0 flex items-center">
+                {getHeaderClipIcon(toast.clip_type, toast.toast_type, isMinimal ? '#A1A1AA' : tv.iconColor)}
+              </div>
               <h4 className={`text-sm font-semibold truncate ${tv.title}`}>{title}</h4>
             </div>
           )}
@@ -344,32 +399,25 @@ export function ToastWindow() {
               />
             </div>
           ) : (
-            <div className="flex items-start gap-3">
-              {/* Icon */}
-              <div className="mt-0.5 shrink-0">
-                {icon}
-              </div>
-
-              <div className="min-w-0 flex-1">
-                {toast.source_app ? (
-                  // When we have a source app, the message is the actual copied content.
-                  // We style it as a preview card to separate it clearly from the header info.
-                  toast.message && (
-                    <div className={`rounded-lg border px-2.5 py-1.5 text-xs line-clamp-2 break-all font-mono whitespace-pre-wrap ${tv.previewBg} ${tv.previewBorder} ${tv.body}`}>
-                      {toast.message}
-                    </div>
-                  )
-                ) : (
-                  // When there is no source app, just render the message normally (e.g. system notification)
-                  toast.message && (
-                    <p
-                      className={`mt-0.5 line-clamp-2 break-words text-sm font-medium leading-snug ${tv.body}`}
-                    >
-                      {toast.message}
-                    </p>
-                  )
-                )}
-              </div>
+            <div className="min-w-0 w-full">
+              {toast.source_app ? (
+                // When we have a source app, the message is the actual copied content.
+                // We style it as a preview card to separate it clearly from the header info.
+                toast.message && (
+                  <div className={`rounded-lg border px-2.5 py-1.5 text-xs line-clamp-2 break-all font-mono whitespace-pre-wrap ${tv.previewBg} ${tv.previewBorder} ${tv.body}`}>
+                    {toast.message}
+                  </div>
+                )
+              ) : (
+                // When there is no source app, just render the message normally (e.g. system notification)
+                toast.message && (
+                  <p
+                    className={`mt-0.5 line-clamp-2 break-words text-sm font-medium leading-snug ${tv.body}`}
+                  >
+                    {toast.message}
+                  </p>
+                )
+              )}
             </div>
           )}
 

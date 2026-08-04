@@ -414,6 +414,7 @@
     "ocrTextUpdateFailed": "Failed to update OCR text",
     "ocrError": "OCR Error: {{error}}",
     "failedToCopyText": "Failed to copy text",
+    "fromApp": "from",
     "tooltipNone": "Notification",
     "tooltipClose": "Click to close",
     "tooltipOpen": "Click to open window",
