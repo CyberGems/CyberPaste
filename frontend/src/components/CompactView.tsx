@@ -1468,6 +1468,7 @@ const ClipRow = memo(function ClipRow({
   clipNumbering,
   isSelected = false,
   onToggleSelect,
+  isPeekVisible,
 }: {
   clip: AppClip;
   index: number;
