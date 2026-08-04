@@ -8,6 +8,7 @@ import Tooltip from './Tooltip';
 interface CompactPeekProps {
   clip: ClipboardItem | null;
   anchorRect: { x: number; y: number; width: number; height: number } | null;
+  sidebarWidth: number;
   resolveImageSrc: (content: string) => string;
   onCopy: (id: string) => void;
   onPin: (id: string) => void;
@@ -15,19 +16,13 @@ interface CompactPeekProps {
   onClose: () => void;
 }
 
-const PEEK_WIDTH = 320; // w-80
-const PEEK_MAX_HEIGHT = 220; // contenido (192) + barra acciones (28) aprox
+const PEEK_MAX_HEIGHT = 280;
 const VIEWPORT_MARGIN = 8;
 
-/**
- * Peek ligero para modo Compact.
- * - Se posiciona arriba de la fila si hay espacio; sino abajo.
- * - Clampa horizontalmente dentro del viewport (no se recorta).
- * - Muestra preview del clip (o imagen resuelta correctamente).
- */
 export const CompactPeek: React.FC<CompactPeekProps> = ({
   clip,
   anchorRect,
+  sidebarWidth,
   resolveImageSrc,
   onCopy,
   onPin,
@@ -65,26 +60,53 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
 
   if (!clip || !anchorRect) return null;
 
-  // ===== Posicionamiento seguro dentro del viewport =====
   const vw = window.innerWidth;
   const vh = window.innerHeight;
 
-  // Horizontal: centrar bajo la fila, clamp dentro del viewport
-  let left = anchorRect.x + anchorRect.width / 2;
-  const halfW = PEEK_WIDTH / 2;
-  left = Math.max(halfW + VIEWPORT_MARGIN, Math.min(left, vw - halfW - VIEWPORT_MARGIN));
+  // Horizontal: Align with the list area (right of the sidebar), clamp to max 380px
+  const width = Math.min(380, vw - sidebarWidth - 16);
+  const left = sidebarWidth + 8;
 
-  // Vertical: intentar mostrar arriba; si no cabe, abajo
+  // Vertical: Try to show above the row; if not enough space, show below
   const spaceAbove = anchorRect.y;
   const spaceBelow = vh - (anchorRect.y + anchorRect.height);
   const showAbove = spaceAbove >= PEEK_MAX_HEIGHT + VIEWPORT_MARGIN || spaceAbove > spaceBelow;
   const top = showAbove ? anchorRect.y - 4 : anchorRect.y + anchorRect.height + 4;
   const translateY = showAbove ? '-100%' : '0';
 
-  // Contenido textual a mostrar: preview (siempre existe) o content truncado
   const isImage = clip.clip_type === 'image';
   const textToShow = (clip.preview || clip.content || '').slice(0, 2000);
   const imageSrc = isImage ? resolveImageSrc(clip.content || clip.image_path || '') : '';
+
+  // Parse image metadata
+  const imageMeta = (() => {
+    if (clip.clip_type !== 'image' || !clip.metadata) return null;
+    try {
+      return JSON.parse(clip.metadata) as {
+        size_bytes?: number;
+        width?: number;
+        height?: number;
+      };
+    } catch {
+      return null;
+    }
+  })();
+
+  const infoLabel = (() => {
+    if (clip.clip_type === 'image') {
+      if (imageMeta) {
+        const sizeKB = imageMeta.size_bytes ? (imageMeta.size_bytes / 1024).toFixed(1) : '0';
+        return t('clipList.imageSize', {
+          width: imageMeta.width || 0,
+          height: imageMeta.height || 0,
+          size: sizeKB,
+        });
+      }
+      return t('common.image');
+    }
+    const len = clip.content_length || clip.content?.length || 0;
+    return t('clipList.textLength', { count: len });
+  })();
 
   return (
     <AnimatePresence>
@@ -99,19 +121,26 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
           style={{
             left,
             top,
-            transform: `translateX(-50%) translateY(${translateY})`,
+            width,
+            transform: `translateY(${translateY})`,
           }}
           onMouseLeave={onClose}
         >
           <div
-            className="flex w-80 flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-[0_8px_32px_rgba(0,0,0,0.7)]"
+            className="flex w-full flex-col overflow-hidden rounded-xl border border-white/10 bg-popover/90 backdrop-blur-md shadow-[0_12px_40px_rgba(0,0,0,0.65)]"
             style={{ maxHeight: PEEK_MAX_HEIGHT }}
           >
+            {/* Header info bar */}
+            <div className="flex flex-shrink-0 items-center justify-between border-b border-white/5 bg-white/5 px-3 py-1.5 text-[10px] font-semibold tracking-wide uppercase text-white/50">
+              <span className="text-cyan-400 font-bold">{t(`clipType.${clip.clip_type}`)}</span>
+              <span className="font-mono text-[9px] opacity-80">{infoLabel}</span>
+            </div>
+
             {/* Content */}
             <div className="min-h-0 flex-1 overflow-y-auto p-3">
               {isImage ? (
                 imageSrc ? (
-                  <div className="flex h-32 items-center justify-center overflow-hidden rounded bg-white/5">
+                  <div className="flex h-44 items-center justify-center overflow-hidden rounded-lg bg-white/5 border border-white/5 p-1">
                     <img
                       src={imageSrc}
                       alt="preview"
@@ -131,7 +160,7 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
             </div>
 
             {/* Action bar */}
-            <div className="flex flex-shrink-0 items-center justify-between border-t border-white/5 bg-black/60 px-2 py-1.5">
+            <div className="flex flex-shrink-0 items-center justify-between border-t border-white/5 bg-black/60 px-2 py-1">
               <div className="flex items-center gap-0.5">
                 <Tooltip label={t('compact.peekCopy')} placement="top">
                   <button

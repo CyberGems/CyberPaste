@@ -209,8 +209,8 @@ pub fn run_app() {
                                          manager.get().pinned
                                      };
 
-                                     // NEW SAFETY: If cursor is inside window, top header area and left mouse button is down, don't hide (fixes dragging)
-                                     let is_inside_and_dragging = if let (Ok(pos), Ok(size)) = (win_clone.outer_position(), win_clone.outer_size()) {
+                                     // NEW SAFETY: If cursor is inside window, top header area/borders and left mouse button is down, don't hide (fixes dragging/resizing)
+                                     let is_inside_and_dragging_or_resizing = if let (Ok(pos), Ok(size)) = (win_clone.outer_position(), win_clone.outer_size()) {
                                          use windows::Win32::Foundation::POINT;
                                          use windows::Win32::UI::WindowsAndMessaging::GetCursorPos;
                                          use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON};
@@ -219,9 +219,25 @@ pub fn run_app() {
                                          if has_cursor {
                                              let cursor_inside = point.x >= pos.x && point.x <= pos.x + size.width as i32 &&
                                                  point.y >= pos.y && point.y <= pos.y + size.height as i32;
-                                             let in_header = (point.x - pos.x <= size.width as i32 - 210) && (point.y - pos.y <= 65);
+                                             
                                              let lbutton_down = (unsafe { GetAsyncKeyState(VK_LBUTTON.0 as i32) } as u16 & 0x8000) != 0;
-                                             cursor_inside && in_header && lbutton_down
+                                             
+                                             if cursor_inside && lbutton_down {
+                                                 if let Ok(handle) = win_clone.hwnd() {
+                                                     use windows::Win32::Foundation::{HWND, WPARAM, LPARAM};
+                                                     use windows::Win32::UI::WindowsAndMessaging::{DefWindowProcW, WM_NCHITTEST};
+                                                     let hwnd = HWND(handle.0 as _);
+                                                     let lparam = (point.x & 0xffff) as isize | (((point.y & 0xffff) as isize) << 16);
+                                                     let hit = unsafe { DefWindowProcW(hwnd, WM_NCHITTEST, WPARAM(0), LPARAM(lparam)) };
+                                                     let hit_val = hit.0;
+                                                     // HTCAPTION = 2 (header), HTLEFT = 10, HTRIGHT = 11, HTTOP = 12, HTTOPLEFT = 13, HTTOPRIGHT = 14, HTBOTTOM = 15, HTBOTTOMLEFT = 16, HTBOTTOMRIGHT = 17
+                                                     hit_val == 2 || (hit_val >= 10 && hit_val <= 17)
+                                                 } else {
+                                                     false
+                                                 }
+                                             } else {
+                                                 false
+                                             }
                                          } else {
                                              false
                                          }
@@ -229,8 +245,8 @@ pub fn run_app() {
                                          false
                                      };
 
-                                     if is_pinned || is_inside_and_dragging {
-                                         log::info!("Auto-hide skipped: pinned={} inside_and_dragging={}", is_pinned, is_inside_and_dragging);
+                                     if is_pinned || is_inside_and_dragging_or_resizing {
+                                         log::info!("Auto-hide skipped: pinned={} dragging_or_resizing={}", is_pinned, is_inside_and_dragging_or_resizing);
                                          return;
                                      }
 

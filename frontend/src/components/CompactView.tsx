@@ -1391,6 +1391,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
       <CompactPeek
         clip={peekClip}
         anchorRect={peekAnchor}
+        sidebarWidth={sidebarWidth}
         resolveImageSrc={getClipImageSrc}
         onCopy={(id) => {
           onPaste(id);
