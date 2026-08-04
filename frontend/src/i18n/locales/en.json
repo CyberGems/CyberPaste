@@ -419,7 +419,30 @@
     "tooltipOpen": "Click to open window",
     "clipsDeleted": "{{count}} clips deleted",
     "clipsMovedToFolder": "{{count}} clips moved",
-    "clipsMovedToMain": "{{count}} clips moved to clipboard"
+    "clipsMovedToMain": "{{count}} clips moved to clipboard",
+    "titles": {
+      "success": "Success",
+      "error": "Error",
+      "cut": "Cut",
+      "info": "Information",
+      "welcome": "CyberPaste Ready",
+      "image_cut": "Image Cut",
+      "image_copied": "Image Copied",
+      "text_cut": "Text Cut",
+      "text_copied": "Text Copied",
+      "code_cut": "Code Cut",
+      "code_copied": "Code Copied",
+      "html_cut": "HTML Cut",
+      "html_copied": "HTML Copied",
+      "rtf_cut": "Rich Text Cut",
+      "rtf_copied": "Rich Text Copied",
+      "file_cut": "File Cut",
+      "file_copied": "File Copied",
+      "url_cut": "URL Cut",
+      "url_copied": "URL Copied",
+      "fallback_cut": "Cut",
+      "fallback_copied": "Copied"
+    }
   },
   "notifications": {
     "clipDeleted": "Clip deleted",

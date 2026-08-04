@@ -799,8 +799,8 @@ async fn process_clipboard_change(
             "id": emitted_id,
             "content": clip_preview,
             "clip_type": clip_type,
-            "source_app": source_app,
-            "source_icon": source_icon,
+            "source_app": source_app.clone(),
+            "source_icon": source_icon.clone(),
             "created_at": chrono::Utc::now().to_rfc3339()
         }),
     );
@@ -860,6 +860,8 @@ async fn process_clipboard_change(
                 Some(clip_type.to_string()),
                 image_b64,
                 Some(emitted_id),
+                source_app,
+                source_icon,
             )
             .await;
         }

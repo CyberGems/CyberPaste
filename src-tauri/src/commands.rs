@@ -2867,6 +2867,8 @@ pub struct ToastPayload {
     clip_type: Option<String>,
     image_preview: Option<String>,
     clip_uuid: Option<String>,
+    source_app: Option<String>,
+    source_icon: Option<String>,
 }
 
 static PENDING_TOAST: Lazy<Mutex<Option<ToastPayload>>> =
@@ -2913,6 +2915,8 @@ pub async fn show_toast(
     clip_type: Option<String>,     // "text", "image", "html", "rtf", "file", "url"
     image_preview: Option<String>, // base64 encoded tiny thumbnail for images
     clip_uuid: Option<String>,
+    source_app: Option<String>,
+    source_icon: Option<String>,
 ) -> Result<(), String> {
     use crate::settings_manager::SettingsManager;
     use std::sync::Arc;
@@ -2928,6 +2932,8 @@ pub async fn show_toast(
         clip_type: clip_type.clone(),
         image_preview,
         clip_uuid,
+        source_app,
+        source_icon,
     };
 
     {

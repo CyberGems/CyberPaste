@@ -476,6 +476,8 @@ pub fn run_app() {
                     Some("welcome".to_string()),
                     None,
                     None,
+                    None,
+                    None,
                 )
                 .await;
             });

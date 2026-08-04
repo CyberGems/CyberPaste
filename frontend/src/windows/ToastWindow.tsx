@@ -12,56 +12,58 @@ interface ToastPayload {
   clip_type?: string | null;
   image_preview?: string | null; // base64 thumbnail
   clip_uuid?: string | null;
+  source_app?: string | null;
+  source_icon?: string | null;
 }
 
-function getClipTitle(clipType?: string | null, toastType?: string): string {
+function getClipTitle(clipType: string | null | undefined, toastType: string | undefined, t: any): string {
   if (!clipType) {
-    if (toastType === 'success') return 'Éxito';
-    if (toastType === 'error') return 'Error';
-    if (toastType === 'cut') return 'Cortado';
-    return 'Aviso';
+    if (toastType === 'success') return t('toasts.titles.success');
+    if (toastType === 'error') return t('toasts.titles.error');
+    if (toastType === 'cut') return t('toasts.titles.cut');
+    return t('toasts.titles.info');
   }
   if (toastType === 'cut') {
     switch (clipType) {
       case 'welcome':
-        return 'CyberPaste listo';
+        return t('toasts.titles.welcome');
       case 'image':
-        return 'Imagen cortada';
+        return t('toasts.titles.image_cut');
       case 'text':
-        return 'Texto cortado';
+        return t('toasts.titles.text_cut');
       case 'code':
-        return 'Código cortado';
+        return t('toasts.titles.code_cut');
       case 'html':
-        return 'HTML cortado';
+        return t('toasts.titles.html_cut');
       case 'rtf':
-        return 'Texto enriquecido cortado';
+        return t('toasts.titles.rtf_cut');
       case 'file':
-        return 'Archivo cortado';
+        return t('toasts.titles.file_cut');
       case 'url':
-        return 'URL cortada';
+        return t('toasts.titles.url_cut');
       default:
-        return 'Cortado';
+        return t('toasts.titles.fallback_cut');
     }
   }
   switch (clipType) {
     case 'welcome':
-      return 'CyberPaste listo';
+      return t('toasts.titles.welcome');
     case 'image':
-      return 'Imagen copiada';
+      return t('toasts.titles.image_copied');
     case 'text':
-      return 'Texto copiado';
+      return t('toasts.titles.text_copied');
     case 'code':
-      return 'Código copiado';
+      return t('toasts.titles.code_copied');
     case 'html':
-      return 'HTML copiado';
+      return t('toasts.titles.html_copied');
     case 'rtf':
-      return 'Texto enriquecido copiado';
+      return t('toasts.titles.rtf_copied');
     case 'file':
-      return 'Archivo copiado';
+      return t('toasts.titles.file_copied');
     case 'url':
-      return 'URL copiada';
+      return t('toasts.titles.url_copied');
     default:
-      return 'Copiado';
+      return t('toasts.titles.fallback_copied');
   }
 }
 
@@ -83,6 +85,8 @@ interface ToastThemeVars {
   track: string;
   progressColor: string; // CSS color (hex/gradient), used via style for the gradient
   iconColor: string;
+  previewBg: string;
+  previewBorder: string;
 }
 
 function toastThemeVars(theme: 'cyberpaste' | 'dark' | 'light', gradient: string): ToastThemeVars {
@@ -96,6 +100,8 @@ function toastThemeVars(theme: 'cyberpaste' | 'dark' | 'light', gradient: string
       track: 'bg-black/10',
       progressColor: gradient,
       iconColor: '#0078D7',
+      previewBg: 'bg-neutral-100/80',
+      previewBorder: 'border-neutral-200',
     };
   }
   if (theme === 'dark') {
@@ -108,6 +114,8 @@ function toastThemeVars(theme: 'cyberpaste' | 'dark' | 'light', gradient: string
       track: 'bg-white/5',
       progressColor: gradient,
       iconColor: '#00F2FF',
+      previewBg: 'bg-black/35',
+      previewBorder: 'border-white/5',
     };
   }
   // cyberpaste — current signature look
@@ -120,6 +128,8 @@ function toastThemeVars(theme: 'cyberpaste' | 'dark' | 'light', gradient: string
     track: 'bg-white/5',
     progressColor: gradient,
     iconColor: '#00F2FF',
+    previewBg: 'bg-black/35',
+    previewBorder: 'border-white/5',
   };
 }
 
@@ -243,7 +253,7 @@ export function ToastWindow() {
   if (!toast) return null;
 
   const hasImagePreview = toast.clip_type === 'image' && toast.image_preview;
-  const title = getClipTitle(toast.clip_type, toast.toast_type);
+  const title = getClipTitle(toast.clip_type, toast.toast_type, t);
   const isMinimal = settings?.toast_style === 'minimal';
   const themeId = resolveToastTheme(settings);
   // Cyan-leaning half of the CyberGems ramp: keeps the suite palette while staying
@@ -300,33 +310,72 @@ export function ToastWindow() {
       <div
         className={`relative w-full overflow-hidden rounded-xl transition-all duration-300 ${containerClasses} ${isClosing ? 'translate-y-2 scale-95 opacity-0' : 'translate-y-0 scale-100 opacity-100'}`}
       >
-        <div className="flex items-start gap-3 p-3 pb-4">
-          {/* Icon or image thumbnail */}
-          <div className="mt-0.5 shrink-0">
-            {hasImagePreview ? (
-              <img
-                src={`data:image/png;base64,${toast.image_preview}`}
-                alt=""
-                className="h-10 w-10 rounded-md border border-white/10 object-cover"
-              />
-            ) : (
-              icon
-            )}
-          </div>
+        <div className="flex flex-col p-3 pb-3.5">
+          {/* Header Row: Source Program info or general Title */}
+          {toast.source_app ? (
+            <div className={`flex items-center gap-1.5 border-b pb-1.5 mb-2.5 text-xs font-semibold pr-7 ${isMinimal ? 'border-zinc-800 text-zinc-400' : 'border-white/5 text-neutral-400'}`}>
+              {toast.source_icon ? (
+                <img
+                  src={`data:image/png;base64,${toast.source_icon}`}
+                  alt=""
+                  className="w-3.5 h-3.5 object-contain rounded-sm"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                  }}
+                />
+              ) : null}
+              <span className={`truncate max-w-[140px] ${isMinimal ? 'text-zinc-200' : 'text-neutral-200'}`}>{toast.source_app}</span>
+              <span>•</span>
+              <span className="truncate font-medium">{title}</span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between mb-2 pr-7">
+              <h4 className={`text-sm font-semibold truncate ${tv.title}`}>{title}</h4>
+            </div>
+          )}
 
-          <div className="min-w-0 flex-1 pr-5">
-            <h4 className={`text-sm font-semibold ${tv.title}`}>{title}</h4>
-            {toast.message && (
-              <p
-                className={`mt-0.5 line-clamp-2 break-words text-sm font-medium leading-snug ${tv.body}`}
-              >
-                {toast.message}
-              </p>
-            )}
+          {/* Content Row: Preview & Details */}
+          <div className="flex items-start gap-3">
+            {/* Icon or image thumbnail */}
+            <div className="mt-0.5 shrink-0">
+              {hasImagePreview ? (
+                <img
+                  src={`data:image/png;base64,${toast.image_preview}`}
+                  alt=""
+                  className="h-12 w-12 rounded-md border border-white/10 object-cover shadow-sm"
+                />
+              ) : (
+                icon
+              )}
+            </div>
+
+            <div className="min-w-0 flex-1">
+              {toast.source_app ? (
+                // When we have a source app, the message is the actual copied content.
+                // We style it as a preview card to separate it clearly from the header info.
+                toast.clip_type !== 'image' && toast.message && (
+                  <div className={`rounded-lg border px-2.5 py-1.5 text-xs line-clamp-2 break-all font-mono whitespace-pre-wrap ${tv.previewBg} ${tv.previewBorder} ${tv.body}`}>
+                    {toast.message}
+                  </div>
+                )
+              ) : (
+                // When there is no source app, just render the message normally (e.g. system notification)
+                toast.message && (
+                  <p
+                    className={`mt-0.5 line-clamp-2 break-words text-sm font-medium leading-snug ${tv.body}`}
+                  >
+                    {toast.message}
+                  </p>
+                )
+              )}
+            </div>
           </div>
 
           <button
-            onClick={closeToast}
+            onClick={(e) => {
+              e.stopPropagation();
+              closeToast();
+            }}
             className={`absolute right-2.5 top-2.5 rounded-md p-1 transition-colors ${tv.closeBtn}`}
           >
             <X className="h-3.5 w-3.5" />

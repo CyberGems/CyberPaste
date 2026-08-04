@@ -419,7 +419,30 @@
     "tooltipOpen": "Haz clic para abrir la ventana",
     "clipsDeleted": "{{count}} clips eliminados",
     "clipsMovedToFolder": "{{count}} clips movidos",
-    "clipsMovedToMain": "{{count}} clips movidos al portapapeles"
+    "clipsMovedToMain": "{{count}} clips movidos al portapapeles",
+    "titles": {
+      "success": "Éxito",
+      "error": "Error",
+      "cut": "Cortado",
+      "info": "Información",
+      "welcome": "CyberPaste listo",
+      "image_cut": "Imagen cortada",
+      "image_copied": "Imagen copiada",
+      "text_cut": "Texto cortado",
+      "text_copied": "Texto copiado",
+      "code_cut": "Código cortado",
+      "code_copied": "Código copiado",
+      "html_cut": "HTML cortado",
+      "html_copied": "HTML copiado",
+      "rtf_cut": "Texto enriquecido cortado",
+      "rtf_copied": "Texto enriquecido copiado",
+      "file_cut": "Archivo cortado",
+      "file_copied": "Archivo copiado",
+      "url_cut": "URL cortada",
+      "url_copied": "URL copiada",
+      "fallback_cut": "Cortado",
+      "fallback_copied": "Copiado"
+    }
   },
   "notifications": {
     "clipDeleted": "Clip eliminado",
