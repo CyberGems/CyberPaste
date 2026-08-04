@@ -732,12 +732,24 @@ export const CompactView: React.FC<CompactViewProps> = ({
   const handleRowMouseEnter = useCallback((clip: AppClip, e: React.MouseEvent) => {
     if (!compactPeekEnabled) return;
 
+    // Si pasamos a un clip diferente, cerramos el peek activo inmediatamente
+    setPeekClipId((prevId) => {
+      if (prevId && prevId !== clip.id) {
+        setPeekAnchor(null);
+        return null;
+      }
+      return prevId;
+    });
+
     // Evitar peek en textos/URLs cortos que caben enteros en la fila (sin saltos de línea y longitud <= 45)
     const isShortText = (clip.clip_type === 'text' || clip.clip_type === 'code' || clip.clip_type === 'url') &&
       !clip.preview.includes('\n') &&
       !clip.preview.includes('\r') &&
       clip.content_length <= 45;
-    if (isShortText) return;
+    if (isShortText) {
+      if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
+      return;
+    }
 
     if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -1367,6 +1379,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
               rowHeight={rowHeight}
               onRowMouseEnter={handleRowMouseEnter}
               onRowMouseLeave={handleRowMouseLeave}
+              isPeekVisible={!!peekClipId}
             />
           </div>
 
@@ -1474,6 +1487,7 @@ const ClipRow = memo(function ClipRow({
   clipNumbering?: 'positional' | 'countdown';
   isSelected?: boolean;
   onToggleSelect?: (id: string, multi: boolean) => void;
+  isPeekVisible?: boolean;
 }) {
   const { i18n } = useTranslation();
   const typeLabel = useMemo(() => {
@@ -1668,7 +1682,7 @@ const ClipRow = memo(function ClipRow({
                         ? LucideFile
                         : FileText;
               return (
-                <Tooltip label={typeLabel} placement="top">
+                <Tooltip label={typeLabel} placement="top" disabled={isPeekVisible}>
                   <span className="flex items-center justify-center">
                     <TypeIcon
                       size={11}
@@ -1679,7 +1693,7 @@ const ClipRow = memo(function ClipRow({
               );
             })()}
             {clip.source_icon && (
-              <Tooltip label={clip.source_app || 'App'} placement="top">
+              <Tooltip label={clip.source_app || 'App'} placement="top" disabled={isPeekVisible}>
                 <img
                   src={`data:image/png;base64,${clip.source_icon}`}
                   alt=""
@@ -1688,7 +1702,7 @@ const ClipRow = memo(function ClipRow({
                 />
               </Tooltip>
             )}
-            <Tooltip label={absoluteTimeLabel} placement="left">
+            <Tooltip label={absoluteTimeLabel} placement="left" disabled={isPeekVisible}>
               <span className="flex items-center gap-1">
                 <Clock size={10} className="text-current" />
                 {relativeTimeLabel}
@@ -1702,7 +1716,7 @@ const ClipRow = memo(function ClipRow({
               showHover ? 'opacity-100' : 'opacity-0'
             )}
           >
-            <Tooltip label={t('common.delete') || 'Delete'} placement="left">
+            <Tooltip label={t('common.delete') || 'Delete'} placement="left" disabled={isPeekVisible}>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -1742,6 +1756,7 @@ type CompactListRowProps = {
   onToggleClipSelect?: (id: string, multi: boolean) => void;
   onRowMouseEnter?: (clip: AppClip, e: React.MouseEvent) => void;
   onRowMouseLeave?: () => void;
+  isPeekVisible?: boolean;
 };
 
 function CompactListRow({
@@ -1766,6 +1781,7 @@ function CompactListRow({
   onToggleClipSelect,
   onRowMouseEnter,
   onRowMouseLeave,
+  isPeekVisible,
 }: RowComponentProps<CompactListRowProps>) {
   const clip = clips[index];
   if (!clip) return null;
@@ -1796,6 +1812,7 @@ function CompactListRow({
         clipNumbering={clipNumbering}
         isSelected={selectedClipIds?.has(clip.id) ?? false}
         onToggleSelect={onToggleClipSelect}
+        isPeekVisible={isPeekVisible}
       />
     </div>
   );
@@ -1825,6 +1842,7 @@ function CompactClipList({
   rowHeight,
   onRowMouseEnter,
   onRowMouseLeave,
+  isPeekVisible,
 }: {
   clips: AppClip[];
   listRef: React.Ref<import('react-window').ListImperativeAPI>;
@@ -1853,6 +1871,7 @@ function CompactClipList({
   rowHeight?: number;
   onRowMouseEnter?: (clip: AppClip, e: React.MouseEvent) => void;
   onRowMouseLeave?: () => void;
+  isPeekVisible: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   // Start with a sensible fallback so the list paints before the first ResizeObserver tick
@@ -1910,6 +1929,7 @@ function CompactClipList({
       onToggleClipSelect,
       onRowMouseEnter,
       onRowMouseLeave,
+      isPeekVisible,
     }),
     [
       clips,
@@ -1930,6 +1950,7 @@ function CompactClipList({
       onToggleClipSelect,
       onRowMouseEnter,
       onRowMouseLeave,
+      isPeekVisible,
     ]
   );
 

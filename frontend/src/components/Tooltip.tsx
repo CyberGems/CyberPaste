@@ -8,6 +8,7 @@ interface TooltipProps {
   label: ReactNode;
   placement?: Placement;
   children: ReactElement;
+  disabled?: boolean;
 }
 
 const VIEWPORT_MARGIN = 8; // separación mínima respecto al borde de la ventana
@@ -22,11 +23,21 @@ function clamp(value: number, min: number, max: number) {
 // Clona al hijo y le añade los handlers de hover sin envolverlo en otro nodo,
 // de modo que no altera los layouts flex existentes. Se reposiciona para no
 // salirse de la pantalla y la flecha se re-ancla al centro del elemento.
-export default function Tooltip({ label, placement = 'bottom', children }: TooltipProps) {
+export default function Tooltip({ label, placement = 'bottom', children, disabled = false }: TooltipProps) {
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ left: number; top: number; arrow: CSSProperties } | null>(null);
   const delayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (disabled) {
+      setAnchor(null);
+      if (delayTimer.current) {
+        clearTimeout(delayTimer.current);
+        delayTimer.current = null;
+      }
+    }
+  }, [disabled]);
 
   // Medimos el tooltip ya renderizado y calculamos la posición con clamping.
   useLayoutEffect(() => {
@@ -110,6 +121,7 @@ export default function Tooltip({ label, placement = 'bottom', children }: Toolt
     };
   }, []);
 
+  if (disabled) return children;
   if (!isValidElement(children)) return children;
   const child = children as ReactElement<any>;
 
