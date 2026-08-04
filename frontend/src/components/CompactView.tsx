@@ -64,6 +64,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
 import { clsx, type ClassValue } from 'clsx';
@@ -349,6 +350,7 @@ interface CompactViewProps {
   onPinClip?: (id: string) => void;
   // NUEVO: micro-animación de entrada
   entranceAnim?: boolean;
+  compactPeekEnabled?: boolean;
 }
 
 export const CompactView: React.FC<CompactViewProps> = ({
@@ -401,6 +403,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   onBulkMove,
   onPinClip,
   entranceAnim = true,
+  compactPeekEnabled = true,
 }) => {
   const { t } = useTranslation();
   const folderScrollRef = useRef<HTMLDivElement>(null);
@@ -727,13 +730,14 @@ export const CompactView: React.FC<CompactViewProps> = ({
 
   // NUEVO: handlers para peek popover
   const handleRowMouseEnter = useCallback((clip: AppClip, e: React.MouseEvent) => {
+    if (!compactPeekEnabled) return;
     if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     peekTimerRef.current = setTimeout(() => {
       setPeekClipId(clip.id);
       setPeekAnchor({ x: rect.left, y: rect.top, width: rect.width, height: rect.height });
-    }, 300); // pequeño delay para no abrir en scroll rápido
-  }, []);
+    }, 600); // delay de 600ms para menor invasión
+  }, [compactPeekEnabled]);
 
   const handleRowMouseLeave = useCallback(() => {
     if (peekTimerRef.current) {
@@ -751,6 +755,18 @@ export const CompactView: React.FC<CompactViewProps> = ({
       peekTimerRef.current = null;
     }
   }, []);
+
+  // Limpiar peek al cambiar la visibilidad de la ventana
+  useEffect(() => {
+    const unlisten = listen<boolean>('window-visibility', (event) => {
+      closePeek();
+    });
+    return () => {
+      unlisten.then((u) => {
+        if (typeof u === 'function') u();
+      });
+    };
+  }, [closePeek]);
 
   const peekClip = useMemo(
     () => (peekClipId ? (filteredClips.find((c) => c.id === peekClipId) ?? null) : null),

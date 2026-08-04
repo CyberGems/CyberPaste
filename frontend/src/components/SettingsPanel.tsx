@@ -1044,6 +1044,24 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         />
                       </button>
                     </div>
+                    <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                      <div>
+                        <span className="text-sm font-medium">{t('settings.compactPeekEnabled')}</span>
+                        <p className="text-xs text-muted-foreground">
+                          {t('settings.compactPeekEnabledDesc')}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() =>
+                          updateSetting('compact_peek_enabled', !(settings.compact_peek_enabled ?? true))
+                        }
+                        className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_peek_enabled ?? true) ? 'bg-primary' : 'bg-white/10'}`}
+                      >
+                        <span
+                          className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.compact_peek_enabled ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                        />
+                      </button>
+                    </div>
                     <div className="space-y-3">
                       <label className="block">
                         <span className="text-base font-medium">{t('settings.clipNumbering')}</span>

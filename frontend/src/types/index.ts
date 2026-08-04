@@ -83,6 +83,7 @@ export interface Settings {
   compact_last_position_x?: number | null;
   compact_last_position_y?: number | null;
   compact_auto_height?: boolean;
+  compact_peek_enabled?: boolean;
 }
 
 export type ClipType = 'text' | 'image' | 'html' | 'rtf' | 'file' | 'url' | 'code';

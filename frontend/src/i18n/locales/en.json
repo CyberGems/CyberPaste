@@ -226,6 +226,8 @@
     "resetViewOnPasteDesc": "Clears active search, resets selected folder to the main clipboard, and scrolls to top when opening the window or pasting a clip",
     "typeToSearch": "Type to Search",
     "typeToSearchDesc": "Start typing anywhere to instantly search clips in real time",
+    "compactPeekEnabled": "Show Row Hover Peek",
+    "compactPeekEnabledDesc": "Display a detailed overlay preview with metadata when hovering over rows in compact mode",
     "clipNumbering": "Clip Numbering",
     "clipNumberingDesc": "How clip numbers are displayed in the list",
     "clipNumberingPositional": "#1 First (Positional)",
