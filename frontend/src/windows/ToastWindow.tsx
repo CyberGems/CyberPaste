@@ -310,10 +310,10 @@ export function ToastWindow() {
       <div
         className={`relative w-full overflow-hidden rounded-xl transition-all duration-300 ${containerClasses} ${isClosing ? 'translate-y-2 scale-95 opacity-0' : 'translate-y-0 scale-100 opacity-100'}`}
       >
-        <div className="flex flex-col p-3 pb-3.5">
+        <div className="flex flex-col p-2.5 pb-3">
           {/* Header Row: Source Program info or general Title */}
           {toast.source_app ? (
-            <div className={`flex items-center gap-1.5 border-b pb-1.5 mb-2.5 text-xs font-semibold pr-7 ${isMinimal ? 'border-zinc-800 text-zinc-400' : 'border-white/5 text-neutral-400'}`}>
+            <div className={`flex items-center gap-1.5 border-b pb-1.5 mb-2 text-xs font-semibold pr-7 ${isMinimal ? 'border-zinc-800 text-zinc-400' : 'border-white/5 text-neutral-400'}`}>
               {toast.source_icon ? (
                 <img
                   src={`data:image/png;base64,${toast.source_icon}`}
@@ -336,11 +336,11 @@ export function ToastWindow() {
 
           {/* Content Row: Preview & Details */}
           {hasImagePreview ? (
-            <div className="flex justify-center py-2 w-full">
+            <div className="flex justify-center w-full">
               <img
                 src={`data:image/png;base64,${toast.image_preview}`}
                 alt=""
-                className="h-16 w-16 rounded-md border border-white/10 object-cover shadow-md transition-transform duration-200 hover:scale-105"
+                className="h-12 w-12 rounded-md border border-white/10 object-cover shadow-md transition-transform duration-200 hover:scale-105"
               />
             </div>
           ) : (

@@ -825,7 +825,7 @@ async fn process_clipboard_change(
                 if let Some(bytes) = full_image_content.clone() {
                     tauri::async_runtime::spawn_blocking(move || {
                         image::load_from_memory(&bytes).ok().map(|img| {
-                            let thumb = img.thumbnail(48, 48);
+                            let thumb = img.thumbnail(128, 128);
                             let mut buf = Vec::new();
                             let encoder = image::codecs::png::PngEncoder::new(&mut buf);
                             use image::ImageEncoder;

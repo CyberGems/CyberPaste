@@ -2962,7 +2962,7 @@ pub async fn show_toast(
             tauri::WebviewUrl::App("index.html?window=toast".into()),
         )
         .title("CyberPaste Toast")
-        .inner_size(240.0, 100.0)
+        .inner_size(300.0, 110.0)
         .decorations(false)
         .transparent(true)
         .always_on_top(true)
