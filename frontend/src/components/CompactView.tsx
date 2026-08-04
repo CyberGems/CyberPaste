@@ -741,6 +741,13 @@ export const CompactView: React.FC<CompactViewProps> = ({
       return prevId;
     });
 
+    // Evitar iniciar el peek si el cursor está sobre la zona de botones/iconos de la derecha
+    const target = e.target as HTMLElement;
+    if (target.closest('.pr-2') || target.closest('button')) {
+      if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
+      return;
+    }
+
     // Evitar peek en textos/URLs cortos que caben enteros en la fila (sin saltos de línea y longitud <= 45)
     const isShortText = (clip.clip_type === 'text' || clip.clip_type === 'code' || clip.clip_type === 'url') &&
       !clip.preview.includes('\n') &&
@@ -1659,7 +1666,7 @@ const ClipRow = memo(function ClipRow({
           )}
         </div>
 
-        <div className="flex flex-shrink-0 items-center gap-3 pr-2" onMouseEnter={(e) => { e.stopPropagation(); closePeek(); }}>
+        <div className="flex flex-shrink-0 items-center gap-3 pr-2" onMouseOver={(e) => { e.stopPropagation(); closePeek(); }}>
           <span className="flex items-center gap-2 whitespace-nowrap text-[10px] opacity-40">
             {index === 0 && !selectedFolder && (
               <span className="text-[8px] font-bold uppercase tracking-widest text-cyan-400/90">
