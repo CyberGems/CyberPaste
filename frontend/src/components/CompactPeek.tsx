@@ -17,7 +17,7 @@ interface CompactPeekProps {
 }
 
 const PEEK_MAX_HEIGHT = 280;
-const VIEWPORT_MARGIN = 8;
+const VIEWPORT_MARGIN = 12;
 
 export const CompactPeek: React.FC<CompactPeekProps> = ({
   clip,
@@ -35,7 +35,7 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
 
   useEffect(() => {
     if (clip && anchorRect) {
-      timerRef.current = setTimeout(() => setVisible(true), 400);
+      timerRef.current = setTimeout(() => setVisible(true), 200);
     } else {
       setVisible(false);
     }
@@ -71,8 +71,20 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
   const spaceAbove = anchorRect.y;
   const spaceBelow = vh - (anchorRect.y + anchorRect.height);
   const showAbove = spaceAbove >= PEEK_MAX_HEIGHT + VIEWPORT_MARGIN || spaceAbove > spaceBelow;
-  const top = showAbove ? anchorRect.y - 4 : anchorRect.y + anchorRect.height + 4;
-  const translateY = showAbove ? '-100%' : '0';
+
+  const style: React.CSSProperties = {
+    left,
+    width,
+  };
+
+  let calculatedMaxHeight = PEEK_MAX_HEIGHT;
+  if (showAbove) {
+    style.bottom = vh - anchorRect.y + 4;
+    calculatedMaxHeight = Math.min(PEEK_MAX_HEIGHT, anchorRect.y - VIEWPORT_MARGIN - 4);
+  } else {
+    style.top = anchorRect.y + anchorRect.height + 4;
+    calculatedMaxHeight = Math.min(PEEK_MAX_HEIGHT, vh - (anchorRect.y + anchorRect.height) - VIEWPORT_MARGIN - 4);
+  }
 
   const isImage = clip.clip_type === 'image';
   const textToShow = (clip.preview || clip.content || '').slice(0, 2000);
@@ -118,22 +130,59 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
           exit={{ opacity: 0, scale: 0.96 }}
           transition={{ duration: 0.08, ease: 'easeOut' }}
           className="fixed z-[100]"
-          style={{
-            left,
-            top,
-            width,
-            transform: `translateY(${translateY})`,
-          }}
+          style={style}
           onMouseLeave={onClose}
         >
           <div
             className="flex w-full flex-col overflow-hidden rounded-xl border border-white/10 bg-popover/90 backdrop-blur-md shadow-[0_12px_40px_rgba(0,0,0,0.65)]"
-            style={{ maxHeight: PEEK_MAX_HEIGHT }}
+            style={{ maxHeight: calculatedMaxHeight }}
           >
-            {/* Header info bar */}
-            <div className="flex flex-shrink-0 items-center justify-between border-b border-white/5 bg-white/5 px-3 py-1.5 text-[10px] font-semibold tracking-wide uppercase text-white/50">
-              <span className="text-cyan-400 font-bold">{t(`clipType.${clip.clip_type}`)}</span>
-              <span className="font-mono text-[9px] opacity-80">{infoLabel}</span>
+            {/* Header info bar / merged with action bar */}
+            <div className="flex flex-shrink-0 items-center justify-between border-b border-white/5 bg-white/5 pl-3 pr-1.5 py-1 text-[10px] font-semibold tracking-wide uppercase text-white/50">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="text-cyan-400 font-bold">{t(`clipType.${clip.clip_type}`)}</span>
+                <span className="font-mono text-[9px] opacity-60 truncate">{infoLabel}</span>
+              </div>
+              
+              {/* Action buttons merged in header */}
+              <div className="flex items-center gap-0.5 flex-shrink-0">
+                <Tooltip label={t('compact.peekCopy')} placement="top">
+                  <button
+                    onClick={() => {
+                      onCopy(clip.id);
+                      onClose();
+                    }}
+                    className="flex h-6 w-6 items-center justify-center rounded text-white/60 hover:bg-white/10 hover:text-white transition-colors"
+                  >
+                    <Copy size={11} />
+                  </button>
+                </Tooltip>
+                <Tooltip
+                  label={clip.is_pinned ? t('compact.peekUnpin') : t('compact.peekPin')}
+                  placement="top"
+                >
+                  <button
+                    onClick={() => {
+                      onPin(clip.id);
+                      onClose();
+                    }}
+                    className="flex h-6 w-6 items-center justify-center rounded text-white/60 hover:bg-white/10 hover:text-white transition-colors"
+                  >
+                    <Pin size={11} className={clip.is_pinned ? 'fill-current text-cyan-400' : ''} />
+                  </button>
+                </Tooltip>
+                <Tooltip label={t('compact.peekDelete')} placement="top">
+                  <button
+                    onClick={() => {
+                      onDelete(clip.id);
+                      onClose();
+                    }}
+                    className="flex h-6 w-6 items-center justify-center rounded text-rose-400/60 hover:bg-rose-500/15 hover:text-rose-300 transition-colors"
+                  >
+                    <Trash2 size={11} />
+                  </button>
+                </Tooltip>
+              </div>
             </div>
 
             {/* Content */}
@@ -157,48 +206,6 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
               ) : (
                 <p className="text-[11px] italic text-white/40">{t('common.loading')}</p>
               )}
-            </div>
-
-            {/* Action bar */}
-            <div className="flex flex-shrink-0 items-center justify-between border-t border-white/5 bg-black/60 px-2 py-1">
-              <div className="flex items-center gap-0.5">
-                <Tooltip label={t('compact.peekCopy')} placement="top">
-                  <button
-                    onClick={() => {
-                      onCopy(clip.id);
-                      onClose();
-                    }}
-                    className="flex h-7 w-7 items-center justify-center rounded text-white/60 hover:bg-white/10 hover:text-white"
-                  >
-                    <Copy size={13} />
-                  </button>
-                </Tooltip>
-                <Tooltip
-                  label={clip.is_pinned ? t('compact.peekUnpin') : t('compact.peekPin')}
-                  placement="top"
-                >
-                  <button
-                    onClick={() => {
-                      onPin(clip.id);
-                      onClose();
-                    }}
-                    className="flex h-7 w-7 items-center justify-center rounded text-white/60 hover:bg-white/10 hover:text-white"
-                  >
-                    <Pin size={13} className={clip.is_pinned ? 'fill-current text-cyan-400' : ''} />
-                  </button>
-                </Tooltip>
-              </div>
-              <Tooltip label={t('compact.peekDelete')} placement="top">
-                <button
-                  onClick={() => {
-                    onDelete(clip.id);
-                    onClose();
-                  }}
-                  className="flex h-7 w-7 items-center justify-center rounded text-rose-400/60 hover:bg-rose-500/15 hover:text-rose-300"
-                >
-                  <Trash2 size={13} />
-                </button>
-              </Tooltip>
             </div>
           </div>
         </motion.div>

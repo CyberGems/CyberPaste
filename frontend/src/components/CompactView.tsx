@@ -734,8 +734,9 @@ export const CompactView: React.FC<CompactViewProps> = ({
 
     // Evitar peek en textos/URLs cortos que caben enteros en la fila (sin saltos de línea y longitud <= 45)
     const isShortText = (clip.clip_type === 'text' || clip.clip_type === 'code' || clip.clip_type === 'url') &&
-      !clip.content.includes('\n') &&
-      clip.content.length <= 45;
+      !clip.preview.includes('\n') &&
+      !clip.preview.includes('\r') &&
+      clip.content_length <= 45;
     if (isShortText) return;
 
     if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
@@ -850,7 +851,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
           >
             <img src="/logo.png" alt="Logo" className="h-5 w-5 object-contain" data-tauri-drag-region />
           </div>
-          <div data-tauri-drag-region className="flex items-center gap-1.5 min-w-0 flex-1">
+          <div data-tauri-drag-region className="flex items-baseline gap-1.5 min-w-0 flex-1">
             <span data-tauri-drag-region className="text-sm font-bold tracking-tight truncate">
               CyberPaste
             </span>
@@ -859,16 +860,6 @@ export const CompactView: React.FC<CompactViewProps> = ({
               className="rounded-sm border border-cyan-400/20 bg-cyan-400/10 px-1.5 text-[10px] font-medium uppercase tracking-widest text-cyan-400/80"
             >
               Compact
-            </span>
-            <span
-              data-tauri-drag-region
-              className="font-mono text-[9px] opacity-40 ml-1.5 border border-white/5 bg-white/5 px-1.5 py-0.5 rounded whitespace-nowrap"
-            >
-              {hasSelection
-                ? `${selectedCount} ${selectedCount === 1 ? t('bulk.selectedSingle') : t('bulk.selectedPlural')}`
-                : isFiltering
-                  ? `${filteredClips.length} / ${clips.length} clips`
-                  : `${clips.length} clips`}
             </span>
           </div>
         </div>
@@ -1378,6 +1369,26 @@ export const CompactView: React.FC<CompactViewProps> = ({
               onRowMouseLeave={handleRowMouseLeave}
             />
           </div>
+
+          {/* Footer */}
+          <div
+            className={cn(
+              'flex flex-shrink-0 items-center justify-between border-t border-white/5 bg-black/10 p-2 font-mono text-[9px] tracking-tighter transition-opacity',
+              entranceAnim && !mounted ? 'opacity-0' : 'opacity-40'
+            )}
+          >
+            <span>
+              {hasSelection
+                ? t('compact.footerWithSelection', { count: selectedCount })
+                : t('compact.enterToPaste')}
+            </span>
+            <span>
+              {isFiltering
+                ? `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: t(`compact.filter${typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}`) })}`
+                : t('compact.footerTotalClips', { count: filteredClips.length })}
+            </span>
+            <span>{t('compact.escToHide')}</span>
+          </div>
         </>
       )}
 
@@ -1633,7 +1644,7 @@ const ClipRow = memo(function ClipRow({
           )}
         </div>
 
-        <div className="flex flex-shrink-0 items-center gap-3 pr-2">
+        <div className="flex flex-shrink-0 items-center gap-3 pr-2" onMouseEnter={(e) => { e.stopPropagation(); closePeek(); }}>
           <span className="flex items-center gap-2 whitespace-nowrap text-[10px] opacity-40">
             {index === 0 && !selectedFolder && (
               <span className="text-[8px] font-bold uppercase tracking-widest text-cyan-400/90">
