@@ -1362,7 +1362,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
               selectedFolder={selectedFolder}
               onPaste={onPaste}
               onDelete={onDelete}
-              onContextMenu={onContextMenu}
+              onContextMenu={(e, id) => {
+                closePeek();
+                onContextMenu?.(e, id);
+              }}
               onDragStart={onDragStart}
               reorderEnabled={reorderEnabled}
               reorderTargetClipId={reorderTargetClipId}
@@ -1666,7 +1669,7 @@ const ClipRow = memo(function ClipRow({
           )}
         </div>
 
-        <div className="flex flex-shrink-0 items-center gap-3 pr-2" onMouseOver={(e) => { e.stopPropagation(); closePeek(); }}>
+        <div className="flex flex-shrink-0 items-center gap-3 pr-2 self-stretch" onMouseOver={(e) => { e.stopPropagation(); closePeek(); }}>
           <span className="flex items-center gap-2 whitespace-nowrap text-[10px] opacity-40">
             {index === 0 && !selectedFolder && (
               <span className="text-[8px] font-bold uppercase tracking-widest text-cyan-400/90">
