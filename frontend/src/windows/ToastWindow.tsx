@@ -335,41 +335,43 @@ export function ToastWindow() {
           )}
 
           {/* Content Row: Preview & Details */}
-          <div className="flex items-start gap-3">
-            {/* Icon or image thumbnail */}
-            <div className="mt-0.5 shrink-0">
-              {hasImagePreview ? (
-                <img
-                  src={`data:image/png;base64,${toast.image_preview}`}
-                  alt=""
-                  className="h-12 w-12 rounded-md border border-white/10 object-cover shadow-sm"
-                />
-              ) : (
-                icon
-              )}
+          {hasImagePreview ? (
+            <div className="flex justify-center py-2 w-full">
+              <img
+                src={`data:image/png;base64,${toast.image_preview}`}
+                alt=""
+                className="h-16 w-16 rounded-md border border-white/10 object-cover shadow-md transition-transform duration-200 hover:scale-105"
+              />
             </div>
+          ) : (
+            <div className="flex items-start gap-3">
+              {/* Icon */}
+              <div className="mt-0.5 shrink-0">
+                {icon}
+              </div>
 
-            <div className="min-w-0 flex-1">
-              {toast.source_app ? (
-                // When we have a source app, the message is the actual copied content.
-                // We style it as a preview card to separate it clearly from the header info.
-                toast.clip_type !== 'image' && toast.message && (
-                  <div className={`rounded-lg border px-2.5 py-1.5 text-xs line-clamp-2 break-all font-mono whitespace-pre-wrap ${tv.previewBg} ${tv.previewBorder} ${tv.body}`}>
-                    {toast.message}
-                  </div>
-                )
-              ) : (
-                // When there is no source app, just render the message normally (e.g. system notification)
-                toast.message && (
-                  <p
-                    className={`mt-0.5 line-clamp-2 break-words text-sm font-medium leading-snug ${tv.body}`}
-                  >
-                    {toast.message}
-                  </p>
-                )
-              )}
+              <div className="min-w-0 flex-1">
+                {toast.source_app ? (
+                  // When we have a source app, the message is the actual copied content.
+                  // We style it as a preview card to separate it clearly from the header info.
+                  toast.message && (
+                    <div className={`rounded-lg border px-2.5 py-1.5 text-xs line-clamp-2 break-all font-mono whitespace-pre-wrap ${tv.previewBg} ${tv.previewBorder} ${tv.body}`}>
+                      {toast.message}
+                    </div>
+                  )
+                ) : (
+                  // When there is no source app, just render the message normally (e.g. system notification)
+                  toast.message && (
+                    <p
+                      className={`mt-0.5 line-clamp-2 break-words text-sm font-medium leading-snug ${tv.body}`}
+                    >
+                      {toast.message}
+                    </p>
+                  )
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           <button
             onClick={(e) => {
