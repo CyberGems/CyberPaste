@@ -795,6 +795,18 @@ export const CompactView: React.FC<CompactViewProps> = ({
     };
   }, [closePeek]);
 
+  // Limpiar peek al abrir cualquier menú contextual
+  useEffect(() => {
+    const onMenu = (e: Event) => {
+      const detail = (e as CustomEvent<ContextMenuEventDetail>).detail;
+      if (detail && detail.open) {
+        closePeek();
+      }
+    };
+    window.addEventListener(CONTEXT_MENU_EVENT, onMenu);
+    return () => window.removeEventListener(CONTEXT_MENU_EVENT, onMenu);
+  }, [closePeek]);
+
   const peekClip = useMemo(
     () => (peekClipId ? (filteredClips.find((c) => c.id === peekClipId) ?? null) : null),
     [peekClipId, filteredClips]
@@ -1669,7 +1681,7 @@ const ClipRow = memo(function ClipRow({
           )}
         </div>
 
-        <div className="flex flex-shrink-0 items-center gap-3 pr-2 self-stretch" onMouseOver={(e) => { e.stopPropagation(); closePeek(); }}>
+        <div className="flex flex-shrink-0 items-center gap-3 pr-2 self-stretch -my-1.5 py-1.5" onMouseOver={(e) => { e.stopPropagation(); closePeek(); }}>
           <span className="flex items-center gap-2 whitespace-nowrap text-[10px] opacity-40">
             {index === 0 && !selectedFolder && (
               <span className="text-[8px] font-bold uppercase tracking-widest text-cyan-400/90">
