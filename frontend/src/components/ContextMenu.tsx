@@ -8,6 +8,7 @@ export interface ContextMenuOption {
   danger?: boolean;
   disabled?: boolean;
   subMenu?: ContextMenuOption[];
+  icon?: React.ReactNode;
 }
 
 interface ContextMenuProps {
@@ -83,13 +84,21 @@ function ContextMenuItem({ option, onClose }: { option: ContextMenuOption; onClo
           }
         }}
         className={clsx(
-          'flex w-full items-center rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors',
+          'flex w-full items-center rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors group',
           option.disabled ? 'pointer-events-none opacity-40' : '',
           option.danger
             ? 'text-red-500 hover:bg-red-500/10'
             : 'text-foreground/90 hover:bg-white/10 hover:text-primary'
         )}
       >
+        {option.icon && (
+          <span className={clsx(
+            "mr-2 flex items-center justify-center transition-colors shrink-0",
+            option.danger ? "text-red-500" : "text-zinc-400 group-hover:text-primary"
+          )}>
+            {option.icon}
+          </span>
+        )}
         <span className="flex-1 text-left">{option.label}</span>
         {hasSubMenu && <ChevronRight size={14} className="ml-2 opacity-60" />}
       </button>

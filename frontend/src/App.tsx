@@ -25,7 +25,29 @@ import { useTranslation } from 'react-i18next';
 import { systemToast as toast } from './utils/toast';
 import { LAYOUT } from './constants';
 import { generateDemoClips } from './debug/demoData';
-import { FileText, Code, Link, File as LucideFile, Image as ImageIcon } from 'lucide-react';
+import {
+  FileText,
+  Code,
+  Link,
+  File as LucideFile,
+  Image as ImageIcon,
+  Eye,
+  Maximize2,
+  ScanText,
+  ExternalLink,
+  Pencil,
+  Copy,
+  ClipboardCopy,
+  Pin,
+  PinOff,
+  FolderInput,
+  Sparkles,
+  AlignLeft,
+  Languages,
+  Code2,
+  CheckSquare,
+  Trash2,
+} from 'lucide-react';
 
 const base64ToBlob = (base64: string, mimeType: string = 'image/png'): Blob => {
   const byteCharacters = atob(base64);
@@ -1480,11 +1502,13 @@ function App() {
         if (clip?.clip_type === 'image') {
           opts.push({
             label: t('contextMenu.view'),
+            icon: <Eye size={14} />,
             onClick: () => handleOpenPreview(itemId),
           });
 
           opts.push({
             label: t('contextMenu.openFullViewer'),
+            icon: <Maximize2 size={14} />,
             onClick: () => {
               if (settings?.show_action_messages) {
                 toast.info(t('toasts.openingViewer'));
@@ -1495,6 +1519,7 @@ function App() {
 
           opts.push({
             label: t('contextMenu.extractText'),
+            icon: <ScanText size={14} />,
             onClick: async () => {
               const loadingToast = toast.loading(t('viewer.extractingText'));
               try {
@@ -1518,6 +1543,7 @@ function App() {
 
           opts.push({
             label: t('contextMenu.openExternalViewer'),
+            icon: <ExternalLink size={14} />,
             onClick: () => {
               if (!clip) return;
               invoke('open_with', {
@@ -1534,6 +1560,7 @@ function App() {
         } else {
           opts.push({
             label: t('contextMenu.edit'),
+            icon: <Pencil size={14} />,
             onClick: () => {
               if (!clip) return;
               invoke<AppClipboardItem>('get_clip', { clipId: clip.id })
@@ -1558,6 +1585,7 @@ function App() {
 
         opts.push({
           label: t('contextMenu.copy'),
+          icon: <Copy size={14} />,
           onClick: () => handlePaste(itemId),
         });
 
@@ -1565,6 +1593,7 @@ function App() {
         if (clip && clip.clip_type !== 'image' && clip.clip_type !== 'file') {
           opts.push({
             label: t('contextMenu.copyPlainText'),
+            icon: <ClipboardCopy size={14} />,
             onClick: async () => {
               try {
                 await invoke('copy_clip_text', { clipId: itemId });
@@ -1579,23 +1608,28 @@ function App() {
 
         opts.push({
           label: clip?.is_pinned ? t('contextMenu.unpin') : t('contextMenu.pin'),
+          icon: clip?.is_pinned ? <PinOff size={14} /> : <Pin size={14} />,
           onClick: () => handleToggleClipPin(itemId),
         });
 
         opts.push({
           label: t('contextMenu.moveToFolder'),
+          icon: <FolderInput size={14} />,
           onClick: () => setMoveToFolderClipId(itemId),
         });
 
         opts.push({
           label: t('contextMenu.aiActions'),
+          icon: <Sparkles size={14} />,
           subMenu: [
             {
               label: aiLabel(settings?.ai_title_summarize, 'Summarize', 'contextMenu.summarize'),
+              icon: <AlignLeft size={14} />,
               onClick: () => handleAiAction(itemId, 'summarize', t('ai.summary')),
             },
             {
               label: aiLabel(settings?.ai_title_translate, 'Translate', 'contextMenu.translate'),
+              icon: <Languages size={14} />,
               onClick: () => handleAiAction(itemId, 'translate', t('ai.translation')),
             },
             {
@@ -1604,10 +1638,12 @@ function App() {
                 'Explain Code',
                 'contextMenu.explainCode'
               ),
+              icon: <Code2 size={14} />,
               onClick: () => handleAiAction(itemId, 'explain_code', t('ai.codeExplanation')),
             },
             {
               label: aiLabel(settings?.ai_title_fix_grammar, 'Fix Grammar', 'contextMenu.fixGrammar'),
+              icon: <CheckSquare size={14} />,
               onClick: () => handleAiAction(itemId, 'fix_grammar', t('ai.grammarCheck')),
             },
           ],
@@ -1615,6 +1651,7 @@ function App() {
 
         opts.push({
           label: t('contextMenu.delete'),
+          icon: <Trash2 size={14} />,
           danger: true,
           onClick: () => handleDelete(itemId),
         });
@@ -1624,6 +1661,7 @@ function App() {
         options = [
           {
             label: t('common.rename'),
+            icon: <Pencil size={14} />,
             onClick: () => {
               setFolderModalMode('rename');
               setEditingFolderId(itemId);
@@ -1634,6 +1672,7 @@ function App() {
           },
           {
             label: t('contextMenu.delete'),
+            icon: <Trash2 size={14} />,
             danger: true,
             onClick: () => handleDeleteFolder(itemId),
           },
