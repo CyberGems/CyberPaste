@@ -920,7 +920,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           type="text"
                           value={settings.image_editor_path || ''}
                           onChange={(e) => updateSetting('image_editor_path', e.target.value)}
-                          placeholder="C:\Path\To\Editor.exe"
+                          placeholder={t('settings.externalViewerPlaceholder')}
                           className="flex-1 rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
                         />
                         <button

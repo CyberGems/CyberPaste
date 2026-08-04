@@ -4,7 +4,7 @@ import { listen } from '@tauri-apps/api/event';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import {
   X,
-  Edit,
+  ExternalLink,
   Copy,
   Maximize,
   Minimize2,
@@ -406,7 +406,7 @@ export function ImageViewerWindow() {
     };
   }, [loadClip, applyTheme]);
 
-  const canEdit = !!(clip?.image_path && imageEditorPath);
+  const canEdit = !!clip?.image_path;
 
   const handleClose = useCallback(() => {
     appWindow.close();
@@ -447,25 +447,20 @@ export function ImageViewerWindow() {
     const current = clipRef.current;
     if (!current) return;
 
-    const editorPath = settingsRef.current?.image_editor_path || imageEditorPath;
-    if (!editorPath) {
-      setEditHint(t('viewer.noEditorConfigured'));
-      showStatus(t('viewer.noEditorConfigured'), 2800);
-      return;
-    }
     if (!current.image_path) {
       setEditHint(t('viewer.noImagePath'));
       showStatus(t('viewer.noImagePath'), 2800);
       return;
     }
 
+    const editorPath = settingsRef.current?.image_editor_path || imageEditorPath || '';
     const path = current.image_path;
     appWindow.close().then(() => {
       invoke('open_with', {
         appPath: editorPath,
         filePath: path,
       }).catch((err) => {
-        console.error('Failed to open editor after closing viewer:', err);
+        console.error('Failed to open external viewer after closing viewer:', err);
       });
     });
   }, [appWindow, imageEditorPath, showStatus, t]);
@@ -937,10 +932,8 @@ export function ImageViewerWindow() {
             <Tooltip
               label={
                 canEdit
-                  ? t('viewer.edit')
-                  : !imageEditorPath
-                    ? t('viewer.noEditorConfigured')
-                    : t('viewer.noImagePath')
+                  ? t('viewer.openExternalViewer')
+                  : t('viewer.noImagePath')
               }
               placement="bottom"
             >
@@ -952,7 +945,7 @@ export function ImageViewerWindow() {
                 }`}
                 aria-disabled={!canEdit}
               >
-                <Edit size={15} />
+                <ExternalLink size={15} />
               </button>
             </Tooltip>
 

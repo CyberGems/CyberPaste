@@ -1477,12 +1477,12 @@ function App() {
         const opts: ContextMenuOption[] = [];
 
         // Universal preview — replaces the old image-only "View Image" flow
-        opts.push({
-          label: t('contextMenu.view'),
-          onClick: () => handleOpenPreview(itemId),
-        });
-
         if (clip?.clip_type === 'image') {
+          opts.push({
+            label: t('contextMenu.view'),
+            onClick: () => handleOpenPreview(itemId),
+          });
+
           opts.push({
             label: t('contextMenu.openFullViewer'),
             onClick: () => {
@@ -1515,27 +1515,27 @@ function App() {
               }
             },
           });
-        }
 
-        opts.push({
-          label: t('contextMenu.edit'),
-          onClick: () => {
-            if (!clip) return;
-            if (clip.clip_type === 'image') {
-              if (settings?.image_editor_path) {
-                invoke('open_with', {
-                  appPath: settings.image_editor_path,
-                  filePath: clip.image_path || clip.content,
+          opts.push({
+            label: t('contextMenu.openExternalViewer'),
+            onClick: () => {
+              if (!clip) return;
+              invoke('open_with', {
+                appPath: settings?.image_editor_path || '',
+                filePath: clip.image_path || clip.content,
+              })
+                .then(() => {
+                  invoke('hide_window');
+                  toast.success(t('toasts.externalViewerLaunched'));
                 })
-                  .then(() => {
-                    invoke('hide_window');
-                    toast.success(t('toasts.imageEditorLaunched'));
-                  })
-                  .catch((err) => toast.error(t('toasts.editorOpenFailed', { error: err })));
-              } else {
-                toast.info(t('toasts.configureEditor'));
-              }
-            } else {
+                .catch((err) => toast.error(t('toasts.viewerOpenFailed', { error: err })));
+            },
+          });
+        } else {
+          opts.push({
+            label: t('contextMenu.edit'),
+            onClick: () => {
+              if (!clip) return;
               invoke<AppClipboardItem>('get_clip', { clipId: clip.id })
                 .then((fullClip) => {
                   setEditClip({
@@ -1552,9 +1552,9 @@ function App() {
                     content: clip.content || clip.preview,
                   });
                 });
-            }
-          },
-        });
+            },
+          });
+        }
 
         opts.push({
           label: t('contextMenu.copy'),
@@ -1588,27 +1588,29 @@ function App() {
         });
 
         opts.push({
-          label: aiLabel(settings?.ai_title_summarize, 'Summarize', 'contextMenu.summarize'),
-          onClick: () => handleAiAction(itemId, 'summarize', t('ai.summary')),
-        });
-
-        opts.push({
-          label: aiLabel(settings?.ai_title_translate, 'Translate', 'contextMenu.translate'),
-          onClick: () => handleAiAction(itemId, 'translate', t('ai.translation')),
-        });
-
-        opts.push({
-          label: aiLabel(
-            settings?.ai_title_explain_code,
-            'Explain Code',
-            'contextMenu.explainCode'
-          ),
-          onClick: () => handleAiAction(itemId, 'explain_code', t('ai.codeExplanation')),
-        });
-
-        opts.push({
-          label: aiLabel(settings?.ai_title_fix_grammar, 'Fix Grammar', 'contextMenu.fixGrammar'),
-          onClick: () => handleAiAction(itemId, 'fix_grammar', t('ai.grammarCheck')),
+          label: t('contextMenu.aiActions'),
+          subMenu: [
+            {
+              label: aiLabel(settings?.ai_title_summarize, 'Summarize', 'contextMenu.summarize'),
+              onClick: () => handleAiAction(itemId, 'summarize', t('ai.summary')),
+            },
+            {
+              label: aiLabel(settings?.ai_title_translate, 'Translate', 'contextMenu.translate'),
+              onClick: () => handleAiAction(itemId, 'translate', t('ai.translation')),
+            },
+            {
+              label: aiLabel(
+                settings?.ai_title_explain_code,
+                'Explain Code',
+                'contextMenu.explainCode'
+              ),
+              onClick: () => handleAiAction(itemId, 'explain_code', t('ai.codeExplanation')),
+            },
+            {
+              label: aiLabel(settings?.ai_title_fix_grammar, 'Fix Grammar', 'contextMenu.fixGrammar'),
+              onClick: () => handleAiAction(itemId, 'fix_grammar', t('ai.grammarCheck')),
+            },
+          ],
         });
 
         opts.push({

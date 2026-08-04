@@ -2627,10 +2627,20 @@ pub fn open_with(app_path: String, file_path: String) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
         use std::process::Command;
-        Command::new(app_path).arg(file_path).spawn().map_err(|e| {
-            log::error!("Failed to spawn editor: {}", e);
-            e.to_string()
-        })?;
+        if app_path.trim().is_empty() {
+            Command::new("cmd")
+                .args(["/C", "start", "", &file_path])
+                .spawn()
+                .map_err(|e| {
+                    log::error!("Failed to open file with default viewer: {}", e);
+                    e.to_string()
+                })?;
+        } else {
+            Command::new(app_path).arg(file_path).spawn().map_err(|e| {
+                log::error!("Failed to spawn editor: {}", e);
+                e.to_string()
+            })?;
+        }
         Ok(())
     }
     #[cfg(not(target_os = "windows"))]
