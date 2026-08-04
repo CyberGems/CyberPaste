@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useTranslation } from 'react-i18next';
-import { AppWindow, Info, LogOut, Pause, Play, Settings } from 'lucide-react';
+import { AppWindow, Info, Pause, Play, Settings, Power } from 'lucide-react';
 import { useLanguage } from '../hooks/useLanguage';
 import type { Settings as AppSettings } from '../types';
 
@@ -237,7 +237,7 @@ export function TrayMenuWindow() {
 
         <div className="p-1.5 pb-2">
           <TrayItem
-            icon={<LogOut size={15} strokeWidth={1.75} className="-scale-x-100 text-[#e8796a]" />}
+            icon={<Power size={15} strokeWidth={1.75} className="text-[#e8796a]" />}
             label={t('tray.quit', { defaultValue: 'Exit' })}
             onClick={() => runAction('quit')}
           />

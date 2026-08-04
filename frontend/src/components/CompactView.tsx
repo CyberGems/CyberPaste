@@ -1491,6 +1491,7 @@ const ClipRow = memo(function ClipRow({
   isSelected = false,
   onToggleSelect,
   isPeekVisible,
+  onRowMouseEnter,
 }: {
   clip: AppClip;
   index: number;
@@ -1511,6 +1512,7 @@ const ClipRow = memo(function ClipRow({
   isSelected?: boolean;
   onToggleSelect?: (id: string, multi: boolean) => void;
   isPeekVisible?: boolean;
+  onRowMouseEnter?: (clip: AppClip, e: React.MouseEvent) => void;
 }) {
   const { i18n } = useTranslation();
   const typeLabel = useMemo(() => {
@@ -1621,64 +1623,69 @@ const ClipRow = memo(function ClipRow({
           isDragging && 'pointer-events-none scale-95 cursor-grabbing opacity-40'
         )}
       >
-        <div className="flex w-8 flex-shrink-0 items-center justify-center">
-          <span className="font-mono text-[10px] opacity-30">
-            #{clipNumbering === 'positional' ? index + 1 : totalCount - index}
-          </span>
-        </div>
-        <div className="flex min-w-0 flex-1 items-center gap-3">
-          {clip.clip_type === 'image' ? (
-            <>
-              <div className="flex h-8 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-white/10 bg-black/20">
-                {clip.content ? (
-                  <img
-                    src={getClipImageSrc(clip.content)}
-                    alt="clip"
-                    draggable="false"
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <span className="text-[10px] opacity-40">{t('common.image')}</span>
-                )}
-              </div>
-              {(() => {
-                const w = imageMeta?.width || 0;
-                const h = imageMeta?.height || 0;
-                const kb = imageMeta?.size_bytes ? Math.round(imageMeta.size_bytes / 1024) : 0;
-                if (w && h && kb) {
-                  return (
-                    <span className="flex items-center gap-1.5 whitespace-nowrap text-[10px] opacity-40">
-                      <span className="flex items-center gap-0.5">
-                        <MoveHorizontal size={9} />
-                        {w}
-                      </span>
-                      <span className="opacity-50">×</span>
-                      <span className="flex items-center gap-0.5">
-                        <MoveVertical size={9} />
-                        {h}
-                      </span>
-                      <span className="opacity-50">•</span>
-                      <span>{kb}KB</span>
-                    </span>
-                  );
-                }
-                return null;
-              })()}
-            </>
-          ) : clip.clip_type === 'file' ? (
-            <span className="flex items-center gap-2 truncate">
-              <span className="flex-shrink-0 text-[10px] font-bold uppercase text-yellow-400/70">
-                {t('common.file')}
-              </span>
-              <span className="truncate text-xs leading-none text-muted-foreground/80">
-                {clip.preview}
-              </span>
+        <div
+          className="flex min-w-0 flex-1 items-center gap-3"
+          onMouseEnter={(e) => onRowMouseEnter?.(clip, e)}
+        >
+          <div className="flex w-8 flex-shrink-0 items-center justify-center">
+            <span className="font-mono text-[10px] opacity-30">
+              #{clipNumbering === 'positional' ? index + 1 : totalCount - index}
             </span>
-          ) : (
-            <span className="truncate text-xs font-medium leading-none">
-              {clip.preview.replace(/[\n\r\t]+/g, ' ')}
-            </span>
-          )}
+          </div>
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            {clip.clip_type === 'image' ? (
+              <>
+                <div className="flex h-8 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-white/10 bg-black/20">
+                  {clip.content ? (
+                    <img
+                      src={getClipImageSrc(clip.content)}
+                      alt="clip"
+                      draggable="false"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-[10px] opacity-40">{t('common.image')}</span>
+                  )}
+                </div>
+                {(() => {
+                  const w = imageMeta?.width || 0;
+                  const h = imageMeta?.height || 0;
+                  const kb = imageMeta?.size_bytes ? Math.round(imageMeta.size_bytes / 1024) : 0;
+                  if (w && h && kb) {
+                    return (
+                      <span className="flex items-center gap-1.5 whitespace-nowrap text-[10px] opacity-40">
+                        <span className="flex items-center gap-0.5">
+                          <MoveHorizontal size={9} />
+                          {w}
+                        </span>
+                        <span className="opacity-50">×</span>
+                        <span className="flex items-center gap-0.5">
+                          <MoveVertical size={9} />
+                          {h}
+                        </span>
+                        <span className="opacity-50">•</span>
+                        <span>{kb}KB</span>
+                      </span>
+                    );
+                  }
+                  return null;
+                })()}
+              </>
+            ) : clip.clip_type === 'file' ? (
+              <span className="flex items-center gap-2 truncate">
+                <span className="flex-shrink-0 text-[10px] font-bold uppercase text-yellow-400/70">
+                  {t('common.file')}
+                </span>
+                <span className="truncate text-xs leading-none text-muted-foreground/80">
+                  {clip.preview}
+                </span>
+              </span>
+            ) : (
+              <span className="truncate text-xs font-medium leading-none">
+                {clip.preview.replace(/[\n\r\t]+/g, ' ')}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-shrink-0 items-center gap-3 pr-2 self-stretch -my-1.5 py-1.5" onMouseOver={(e) => { e.stopPropagation(); closePeek(); }}>
@@ -1813,7 +1820,6 @@ function CompactListRow({
       style={style}
       {...ariaAttributes}
       className="box-border px-2"
-      onMouseEnter={(e) => onRowMouseEnter?.(clip, e)}
       onMouseLeave={() => onRowMouseLeave?.()}
     >
       <ClipRow
@@ -1836,6 +1842,7 @@ function CompactListRow({
         isSelected={selectedClipIds?.has(clip.id) ?? false}
         onToggleSelect={onToggleClipSelect}
         isPeekVisible={isPeekVisible}
+        onRowMouseEnter={onRowMouseEnter}
       />
     </div>
   );
