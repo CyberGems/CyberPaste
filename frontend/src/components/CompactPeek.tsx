@@ -134,11 +134,11 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
           onMouseLeave={onClose}
         >
           <div
-            className="flex w-full flex-col overflow-hidden rounded-xl border border-white/10 bg-[#151518]/95 backdrop-blur-md shadow-[0_12px_40px_rgba(0,0,0,0.75)]"
+            className="flex w-full flex-col overflow-hidden rounded-xl border border-white/10 bg-[#151518] shadow-[0_12px_40px_rgba(0,0,0,0.75)]"
             style={{ maxHeight: calculatedMaxHeight }}
           >
             {/* Header info bar / merged with action bar */}
-            <div className="flex h-9 flex-shrink-0 items-center justify-between border-b border-white/5 bg-white/[0.03] px-3 text-[10px] font-medium tracking-wider uppercase text-white/40">
+            <div className="flex h-9 flex-shrink-0 items-center justify-between border-b border-white/5 bg-[#1d1d22] px-3 text-[10px] font-medium tracking-wider uppercase text-white/40">
               <div className="flex items-center gap-2 min-w-0">
                 <span className="text-cyan-400 font-bold bg-cyan-950/40 border border-cyan-800/30 rounded px-1.5 py-0.5 text-[9px] tracking-widest">{t(`clipType.${clip.clip_type}`)}</span>
                 <span className="font-mono text-[9px] text-white/50 truncate">{infoLabel}</span>

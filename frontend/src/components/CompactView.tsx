@@ -1418,9 +1418,11 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 : t('compact.enterToPaste')}
             </span>
             <span>
-              {isFiltering
-                ? `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: t(`compact.filter${typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}`) })}`
-                : t('compact.footerTotalClips', { count: filteredClips.length })}
+              {(isFiltering || searchQuery || selectedFolder) && (
+                isFiltering
+                  ? `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: t(`compact.filter${typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}`) })}`
+                  : t('compact.footerTotalClips', { count: filteredClips.length })
+              )}
             </span>
             <span>{t('compact.escToHide')}</span>
           </div>
