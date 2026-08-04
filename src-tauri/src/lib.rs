@@ -209,15 +209,19 @@ pub fn run_app() {
                                          manager.get().pinned
                                      };
 
-                                     // NEW SAFETY: If cursor is inside window, don't hide (fixes dragging)
-                                     let is_inside = if let (Ok(pos), Ok(size)) = (win_clone.outer_position(), win_clone.outer_size()) {
+                                     // NEW SAFETY: If cursor is inside window, top header area and left mouse button is down, don't hide (fixes dragging)
+                                     let is_inside_and_dragging = if let (Ok(pos), Ok(size)) = (win_clone.outer_position(), win_clone.outer_size()) {
                                          use windows::Win32::Foundation::POINT;
                                          use windows::Win32::UI::WindowsAndMessaging::GetCursorPos;
+                                         use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON};
                                          let mut point = POINT { x: 0, y: 0 };
                                          let has_cursor = unsafe { GetCursorPos(&mut point).is_ok() };
                                          if has_cursor {
-                                             point.x >= pos.x && point.x <= pos.x + size.width as i32 &&
-                                             point.y >= pos.y && point.y <= pos.y + size.height as i32
+                                             let cursor_inside = point.x >= pos.x && point.x <= pos.x + size.width as i32 &&
+                                                 point.y >= pos.y && point.y <= pos.y + size.height as i32;
+                                             let in_header = (point.x - pos.x <= size.width as i32 - 210) && (point.y - pos.y <= 65);
+                                             let lbutton_down = (unsafe { GetAsyncKeyState(VK_LBUTTON.0 as i32) } as u16 & 0x8000) != 0;
+                                             cursor_inside && in_header && lbutton_down
                                          } else {
                                              false
                                          }
@@ -225,8 +229,8 @@ pub fn run_app() {
                                          false
                                      };
 
-                                     if is_pinned || is_inside {
-                                         log::info!("Auto-hide skipped: pinned={} inside={}", is_pinned, is_inside);
+                                     if is_pinned || is_inside_and_dragging {
+                                         log::info!("Auto-hide skipped: pinned={} inside_and_dragging={}", is_pinned, is_inside_and_dragging);
                                          return;
                                      }
 
@@ -873,13 +877,6 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                 }
             }
 
-            // If last position is saved for compact mode, use it directly (skip caret/cursor)
-            if view_mode == "compact" && compact_pos_mode == "auto" {
-                if let (Some(lx), Some(ly)) = (compact_last_x, compact_last_y) {
-                    point = POINT { x: lx, y: ly };
-                    found = true;
-                }
-            }
 
             if !found {
                 if unsafe { GetCursorPos(&mut point).is_ok() } {

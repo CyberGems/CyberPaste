@@ -806,8 +806,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
       `}</style>
       {/* Header */}
       <div
-        data-tauri-drag-region
-        className="relative flex flex-shrink-0 cursor-move items-center justify-between overflow-hidden border-b border-white/10 bg-white/5 p-3 backdrop-blur-sm"
+        className="relative flex h-12 flex-shrink-0 items-stretch justify-between overflow-hidden border-b border-white/10 bg-white/5 px-3 backdrop-blur-sm"
       >
         {/* Scan-line sweep (CSS-only, GPU-composited) - 50% opacity of full view */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -821,15 +820,15 @@ export const CompactView: React.FC<CompactViewProps> = ({
             }}
           />
         </div>
-        <div data-tauri-drag-region className="flex items-center gap-2">
+        <div data-tauri-drag-region className="flex cursor-move items-center gap-2 flex-1 min-w-0 self-stretch">
           <div
             data-tauri-drag-region
             className="flex h-6 w-6 items-center justify-center overflow-hidden"
           >
-            <img src="/logo.png" alt="Logo" className="h-5 w-5 object-contain" />
+            <img src="/logo.png" alt="Logo" className="h-5 w-5 object-contain" data-tauri-drag-region />
           </div>
-          <div data-tauri-drag-region className="flex items-baseline gap-1.5">
-            <span data-tauri-drag-region className="text-sm font-bold tracking-tight">
+          <div data-tauri-drag-region className="flex items-baseline gap-1.5 min-w-0 flex-1">
+            <span data-tauri-drag-region className="text-sm font-bold tracking-tight truncate">
               CyberPaste
             </span>
             <span
@@ -840,7 +839,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-0.5">
+        <div className="flex cursor-default items-center gap-0.5">
           {onTogglePin && (
             <Tooltip
               label={isPinned ? t('common.unpinWindowShort') : t('common.pinWindowShort')}
