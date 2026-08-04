@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Copy, Pin, Trash2 } from 'lucide-react';
+import { Copy, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ClipboardItem } from '../types';
@@ -35,7 +35,7 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
 
   useEffect(() => {
     if (clip && anchorRect) {
-      timerRef.current = setTimeout(() => setVisible(true), 200);
+      timerRef.current = setTimeout(() => setVisible(true), 500);
     } else {
       setVisible(false);
     }
@@ -134,41 +134,28 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
           onMouseLeave={onClose}
         >
           <div
-            className="flex w-full flex-col overflow-hidden rounded-xl border border-white/10 bg-[#151518] shadow-[0_12px_40px_rgba(0,0,0,0.75)]"
+            className="flex w-full flex-col overflow-hidden rounded-xl border border-white/10 bg-[#151518]/95 backdrop-blur-md shadow-[0_12px_40px_rgba(0,0,0,0.75)]"
             style={{ maxHeight: calculatedMaxHeight }}
           >
             {/* Header info bar / merged with action bar */}
-            <div className="flex flex-shrink-0 items-center justify-between border-b border-white/5 bg-white/5 pl-3 pr-1.5 py-1 text-[10px] font-semibold tracking-wide uppercase text-white/50">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className="text-cyan-400 font-bold">{t(`clipType.${clip.clip_type}`)}</span>
-                <span className="font-mono text-[9px] opacity-60 truncate">{infoLabel}</span>
+            <div className="flex h-9 flex-shrink-0 items-center justify-between border-b border-white/5 bg-white/[0.03] px-3 text-[10px] font-medium tracking-wider uppercase text-white/40">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-cyan-400 font-bold bg-cyan-950/40 border border-cyan-800/30 rounded px-1.5 py-0.5 text-[9px] tracking-widest">{t(`clipType.${clip.clip_type}`)}</span>
+                <span className="font-mono text-[9px] text-white/50 truncate">{infoLabel}</span>
               </div>
               
               {/* Action buttons merged in header */}
-              <div className="flex items-center gap-0.5 flex-shrink-0">
+              <div className="flex items-center gap-1 flex-shrink-0">
                 <Tooltip label={t('compact.peekCopy')} placement="top">
                   <button
                     onClick={() => {
                       onCopy(clip.id);
                       onClose();
                     }}
-                    className="flex h-6 w-6 items-center justify-center rounded text-white/60 hover:bg-white/10 hover:text-white transition-colors"
+                    className="flex h-6.5 w-6.5 items-center justify-center rounded-md text-white/50 hover:bg-white/10 hover:text-white transition-all duration-150 active:scale-95"
+                    style={{ width: '26px', height: '26px' }}
                   >
-                    <Copy size={11} />
-                  </button>
-                </Tooltip>
-                <Tooltip
-                  label={clip.is_pinned ? t('compact.peekUnpin') : t('compact.peekPin')}
-                  placement="top"
-                >
-                  <button
-                    onClick={() => {
-                      onPin(clip.id);
-                      onClose();
-                    }}
-                    className="flex h-6 w-6 items-center justify-center rounded text-white/60 hover:bg-white/10 hover:text-white transition-colors"
-                  >
-                    <Pin size={11} className={clip.is_pinned ? 'fill-current text-cyan-400' : ''} />
+                    <Copy size={13} />
                   </button>
                 </Tooltip>
                 <Tooltip label={t('compact.peekDelete')} placement="top">
@@ -177,9 +164,10 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
                       onDelete(clip.id);
                       onClose();
                     }}
-                    className="flex h-6 w-6 items-center justify-center rounded text-rose-400/60 hover:bg-rose-500/15 hover:text-rose-300 transition-colors"
+                    className="flex h-6.5 w-6.5 items-center justify-center rounded-md text-rose-400/50 hover:bg-rose-500/15 hover:text-rose-400 transition-all duration-150 active:scale-95"
+                    style={{ width: '26px', height: '26px' }}
                   >
-                    <Trash2 size={11} />
+                    <Trash2 size={13} />
                   </button>
                 </Tooltip>
               </div>
@@ -189,7 +177,7 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
             <div className="min-h-0 flex-1 overflow-y-auto p-3">
               {isImage ? (
                 imageSrc ? (
-                  <div className="flex h-44 items-center justify-center overflow-hidden rounded-lg bg-white/5 border border-white/5 p-1">
+                  <div className="flex h-44 items-center justify-center overflow-hidden rounded-lg bg-[#0c0c0e] border border-white/10 p-1">
                     <img
                       src={imageSrc}
                       alt="preview"
