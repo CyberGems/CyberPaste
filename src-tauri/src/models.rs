@@ -74,6 +74,10 @@ pub struct AppSettings {
     pub compact_last_position_y: Option<i32>,
     pub compact_auto_height: bool,
     pub compact_peek_enabled: bool,
+    pub settings_window_width: Option<f64>,
+    pub settings_window_height: Option<f64>,
+    pub settings_window_x: Option<i32>,
+    pub settings_window_y: Option<i32>,
 }
 
 impl Default for AppSettings {
@@ -147,6 +151,10 @@ impl Default for AppSettings {
             compact_last_position_y: None,
             compact_auto_height: true,
             compact_peek_enabled: true,
+            settings_window_width: None,
+            settings_window_height: None,
+            settings_window_x: None,
+            settings_window_y: None,
         }
     }
 }

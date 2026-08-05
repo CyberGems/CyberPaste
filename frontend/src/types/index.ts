@@ -84,6 +84,10 @@ export interface Settings {
   compact_last_position_y?: number | null;
   compact_auto_height?: boolean;
   compact_peek_enabled?: boolean;
+  settings_window_width?: number | null;
+  settings_window_height?: number | null;
+  settings_window_x?: number | null;
+  settings_window_y?: number | null;
 }
 
 export type ClipType = 'text' | 'image' | 'html' | 'rtf' | 'file' | 'url' | 'code';

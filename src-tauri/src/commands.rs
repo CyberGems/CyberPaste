@@ -3651,19 +3651,49 @@ fn open_settings_window(app: &AppHandle, about_tab: bool) {
         return;
     }
 
-    let _ = tauri::WebviewWindowBuilder::new(
+    let manager = app.state::<std::sync::Arc<crate::settings_manager::SettingsManager>>();
+    let settings = manager.get();
+    let reference_window = app.get_webview_window("main");
+
+    let mut builder = tauri::WebviewWindowBuilder::new(
         app,
         "settings",
         tauri::WebviewUrl::App("index.html?window=settings".into()),
     )
     .title("Settings")
-    .inner_size(800.0, 700.0)
+    .inner_size(
+        settings.settings_window_width.unwrap_or(800.0),
+        settings.settings_window_height.unwrap_or(700.0),
+    )
     .resizable(true)
     .maximizable(true)
     .decorations(false)
     .transparent(false)
-    .center()
-    .build();
+    .visible(false);
+
+    if let (Some(x), Some(y)) = (settings.settings_window_x, settings.settings_window_y) {
+        builder = builder.position(x as f64, y as f64);
+    } else {
+        if let Some(ref_win) = reference_window {
+            if let Some(cursor_monitor) = crate::get_monitor_at_cursor(&ref_win) {
+                let scale_factor = cursor_monitor.scale_factor();
+                let monitor_pos = cursor_monitor.position();
+                let monitor_size = cursor_monitor.size();
+                
+                let window_w = (settings.settings_window_width.unwrap_or(800.0) * scale_factor) as u32;
+                let window_h = (settings.settings_window_height.unwrap_or(700.0) * scale_factor) as u32;
+                let x = monitor_pos.x + ((monitor_size.width as i32 - window_w as i32) / 2);
+                let y = monitor_pos.y + ((monitor_size.height as i32 - window_h as i32) / 2);
+                builder = builder.position(x as f64, y as f64);
+            } else {
+                builder = builder.center();
+            }
+        } else {
+            builder = builder.center();
+        }
+    }
+
+    let _ = builder.build();
 
     if about_tab {
         let app_clone = app.clone();
