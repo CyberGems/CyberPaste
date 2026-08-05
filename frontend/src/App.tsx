@@ -1109,7 +1109,7 @@ function App() {
 
   const handleCopy = async (clipId: string) => {
     try {
-      const clip = clips.find((c) => c.id === clipId);
+      const clip = clipsRef.current.find((c) => c.id === clipId);
       if (clip && clip.clip_type === 'image') {
         const blob = await getFullImageBlob(clipId, clip);
         await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
