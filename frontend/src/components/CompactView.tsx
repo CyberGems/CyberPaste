@@ -730,7 +730,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
 
   // NUEVO: handlers para peek popover
   const handleRowMouseEnter = useCallback((clip: AppClip, e: React.MouseEvent) => {
-    if (!compactPeekEnabled) return;
+    if (!compactPeekEnabled || isDragging) return;
 
     // Si pasamos a un clip diferente, cerramos el peek activo inmediatamente
     setPeekClipId((prevId) => {
@@ -764,7 +764,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
       setPeekClipId(clip.id);
       setPeekAnchor({ x: rect.left, y: rect.top, width: rect.width, height: rect.height });
     }, 600); // delay de 600ms para menor invasión
-  }, [compactPeekEnabled]);
+  }, [compactPeekEnabled, isDragging]);
 
   const handleRowMouseLeave = useCallback(() => {
     if (peekTimerRef.current) {
@@ -782,6 +782,13 @@ export const CompactView: React.FC<CompactViewProps> = ({
       peekTimerRef.current = null;
     }
   }, []);
+
+  // Limpiar peek al cambiar isDragging
+  useEffect(() => {
+    if (isDragging) {
+      closePeek();
+    }
+  }, [isDragging, closePeek]);
 
   // Limpiar peek al cambiar la visibilidad de la ventana
   useEffect(() => {

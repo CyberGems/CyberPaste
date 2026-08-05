@@ -195,6 +195,7 @@ function App() {
 
   const dragIndicatorRef = useRef<HTMLDivElement>(null);
   const wasDraggingRef = useRef<boolean>(false);
+  const dragHoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const effectiveTheme = useTheme(theme);
   useLanguage(settings?.language);
@@ -597,15 +598,34 @@ function App() {
           }
 
           if (closestId && closestDist < 300) {
-            const position = e.clientY < closestCenterY ? 'before' : 'after';
+            const position: 'before' | 'after' = e.clientY < closestCenterY ? 'before' : 'after';
+            
+            let finalTargetId = closestId;
+            let finalPosition: 'before' | 'after' | null = position;
+
+            const draggedClip = clipsRef.current.find((c) => c.id === dragStateRef.current.clipId);
+            const targetClip = clipsRef.current.find((c) => c.id === closestId);
+
+            if (draggedClip && !draggedClip.is_pinned && targetClip && targetClip.is_pinned) {
+              const firstUnpinned = clipsRef.current.find((c) => !c.is_pinned);
+              if (firstUnpinned) {
+                finalTargetId = firstUnpinned.id;
+                finalPosition = 'before';
+              } else {
+                const lastClip = clipsRef.current[clipsRef.current.length - 1];
+                finalTargetId = lastClip.id;
+                finalPosition = 'after';
+              }
+            }
+
             if (
-              dragStateRef.current.reorderTargetClipId !== closestId ||
-              dragStateRef.current.reorderTargetPosition !== position
+              dragStateRef.current.reorderTargetClipId !== finalTargetId ||
+              dragStateRef.current.reorderTargetPosition !== finalPosition
             ) {
-              setReorderTargetClipId(closestId);
-              setReorderTargetPosition(position);
-              dragStateRef.current.reorderTargetClipId = closestId;
-              dragStateRef.current.reorderTargetPosition = position;
+              setReorderTargetClipId(finalTargetId);
+              setReorderTargetPosition(finalPosition);
+              dragStateRef.current.reorderTargetClipId = finalTargetId;
+              dragStateRef.current.reorderTargetPosition = finalPosition;
             }
           }
         } else {
@@ -732,6 +752,11 @@ function App() {
     const { clipId, targetFolderId, reorderTargetClipId, reorderTargetPosition } =
       dragStateRef.current;
 
+    if (dragHoverTimerRef.current) {
+      clearTimeout(dragHoverTimerRef.current);
+      dragHoverTimerRef.current = null;
+    }
+
     // Save reorder targets before clearing state (override reordering if dropping to a folder)
     const reorderClipId = targetFolderId !== undefined ? null : reorderTargetClipId;
     const reorderPos = targetFolderId !== undefined ? null : reorderTargetPosition;
@@ -762,17 +787,44 @@ function App() {
 
     // Handle reorder drop (priority over folder move)
     if (clipId && reorderClipId && reorderPos) {
-      try {
-        await invoke('reorder_clip', {
-          clipUuid: clipId,
-          targetUuid: reorderClipId,
-          position: reorderPos,
-        });
-        await loadClips(selectedFolderRef.current);
-        await loadFolders();
-        refreshTotalCount();
-      } catch (e) {
-        console.error('[finishDrag] Failed to reorder clip:', e);
+      const draggedClip = clips.find((c) => c.id === clipId);
+      const targetClip = clips.find((c) => c.id === reorderClipId);
+
+      let finalReorderClipId = reorderClipId;
+      let finalReorderPos = reorderPos;
+
+      // Redirect if target is pinned and dragged is not pinned
+      if (draggedClip && !draggedClip.is_pinned && targetClip && targetClip.is_pinned) {
+        const firstUnpinned = clips.find((c) => !c.is_pinned);
+        if (firstUnpinned) {
+          finalReorderClipId = firstUnpinned.id;
+          finalReorderPos = 'before';
+        } else {
+          const lastClip = clips[clips.length - 1];
+          finalReorderClipId = lastClip.id;
+          finalReorderPos = 'after';
+        }
+      }
+
+      // Check if this is the first position in the main list (copy to clipboard)
+      const isMainList = selectedFolderRef.current === null;
+      const isFirstPos = clips.length > 0 && finalReorderClipId === clips[0].id && finalReorderPos === 'before';
+
+      if (isMainList && isFirstPos) {
+        handleCopy(clipId);
+      } else {
+        try {
+          await invoke('reorder_clip', {
+            clipUuid: clipId,
+            targetUuid: finalReorderClipId,
+            position: finalReorderPos,
+          });
+          await loadClips(selectedFolderRef.current);
+          await loadFolders();
+          refreshTotalCount();
+        } catch (e) {
+          console.error('[finishDrag] Failed to reorder clip:', e);
+        }
       }
     } else if (clipId && targetFolderId !== undefined) {
       handleMoveClip(clipId, targetFolderId);
@@ -782,11 +834,29 @@ function App() {
   const handleDragHover = (folderId: string | null) => {
     setDragTargetFolderId(folderId);
     dragStateRef.current.targetFolderId = folderId;
+
+    if (dragHoverTimerRef.current) {
+      clearTimeout(dragHoverTimerRef.current);
+      dragHoverTimerRef.current = null;
+    }
+
+    if (folderId !== undefined) {
+      dragHoverTimerRef.current = setTimeout(() => {
+        if (dragStateRef.current.targetFolderId === folderId) {
+          handleSelectFolder(folderId);
+        }
+      }, 1200); // 1.2s hover to open folder
+    }
   };
 
   const handleDragLeave = () => {
     setDragTargetFolderId(undefined);
     dragStateRef.current.targetFolderId = undefined;
+
+    if (dragHoverTimerRef.current) {
+      clearTimeout(dragHoverTimerRef.current);
+      dragHoverTimerRef.current = null;
+    }
   };
 
   // Total History Count

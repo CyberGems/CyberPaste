@@ -3,7 +3,6 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getVersion } from '@tauri-apps/api/app';
 import { useLanguage } from '../hooks/useLanguage';
-import { getClipIcon } from './toastIcons';
 
 function getWelcomeTitle(version: string, lang?: string): string {
   const vStr = version ? ` v${version}` : '';
