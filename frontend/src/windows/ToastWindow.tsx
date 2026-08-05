@@ -1,8 +1,18 @@
 import { useEffect, useState, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { getVersion } from '@tauri-apps/api/app';
 import { useLanguage } from '../hooks/useLanguage';
 import { getClipIcon } from './toastIcons';
+
+function getWelcomeTitle(version: string, lang?: string): string {
+  const vStr = version ? ` v${version}` : '';
+  if (lang === 'es') {
+    return `CyberPaste${vStr} está listo`;
+  }
+  return `CyberPaste${vStr} is ready`;
+}
+
 import {
   X,
   Image as ImageIcon,
@@ -186,6 +196,7 @@ export function ToastWindow() {
   const [toast, setToast] = useState<ToastPayload | null>(null);
   const [isClosing, setIsClosing] = useState(false);
   const [settings, setSettings] = useState<Settings | null>(null);
+  const [version, setVersion] = useState<string>('');
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { t } = useLanguage(settings?.language);
@@ -200,6 +211,11 @@ export function ToastWindow() {
   const handleToastUpdate = async (payload: ToastPayload) => {
     const freshSettings = await invoke<Settings>('get_settings').catch(() => null);
     if (freshSettings) setSettings(freshSettings);
+
+    const isWelcome = payload.clip_type === 'welcome';
+    const width = isWelcome ? 340 : 300;
+    const height = isWelcome ? 80 : 110;
+    await invoke('set_toast_position', { width, height }).catch(console.error);
 
     setToast(payload);
     setIsClosing(false);
@@ -259,14 +275,11 @@ export function ToastWindow() {
   useEffect(() => {
     document.documentElement.classList.add('toast-window');
 
+    getVersion().then(setVersion).catch(console.error);
     invoke<Settings>('get_settings').then(setSettings).catch(console.error);
 
     const unlisten = listen<ToastPayload>('update-toast', (event) => {
       handleToastUpdate(event.payload);
-      // Reposition on subsequent events
-      invoke('set_toast_position', { width: window.innerWidth, height: window.innerHeight }).catch(
-        console.error
-      );
     });
 
     // Re-theme the toast live when settings change from another window
@@ -302,6 +315,7 @@ export function ToastWindow() {
   if (!toast) return null;
 
   const hasImagePreview = toast.clip_type === 'image' && toast.image_preview;
+  const isWelcome = toast.clip_type === 'welcome';
   const title = getClipTitle(toast.clip_type, toast.toast_type, t);
   const isMinimal = settings?.toast_style === 'minimal';
   const themeId = resolveToastTheme(settings);
@@ -313,8 +327,6 @@ export function ToastWindow() {
   const containerClasses = isMinimal
     ? 'bg-zinc-900/95 border border-zinc-700/50 text-white shadow-xl'
     : tv.container;
-
-  const icon = getClipIcon(toast.clip_type, toast.toast_type, isMinimal ? '#A1A1AA' : tv.iconColor);
 
   const clickAction = settings?.toast_click_action || 'close';
   const isClickable = clickAction !== 'none';
@@ -359,78 +371,115 @@ export function ToastWindow() {
       <div
         className={`relative w-full overflow-hidden rounded-xl transition-all duration-300 ${containerClasses} ${isClosing ? 'translate-y-2 scale-95 opacity-0' : 'translate-y-0 scale-100 opacity-100'}`}
       >
-        <div className="flex flex-col p-2.5 pb-3">
-          {/* Header Row: Source Program info or general Title */}
-          {toast.source_app ? (
-            <div className={`flex items-center gap-1.5 border-b pb-1.5 mb-2 text-xs font-semibold pr-7 ${isMinimal ? 'border-zinc-800 text-zinc-400' : 'border-white/5 text-neutral-400'}`}>
-              <div className="shrink-0 flex items-center">
-                {getHeaderClipIcon(toast.clip_type, toast.toast_type, isMinimal ? '#A1A1AA' : tv.iconColor)}
+        {isWelcome ? (
+          <div className="flex items-center px-3.5 py-2.5 h-full w-full select-none">
+            {/* CyberSnap-like layout with the app logo on the left */}
+            <div className="shrink-0 flex items-center justify-center w-11 h-11 rounded-lg bg-white/5 border border-white/10 p-1 mr-3">
+              <img src="/logo.png" alt="CyberPaste Logo" className="w-8 h-8 object-contain" />
+            </div>
+
+            <div className="flex flex-col flex-1 min-w-0 pr-6 justify-center">
+              <h4
+                className={`text-[12.75px] font-semibold leading-tight truncate ${tv.title}`}
+                style={{ fontFamily: "'Segoe UI Variable Text', -apple-system, sans-serif" }}
+              >
+                {getWelcomeTitle(version, settings?.language)}
+              </h4>
+              <p
+                className={`text-[11.5px] font-normal leading-normal mt-0.5 ${tv.body}`}
+                style={{
+                  fontFamily: "'Segoe UI Variable Text', -apple-system, sans-serif",
+                  opacity: 0.72
+                }}
+              >
+                {toast.message}
+              </p>
+            </div>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                closeToast();
+              }}
+              className={`absolute right-2 top-2 rounded-md p-1 transition-colors ${tv.closeBtn}`}
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col p-2.5 pb-3">
+            {/* Header Row: Source Program info or general Title */}
+            {toast.source_app ? (
+              <div className={`flex items-center gap-1.5 border-b pb-1.5 mb-2 text-xs font-semibold pr-7 ${isMinimal ? 'border-zinc-800 text-zinc-400' : 'border-white/5 text-neutral-400'}`}>
+                <div className="shrink-0 flex items-center">
+                  {getHeaderClipIcon(toast.clip_type, toast.toast_type, isMinimal ? '#A1A1AA' : tv.iconColor)}
+                </div>
+                <span className="truncate font-medium">{title}</span>
+                <span className="text-[10px] font-normal text-neutral-500 lowercase px-0.5">{t('toasts.fromApp')}</span>
+                {toast.source_icon ? (
+                  <img
+                    src={`data:image/png;base64,${toast.source_icon}`}
+                    alt=""
+                    className="w-3.5 h-3.5 object-contain rounded-sm"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                ) : null}
+                <span className={`truncate max-w-[120px] ${isMinimal ? 'text-zinc-200' : 'text-neutral-200'}`}>{toast.source_app}</span>
               </div>
-              <span className="truncate font-medium">{title}</span>
-              <span className="text-[10px] font-normal text-neutral-500 lowercase px-0.5">{t('toasts.fromApp')}</span>
-              {toast.source_icon ? (
+            ) : (
+              <div className="flex items-center gap-1.5 mb-2 pr-7">
+                <div className="shrink-0 flex items-center">
+                  {getHeaderClipIcon(toast.clip_type, toast.toast_type, isMinimal ? '#A1A1AA' : tv.iconColor)}
+                </div>
+                <h4 className={`text-sm font-semibold truncate ${tv.title}`}>{title}</h4>
+              </div>
+            )}
+
+            {/* Content Row: Preview & Details */}
+            {hasImagePreview ? (
+              <div className="flex justify-center w-full">
                 <img
-                  src={`data:image/png;base64,${toast.source_icon}`}
+                  src={`data:image/png;base64,${toast.image_preview}`}
                   alt=""
-                  className="w-3.5 h-3.5 object-contain rounded-sm"
-                  onError={(e) => {
-                    (e.target as HTMLElement).style.display = 'none';
-                  }}
+                  className="max-h-12 max-w-[180px] rounded-md border border-white/10 object-contain shadow-md transition-transform duration-200 hover:scale-105"
                 />
-              ) : null}
-              <span className={`truncate max-w-[120px] ${isMinimal ? 'text-zinc-200' : 'text-neutral-200'}`}>{toast.source_app}</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5 mb-2 pr-7">
-              <div className="shrink-0 flex items-center">
-                {getHeaderClipIcon(toast.clip_type, toast.toast_type, isMinimal ? '#A1A1AA' : tv.iconColor)}
               </div>
-              <h4 className={`text-sm font-semibold truncate ${tv.title}`}>{title}</h4>
-            </div>
-          )}
+            ) : (
+              <div className="min-w-0 w-full">
+                {toast.source_app ? (
+                  // When we have a source app, the message is the actual copied content.
+                  // We style it as a preview card to separate it clearly from the header info.
+                  toast.message && (
+                    <div className={`rounded-lg border px-2.5 py-1.5 text-xs line-clamp-2 break-all font-mono whitespace-pre-wrap ${tv.previewBg} ${tv.previewBorder} ${tv.body}`}>
+                      {toast.message}
+                    </div>
+                  )
+                ) : (
+                  // When there is no source app, just render the message normally (e.g. system notification)
+                  toast.message && (
+                    <p
+                      className={`mt-0.5 line-clamp-2 break-words text-sm font-medium leading-snug ${tv.body}`}
+                    >
+                      {toast.message}
+                    </p>
+                  )
+                )}
+              </div>
+            )}
 
-          {/* Content Row: Preview & Details */}
-          {hasImagePreview ? (
-            <div className="flex justify-center w-full">
-              <img
-                src={`data:image/png;base64,${toast.image_preview}`}
-                alt=""
-                className="max-h-12 max-w-[180px] rounded-md border border-white/10 object-contain shadow-md transition-transform duration-200 hover:scale-105"
-              />
-            </div>
-          ) : (
-            <div className="min-w-0 w-full">
-              {toast.source_app ? (
-                // When we have a source app, the message is the actual copied content.
-                // We style it as a preview card to separate it clearly from the header info.
-                toast.message && (
-                  <div className={`rounded-lg border px-2.5 py-1.5 text-xs line-clamp-2 break-all font-mono whitespace-pre-wrap ${tv.previewBg} ${tv.previewBorder} ${tv.body}`}>
-                    {toast.message}
-                  </div>
-                )
-              ) : (
-                // When there is no source app, just render the message normally (e.g. system notification)
-                toast.message && (
-                  <p
-                    className={`mt-0.5 line-clamp-2 break-words text-sm font-medium leading-snug ${tv.body}`}
-                  >
-                    {toast.message}
-                  </p>
-                )
-              )}
-            </div>
-          )}
-
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              closeToast();
-            }}
-            className={`absolute right-2.5 top-2.5 rounded-md p-1 transition-colors ${tv.closeBtn}`}
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                closeToast();
+              }}
+              className={`absolute right-2.5 top-2.5 rounded-md p-1 transition-colors ${tv.closeBtn}`}
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
 
         {/* Progress Bar */}
         <div

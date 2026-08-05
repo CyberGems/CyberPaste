@@ -465,9 +465,9 @@ pub fn run_app() {
 
                 let lang = settings.language.as_str();
                 let msg = if lang == "es" {
-                    format!("{} para abrir", saved_hotkey_clone)
+                    format!("Presiona {} para abrir", saved_hotkey_clone)
                 } else {
-                    format!("{} to open", saved_hotkey_clone)
+                    format!("Press {} to open", saved_hotkey_clone)
                 };
                 let _ = commands::show_toast(
                     handle_for_toast,
