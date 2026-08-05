@@ -191,6 +191,7 @@ function App() {
     reorderTargetClipId: null as string | null,
     reorderTargetPosition: null as 'before' | 'after' | null,
     cachedRects: null as { id: string; rect: DOMRect; centerY: number }[] | null,
+    sourceFolderId: null as string | null,
   });
 
   const dragIndicatorRef = useRef<HTMLDivElement>(null);
@@ -606,7 +607,14 @@ function App() {
             const draggedClip = clipsRef.current.find((c) => c.id === dragStateRef.current.clipId);
             const targetClip = clipsRef.current.find((c) => c.id === closestId);
 
-            if (draggedClip && !draggedClip.is_pinned && targetClip && targetClip.is_pinned) {
+            // Skip pinned redirect if hovering at the absolute first position in main clipboard
+            // (that position triggers copy-to-clipboard on drop)
+            const isFirstPosMain = selectedFolderRef.current === null &&
+              clipsRef.current.length > 0 &&
+              closestId === clipsRef.current[0].id &&
+              position === 'before';
+
+            if (!isFirstPosMain && draggedClip && !draggedClip.is_pinned && targetClip && targetClip.is_pinned) {
               const firstUnpinned = clipsRef.current.find((c) => !c.is_pinned);
               if (firstUnpinned) {
                 finalTargetId = firstUnpinned.id;
@@ -744,6 +752,7 @@ function App() {
     // Instead of starting immediately, set pending
     dragStateRef.current.pendingDrag = { clipId, startX, startY };
     dragStateRef.current.clipId = clipId;
+    dragStateRef.current.sourceFolderId = selectedFolder;
     // We don't set state yet, avoiding re-render until threshold passed
     document.body.classList.add('is-dragging');
   };
@@ -770,6 +779,7 @@ function App() {
       dragIndicatorRef.current.classList.add('hidden');
       dragIndicatorRef.current.classList.remove('flex');
     }
+    const sourceFolderId = dragStateRef.current.sourceFolderId;
     dragStateRef.current = {
       isDragging: false,
       clipId: null,
@@ -778,6 +788,7 @@ function App() {
       reorderTargetClipId: null,
       reorderTargetPosition: null,
       cachedRects: null,
+      sourceFolderId: null,
     };
     document.body.classList.remove('is-dragging');
 
@@ -785,45 +796,73 @@ function App() {
       return;
     }
 
+    const currentClips = clipsRef.current;
+
     // Handle reorder drop (priority over folder move)
     if (clipId && reorderClipId && reorderPos) {
-      const draggedClip = clips.find((c) => c.id === clipId);
-      const targetClip = clips.find((c) => c.id === reorderClipId);
-
       // Check if this is the first position in the main list (copy to clipboard)
       const isMainList = selectedFolderRef.current === null;
-      const isFirstPos = clips.length > 0 && reorderClipId === clips[0].id && reorderPos === 'before';
+      const isFirstPos = currentClips.length > 0 && reorderClipId === currentClips[0].id && reorderPos === 'before';
 
-      if (isMainList && isFirstPos) {
+      if (isMainList && isFirstPos && sourceFolderId === null) {
         handleCopy(clipId);
       } else {
-        let finalReorderClipId = reorderClipId;
-        let finalReorderPos = reorderPos;
+        // Detect cross-folder drag (folder was switched during drag via hover)
+        const isCrossFolderDrag = sourceFolderId !== selectedFolderRef.current;
 
-        // Redirect if target is pinned and dragged is not pinned
-        if (draggedClip && !draggedClip.is_pinned && targetClip && targetClip.is_pinned) {
-          const firstUnpinned = clips.find((c) => !c.is_pinned);
-          if (firstUnpinned) {
-            finalReorderClipId = firstUnpinned.id;
-            finalReorderPos = 'before';
-          } else {
-            const lastClip = clips[clips.length - 1];
-            finalReorderClipId = lastClip.id;
-            finalReorderPos = 'after';
+        if (isCrossFolderDrag) {
+          // Move clip to the destination folder first, then reorder
+          try {
+            await invoke('move_to_folder', { clipId, folderId: selectedFolderRef.current });
+            await loadClips(selectedFolderRef.current);
+            await loadFolders();
+            // Now reorder within the new folder
+            await invoke('reorder_clip', {
+              clipUuid: clipId,
+              targetUuid: reorderClipId,
+              position: reorderPos,
+            });
+            await loadClips(selectedFolderRef.current);
+            refreshTotalCount();
+            toast.success(t('notifications.clipMoved'));
+          } catch (e) {
+            const errMsg = typeof e === 'string' ? e : t('notifications.clipMoveFailed');
+            console.error('[finishDrag] Cross-folder drag failed:', e);
+            toast.error(errMsg);
           }
-        }
+        } else {
+          // Same-folder reorder
+          const draggedClip = currentClips.find((c) => c.id === clipId);
+          const targetClip = currentClips.find((c) => c.id === reorderClipId);
 
-        try {
-          await invoke('reorder_clip', {
-            clipUuid: clipId,
-            targetUuid: finalReorderClipId,
-            position: finalReorderPos,
-          });
-          await loadClips(selectedFolderRef.current);
-          await loadFolders();
-          refreshTotalCount();
-        } catch (e) {
-          console.error('[finishDrag] Failed to reorder clip:', e);
+          let finalReorderClipId = reorderClipId;
+          let finalReorderPos = reorderPos;
+
+          // Redirect if target is pinned and dragged is not pinned
+          if (draggedClip && !draggedClip.is_pinned && targetClip && targetClip.is_pinned) {
+            const firstUnpinned = currentClips.find((c) => !c.is_pinned);
+            if (firstUnpinned) {
+              finalReorderClipId = firstUnpinned.id;
+              finalReorderPos = 'before';
+            } else {
+              const lastClip = currentClips[currentClips.length - 1];
+              finalReorderClipId = lastClip.id;
+              finalReorderPos = 'after';
+            }
+          }
+
+          try {
+            await invoke('reorder_clip', {
+              clipUuid: clipId,
+              targetUuid: finalReorderClipId,
+              position: finalReorderPos,
+            });
+            await loadClips(selectedFolderRef.current);
+            await loadFolders();
+            refreshTotalCount();
+          } catch (e) {
+            console.error('[finishDrag] Failed to reorder clip:', e);
+          }
         }
       }
     } else if (clipId && targetFolderId !== undefined) {
@@ -853,10 +892,13 @@ function App() {
 
   useEffect(() => {
     if (dragStateRef.current.isDragging) {
-      const timer = setTimeout(() => {
-        recalculateCachedRects();
-      }, 50);
-      return () => clearTimeout(timer);
+      // Use requestAnimationFrame + small delay to ensure DOM has rendered the new clips
+      const raf = requestAnimationFrame(() => {
+        setTimeout(() => {
+          recalculateCachedRects();
+        }, 100);
+      });
+      return () => cancelAnimationFrame(raf);
     }
   }, [clips, recalculateCachedRects]);
 
