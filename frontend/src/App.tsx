@@ -790,29 +790,29 @@ function App() {
       const draggedClip = clips.find((c) => c.id === clipId);
       const targetClip = clips.find((c) => c.id === reorderClipId);
 
-      let finalReorderClipId = reorderClipId;
-      let finalReorderPos = reorderPos;
-
-      // Redirect if target is pinned and dragged is not pinned
-      if (draggedClip && !draggedClip.is_pinned && targetClip && targetClip.is_pinned) {
-        const firstUnpinned = clips.find((c) => !c.is_pinned);
-        if (firstUnpinned) {
-          finalReorderClipId = firstUnpinned.id;
-          finalReorderPos = 'before';
-        } else {
-          const lastClip = clips[clips.length - 1];
-          finalReorderClipId = lastClip.id;
-          finalReorderPos = 'after';
-        }
-      }
-
       // Check if this is the first position in the main list (copy to clipboard)
       const isMainList = selectedFolderRef.current === null;
-      const isFirstPos = clips.length > 0 && finalReorderClipId === clips[0].id && finalReorderPos === 'before';
+      const isFirstPos = clips.length > 0 && reorderClipId === clips[0].id && reorderPos === 'before';
 
       if (isMainList && isFirstPos) {
         handleCopy(clipId);
       } else {
+        let finalReorderClipId = reorderClipId;
+        let finalReorderPos = reorderPos;
+
+        // Redirect if target is pinned and dragged is not pinned
+        if (draggedClip && !draggedClip.is_pinned && targetClip && targetClip.is_pinned) {
+          const firstUnpinned = clips.find((c) => !c.is_pinned);
+          if (firstUnpinned) {
+            finalReorderClipId = firstUnpinned.id;
+            finalReorderPos = 'before';
+          } else {
+            const lastClip = clips[clips.length - 1];
+            finalReorderClipId = lastClip.id;
+            finalReorderPos = 'after';
+          }
+        }
+
         try {
           await invoke('reorder_clip', {
             clipUuid: clipId,
@@ -830,6 +830,35 @@ function App() {
       handleMoveClip(clipId, targetFolderId);
     }
   };
+
+  const recalculateCachedRects = useCallback(() => {
+    if (!dragStateRef.current.isDragging) return;
+    const currentClipId = dragStateRef.current.clipId;
+    const cards = document.querySelectorAll('[data-clip-id]');
+    const rects: { id: string; rect: DOMRect; centerY: number }[] = [];
+    for (let i = 0; i < cards.length; i++) {
+      const card = cards[i] as HTMLElement;
+      const cardId = card.getAttribute('data-clip-id');
+      if (cardId && cardId !== currentClipId) {
+        const rect = card.getBoundingClientRect();
+        rects.push({
+          id: cardId,
+          rect,
+          centerY: rect.top + rect.height / 2,
+        });
+      }
+    }
+    dragStateRef.current.cachedRects = rects;
+  }, []);
+
+  useEffect(() => {
+    if (dragStateRef.current.isDragging) {
+      const timer = setTimeout(() => {
+        recalculateCachedRects();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [clips, recalculateCachedRects]);
 
   const handleDragHover = (folderId: string | null) => {
     setDragTargetFolderId(folderId);
