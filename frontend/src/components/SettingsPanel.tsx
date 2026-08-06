@@ -630,82 +630,84 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
                       <SettingsIcon size={14} /> {t('settings.appearanceSection')}
                     </h3>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-3">
+                          <label className="block">
+                            <span className="text-base font-medium">{t('settings.language')}</span>
+                          </label>
+                          <Select
+                            value={settings.language || 'en'}
+                            onChange={handleLanguageChange}
+                            options={[
+                              { value: 'de', label: 'Deutsch' },
+                              { value: 'en', label: 'English' },
+                              { value: 'es', label: 'Español' },
+                              { value: 'fr', label: 'Francais' },
+                              { value: 'ja', label: '日本語' },
+                              { value: 'zh', label: '中文' },
+                            ]}
+                          />
+                        </div>
+                      </div>
                       <div className="space-y-3">
                         <label className="block">
-                          <span className="text-base font-medium">{t('settings.language')}</span>
+                          <span className="text-base font-medium">{t('settings.theme')}</span>
                         </label>
-                        <Select
-                          value={settings.language || 'en'}
-                          onChange={handleLanguageChange}
-                          options={[
-                            { value: 'de', label: 'Deutsch' },
-                            { value: 'en', label: 'English' },
-                            { value: 'es', label: 'Español' },
-                            { value: 'fr', label: 'Francais' },
-                            { value: 'ja', label: '日本語' },
-                            { value: 'zh', label: '中文' },
-                          ]}
-                        />
+                        <div role="radiogroup" className="flex flex-wrap gap-4 pt-1">
+                          {(['cyberpaste', 'dark', 'light', 'system'] as ThemeMode[]).map((mode) => (
+                            <ThemeCard
+                              key={mode}
+                              mode={mode}
+                              caption={
+                                mode === 'cyberpaste'
+                                  ? 'CyberPaste'
+                                  : t(`settings.theme${mode.charAt(0).toUpperCase() + mode.slice(1)}`)
+                              }
+                              selected={settings.theme === mode}
+                              onSelect={(m) => handleThemeChange(m)}
+                            />
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                    <div className="space-y-3">
-                      <label className="block">
-                        <span className="text-base font-medium">{t('settings.theme')}</span>
-                      </label>
-                      <div role="radiogroup" className="flex flex-wrap gap-4 pt-1">
-                        {(['cyberpaste', 'dark', 'light', 'system'] as ThemeMode[]).map((mode) => (
-                          <ThemeCard
-                            key={mode}
-                            mode={mode}
-                            caption={
-                              mode === 'cyberpaste'
-                                ? 'CyberPaste'
-                                : t(`settings.theme${mode.charAt(0).toUpperCase() + mode.slice(1)}`)
-                            }
-                            selected={settings.theme === mode}
-                            onSelect={(m) => handleThemeChange(m)}
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div>
+                          <span className="text-sm font-medium">{t('settings.roundCorners')}</span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.roundCornersDesc')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() =>
+                            updateSetting('round_corners', !(settings.round_corners ?? false))
+                          }
+                          className={`h-6 w-11 rounded-full transition-colors ${(settings.round_corners ?? false) ? 'bg-primary' : 'bg-white/10'}`}
+                        >
+                          <span
+                            className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.round_corners ?? false) ? 'translate-x-5' : 'translate-x-0.5'}`}
                           />
-                        ))}
+                        </button>
                       </div>
-                    </div>
-                    <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                      <div>
-                        <span className="text-sm font-medium">{t('settings.roundCorners')}</span>
-                        <p className="text-xs text-muted-foreground">
-                          {t('settings.roundCornersDesc')}
-                        </p>
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div>
+                          <span className="text-base font-semibold">
+                            {t('settings.startupWithWindows')}
+                          </span>
+                          <p className="text-sm text-muted-foreground/80">
+                            {t('settings.startupWithWindowsDesc')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() =>
+                            updateSetting('startup_with_windows', !settings.startup_with_windows)
+                          }
+                          className={`h-6 w-11 rounded-full transition-colors ${settings.startup_with_windows ? 'bg-primary' : 'bg-white/10'}`}
+                        >
+                          <div
+                            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.startup_with_windows ? 'translate-x-5' : 'translate-x-0.5'}`}
+                          />
+                        </button>
                       </div>
-                      <button
-                        onClick={() =>
-                          updateSetting('round_corners', !(settings.round_corners ?? false))
-                        }
-                        className={`h-6 w-11 rounded-full transition-colors ${(settings.round_corners ?? false) ? 'bg-primary' : 'bg-white/10'}`}
-                      >
-                        <span
-                          className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.round_corners ?? false) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                        />
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                      <div>
-                        <span className="text-base font-semibold">
-                          {t('settings.startupWithWindows')}
-                        </span>
-                        <p className="text-sm text-muted-foreground/80">
-                          {t('settings.startupWithWindowsDesc')}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() =>
-                          updateSetting('startup_with_windows', !settings.startup_with_windows)
-                        }
-                        className={`h-6 w-11 rounded-full transition-colors ${settings.startup_with_windows ? 'bg-primary' : 'bg-white/10'}`}
-                      >
-                        <div
-                          className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.startup_with_windows ? 'translate-x-5' : 'translate-x-0.5'}`}
-                        />
-                      </button>
                     </div>
                   </section>
 
