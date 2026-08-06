@@ -339,7 +339,7 @@
   }
 
   /* ── Settings Panel Flat Rows & Toggles (CyberSnap Match) ────────── */
-  .dark .rounded-\[4px\].border.border-border.bg-secondary {
+  .dark .bg-secondary.border {
     background: transparent !important;
     border: none !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
