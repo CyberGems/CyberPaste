@@ -919,6 +919,44 @@ pub fn remove_full_image_file(file_path: &str) {
 }
 
 #[cfg(target_os = "windows")]
+unsafe fn get_parent_pid(process_handle: windows::Win32::Foundation::HANDLE) -> Option<u32> {
+    type NtQueryInformationProcessFn = unsafe extern "system" fn(
+        windows::Win32::Foundation::HANDLE,
+        u32,
+        *mut std::ffi::c_void,
+        u32,
+        *mut u32,
+    ) -> i32;
+
+    if let Ok(lib) = libloading::Library::new("ntdll.dll") {
+        if let Ok(func) = lib.get::<NtQueryInformationProcessFn>(b"NtQueryInformationProcess") {
+            #[repr(C)]
+            struct PROCESS_BASIC_INFORMATION {
+                exit_status: i32,
+                peb_base_address: *mut std::ffi::c_void,
+                affinity_mask: usize,
+                base_priority: i32,
+                unique_process_id: usize,
+                inherited_from_unique_process_id: usize,
+            }
+            let mut pbi = std::mem::zeroed::<PROCESS_BASIC_INFORMATION>();
+            let mut return_len = 0;
+            let status = func(
+                process_handle,
+                0, // ProcessBasicInformation
+                &mut pbi as *mut _ as *mut std::ffi::c_void,
+                std::mem::size_of::<PROCESS_BASIC_INFORMATION>() as u32,
+                &mut return_len,
+            );
+            if status >= 0 {
+                return Some(pbi.inherited_from_unique_process_id as u32);
+            }
+        }
+    }
+    None
+}
+
+#[cfg(target_os = "windows")]
 fn get_clipboard_owner_app_info() -> (
     Option<String>,
     Option<String>,
@@ -926,6 +964,10 @@ fn get_clipboard_owner_app_info() -> (
     Option<String>,
     bool,
 ) {
+    use windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow;
+    use windows::Win32::UI::WindowsAndMessaging::GetWindowThreadProcessId;
+    use windows::Win32::Foundation::CloseHandle;
+
     unsafe {
         let (hwnd, is_explicit) = match GetClipboardOwner() {
             Ok(h) if !h.0.is_null() => (h, true),
@@ -966,15 +1008,15 @@ fn get_clipboard_owner_app_info() -> (
 
         let mut name_buffer = [0u16; MAX_PATH as usize];
         let name_size = GetModuleBaseNameW(process_handle, None, &mut name_buffer);
-        let exe_name = if name_size > 0 {
+        let mut exe_name = if name_size > 0 {
             String::from_utf16_lossy(&name_buffer[..name_size as usize])
         } else {
             String::new()
         };
 
         let mut path_buffer = [0u16; MAX_PATH as usize];
-        let path_size = GetModuleFileNameExW(Some(process_handle), None, &mut path_buffer);
-        let (app_name, app_icon, full_path) = if path_size > 0 {
+        let mut path_size = GetModuleFileNameExW(Some(process_handle), None, &mut path_buffer);
+        let (mut app_name, mut app_icon, mut full_path) = if path_size > 0 {
             let full_path_str = String::from_utf16_lossy(&path_buffer[..path_size as usize]);
 
             let desc = get_app_description(&full_path_str);
@@ -1001,6 +1043,45 @@ fn get_clipboard_owner_app_info() -> (
                 None,
             )
         };
+
+        // If the process is Microsoft Edge WebView2, resolve its parent process (the host app) instead
+        let is_webview = exe_name.to_lowercase() == "msedgewebview2.exe"
+            || app_name.as_deref().unwrap_or("").to_lowercase().contains("webview2");
+
+        if is_webview {
+            if let Some(parent_pid) = get_parent_pid(process_handle) {
+                if let Ok(parent_handle) = OpenProcess(
+                    PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
+                    false,
+                    parent_pid,
+                ) {
+                    let mut p_name_buffer = [0u16; MAX_PATH as usize];
+                    let p_name_size = GetModuleBaseNameW(parent_handle, None, &mut p_name_buffer);
+                    if p_name_size > 0 {
+                        let parent_exe = String::from_utf16_lossy(&p_name_buffer[..p_name_size as usize]);
+                        
+                        let mut p_path_buffer = [0u16; MAX_PATH as usize];
+                        let p_path_size = GetModuleFileNameExW(Some(parent_handle), None, &mut p_path_buffer);
+                        if p_path_size > 0 {
+                            let parent_path_str = String::from_utf16_lossy(&p_path_buffer[..p_path_size as usize]);
+                            let parent_desc = get_app_description(&parent_path_str);
+                            
+                            exe_name = parent_exe;
+                            app_name = if let Some(d) = parent_desc {
+                                Some(d)
+                            } else {
+                                Some(exe_name.clone())
+                            };
+                            app_icon = extract_icon(&parent_path_str);
+                            full_path = Some(parent_path_str);
+                        }
+                    }
+                    let _ = CloseHandle(parent_handle);
+                }
+            }
+        }
+
+        let _ = CloseHandle(process_handle);
 
         let exe_val = if !exe_name.is_empty() {
             Some(exe_name)
