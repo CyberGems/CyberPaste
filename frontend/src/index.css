@@ -356,28 +356,57 @@
     margin-top: 1.5rem;
   }
   .dark section.space-y-4 > h3 {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
     padding-bottom: 0.5rem;
     color: var(--primary) !important; /* Silver accent */
   }
 
   /* Settings inputs margins and flat wrappers */
   .dark .rounded-xl.border.border-border\/40.bg-accent\/10 {
-    background: var(--secondary) !important;
-    border-color: var(--border) !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 6px !important;
+  }
+
+  /* Indicator box for numbers next to sliders */
+  .dark .min-w-\[3rem\].rounded-lg.border.border-primary\/20.bg-primary\/10 {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: var(--foreground) !important;
+  }
+
+  /* TextInput & Inputs for Dark Theme */
+  .dark input[type="text"],
+  .dark input[type="password"],
+  .dark input[type="number"],
+  .dark textarea {
+    background: rgba(0, 0, 0, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: var(--foreground) !important;
     border-radius: 4px !important;
+  }
+
+  .dark .btn-secondary {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: var(--foreground) !important;
+    border-radius: 4px !important;
+  }
+  .dark .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.09) !important;
   }
 
   /* Toggles / Switcher styling */
   .dark button.rounded-full {
     height: 1.25rem !important; /* 20px */
     width: 2.25rem !important;  /* 36px */
-    border: 1px solid rgba(255, 255, 255, 0.28) !important;
-    background: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.44) !important;
+    background: rgba(255, 255, 255, 0.06) !important;
     position: relative;
     padding: 0 !important;
-    display: inline-flex;
-    align-items: center;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
   }
 
   .dark button.rounded-full.bg-primary {
@@ -389,20 +418,21 @@
   .dark button.rounded-full > span {
     height: 0.75rem !important; /* 12px */
     width: 0.75rem !important;  /* 12px */
-    background: rgba(255, 255, 255, 0.8) !important;
     border-radius: 9999px !important;
-    transition: transform 0.2s ease-in-out, background-color 0.2s !important;
+    display: block !important;
+    margin: 0 !important;
+    transition: transform 0.15s ease-in-out, background-color 0.15s !important;
   }
 
   .dark button.rounded-full.bg-primary > div,
   .dark button.rounded-full.bg-primary > span {
     background: #16181B !important; /* switch active indicator matches background */
-    transform: translateX(1.2rem) !important;
+    transform: translateX(1.3rem) !important;
   }
 
   .dark button.rounded-full:not(.bg-primary) > div,
   .dark button.rounded-full:not(.bg-primary) > span {
-    background: rgba(255, 255, 255, 0.6) !important;
-    transform: translateX(0.18rem) !important;
+    background: rgba(255, 255, 255, 0.75) !important;
+    transform: translateX(0.2rem) !important;
   }
 }
