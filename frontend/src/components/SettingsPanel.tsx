@@ -716,205 +716,207 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-cyan-400/80">
                       <Clipboard size={14} /> {t('settings.clipboardCapture')}
                     </h3>
-                    <div className="space-y-3">
-                      <label className="block">
-                        <span className="text-sm font-bold uppercase tracking-tight text-primary/70">
-                          {t('settings.historyLimit')}
-                        </span>
-                        <p className="text-xs text-muted-foreground">
-                          {t('settings.historyLimitDesc')}
-                        </p>
-                      </label>
-                      <div className="flex items-center gap-4 rounded-xl border border-border/40 bg-accent/10 p-3">
-                        <input
-                          type="range"
-                          min="50"
-                          max="1000"
-                          step="50"
-                          value={settings.max_items || 300}
-                          onChange={(e) => updateSetting('max_items', parseInt(e.target.value))}
-                          className="h-1.5 flex-1 cursor-pointer appearance-none rounded-lg bg-accent accent-primary"
-                        />
-                        <span className="min-w-[3rem] rounded-lg border border-primary/20 bg-primary/10 px-2 py-1 text-center font-mono text-sm font-bold text-primary shadow-sm">
-                          {settings.max_items || 300}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                      <div>
-                        <span className="text-base font-semibold">
-                          {t('settings.ignoreGhostClips')}
-                        </span>
-                        <p className="text-sm text-muted-foreground/80">
-                          {t('settings.ignoreGhostClipsDesc')}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() =>
-                          updateSetting('ignore_ghost_clips', !settings.ignore_ghost_clips)
-                        }
-                        className={`h-6 w-11 rounded-full transition-colors ${settings.ignore_ghost_clips ? 'bg-primary' : 'bg-white/10'}`}
-                      >
-                        <div
-                          className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.ignore_ghost_clips ? 'translate-x-5' : 'translate-x-0.5'}`}
-                        />
-                      </button>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                        <div>
-                          <span className="text-sm font-medium">
-                            {t('settings.clipboardSound')}
+                    <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-sm font-bold uppercase tracking-tight text-primary/70">
+                            {t('settings.historyLimit')}
                           </span>
                           <p className="text-xs text-muted-foreground">
-                            {t('settings.clipboardSoundDesc')}
+                            {t('settings.historyLimitDesc')}
+                          </p>
+                        </label>
+                        <div className="flex items-center gap-4 rounded-xl border border-border/40 bg-accent/10 p-3">
+                          <input
+                            type="range"
+                            min="50"
+                            max="1000"
+                            step="50"
+                            value={settings.max_items || 300}
+                            onChange={(e) => updateSetting('max_items', parseInt(e.target.value))}
+                            className="h-1.5 flex-1 cursor-pointer appearance-none rounded-lg bg-accent accent-primary"
+                          />
+                          <span className="min-w-[3rem] rounded-lg border border-primary/20 bg-primary/10 px-2 py-1 text-center font-mono text-sm font-bold text-primary shadow-sm">
+                            {settings.max_items || 300}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div>
+                          <span className="text-base font-semibold">
+                            {t('settings.ignoreGhostClips')}
+                          </span>
+                          <p className="text-sm text-muted-foreground/80">
+                            {t('settings.ignoreGhostClipsDesc')}
                           </p>
                         </div>
                         <button
                           onClick={() =>
-                            updateSetting(
-                              'clipboard_sound_enabled',
-                              !(settings.clipboard_sound_enabled ?? false)
-                            )
+                            updateSetting('ignore_ghost_clips', !settings.ignore_ghost_clips)
                           }
-                          className={`h-6 w-11 rounded-full transition-colors ${(settings.clipboard_sound_enabled ?? false) ? 'bg-primary' : 'bg-white/10'}`}
+                          className={`h-6 w-11 rounded-full transition-colors ${settings.ignore_ghost_clips ? 'bg-primary' : 'bg-white/10'}`}
                         >
-                          <span
-                            className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.clipboard_sound_enabled ?? false) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                          <div
+                            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.ignore_ghost_clips ? 'translate-x-5' : 'translate-x-0.5'}`}
                           />
                         </button>
                       </div>
-                      {(settings.clipboard_sound_enabled ?? false) && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                          <div>
+                            <span className="text-sm font-medium">
+                              {t('settings.clipboardSound')}
+                            </span>
+                            <p className="text-xs text-muted-foreground">
+                              {t('settings.clipboardSoundDesc')}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() =>
+                              updateSetting(
+                                'clipboard_sound_enabled',
+                                !(settings.clipboard_sound_enabled ?? false)
+                              )
+                            }
+                            className={`h-6 w-11 rounded-full transition-colors ${(settings.clipboard_sound_enabled ?? false) ? 'bg-primary' : 'bg-white/10'}`}
+                          >
+                            <span
+                              className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.clipboard_sound_enabled ?? false) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                            />
+                          </button>
+                        </div>
+                        {(settings.clipboard_sound_enabled ?? false) && (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={settings.clipboard_sound_path || ''}
+                              onChange={(e) => updateSetting('clipboard_sound_path', e.target.value)}
+                              placeholder="C:\path\to\sound.wav"
+                              className="flex-1 rounded-lg border border-white/5 bg-black/20 px-3 py-1.5 text-xs transition-all focus:border-cyan-500/50 focus:outline-none"
+                            />
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const path = await invoke<string>('pick_file', {
+                                    filterName: 'Sound Files',
+                                    extensions: ['wav', 'mp3'],
+                                  });
+                                  if (path) updateSetting('clipboard_sound_path', path);
+                                } catch (e) {
+                                  if (e !== 'No file selected') console.error(e);
+                                }
+                              }}
+                              className="btn btn-secondary flex-shrink-0 rounded-[4px] text-xs"
+                            >
+                              {t('common.browse')}
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (settings.clipboard_sound_path) {
+                                  try {
+                                    await invoke('play_clipboard_sound', {
+                                      soundPath: settings.clipboard_sound_path,
+                                    });
+                                  } catch (e) {
+                                    console.error('Sound preview failed:', e);
+                                  }
+                                }
+                              }}
+                              disabled={!settings.clipboard_sound_path}
+                              className="btn btn-secondary flex-shrink-0 rounded-[4px] text-xs disabled:opacity-50"
+                              title={t('settings.previewSound')}
+                            >
+                              <Volume2 size={14} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div>
+                          <span className="text-sm font-medium">{t('settings.autoPaste')}</span>
+                          <p className="text-sm text-muted-foreground/80">
+                            {t('settings.autoPasteDesc')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => updateSetting('auto_paste', !settings.auto_paste)}
+                          className={`h-6 w-11 rounded-full transition-colors ${settings.auto_paste ? 'bg-primary' : 'bg-white/10'}`}
+                        >
+                          <div
+                            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.auto_paste ? 'translate-x-5' : 'translate-x-0.5'}`}
+                          />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div>
+                          <span className="text-sm font-medium">{t('settings.autoInjectPaste')}</span>
+                          <p className="text-sm text-muted-foreground/80">
+                            {t('settings.autoInjectPasteDesc')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() =>
+                            updateSetting('auto_inject_paste', !settings.auto_inject_paste)
+                          }
+                          className={`h-6 w-11 rounded-full transition-colors ${settings.auto_inject_paste ? 'bg-primary' : 'bg-white/10'}`}
+                        >
+                          <div
+                            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.auto_inject_paste ? 'translate-x-5' : 'translate-x-0.5'}`}
+                          />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div>
+                          <span className="text-sm font-medium">
+                            {t('settings.resetViewOnPaste')}
+                          </span>
+                          <p className="text-sm text-muted-foreground/80">
+                            {t('settings.resetViewOnPasteDesc')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() =>
+                            updateSetting('reset_view_on_paste', !settings.reset_view_on_paste)
+                          }
+                          className={`h-6 w-11 rounded-full transition-colors ${settings.reset_view_on_paste ? 'bg-primary' : 'bg-white/10'}`}
+                        >
+                          <div
+                            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.reset_view_on_paste ? 'translate-x-5' : 'translate-x-0.5'}`}
+                          />
+                        </button>
+                      </div>
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-sm font-bold uppercase tracking-tight text-primary/70">
+                            {t('settings.externalImageEditor')}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.externalImageEditorDesc')}
+                          </p>
+                        </label>
                         <div className="flex items-center gap-2">
                           <input
                             type="text"
-                            value={settings.clipboard_sound_path || ''}
-                            onChange={(e) => updateSetting('clipboard_sound_path', e.target.value)}
-                            placeholder="C:\path\to\sound.wav"
-                            className="flex-1 rounded-lg border border-white/5 bg-black/20 px-3 py-1.5 text-xs transition-all focus:border-cyan-500/50 focus:outline-none"
+                            value={settings.image_editor_path || ''}
+                            onChange={(e) => updateSetting('image_editor_path', e.target.value)}
+                            placeholder={t('settings.externalViewerPlaceholder')}
+                            className="flex-1 rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
                           />
                           <button
                             onClick={async () => {
                               try {
                                 const path = await invoke<string>('pick_file', {
-                                  filterName: 'Sound Files',
-                                  extensions: ['wav', 'mp3'],
+                                  filterName: 'Executables',
+                                  extensions: ['exe', 'app'],
                                 });
-                                if (path) updateSetting('clipboard_sound_path', path);
-                              } catch (e) {
-                                if (e !== 'No file selected') console.error(e);
-                              }
+                                if (path) updateSetting('image_editor_path', path);
+                              } catch (e) {}
                             }}
-                            className="btn btn-secondary flex-shrink-0 rounded-[4px] text-xs"
+                            className="rounded-[4px] bg-accent px-3 py-2 text-sm font-medium transition-all hover:bg-accent/80"
                           >
                             {t('common.browse')}
                           </button>
-                          <button
-                            onClick={async () => {
-                              if (settings.clipboard_sound_path) {
-                                try {
-                                  await invoke('play_clipboard_sound', {
-                                    soundPath: settings.clipboard_sound_path,
-                                  });
-                                } catch (e) {
-                                  console.error('Sound preview failed:', e);
-                                }
-                              }
-                            }}
-                            disabled={!settings.clipboard_sound_path}
-                            className="btn btn-secondary flex-shrink-0 rounded-[4px] text-xs disabled:opacity-50"
-                            title={t('settings.previewSound')}
-                          >
-                            <Volume2 size={14} />
-                          </button>
                         </div>
-                      )}
-                    </div>
-                    <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                      <div>
-                        <span className="text-sm font-medium">{t('settings.autoPaste')}</span>
-                        <p className="text-sm text-muted-foreground/80">
-                          {t('settings.autoPasteDesc')}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => updateSetting('auto_paste', !settings.auto_paste)}
-                        className={`h-6 w-11 rounded-full transition-colors ${settings.auto_paste ? 'bg-primary' : 'bg-white/10'}`}
-                      >
-                        <div
-                          className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.auto_paste ? 'translate-x-5' : 'translate-x-0.5'}`}
-                        />
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                      <div>
-                        <span className="text-sm font-medium">{t('settings.autoInjectPaste')}</span>
-                        <p className="text-sm text-muted-foreground/80">
-                          {t('settings.autoInjectPasteDesc')}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() =>
-                          updateSetting('auto_inject_paste', !settings.auto_inject_paste)
-                        }
-                        className={`h-6 w-11 rounded-full transition-colors ${settings.auto_inject_paste ? 'bg-primary' : 'bg-white/10'}`}
-                      >
-                        <div
-                          className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.auto_inject_paste ? 'translate-x-5' : 'translate-x-0.5'}`}
-                        />
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                      <div>
-                        <span className="text-sm font-medium">
-                          {t('settings.resetViewOnPaste')}
-                        </span>
-                        <p className="text-sm text-muted-foreground/80">
-                          {t('settings.resetViewOnPasteDesc')}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() =>
-                          updateSetting('reset_view_on_paste', !settings.reset_view_on_paste)
-                        }
-                        className={`h-6 w-11 rounded-full transition-colors ${settings.reset_view_on_paste ? 'bg-primary' : 'bg-white/10'}`}
-                      >
-                        <div
-                          className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.reset_view_on_paste ? 'translate-x-5' : 'translate-x-0.5'}`}
-                        />
-                      </button>
-                    </div>
-                    <div className="space-y-3">
-                      <label className="block">
-                        <span className="text-sm font-bold uppercase tracking-tight text-primary/70">
-                          {t('settings.externalImageEditor')}
-                        </span>
-                        <p className="text-xs text-muted-foreground">
-                          {t('settings.externalImageEditorDesc')}
-                        </p>
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={settings.image_editor_path || ''}
-                          onChange={(e) => updateSetting('image_editor_path', e.target.value)}
-                          placeholder={t('settings.externalViewerPlaceholder')}
-                          className="flex-1 rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
-                        />
-                        <button
-                          onClick={async () => {
-                            try {
-                              const path = await invoke<string>('pick_file', {
-                                filterName: 'Executables',
-                                extensions: ['exe', 'app'],
-                              });
-                              if (path) updateSetting('image_editor_path', path);
-                            } catch (e) {}
-                          }}
-                          className="rounded-[4px] bg-accent px-3 py-2 text-sm font-medium transition-all hover:bg-accent/80"
-                        >
-                          {t('common.browse')}
-                        </button>
                       </div>
                     </div>
                   </section>
@@ -957,104 +959,139 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         options={[
                           { value: 'horizontal', label: t('settings.scrollHorizontal') },
                           { value: 'vertical', label: t('settings.scrollVertical') },
-                        ]}
-                      />
-                      {(settings.compact_folder_layout || 'vertical') === 'vertical' && (
-                        <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                          <div>
-                            <span className="text-sm font-medium">
-                              {t('settings.compactSidebarCollapsed')}
-                            </span>
-                            <p className="text-xs text-muted-foreground">
-                              {t('settings.compactSidebarCollapsedDesc')}
-                            </p>
+                    <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-base font-medium">
+                            {t('settings.scrollDirection')}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.scrollDirectionDesc')}
+                          </p>
+                        </label>
+                        <Select
+                          value={settings.scroll_direction || 'vertical'}
+                          onChange={(val) => updateSetting('scroll_direction', val)}
+                          options={[
+                            { value: 'horizontal', label: t('settings.scrollHorizontal') },
+                            { value: 'vertical', label: t('settings.scrollVertical') },
+                          ]}
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-base font-medium">
+                            {t('settings.compactFolderLayout')}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.compactFolderLayoutDesc')}
+                          </p>
+                        </label>
+                        <Select
+                          value={settings.compact_folder_layout || 'vertical'}
+                          onChange={(val) => updateSetting('compact_folder_layout', val)}
+                          options={[
+                            { value: 'horizontal', label: t('settings.scrollHorizontal') },
+                            { value: 'vertical', label: t('settings.scrollVertical') },
+                          ]}
+                        />
+                        {(settings.compact_folder_layout || 'vertical') === 'vertical' && (
+                          <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                            <div>
+                              <span className="text-sm font-medium">
+                                {t('settings.compactSidebarCollapsed')}
+                              </span>
+                              <p className="text-xs text-muted-foreground">
+                                {t('settings.compactSidebarCollapsedDesc')}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() =>
+                                updateSetting(
+                                  'compact_sidebar_collapsed',
+                                  !(settings.compact_sidebar_collapsed ?? false)
+                                )
+                              }
+                              className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_sidebar_collapsed ?? false) ? 'bg-primary' : 'bg-white/10'}`}
+                            >
+                              <span
+                                className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.compact_sidebar_collapsed ?? false) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                              />
+                            </button>
                           </div>
-                          <button
-                            onClick={() =>
-                              updateSetting(
-                                'compact_sidebar_collapsed',
-                                !(settings.compact_sidebar_collapsed ?? false)
-                              )
-                            }
-                            className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_sidebar_collapsed ?? false) ? 'bg-primary' : 'bg-white/10'}`}
-                          >
-                            <span
-                              className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.compact_sidebar_collapsed ?? false) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                            />
-                          </button>
+                        )}
+                      </div>
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-base font-medium">
+                            {t('settings.compactViewPosition')}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.compactViewPositionDesc')}
+                          </p>
+                        </label>
+                        <Select
+                          value={settings.compact_view_position_mode || 'auto'}
+                          onChange={(val) => updateSetting('compact_view_position_mode', val)}
+                          options={[
+                            { value: 'auto', label: t('settings.positionAuto') },
+                            { value: 'cursor', label: t('settings.positionCursor') },
+                            { value: 'caret', label: t('settings.positionCaret') },
+                          ]}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div>
+                          <span className="text-sm font-medium">{t('settings.typeToSearch')}</span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.typeToSearchDesc')}
+                          </p>
                         </div>
-                      )}
-                    </div>
-                    <div className="space-y-3">
-                      <label className="block">
-                        <span className="text-base font-medium">
-                          {t('settings.compactViewPosition')}
-                        </span>
-                        <p className="text-xs text-muted-foreground">
-                          {t('settings.compactViewPositionDesc')}
-                        </p>
-                      </label>
-                      <Select
-                        value={settings.compact_view_position_mode || 'auto'}
-                        onChange={(val) => updateSetting('compact_view_position_mode', val)}
-                        options={[
-                          { value: 'auto', label: t('settings.positionAuto') },
-                          { value: 'cursor', label: t('settings.positionCursor') },
-                          { value: 'caret', label: t('settings.positionCaret') },
-                        ]}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                      <div>
-                        <span className="text-sm font-medium">{t('settings.typeToSearch')}</span>
-                        <p className="text-xs text-muted-foreground">
-                          {t('settings.typeToSearchDesc')}
-                        </p>
+                        <button
+                          onClick={() =>
+                            updateSetting('type_to_search', !(settings.type_to_search ?? true))
+                          }
+                          className={`h-6 w-11 rounded-full transition-colors ${(settings.type_to_search ?? true) ? 'bg-primary' : 'bg-white/10'}`}
+                        >
+                          <span
+                            className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.type_to_search ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                          />
+                        </button>
                       </div>
-                      <button
-                        onClick={() =>
-                          updateSetting('type_to_search', !(settings.type_to_search ?? true))
-                        }
-                        className={`h-6 w-11 rounded-full transition-colors ${(settings.type_to_search ?? true) ? 'bg-primary' : 'bg-white/10'}`}
-                      >
-                        <span
-                          className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.type_to_search ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                        />
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                      <div>
-                        <span className="text-sm font-medium">{t('settings.compactPeekEnabled')}</span>
-                        <p className="text-xs text-muted-foreground">
-                          {t('settings.compactPeekEnabledDesc')}
-                        </p>
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div>
+                          <span className="text-sm font-medium">{t('settings.compactPeekEnabled')}</span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.compactPeekEnabledDesc')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() =>
+                            updateSetting('compact_peek_enabled', !(settings.compact_peek_enabled ?? true))
+                          }
+                          className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_peek_enabled ?? true) ? 'bg-primary' : 'bg-white/10'}`}
+                        >
+                          <span
+                            className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.compact_peek_enabled ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                          />
+                        </button>
                       </div>
-                      <button
-                        onClick={() =>
-                          updateSetting('compact_peek_enabled', !(settings.compact_peek_enabled ?? true))
-                        }
-                        className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_peek_enabled ?? true) ? 'bg-primary' : 'bg-white/10'}`}
-                      >
-                        <span
-                          className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.compact_peek_enabled ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-base font-medium">{t('settings.clipNumbering')}</span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.clipNumberingDesc')}
+                          </p>
+                        </label>
+                        <Select
+                          value={settings.clip_numbering || 'positional'}
+                          onChange={(val) => updateSetting('clip_numbering', val)}
+                          options={[
+                            { value: 'positional', label: t('settings.clipNumberingPositional') },
+                            { value: 'countdown', label: t('settings.clipNumberingCountdown') },
+                          ]}
                         />
-                      </button>
-                    </div>
-                    <div className="space-y-3">
-                      <label className="block">
-                        <span className="text-base font-medium">{t('settings.clipNumbering')}</span>
-                        <p className="text-xs text-muted-foreground">
-                          {t('settings.clipNumberingDesc')}
-                        </p>
-                      </label>
-                      <Select
-                        value={settings.clip_numbering || 'positional'}
-                        onChange={(val) => updateSetting('clip_numbering', val)}
-                        options={[
-                          { value: 'positional', label: t('settings.clipNumberingPositional') },
-                          { value: 'countdown', label: t('settings.clipNumberingCountdown') },
-                        ]}
-                      />
+                      </div>
                     </div>
                   </section>
 
