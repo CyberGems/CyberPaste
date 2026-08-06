@@ -926,39 +926,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-purple-400/80">
                       <Layout size={14} /> {t('settings.layoutNavigation')}
                     </h3>
-                    <div className="space-y-3">
-                      <label className="block">
-                        <span className="text-base font-medium">
-                          {t('settings.scrollDirection')}
-                        </span>
-                        <p className="text-xs text-muted-foreground">
-                          {t('settings.scrollDirectionDesc')}
-                        </p>
-                      </label>
-                      <Select
-                        value={settings.scroll_direction || 'vertical'}
-                        onChange={(val) => updateSetting('scroll_direction', val)}
-                        options={[
-                          { value: 'horizontal', label: t('settings.scrollHorizontal') },
-                          { value: 'vertical', label: t('settings.scrollVertical') },
-                        ]}
-                      />
-                    </div>
-                    <div className="space-y-3">
-                      <label className="block">
-                        <span className="text-base font-medium">
-                          {t('settings.compactFolderLayout')}
-                        </span>
-                        <p className="text-xs text-muted-foreground">
-                          {t('settings.compactFolderLayoutDesc')}
-                        </p>
-                      </label>
-                      <Select
-                        value={settings.compact_folder_layout || 'vertical'}
-                        onChange={(val) => updateSetting('compact_folder_layout', val)}
-                        options={[
-                          { value: 'horizontal', label: t('settings.scrollHorizontal') },
-                          { value: 'vertical', label: t('settings.scrollVertical') },
                     <div className="rounded-xl border border-border bg-card p-4 space-y-4">
                       <div className="space-y-3">
                         <label className="block">
