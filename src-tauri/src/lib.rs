@@ -464,6 +464,8 @@ pub fn run_app() {
                     let _ = std::fs::write(&capture_sound_path, wav_bytes);
                 }
 
+                let manager = handle_for_toast.state::<Arc<SettingsManager>>();
+                let settings = manager.get();
                 let lang = settings.language.as_str();
                 let msg = if lang == "es" {
                     format!("Presiona {} para abrir", saved_hotkey_clone)
