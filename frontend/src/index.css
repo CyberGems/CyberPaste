@@ -183,6 +183,24 @@
     transform: translateY(-2px);
   }
 
+  /* Dark (monochrome) theme cards */
+  .dark .clip-card {
+    @apply border-border bg-card bg-none;
+    box-shadow: 0 4px 16px -5px rgba(0, 0, 0, 0.3);
+  }
+
+  .dark .clip-card:hover {
+    @apply border-primary/40 bg-secondary;
+    box-shadow:
+      0 8px 28px -8px rgba(0, 0, 0, 0.4),
+      0 0 15px rgba(var(--primary-rgb), 0.08);
+  }
+
+  .dark .clip-card.selected {
+    @apply border-primary/70 bg-primary/10;
+    box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.12);
+  }
+
   .light .clip-card:hover {
     box-shadow:
       0 8px 28px -8px rgba(0, 0, 0, 0.25),

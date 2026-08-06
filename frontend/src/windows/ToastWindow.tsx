@@ -165,13 +165,13 @@ function toastThemeVars(theme: 'cyberpaste' | 'dark' | 'light', gradient: string
   if (theme === 'dark') {
     return {
       container:
-        'bg-[#0D0F17]/90 border border-[#00FFFF33] text-neutral-100 shadow-[0_3px_18px_rgba(0,0,0,0.4)]',
+        'bg-[#16181B]/95 border border-white/10 text-neutral-100 shadow-[0_3px_18px_rgba(0,0,0,0.4)]',
       title: 'text-neutral-100',
       body: 'text-neutral-300',
       closeBtn: 'text-neutral-500 hover:bg-white/10 hover:text-white',
       track: 'bg-white/5',
-      progressColor: gradient,
-      iconColor: '#00F2FF',
+      progressColor: '#B8BEC6',
+      iconColor: '#B8BEC6',
       previewBg: 'bg-black/35',
       previewBorder: 'border-white/5',
     };
