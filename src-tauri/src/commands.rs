@@ -3265,6 +3265,7 @@ pub fn toggle_clipboard_monitoring(app: AppHandle) -> Result<bool, String> {
     
     // Rebuild the tray menu to reflect the new state (checked state / pause/resume text)
     let _ = crate::rebuild_tray_menu(&app);
+    let _ = app.emit("clipboard-pause-changed", new_val);
     
     Ok(new_val)
 }

@@ -150,6 +150,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     null
   );
   const [showApiKey, setShowApiKey] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [appVersion, setAppVersion] = useState('');
   const [monitorList, setMonitorList] = useState<{ name: string; index: number }[]>([]);
 
@@ -165,6 +166,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         );
       })
       .catch(console.error);
+
+    // Initial pause state
+    invoke<boolean>('is_clipboard_monitoring_paused')
+      .then(setIsPaused)
+      .catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -174,8 +180,12 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         setActiveTab(tab);
       }
     });
+    const unlistenPause = listen<boolean>('clipboard-pause-changed', (event) => {
+      setIsPaused(event.payload);
+    });
     return () => {
       unlisten.then((f) => f());
+      unlistenPause.then((f) => f());
     };
   }, []);
 
@@ -237,6 +247,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
   // i18n hook
   const { i18n, t } = useTranslation();
+
+  const handleTogglePause = () => {
+    invoke('toggle_clipboard_monitoring').catch(console.error);
+  };
 
   // Generic handler for immediate settings updates
   const updateSettings = async (updates: Partial<Settings>) => {
@@ -752,21 +766,19 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
                       <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                         <div>
-                          <span className="text-base font-semibold">
-                            {t('settings.ignoreGhostClips')}
+                          <span className="text-sm font-medium">
+                            {t('settings.pauseMonitoring')}
                           </span>
-                          <p className="text-sm text-muted-foreground/80">
-                            {t('settings.ignoreGhostClipsDesc')}
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.pauseMonitoringDesc')}
                           </p>
                         </div>
                         <button
-                          onClick={() =>
-                            updateSetting('ignore_ghost_clips', !settings.ignore_ghost_clips)
-                          }
-                          className={`h-6 w-11 rounded-full transition-colors ${settings.ignore_ghost_clips ? 'bg-primary' : 'bg-white/10'}`}
+                          onClick={handleTogglePause}
+                          className={`h-6 w-11 rounded-full transition-colors ${isPaused ? 'bg-primary' : 'bg-white/10'}`}
                         >
                           <div
-                            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.ignore_ghost_clips ? 'translate-x-5' : 'translate-x-0.5'}`}
+                            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${isPaused ? 'translate-x-5' : 'translate-x-0.5'}`}
                           />
                         </button>
                       </div>
