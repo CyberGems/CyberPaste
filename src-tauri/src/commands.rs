@@ -2714,7 +2714,13 @@ pub async fn center_window(window: tauri::WebviewWindow) -> Result<(), String> {
 
 #[tauri::command]
 pub fn play_clipboard_sound(sound_path: String) -> Result<(), String> {
-    if sound_path.is_empty() {
+    let path_to_play = if sound_path.is_empty() {
+        crate::get_data_dir().join("capture_sound.wav").to_string_lossy().to_string()
+    } else {
+        sound_path
+    };
+
+    if !std::path::Path::new(&path_to_play).exists() {
         return Ok(());
     }
 
@@ -2735,7 +2741,7 @@ pub fn play_clipboard_sound(sound_path: String) -> Result<(), String> {
         let _ = mciSendStringW(windows::core::PCWSTR(wide_close.as_ptr()), None, None);
     }
 
-    let escaped_path = format!("\"{}\"", sound_path.replace('"', "\"\""));
+    let escaped_path = format!("\"{}\"", path_to_play.replace('"', "\"\""));
 
     // Open the file with mci
     let open_cmd = format!("open {} alias {}", escaped_path, alias);
@@ -2881,18 +2887,20 @@ pub async fn toast_ready(
     if let Some(ref p) = payload {
         let _ = set_toast_position(app.clone(), width, height).await;
 
-        // If this is the welcome toast, play the activation sound when the window is ready and displayed
+        // If this is the welcome toast, play the startup sound when the window is ready and displayed
         if p.clip_type == Some("welcome".to_string()) {
             use crate::settings_manager::SettingsManager;
             use std::sync::Arc;
             let manager = app.state::<Arc<SettingsManager>>();
             let settings = manager.get();
-            if settings.clipboard_sound_enabled {
-                let data_dir = crate::get_data_dir();
-                let activation_sound_path = data_dir.join("activation_sound.wav");
-                if let Some(path_str) = activation_sound_path.to_str() {
-                    let _ = play_clipboard_sound(path_str.to_string());
-                }
+            if settings.startup_sound_enabled {
+                let path_to_play = if settings.startup_sound_path.is_empty() {
+                    let data_dir = crate::get_data_dir();
+                    data_dir.join("activation_sound.wav").to_string_lossy().to_string()
+                } else {
+                    settings.startup_sound_path.clone()
+                };
+                let _ = play_clipboard_sound(path_to_play);
             }
         }
     }
@@ -2940,12 +2948,14 @@ pub async fn show_toast(
 
         // If this is the welcome toast and the window already exists, play the sound immediately
         if clip_type == Some("welcome".to_string()) {
-            if manager.get().clipboard_sound_enabled {
-                let data_dir = crate::get_data_dir();
-                let activation_sound_path = data_dir.join("activation_sound.wav");
-                if let Some(path_str) = activation_sound_path.to_str() {
-                    let _ = play_clipboard_sound(path_str.to_string());
-                }
+            if manager.get().startup_sound_enabled {
+                let path_to_play = if manager.get().startup_sound_path.is_empty() {
+                    let data_dir = crate::get_data_dir();
+                    data_dir.join("activation_sound.wav").to_string_lossy().to_string()
+                } else {
+                    manager.get().startup_sound_path.clone()
+                };
+                let _ = play_clipboard_sound(path_to_play);
             }
         }
     } else {

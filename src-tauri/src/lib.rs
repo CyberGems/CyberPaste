@@ -451,22 +451,17 @@ pub fn run_app() {
                 // Wait 5 seconds for the app environment/windows to fully boot
                 tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
-                // Ensure activation sound is generated and played on startup if enabled
-                let manager = handle_for_toast.state::<Arc<SettingsManager>>();
-                let settings = manager.get();
-                if settings.startup_sound_enabled {
-                    let path_to_play = if settings.startup_sound_path.is_empty() {
-                        let data_dir = get_data_dir();
-                        let activation_sound_path = data_dir.join("activation_sound.wav");
-                        if !activation_sound_path.exists() {
-                            let wav_bytes = generate_activation_sound_wav();
-                            let _ = std::fs::write(&activation_sound_path, wav_bytes);
-                        }
-                        activation_sound_path.to_string_lossy().to_string()
-                    } else {
-                        settings.startup_sound_path.clone()
-                    };
-                    let _ = commands::play_clipboard_sound(path_to_play);
+                // Ensure default synthesized sound files are pre-generated on startup if they don't exist
+                let data_dir = get_data_dir();
+                let activation_sound_path = data_dir.join("activation_sound.wav");
+                if !activation_sound_path.exists() {
+                    let wav_bytes = generate_activation_sound_wav();
+                    let _ = std::fs::write(&activation_sound_path, wav_bytes);
+                }
+                let capture_sound_path = data_dir.join("capture_sound.wav");
+                if !capture_sound_path.exists() {
+                    let wav_bytes = generate_capture_sound_wav();
+                    let _ = std::fs::write(&capture_sound_path, wav_bytes);
                 }
 
                 let lang = settings.language.as_str();
@@ -1346,6 +1341,44 @@ fn generate_activation_sound_wav() -> Vec<u8> {
 
         let sample = soft_clip(noise + fund + h2 + sub) * v;
 
+        let sample_clamped = sample.clamp(-1.0, 1.0);
+        let sample_i16 = (sample_clamped * (i16::MAX as f64)) as i16;
+        wav.extend_from_slice(&sample_i16.to_le_bytes());
+    }
+
+    wav
+}
+
+pub fn generate_capture_sound_wav() -> Vec<u8> {
+    let sr = 44100;
+    let duration_ms = 65;
+    let n = sr * duration_ms / 1000;
+
+    let data_size = n * 2;
+    let mut wav = Vec::with_capacity(44 + data_size);
+
+    // Write WAV header
+    wav.extend_from_slice(b"RIFF");
+    wav.extend_from_slice(&((36 + data_size) as u32).to_le_bytes());
+    wav.extend_from_slice(b"WAVE");
+    wav.extend_from_slice(b"fmt ");
+    wav.extend_from_slice(&(16u32).to_le_bytes());
+    wav.extend_from_slice(&(1u16).to_le_bytes()); // PCM
+    wav.extend_from_slice(&(1u16).to_le_bytes()); // Mono
+    wav.extend_from_slice(&(sr as u32).to_le_bytes()); // Sample rate
+    wav.extend_from_slice(&((sr * 2) as u32).to_le_bytes()); // Byte rate
+    wav.extend_from_slice(&(2u16).to_le_bytes()); // Block align
+    wav.extend_from_slice(&(16u16).to_le_bytes()); // Bits per sample
+    wav.extend_from_slice(b"data");
+    wav.extend_from_slice(&(data_size as u32).to_le_bytes());
+
+    for i in 0..n {
+        let t = (i as f64) / (sr as f64);
+        // Fast pitch chirp that slides from 1100 Hz to 650 Hz
+        let f0 = 650.0 + 450.0 * (-t * 125.0).exp();
+        // Envelope with a snappy decay to sound like a digital click
+        let env_val = (-t * 85.0).exp();
+        let sample = (2.0 * std::f64::consts::PI * f0 * t).sin() * env_val * 0.20;
         let sample_clamped = sample.clamp(-1.0, 1.0);
         let sample_i16 = (sample_clamped * (i16::MAX as f64)) as i16;
         wav.extend_from_slice(&sample_i16.to_le_bytes());

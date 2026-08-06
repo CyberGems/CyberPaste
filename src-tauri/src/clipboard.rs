@@ -809,7 +809,7 @@ async fn process_clipboard_change(
     // Play sound if enabled
     if let Some(manager) = app.try_state::<Arc<crate::settings_manager::SettingsManager>>() {
         let settings = manager.get();
-        if settings.clipboard_sound_enabled && !settings.clipboard_sound_path.is_empty() {
+        if settings.clipboard_sound_enabled {
             let _ = crate::commands::play_clipboard_sound(settings.clipboard_sound_path.clone());
         }
         if settings.toast_enabled {
