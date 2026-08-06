@@ -35,11 +35,11 @@ export const THEME_PALETTES: Record<ThemeMode, ThemePalette> = {
     textMuted: 'rgba(230,240,255,0.65)',
   },
   dark: {
-    background: '#1E1E1E',
-    surface: '#1E1E1E',
-    accent: '#6d28d9',
-    textLine: '#FAFAFA',
-    textMuted: 'rgba(250,250,250,0.65)',
+    background: '#16181B',
+    surface: '#24272B',
+    accent: '#B8BEC6',
+    textLine: '#E8EAEC',
+    textMuted: 'rgba(166,171,178,0.65)',
   },
   light: {
     background: '#DFE2EA',
