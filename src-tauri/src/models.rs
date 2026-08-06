@@ -91,7 +91,7 @@ impl Default for AppSettings {
             auto_paste: false,
             ignore_ghost_clips: false,
             startup_with_windows: false,
-            round_corners: false,
+            round_corners: true,
             view_mode: "compact".to_string(),
             scroll_direction: "vertical".to_string(),
             compact_folder_layout: "vertical".to_string(),

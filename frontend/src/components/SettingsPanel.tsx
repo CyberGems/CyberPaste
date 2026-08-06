@@ -267,15 +267,41 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
       })();
 
       // Feedback for changes
+      const SETTING_LABELS: Record<string, string> = {
+        startup_with_windows: 'settings.startupWithWindows',
+        ignore_ghost_clips: 'settings.ignoreGhostClips',
+        clipboard_sound_enabled: 'settings.clipboardSound',
+        auto_paste: 'settings.autoPaste',
+        auto_inject_paste: 'settings.autoInjectPaste',
+        reset_view_on_paste: 'settings.resetViewOnPaste',
+        compact_sidebar_collapsed: 'settings.compactSidebarCollapsed',
+        type_to_search: 'settings.typeToSearch',
+        compact_peek_enabled: 'settings.compactPeekEnabled',
+        toast_enabled: 'settings.toastEnabled',
+        show_action_messages: 'settings.showActionMessages',
+        auto_check_updates: 'settings.autoCheckUpdates',
+        round_corners: 'settings.roundCorners',
+        max_items: 'settings.historyLimit',
+        scroll_direction: 'settings.scrollDirection',
+        compact_folder_layout: 'settings.compactFolderLayout',
+        compact_view_position_mode: 'settings.compactViewPosition',
+        clip_numbering: 'settings.clipNumbering',
+        language: 'settings.language',
+        image_editor_path: 'settings.externalImageEditor',
+        clipboard_sound_path: 'settings.clipboardSound',
+        toast_monitor: 'settings.toastMonitor',
+        toast_position: 'settings.toastPosition',
+        toast_duration: 'settings.toastDuration',
+        toast_click_action: 'settings.toastClickAction',
+      };
+
       const keys = Object.keys(updates);
       if (keys.length === 1) {
         const key = keys[0] as keyof Settings;
         const value = updates[key];
         if (key !== 'theme') {
-          const label = key
-            .split('_')
-            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-            .join(' ');
+          const translationKey = SETTING_LABELS[key];
+          const label = translationKey ? t(translationKey) : key;
           if (typeof value === 'boolean') {
             toast.success(`${label}: ${value ? t('common.enabled') : t('common.disabled')}`);
           } else {
@@ -670,24 +696,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           ))}
                         </div>
                       </div>
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                        <div>
-                          <span className="text-sm font-medium">{t('settings.roundCorners')}</span>
-                          <p className="text-xs text-muted-foreground">
-                            {t('settings.roundCornersDesc')}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() =>
-                            updateSetting('round_corners', !(settings.round_corners ?? false))
-                          }
-                          className={`h-6 w-11 rounded-full transition-colors ${(settings.round_corners ?? false) ? 'bg-primary' : 'bg-white/10'}`}
-                        >
-                          <span
-                            className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.round_corners ?? false) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                          />
-                        </button>
-                      </div>
+
                       <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                         <div>
                           <span className="text-base font-semibold">

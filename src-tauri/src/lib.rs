@@ -1239,7 +1239,7 @@ pub fn apply_window_effect(
             let _ = clear_mica(window);
         }
     }
-    let use_rounded = effect == "clear" || round_corners;
+    let use_rounded = true;
     if let Ok(handle) = window.hwnd() {
         use windows::Win32::Foundation::HWND;
         use windows::Win32::Graphics::Dwm::{
