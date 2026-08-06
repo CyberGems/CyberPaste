@@ -2135,7 +2135,7 @@ function App() {
                   onLoadMore={loadMore}
                   onDragStart={startDrag}
                   onCardContextMenu={(e, clipId) => handleContextMenu(e, 'card', clipId)}
-                  scrollDirection={settings?.scroll_direction || 'vertical'}
+                  scrollDirection="vertical"
                   reorderTargetClipId={reorderTargetClipId}
                   reorderTargetPosition={reorderTargetPosition}
                   reorderEnabled={true}

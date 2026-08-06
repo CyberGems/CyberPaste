@@ -303,6 +303,8 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         language: 'settings.language',
         image_editor_path: 'settings.externalImageEditor',
         clipboard_sound_path: 'settings.clipboardSound',
+        startup_sound_enabled: 'settings.startupSound',
+        startup_sound_path: 'settings.startupSound',
         toast_monitor: 'settings.toastMonitor',
         toast_position: 'settings.toastPosition',
         toast_duration: 'settings.toastDuration',
@@ -1043,24 +1045,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <Layout size={14} /> {t('settings.layoutNavigation')}
                     </h3>
                     <div className="rounded-xl border border-border bg-card p-4 space-y-4">
-                      <div className="space-y-3">
-                        <label className="block">
-                          <span className="text-base font-medium">
-                            {t('settings.scrollDirection')}
-                          </span>
-                          <p className="text-xs text-muted-foreground">
-                            {t('settings.scrollDirectionDesc')}
-                          </p>
-                        </label>
-                        <Select
-                          value={settings.scroll_direction || 'vertical'}
-                          onChange={(val) => updateSetting('scroll_direction', val)}
-                          options={[
-                            { value: 'horizontal', label: t('settings.scrollHorizontal') },
-                            { value: 'vertical', label: t('settings.scrollVertical') },
-                          ]}
-                        />
-                      </div>
+
                       <div className="space-y-3">
                         <label className="block">
                           <span className="text-base font-medium">
