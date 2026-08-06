@@ -807,13 +807,13 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           </button>
                         </div>
                         {(settings.clipboard_sound_enabled ?? false) && (
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 pt-1">
                             <input
                               type="text"
                               value={settings.clipboard_sound_path || ''}
                               onChange={(e) => updateSetting('clipboard_sound_path', e.target.value)}
                               placeholder="C:\path\to\sound.wav"
-                              className="flex-1 rounded-lg border border-white/5 bg-black/20 px-3 py-1.5 text-xs transition-all focus:border-cyan-500/50 focus:outline-none"
+                              className="flex-1 h-8 rounded-[4px] border border-border bg-input px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
                             />
                             <button
                               onClick={async () => {
@@ -827,7 +827,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                   if (e !== 'No file selected') console.error(e);
                                 }
                               }}
-                              className="btn btn-secondary flex-shrink-0 rounded-[4px] text-xs"
+                              className="h-8 rounded-[4px] bg-accent px-3 text-xs font-medium transition-all hover:bg-accent/80 flex items-center justify-center flex-shrink-0"
                             >
                               {t('common.browse')}
                             </button>
@@ -844,7 +844,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                 }
                               }}
                               disabled={!settings.clipboard_sound_path}
-                              className="btn btn-secondary flex-shrink-0 rounded-[4px] text-xs disabled:opacity-50"
+                              className="h-8 w-8 rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 flex items-center justify-center flex-shrink-0 disabled:opacity-50"
                               title={t('settings.previewSound')}
                             >
                               <Volume2 size={14} />
