@@ -62,36 +62,8 @@
     --sidebar-border: 220 11% 82%;
   }
 
-  /* ── Dark (CyberSnap dark palette, Mica-backed) ──────────────────── */
+  /* ── Dark (now legacy dark, opaque) ──────────────────────────────── */
   .dark {
-    --background: 228 28% 7%; /* #0D0F17 */
-    --foreground: 216 100% 95%; /* #E6F0FF */
-    --card: 230 27% 12%; /* #171A28 */
-    --card-foreground: 216 100% 95%;
-    --popover: 230 27% 12%;
-    --popover-foreground: 216 100% 95%;
-    --primary: 180 100% 50%; /* #00FFFF cyberpunk cyan */
-    --primary-foreground: 228 28% 7%;
-    --secondary: 228 27% 18%; /* #21263A */
-    --secondary-foreground: 216 36% 72%; /* #A0B4D2 */
-    --muted: 228 27% 18%;
-    --muted-foreground: 216 21% 53%; /* #6E82A0 */
-    --accent: 228 27% 18%;
-    --accent-foreground: 216 100% 95%;
-    --destructive: 340 100% 50%; /* #FF0055 */
-    --destructive-foreground: 216 100% 95%;
-    --border: 225 25% 20%; /* ~cyan 24% over #0D0F17 */
-    --input: 225 20% 16%;
-    --ring: 180 100% 50%;
-    --primary-rgb: 0, 255, 255;
-
-    --sidebar-background: 228 27% 9%; /* #10131D */
-    --sidebar-foreground: 216 100% 95%;
-    --sidebar-border: 225 25% 20%;
-  }
-
-  /* ── CyberPaste (signature legacy dark, opaque) ──────────────────── */
-  .cyberpaste {
     --background: 0 0% 12%; /* #1E1E1E */
     --foreground: 0 0% 98%;
     --card: 0 0% 12%;
@@ -118,6 +90,34 @@
     --sidebar-border: 240 3.7% 15.9%;
   }
 
+  /* ── CyberPaste (now CyberSnap dark palette, Mica-backed) ────────── */
+  .cyberpaste {
+    --background: 228 28% 7%; /* #0D0F17 */
+    --foreground: 216 100% 95%; /* #E6F0FF */
+    --card: 230 27% 12%; /* #171A28 */
+    --card-foreground: 216 100% 95%;
+    --popover: 230 27% 12%;
+    --popover-foreground: 216 100% 95%;
+    --primary: 180 100% 50%; /* #00FFFF cyberpunk cyan */
+    --primary-foreground: 228 28% 7%;
+    --secondary: 228 27% 18%; /* #21263A */
+    --secondary-foreground: 216 36% 72%; /* #A0B4D2 */
+    --muted: 228 27% 18%;
+    --muted-foreground: 216 21% 53%; /* #6E82A0 */
+    --accent: 228 27% 18%;
+    --accent-foreground: 216 100% 95%;
+    --destructive: 340 100% 50%; /* #FF0055 */
+    --destructive-foreground: 216 100% 95%;
+    --border: 225 25% 20%; /* ~cyan 24% over #0D0F17 */
+    --input: 225 20% 16%;
+    --ring: 180 100% 50%;
+    --primary-rgb: 0, 255, 255;
+
+    --sidebar-background: 228 27% 9%; /* #10131D */
+    --sidebar-foreground: 216 100% 95%;
+    --sidebar-border: 225 25% 20%;
+  }
+
   * {
     @apply border-border;
   }
@@ -131,9 +131,9 @@
     @apply m-0 h-full w-full bg-background p-0;
   }
 
-  .dark body,
-  .dark #root,
-  .dark html {
+  .cyberpaste body,
+  .cyberpaste #root,
+  .cyberpaste html {
     /* Mica shows through — keep the app shell translucent, no forced bg */
     background-color: transparent;
   }

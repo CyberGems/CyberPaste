@@ -1218,7 +1218,7 @@ pub fn normalize_theme(theme: &str) -> &str {
 /// Dark is the only Mica-backed theme; everything else is `clear` (opaque).
 pub fn effect_for_theme(theme: &str) -> &'static str {
     match normalize_theme(theme) {
-        "dark" => "mica",
+        "cyberpaste" => "mica",
         _ => "clear",
     }
 }

@@ -28,18 +28,18 @@ export interface ThemePalette {
 // cyberpaste is this app's own signature dark; system is rendered as a split.
 export const THEME_PALETTES: Record<ThemeMode, ThemePalette> = {
   cyberpaste: {
-    background: '#1E1E1E',
-    surface: '#1E1E1E',
-    accent: '#6d28d9',
-    textLine: '#FAFAFA',
-    textMuted: 'rgba(250,250,250,0.65)',
-  },
-  dark: {
     background: '#0D0F17',
     surface: '#171A28',
     accent: '#00FFFF',
     textLine: '#E6F0FF',
     textMuted: 'rgba(230,240,255,0.65)',
+  },
+  dark: {
+    background: '#1E1E1E',
+    surface: '#1E1E1E',
+    accent: '#6d28d9',
+    textLine: '#FAFAFA',
+    textMuted: 'rgba(250,250,250,0.65)',
   },
   light: {
     background: '#DFE2EA',
@@ -52,7 +52,7 @@ export const THEME_PALETTES: Record<ThemeMode, ThemePalette> = {
     // Not used directly — "system" paints a diagonal light/dark split.
     background: '#0D0F17',
     surface: '#171A28',
-    accent: '#6d28d9',
+    accent: '#00FFFF',
     textLine: '#E6F0FF',
     textMuted: 'rgba(230,240,255,0.65)',
   },
