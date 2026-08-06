@@ -403,8 +403,8 @@
   }
 
   .dark button.rounded-full.bg-primary {
-    background: var(--primary) !important; /* Silver accent */
-    border-color: var(--primary) !important;
+    background: hsl(var(--primary)) !important; /* Silver accent */
+    border-color: hsl(var(--primary)) !important;
   }
 
   .dark button.rounded-full.bg-primary > div,
