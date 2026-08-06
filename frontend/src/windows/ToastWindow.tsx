@@ -316,16 +316,13 @@ export function ToastWindow() {
   const hasImagePreview = toast.clip_type === 'image' && toast.image_preview;
   const isWelcome = toast.clip_type === 'welcome';
   const title = getClipTitle(toast.clip_type, toast.toast_type, t);
-  const isMinimal = settings?.toast_style === 'minimal';
   const themeId = resolveToastTheme(settings);
   // Cyan-leaning half of the CyberGems ramp: keeps the suite palette while staying
   // distinguishable from CyberSnap's toast, which owns the purple->magenta half.
   const gradient = 'linear-gradient(90deg, #00F2FF, #00A8FF, #7A00FF)';
   const tv = toastThemeVars(themeId, gradient);
 
-  const containerClasses = isMinimal
-    ? 'bg-zinc-900/95 border border-zinc-700/50 text-white shadow-xl'
-    : tv.container;
+  const containerClasses = tv.container;
 
   const clickAction = settings?.toast_click_action || 'close';
   const isClickable = clickAction !== 'none';
@@ -409,9 +406,9 @@ export function ToastWindow() {
           <div className="flex flex-col p-2.5 pb-3">
             {/* Header Row: Source Program info or general Title */}
             {toast.source_app ? (
-              <div className={`flex items-center gap-1.5 border-b pb-1.5 mb-2 text-xs font-semibold pr-7 ${isMinimal ? 'border-zinc-800 text-zinc-400' : 'border-white/5 text-neutral-400'}`}>
+              <div className={`flex items-center gap-1.5 border-b pb-1.5 mb-2 text-xs font-semibold pr-7 border-white/5 text-neutral-400`}>
                 <div className="shrink-0 flex items-center">
-                  {getHeaderClipIcon(toast.clip_type, toast.toast_type, isMinimal ? '#A1A1AA' : tv.iconColor)}
+                  {getHeaderClipIcon(toast.clip_type, toast.toast_type, tv.iconColor)}
                 </div>
                 <span className="truncate font-medium">{title}</span>
                 <span className="text-[10px] font-normal text-neutral-500 lowercase px-0.5">{t('toasts.fromApp')}</span>
@@ -425,12 +422,12 @@ export function ToastWindow() {
                     }}
                   />
                 ) : null}
-                <span className={`truncate max-w-[120px] ${isMinimal ? 'text-zinc-200' : 'text-neutral-200'}`}>{toast.source_app}</span>
+                <span className={`truncate max-w-[120px] text-neutral-200`}>{toast.source_app}</span>
               </div>
             ) : (
               <div className="flex items-center gap-1.5 mb-2 pr-7">
                 <div className="shrink-0 flex items-center">
-                  {getHeaderClipIcon(toast.clip_type, toast.toast_type, isMinimal ? '#A1A1AA' : tv.iconColor)}
+                  {getHeaderClipIcon(toast.clip_type, toast.toast_type, tv.iconColor)}
                 </div>
                 <h4 className={`text-sm font-semibold truncate ${tv.title}`}>{title}</h4>
               </div>
@@ -488,7 +485,7 @@ export function ToastWindow() {
             id="toast-progress-bar"
             className={`h-full w-full ${originClass}`}
             style={{
-              background: isMinimal ? '#52525B' : tv.progressColor,
+              background: tv.progressColor,
             }}
           />
         </div>

@@ -116,8 +116,6 @@
     "compactFolderLayoutVertical": "垂直",
     "clipboardSound": "クリップボードサウンド",
     "clipboardSoundDesc": "新しいクリップがキャプチャされたときにサウンドを再生",
-    "floatAboveTaskbar": "タスクバーの上に表示",
-    "floatAboveTaskbarDesc": "ウィンドウをタスクバーの上に表示します",
     "launchAtLogin": "ログイン時に起動",
     "launchAtLoginDesc": "ログイン時に自動的に起動します",
     "accessibilityPermission": "アクセシビリティ権限",

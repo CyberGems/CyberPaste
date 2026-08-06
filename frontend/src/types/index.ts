@@ -34,7 +34,6 @@ export interface Settings {
   language?: string;
   mica_effect?: string;
   round_corners?: boolean;
-  float_above_taskbar?: boolean;
   view_mode?: 'full' | 'compact';
   scroll_direction?: 'horizontal' | 'vertical';
   compact_folder_layout?: 'horizontal' | 'vertical';
@@ -63,7 +62,6 @@ export interface Settings {
   ai_title_fix_grammar?: string;
   toast_position?: string;
   toast_duration?: number;
-  toast_style?: string;
   toast_enabled?: boolean;
   toast_monitor?: string;
   toast_click_action?: 'none' | 'close' | 'open';

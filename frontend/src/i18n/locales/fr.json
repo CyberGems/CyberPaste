@@ -116,8 +116,6 @@
     "compactFolderLayoutVertical": "Vertical",
     "clipboardSound": "Son du presse-papiers",
     "clipboardSoundDesc": "Jouer un son lorsqu'un nouveau clip est capturé",
-    "floatAboveTaskbar": "Flotter au-dessus de la barre des tâches",
-    "floatAboveTaskbarDesc": "Afficher la fenêtre au-dessus de la barre des tâches",
     "launchAtLogin": "Lancer à la connexion",
     "launchAtLoginDesc": "Démarrer automatiquement lors de la connexion",
     "accessibilityPermission": "Autorisation d'accessibilité",

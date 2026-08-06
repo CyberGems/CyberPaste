@@ -594,7 +594,7 @@ pub fn animate_view_mode_transition(window: &tauri::WebviewWindow) {
     }
     let _guard = AnimationGuard;
 
-    let (side_margin, bottom_margin, float_above_taskbar, view_mode, saved_width, saved_height) = {
+    let (side_margin, bottom_margin, view_mode, saved_width, saved_height) = {
         let manager = window.state::<Arc<crate::settings_manager::SettingsManager>>();
         let s = manager.get();
         let is_mica = crate::effect_for_theme(&s.theme) == "mica";
@@ -604,15 +604,10 @@ pub fn animate_view_mode_transition(window: &tauri::WebviewWindow) {
         } else {
             constants::WINDOW_MARGIN
         };
-        let bottom = if is_mica && no_corners {
-            0.0
-        } else {
-            constants::WINDOW_MARGIN
-        };
+        let bottom = 0.0;
         (
             side,
             bottom,
-            s.float_above_taskbar,
             s.view_mode,
             s.window_width,
             s.window_height,
@@ -665,11 +660,7 @@ pub fn animate_view_mode_transition(window: &tauri::WebviewWindow) {
     } else {
         let side_margin_px = (side_margin * scale_factor) as i32;
         let bottom_margin_px = (bottom_margin * scale_factor) as i32;
-        let reference_bottom = if float_above_taskbar {
-            monitor_pos.y + monitor_size.height as i32
-        } else {
-            work_area.position.y + work_area.size.height as i32
-        };
+        let reference_bottom = monitor_pos.y + monitor_size.height as i32;
         let logical_h = if saved_height > 100.0 {
             saved_height
         } else {
@@ -761,9 +752,7 @@ pub fn animate_view_mode_transition(window: &tauri::WebviewWindow) {
 
     set_rect(target_x, target_y, target_w, target_h);
 
-    if float_above_taskbar {
-        let _ = window.set_always_on_top(true);
-    }
+    let _ = window.set_always_on_top(true);
 
     let _ = window.set_focus();
 }
@@ -805,7 +794,6 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
         let (
             side_margin,
             bottom_margin,
-            float_above_taskbar,
             view_mode,
             saved_width,
             saved_height,
@@ -825,15 +813,10 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
             } else {
                 constants::WINDOW_MARGIN
             };
-            let bottom = if is_mica && no_corners {
-                0.0
-            } else {
-                constants::WINDOW_MARGIN
-            };
+            let bottom = 0.0;
             (
                 side,
                 bottom,
-                s.float_above_taskbar,
                 s.view_mode,
                 s.window_width,
                 s.window_height,
@@ -971,18 +954,12 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                     height: window_height_px,
                 }));
 
-                if float_above_taskbar {
-                    let _ = window.set_always_on_top(true);
-                }
+                let _ = window.set_always_on_top(true);
             } else {
                 let side_margin_px = (side_margin * scale_factor) as i32;
                 let bottom_margin_px = (bottom_margin * scale_factor) as i32;
 
-                let reference_bottom = if float_above_taskbar {
-                    monitor_pos.y + monitor_size.height as i32
-                } else {
-                    work_area.position.y + work_area.size.height as i32
-                };
+                let reference_bottom = monitor_pos.y + monitor_size.height as i32;
 
                 // Work in physical pixels to avoid webview DPI scale issues
                 let logical_window_height = if saved_height > 100.0 {
@@ -1062,9 +1039,7 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                     height: window_height_px,
                 }));
 
-                if float_above_taskbar {
-                    let _ = window.set_always_on_top(true);
-                }
+                let _ = window.set_always_on_top(true);
             }
         } else {
             let current_theme = if theme_str == "light" {
@@ -1120,7 +1095,7 @@ pub fn animate_window_hide(
         }
 
         let _guard = AnimationGuard;
-        let (side_margin, bottom_margin, float_above_taskbar, view_mode, saved_height) = {
+        let (side_margin, bottom_margin, view_mode, saved_height) = {
             let manager = window.state::<Arc<crate::settings_manager::SettingsManager>>();
             let s = manager.get();
             let is_mica = crate::effect_for_theme(&s.theme) == "mica";
@@ -1130,15 +1105,10 @@ pub fn animate_window_hide(
             } else {
                 constants::WINDOW_MARGIN
             };
-            let bottom = if is_mica && no_corners {
-                0.0
-            } else {
-                constants::WINDOW_MARGIN
-            };
+            let bottom = 0.0;
             (
                 side,
                 bottom,
-                s.float_above_taskbar,
                 s.view_mode,
                 s.window_height,
             )
@@ -1167,11 +1137,7 @@ pub fn animate_window_hide(
                 let window_height_px = (logical_window_height * scale_factor) as u32;
                 let side_margin_px = (side_margin * scale_factor) as i32;
                 let bottom_margin_px = (bottom_margin * scale_factor) as i32;
-                let reference_bottom = if float_above_taskbar {
-                    monitor_pos.y + monitor_size.height as i32
-                } else {
-                    work_area.position.y + work_area.size.height as i32
-                };
+                let reference_bottom = monitor_pos.y + monitor_size.height as i32;
                 let start_y = reference_bottom - window_height_px as i32 - bottom_margin_px;
                 let target_y = reference_bottom;
                 let steps = 15;

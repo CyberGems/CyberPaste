@@ -2316,12 +2316,7 @@ pub async fn reset_window_size(app: AppHandle, window: tauri::WebviewWindow) -> 
     } else {
         crate::constants::WINDOW_MARGIN
     };
-    let bottom_margin = if is_mica && no_corners {
-        0.0
-    } else {
-        crate::constants::WINDOW_MARGIN
-    };
-    let float_above_taskbar = settings.float_above_taskbar;
+    let bottom_margin = 0.0;
 
     let (default_w, default_h) = if is_full {
         let logical_wa_width = work_area.size.width as f64 / scale_factor;
@@ -2361,11 +2356,7 @@ pub async fn reset_window_size(app: AppHandle, window: tauri::WebviewWindow) -> 
             height: new_height_px,
         }));
 
-        let reference_bottom = if float_above_taskbar {
-            monitor_pos.y + monitor_size.height as i32
-        } else {
-            work_area.position.y + work_area.size.height as i32
-        };
+        let reference_bottom = monitor_pos.y + monitor_size.height as i32;
 
         let target_x = work_area.position.x + side_margin_px;
         let target_y = reference_bottom - new_height_px as i32 - bottom_margin_px;

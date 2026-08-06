@@ -116,8 +116,6 @@
     "compactFolderLayoutVertical": "Vertikal",
     "clipboardSound": "Clipborad-Sound",
     "clipboardSoundDesc": "Sound abspielen, wenn ein neuer Clip erfasst wird",
-    "floatAboveTaskbar": "Über Taskleiste schweben",
-    "floatAboveTaskbarDesc": "Fenster über der Taskleiste anzeigen",
     "launchAtLogin": "Beim Anmelden starten",
     "launchAtLoginDesc": "Automatisch beim Anmelden starten",
     "accessibilityPermission": "Bedienungshilfen-Berechtigung",

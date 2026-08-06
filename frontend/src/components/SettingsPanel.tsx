@@ -256,8 +256,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
           }
           if (
             'round_corners' in updates ||
-            'theme' in updates ||
-            'float_above_taskbar' in updates
+            'theme' in updates
           ) {
             await invoke('refresh_window');
           }
@@ -669,29 +668,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           />
                         ))}
                       </div>
-                    </div>
-                    <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                      <div>
-                        <span className="text-sm font-medium">
-                          {t('settings.floatAboveTaskbar')}
-                        </span>
-                        <p className="text-xs text-muted-foreground">
-                          {t('settings.floatAboveTaskbarDesc')}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() =>
-                          updateSetting(
-                            'float_above_taskbar',
-                            !(settings.float_above_taskbar ?? true)
-                          )
-                        }
-                        className={`h-6 w-11 rounded-full transition-colors ${(settings.float_above_taskbar ?? true) ? 'bg-primary' : 'bg-white/10'}`}
-                      >
-                        <span
-                          className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.float_above_taskbar ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                        />
-                      </button>
                     </div>
                     <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                       <div>
@@ -1609,20 +1585,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             value: m.index.toString(),
                             label: m.name,
                           })),
-                        ]}
-                      />
-                    </div>
-                    <div className="space-y-3">
-                      <label className="block">
-                        <span className="text-base font-medium">{t('settings.toastStyle')}</span>
-                      </label>
-                      <Select
-                        value={settings.toast_style || 'cyber'}
-                        onChange={(val) => updateSetting('toast_style', val)}
-                        options={[
-                          { value: 'cyber', label: t('settings.toastStyleCyber') },
-                          { value: 'minimal', label: t('settings.toastStyleMinimal') },
-                          { value: 'dark', label: t('settings.toastStyleDark') },
                         ]}
                       />
                     </div>

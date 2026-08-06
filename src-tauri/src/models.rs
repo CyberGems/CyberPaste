@@ -18,7 +18,6 @@ pub struct AppSettings {
     pub ignore_ghost_clips: bool,
     pub startup_with_windows: bool,
     pub round_corners: bool,
-    pub float_above_taskbar: bool,
     pub view_mode: String,             // "full" or "compact"
     pub scroll_direction: String,      // "horizontal" or "vertical"
     pub compact_folder_layout: String, // "horizontal" or "vertical"
@@ -53,7 +52,6 @@ pub struct AppSettings {
     pub ignored_apps: HashSet<String>,
     pub toast_position: String,
     pub toast_duration: i64,
-    pub toast_style: String,
     pub toast_enabled: bool,
     pub toast_monitor: String,
     pub toast_click_action: String,
@@ -94,7 +92,6 @@ impl Default for AppSettings {
             ignore_ghost_clips: false,
             startup_with_windows: false,
             round_corners: false,
-            float_above_taskbar: true,
             view_mode: "compact".to_string(),
             scroll_direction: "vertical".to_string(),
             compact_folder_layout: "vertical".to_string(),
@@ -130,7 +127,6 @@ impl Default for AppSettings {
             ignored_apps: HashSet::new(),
             toast_position: "bottom-center".to_string(),
             toast_duration: 3000,
-            toast_style: "cyber".to_string(),
             toast_enabled: true,
             toast_monitor: "primary".to_string(),
             toast_click_action: "close".to_string(),
