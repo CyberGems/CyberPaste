@@ -40,6 +40,8 @@ export interface Settings {
   compact_sidebar_collapsed?: boolean;
   clipboard_sound_enabled?: boolean;
   clipboard_sound_path?: string;
+  startup_sound_enabled?: boolean;
+  startup_sound_path?: string;
   auto_inject_paste?: boolean;
   pinned?: boolean;
   auto_paste: boolean;

@@ -451,16 +451,22 @@ pub fn run_app() {
                 // Wait 5 seconds for the app environment/windows to fully boot
                 tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
-                // Ensure activation sound is generated on startup if enabled
+                // Ensure activation sound is generated and played on startup if enabled
                 let manager = handle_for_toast.state::<Arc<SettingsManager>>();
                 let settings = manager.get();
-                if settings.clipboard_sound_enabled {
-                    let data_dir = get_data_dir();
-                    let activation_sound_path = data_dir.join("activation_sound.wav");
-                    if !activation_sound_path.exists() {
-                        let wav_bytes = generate_activation_sound_wav();
-                        let _ = std::fs::write(&activation_sound_path, wav_bytes);
-                    }
+                if settings.startup_sound_enabled {
+                    let path_to_play = if settings.startup_sound_path.is_empty() {
+                        let data_dir = get_data_dir();
+                        let activation_sound_path = data_dir.join("activation_sound.wav");
+                        if !activation_sound_path.exists() {
+                            let wav_bytes = generate_activation_sound_wav();
+                            let _ = std::fs::write(&activation_sound_path, wav_bytes);
+                        }
+                        activation_sound_path.to_string_lossy().to_string()
+                    } else {
+                        settings.startup_sound_path.clone()
+                    };
+                    let _ = commands::play_clipboard_sound(path_to_play);
                 }
 
                 let lang = settings.language.as_str();

@@ -782,8 +782,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           />
                         </button>
                       </div>
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                      {/* Clipboard Sound Group */}
+                      <div className="flex flex-col gap-2 rounded-[4px] border border-border bg-secondary p-3">
+                        <div className="flex items-center justify-between">
                           <div>
                             <span className="text-sm font-medium">
                               {t('settings.clipboardSound')}
@@ -812,7 +813,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               type="text"
                               value={settings.clipboard_sound_path || ''}
                               onChange={(e) => updateSetting('clipboard_sound_path', e.target.value)}
-                              placeholder="C:\path\to\sound.wav"
+                              placeholder={t('settings.soundPathPlaceholder')}
                               className="flex-1 h-8 rounded-[4px] border border-border bg-input px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
                             />
                             <button
@@ -833,18 +834,87 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             </button>
                             <button
                               onClick={async () => {
-                                if (settings.clipboard_sound_path) {
-                                  try {
-                                    await invoke('play_clipboard_sound', {
-                                      soundPath: settings.clipboard_sound_path,
-                                    });
-                                  } catch (e) {
-                                    console.error('Sound preview failed:', e);
-                                  }
+                                // If path is empty, we play the default Windows sound
+                                try {
+                                  await invoke('play_clipboard_sound', {
+                                    soundPath: settings.clipboard_sound_path || '',
+                                  });
+                                } catch (e) {
+                                  console.error('Sound preview failed:', e);
                                 }
                               }}
-                              disabled={!settings.clipboard_sound_path}
-                              className="h-8 w-8 rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 flex items-center justify-center flex-shrink-0 disabled:opacity-50"
+                              className="h-8 w-8 rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 flex items-center justify-center flex-shrink-0"
+                              title={t('settings.previewSound')}
+                            >
+                              <Volume2 size={14} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Startup Sound Group */}
+                      <div className="flex flex-col gap-2 rounded-[4px] border border-border bg-secondary p-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="text-sm font-medium">
+                              {t('settings.startupSound')}
+                            </span>
+                            <p className="text-xs text-muted-foreground">
+                              {t('settings.startupSoundDesc')}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() =>
+                              updateSetting(
+                                'startup_sound_enabled',
+                                !(settings.startup_sound_enabled ?? false)
+                              )
+                            }
+                            className={`h-6 w-11 rounded-full transition-colors ${(settings.startup_sound_enabled ?? false) ? 'bg-primary' : 'bg-white/10'}`}
+                          >
+                            <span
+                              className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.startup_sound_enabled ?? false) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                            />
+                          </button>
+                        </div>
+                        {(settings.startup_sound_enabled ?? false) && (
+                          <div className="flex items-center gap-2 pt-1">
+                            <input
+                              type="text"
+                              value={settings.startup_sound_path || ''}
+                              onChange={(e) => updateSetting('startup_sound_path', e.target.value)}
+                              placeholder={t('settings.soundPathPlaceholder')}
+                              className="flex-1 h-8 rounded-[4px] border border-border bg-input px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
+                            />
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const path = await invoke<string>('pick_file', {
+                                    filterName: 'Sound Files',
+                                    extensions: ['wav', 'mp3'],
+                                  });
+                                  if (path) updateSetting('startup_sound_path', path);
+                                } catch (e) {
+                                  if (e !== 'No file selected') console.error(e);
+                                }
+                              }}
+                              className="h-8 rounded-[4px] bg-accent px-3 text-xs font-medium transition-all hover:bg-accent/80 flex items-center justify-center flex-shrink-0"
+                            >
+                              {t('common.browse')}
+                            </button>
+                            <button
+                              onClick={async () => {
+                                // If path is empty, we play the default startup sound (which will trigger activation_sound.wav generation in preview too)
+                                try {
+                                  const path_to_play = settings.startup_sound_path || '';
+                                  await invoke('play_clipboard_sound', {
+                                    soundPath: path_to_play,
+                                  });
+                                } catch (e) {
+                                  console.error('Sound preview failed:', e);
+                                }
+                              }}
+                              className="h-8 w-8 rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 flex items-center justify-center flex-shrink-0"
                               title={t('settings.previewSound')}
                             >
                               <Volume2 size={14} />
