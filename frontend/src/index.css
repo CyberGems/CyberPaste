@@ -397,42 +397,23 @@
   }
 
   /* Toggles / Switcher styling */
-  .dark button.rounded-full {
-    height: 1.25rem !important; /* 20px */
-    width: 2.25rem !important;  /* 36px */
-    border: 1px solid rgba(255, 255, 255, 0.44) !important;
-    background: rgba(255, 255, 255, 0.06) !important;
-    position: relative;
-    padding: 0 !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
+  .dark button.rounded-full:not(.bg-primary) {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
   }
 
   .dark button.rounded-full.bg-primary {
-    background: var(--primary) !important;
+    background: var(--primary) !important; /* Silver accent */
     border-color: var(--primary) !important;
-  }
-
-  .dark button.rounded-full > div,
-  .dark button.rounded-full > span {
-    height: 0.75rem !important; /* 12px */
-    width: 0.75rem !important;  /* 12px */
-    border-radius: 9999px !important;
-    display: block !important;
-    margin: 0 !important;
-    transition: transform 0.15s ease-in-out, background-color 0.15s !important;
   }
 
   .dark button.rounded-full.bg-primary > div,
   .dark button.rounded-full.bg-primary > span {
     background: #16181B !important; /* switch active indicator matches background */
-    transform: translateX(1.3rem) !important;
   }
 
   .dark button.rounded-full:not(.bg-primary) > div,
   .dark button.rounded-full:not(.bg-primary) > span {
-    background: rgba(255, 255, 255, 0.75) !important;
-    transform: translateX(0.2rem) !important;
+    background: rgba(255, 255, 255, 0.8) !important;
   }
 }
