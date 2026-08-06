@@ -2714,8 +2714,10 @@ pub async fn center_window(window: tauri::WebviewWindow) -> Result<(), String> {
 
 #[tauri::command]
 pub fn play_clipboard_sound(sound_path: String) -> Result<(), String> {
-    let path_to_play = if sound_path.is_empty() {
+    let path_to_play = if sound_path.is_empty() || sound_path == "default_capture" {
         crate::get_data_dir().join("capture_sound.wav").to_string_lossy().to_string()
+    } else if sound_path == "default_startup" {
+        crate::get_data_dir().join("activation_sound.wav").to_string_lossy().to_string()
     } else {
         sound_path
     };

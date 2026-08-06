@@ -782,6 +782,15 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           />
                         </button>
                       </div>
+                    </div>
+                  </section>
+
+                  {/* Sounds */}
+                  <section className="space-y-4">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-cyan-400/80">
+                      <Volume2 size={14} /> {t('settings.soundsSection')}
+                    </h3>
+                    <div className="rounded-xl border border-border bg-card p-4 space-y-4">
                       {/* Clipboard Sound Group */}
                       <div className="flex flex-col gap-2 rounded-[4px] border border-border bg-secondary p-3">
                         <div className="flex items-center justify-between">
@@ -832,12 +841,20 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             >
                               {t('common.browse')}
                             </button>
+                            {settings.clipboard_sound_path && (
+                              <button
+                                onClick={() => updateSetting('clipboard_sound_path', '')}
+                                className="h-8 w-8 rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 flex items-center justify-center flex-shrink-0"
+                                title={t('common.reset', { defaultValue: 'Reset to default' })}
+                              >
+                                <RotateCcw size={14} />
+                              </button>
+                            )}
                             <button
                               onClick={async () => {
-                                // If path is empty, we play the default Windows sound
                                 try {
                                   await invoke('play_clipboard_sound', {
-                                    soundPath: settings.clipboard_sound_path || '',
+                                    soundPath: settings.clipboard_sound_path || 'default_capture',
                                   });
                                 } catch (e) {
                                   console.error('Sound preview failed:', e);
@@ -902,13 +919,20 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             >
                               {t('common.browse')}
                             </button>
+                            {settings.startup_sound_path && (
+                              <button
+                                onClick={() => updateSetting('startup_sound_path', '')}
+                                className="h-8 w-8 rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 flex items-center justify-center flex-shrink-0"
+                                title={t('common.reset', { defaultValue: 'Reset to default' })}
+                              >
+                                <RotateCcw size={14} />
+                              </button>
+                            )}
                             <button
                               onClick={async () => {
-                                // If path is empty, we play the default startup sound (which will trigger activation_sound.wav generation in preview too)
                                 try {
-                                  const path_to_play = settings.startup_sound_path || '';
                                   await invoke('play_clipboard_sound', {
-                                    soundPath: path_to_play,
+                                    soundPath: settings.startup_sound_path || 'default_startup',
                                   });
                                 } catch (e) {
                                   console.error('Sound preview failed:', e);
@@ -922,6 +946,8 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           </div>
                         )}
                       </div>
+                    </div>
+                  </section>
                       <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                         <div>
                           <span className="text-sm font-medium">{t('settings.autoPaste')}</span>
