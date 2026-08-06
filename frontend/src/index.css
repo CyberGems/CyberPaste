@@ -66,9 +66,9 @@
   .dark {
     --background: 216 10% 10%; /* #16181B */
     --foreground: 210 9% 92%; /* #E8EAEC */
-    --card: 214 9% 13%; /* #24272B */
+    --card: 214 9% 17%; /* #292D33 - lighter gray card */
     --card-foreground: 210 9% 92%;
-    --popover: 214 9% 13%;
+    --popover: 214 9% 17%;
     --popover-foreground: 210 9% 92%;
     --primary: 214 11% 75%; /* #B8BEC6 silver accent */
     --primary-foreground: 216 10% 10%;
@@ -80,7 +80,7 @@
     --accent-foreground: 210 9% 92%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 85.7% 97.3%;
-    --border: 214 9% 18%; /* #2D3136 */
+    --border: 214 9% 23%; /* #353B42 - subtle lighter border */
     --input: 214 9% 18%;
     --ring: 214 11% 75%;
     --primary-rgb: 184, 190, 198;
