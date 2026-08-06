@@ -782,6 +782,94 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           />
                         </button>
                       </div>
+
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div>
+                          <span className="text-sm font-medium">{t('settings.autoPaste')}</span>
+                          <p className="text-sm text-muted-foreground/80">
+                            {t('settings.autoPasteDesc')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => updateSetting('auto_paste', !settings.auto_paste)}
+                          className={`h-6 w-11 rounded-full transition-colors ${settings.auto_paste ? 'bg-primary' : 'bg-white/10'}`}
+                        >
+                          <div
+                            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.auto_paste ? 'translate-x-5' : 'translate-x-0.5'}`}
+                          />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div>
+                          <span className="text-sm font-medium">{t('settings.autoInjectPaste')}</span>
+                          <p className="text-sm text-muted-foreground/80">
+                            {t('settings.autoInjectPasteDesc')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() =>
+                            updateSetting('auto_inject_paste', !settings.auto_inject_paste)
+                          }
+                          className={`h-6 w-11 rounded-full transition-colors ${settings.auto_inject_paste ? 'bg-primary' : 'bg-white/10'}`}
+                        >
+                          <div
+                            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.auto_inject_paste ? 'translate-x-5' : 'translate-x-0.5'}`}
+                          />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div>
+                          <span className="text-sm font-medium">
+                            {t('settings.resetViewOnPaste')}
+                          </span>
+                          <p className="text-sm text-muted-foreground/80">
+                            {t('settings.resetViewOnPasteDesc')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() =>
+                            updateSetting('reset_view_on_paste', !settings.reset_view_on_paste)
+                          }
+                          className={`h-6 w-11 rounded-full transition-colors ${settings.reset_view_on_paste ? 'bg-primary' : 'bg-white/10'}`}
+                        >
+                          <div
+                            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.reset_view_on_paste ? 'translate-x-5' : 'translate-x-0.5'}`}
+                          />
+                        </button>
+                      </div>
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-sm font-bold uppercase tracking-tight text-primary/70">
+                            {t('settings.externalImageEditor')}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.externalImageEditorDesc')}
+                          </p>
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={settings.image_editor_path || ''}
+                            onChange={(e) => updateSetting('image_editor_path', e.target.value)}
+                            placeholder={t('settings.externalViewerPlaceholder')}
+                            className="flex-1 rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
+                          />
+                          <button
+                            onClick={async () => {
+                              try {
+                                const path = await invoke<string>('pick_file', {
+                                  filterName: 'Executables',
+                                  extensions: ['exe', 'app'],
+                                });
+                                if (path) updateSetting('image_editor_path', path);
+                              } catch (e) {}
+                            }}
+                            className="rounded-[4px] bg-accent px-3 py-2 text-sm font-medium transition-all hover:bg-accent/80"
+                          >
+                            {t('common.browse')}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </section>
 
@@ -945,95 +1033,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             </button>
                           </div>
                         )}
-                      </div>
-                    </div>
-                  </section>
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                        <div>
-                          <span className="text-sm font-medium">{t('settings.autoPaste')}</span>
-                          <p className="text-sm text-muted-foreground/80">
-                            {t('settings.autoPasteDesc')}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => updateSetting('auto_paste', !settings.auto_paste)}
-                          className={`h-6 w-11 rounded-full transition-colors ${settings.auto_paste ? 'bg-primary' : 'bg-white/10'}`}
-                        >
-                          <div
-                            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.auto_paste ? 'translate-x-5' : 'translate-x-0.5'}`}
-                          />
-                        </button>
-                      </div>
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                        <div>
-                          <span className="text-sm font-medium">{t('settings.autoInjectPaste')}</span>
-                          <p className="text-sm text-muted-foreground/80">
-                            {t('settings.autoInjectPasteDesc')}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() =>
-                            updateSetting('auto_inject_paste', !settings.auto_inject_paste)
-                          }
-                          className={`h-6 w-11 rounded-full transition-colors ${settings.auto_inject_paste ? 'bg-primary' : 'bg-white/10'}`}
-                        >
-                          <div
-                            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.auto_inject_paste ? 'translate-x-5' : 'translate-x-0.5'}`}
-                          />
-                        </button>
-                      </div>
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                        <div>
-                          <span className="text-sm font-medium">
-                            {t('settings.resetViewOnPaste')}
-                          </span>
-                          <p className="text-sm text-muted-foreground/80">
-                            {t('settings.resetViewOnPasteDesc')}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() =>
-                            updateSetting('reset_view_on_paste', !settings.reset_view_on_paste)
-                          }
-                          className={`h-6 w-11 rounded-full transition-colors ${settings.reset_view_on_paste ? 'bg-primary' : 'bg-white/10'}`}
-                        >
-                          <div
-                            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.reset_view_on_paste ? 'translate-x-5' : 'translate-x-0.5'}`}
-                          />
-                        </button>
-                      </div>
-                      <div className="space-y-3">
-                        <label className="block">
-                          <span className="text-sm font-bold uppercase tracking-tight text-primary/70">
-                            {t('settings.externalImageEditor')}
-                          </span>
-                          <p className="text-xs text-muted-foreground">
-                            {t('settings.externalImageEditorDesc')}
-                          </p>
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={settings.image_editor_path || ''}
-                            onChange={(e) => updateSetting('image_editor_path', e.target.value)}
-                            placeholder={t('settings.externalViewerPlaceholder')}
-                            className="flex-1 rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
-                          />
-                          <button
-                            onClick={async () => {
-                              try {
-                                const path = await invoke<string>('pick_file', {
-                                  filterName: 'Executables',
-                                  extensions: ['exe', 'app'],
-                                });
-                                if (path) updateSetting('image_editor_path', path);
-                              } catch (e) {}
-                            }}
-                            className="rounded-[4px] bg-accent px-3 py-2 text-sm font-medium transition-all hover:bg-accent/80"
-                          >
-                            {t('common.browse')}
-                          </button>
-                        </div>
                       </div>
                     </div>
                   </section>
