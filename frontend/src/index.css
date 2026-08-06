@@ -369,7 +369,7 @@
   }
 
   /* Indicator box for numbers next to sliders */
-  .dark .min-w-\[3rem\].rounded-lg.border.border-primary\/20.bg-primary\/10 {
+  .dark section span.font-mono {
     background: rgba(255, 255, 255, 0.05) !important;
     border: 1px solid rgba(255, 255, 255, 0.12) !important;
     color: var(--foreground) !important;
