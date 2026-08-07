@@ -410,16 +410,23 @@ export const ClipCard = memo(
             className="relative z-10 flex flex-shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2.5 py-2 backdrop-blur-sm"
           >
             {clip.source_icon && (
-              <Tooltip label={clip.source_app || 'App'} placement="top">
-                <div className="flex items-center justify-center rounded-sm border border-border bg-muted/40 p-0.5">
-                  <img
-                    src={`data:image/png;base64,${clip.source_icon}`}
-                    alt=""
-                    draggable="false"
-                    className="h-3.5 w-3.5 object-contain"
-                  />
-                </div>
-              </Tooltip>
+              <div
+                className={clsx(
+                  'transition-opacity duration-150',
+                  hovered || isBulkSelected ? 'opacity-0 pointer-events-none' : 'opacity-100'
+                )}
+              >
+                <Tooltip label={clip.source_app || 'App'} placement="top">
+                  <div className="flex items-center justify-center rounded-sm border border-border bg-muted/40 p-0.5">
+                    <img
+                      src={`data:image/png;base64,${clip.source_icon}`}
+                      alt=""
+                      draggable="false"
+                      className="h-3.5 w-3.5 object-contain"
+                    />
+                  </div>
+                </Tooltip>
+              </div>
             )}
             {clip.is_pinned && (
               <span
@@ -461,11 +468,12 @@ export const ClipCard = memo(
               </Tooltip>
             </div>
             <div className="relative flex h-full min-w-[40px] items-center justify-end">
-              {/* LATEST badge + LED - slide together on hover */}
+              {/* LATEST badge + LED - slide together and fade out on hover */}
               <motion.div
                 className="absolute right-2 flex items-center gap-1"
                 animate={{
                   x: hovered ? -24 : 0,
+                  opacity: hovered ? 0 : 1,
                 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 30 }}
               >
