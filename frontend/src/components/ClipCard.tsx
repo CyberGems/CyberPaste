@@ -369,24 +369,31 @@ export const ClipCard = memo(
           )}
           {/* Bulk selection checkbox (top-left, visible on hover or when selected) */}
           {onToggleBulkSelect && (
-            <button
-              data-el="clip-card-bulk-check"
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleBulkSelect();
-              }}
-              className={clsx(
-                'absolute left-2 top-2 z-20 flex h-4 w-4 items-center justify-center rounded border transition-all',
-                isBulkSelected
-                  ? 'border-primary bg-primary text-primary-foreground opacity-100'
-                  : hovered
-                    ? 'border-border bg-popover/85 text-muted-foreground opacity-75 hover:border-primary'
-                    : 'opacity-0'
-              )}
-              aria-label={isBulkSelected ? 'Deselect clip' : 'Select clip'}
+            <Tooltip
+              label={isBulkSelected ? t('common.deselect') : t('common.select')}
+              placement="top"
             >
-              {isBulkSelected && <Check size={10} strokeWidth={3} />}
-            </button>
+              <button
+                data-el="clip-card-bulk-check"
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onToggleBulkSelect();
+                }}
+                className={clsx(
+                  'absolute left-2 top-2 z-20 flex h-4 w-4 items-center justify-center rounded border transition-all',
+                  isBulkSelected
+                    ? 'border-primary bg-primary text-primary-foreground opacity-100'
+                    : hovered
+                      ? 'border-border bg-popover/85 text-muted-foreground opacity-75 hover:border-primary'
+                      : 'opacity-0'
+                )}
+                aria-label={isBulkSelected ? 'Deselect clip' : 'Select clip'}
+              >
+                {isBulkSelected && <Check size={10} strokeWidth={3} />}
+              </button>
+            </Tooltip>
           )}
 
           {/* Framer-motion spotlight border glow */}
@@ -492,7 +499,7 @@ export const ClipCard = memo(
               </motion.div>
 
               {/* Preview + Copy buttons - slide in on hover */}
-              {hovered && onPreview && (
+              {hovered && onPreview && clip.clip_type === 'image' && (
                 <motion.button
                   data-el="clip-card-preview-btn"
                   initial={{ opacity: 0, x: 20 }}

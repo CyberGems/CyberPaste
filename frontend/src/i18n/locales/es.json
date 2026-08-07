@@ -48,7 +48,9 @@
     "showHud": "Mostrar barra de información",
     "hideHud": "Ocultar barra de información",
     "yes": "Sí",
-    "clipDetails": "Detalles del clip"
+    "clipDetails": "Detalles del clip",
+    "select": "Seleccionar",
+    "deselect": "Deseleccionar"
   },
   "bulk": {
     "selectedSingle": "seleccionado",
