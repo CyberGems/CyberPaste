@@ -160,7 +160,7 @@ function toastThemeVars(theme: 'cyberpaste' | 'dark' | 'light', gradient: string
       body: 'text-neutral-700',
       closeBtn: 'text-neutral-400 hover:bg-black/10 hover:text-neutral-700',
       track: 'bg-black/10',
-      progressColor: gradient,
+      progressColor: 'linear-gradient(90deg, #0078D7, #00A8FF, #7A00FF)',
       iconColor: '#0078D7',
       previewBg: 'bg-neutral-100/80',
       previewBorder: 'border-neutral-200',
