@@ -99,6 +99,7 @@ function App() {
   const [selectedClipIds, setSelectedClipIds] = useState<Set<string>>(new Set());
   const [detailPanelOpen, setDetailPanelOpen] = useState(false);
   const [clipListResetToken, setClipListResetToken] = useState(0);
+  const [gridColumns, setGridColumns] = useState(3);
   const [searchFocusToken, setSearchFocusToken] = useState(0);
   const [previewClip, setPreviewClip] = useState<AppClipboardItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -1208,13 +1209,23 @@ function App() {
     }
 
     const currentIndex = clips.findIndex((c) => c.id === selectedClipId);
-    if (currentIndex > 0) {
-      setSelectedClipId(clips[currentIndex - 1].id);
+    if (settings?.view_mode === 'full' && settings?.scroll_direction === 'vertical') {
+      const cols = gridColumns || 1;
+      if (currentIndex >= cols) {
+        setSelectedClipId(clips[currentIndex - cols].id);
+      } else {
+        // Wrap around to bottom
+        const target = clips.length - 1;
+        setSelectedClipId(clips[target].id);
+      }
     } else {
-      // Wrap to last
-      setSelectedClipId(clips[clips.length - 1].id);
+      if (currentIndex > 0) {
+        setSelectedClipId(clips[currentIndex - 1].id);
+      } else {
+        setSelectedClipId(clips[clips.length - 1].id);
+      }
     }
-  }, [clips, selectedClipId]);
+  }, [clips, selectedClipId, settings?.view_mode, settings?.scroll_direction, gridColumns]);
 
   const handleNavigateNext = useCallback(() => {
     if (clips.length === 0) return;
@@ -1225,13 +1236,22 @@ function App() {
     }
 
     const currentIndex = clips.findIndex((c) => c.id === selectedClipId);
-    if (currentIndex < clips.length - 1) {
-      setSelectedClipId(clips[currentIndex + 1].id);
+    if (settings?.view_mode === 'full' && settings?.scroll_direction === 'vertical') {
+      const cols = gridColumns || 1;
+      if (currentIndex + cols < clips.length) {
+        setSelectedClipId(clips[currentIndex + cols].id);
+      } else {
+        // Wrap around to top
+        setSelectedClipId(clips[0].id);
+      }
     } else {
-      // Wrap to first
-      setSelectedClipId(clips[0].id);
+      if (currentIndex < clips.length - 1) {
+        setSelectedClipId(clips[currentIndex + 1].id);
+      } else {
+        setSelectedClipId(clips[0].id);
+      }
     }
-  }, [clips, selectedClipId]);
+  }, [clips, selectedClipId, settings?.view_mode, settings?.scroll_direction, gridColumns]);
 
   // Folder navigation handlers (Left/Right arrows in compact mode)
   const handleFolderPrev = useCallback(() => {
@@ -1399,8 +1419,33 @@ function App() {
   );
 
   // Left/Right move between cards (identical wrap-around semantics as Up/Down)
-  const handleCardPrev = useCallback(() => handleNavigatePrev(), [handleNavigatePrev]);
-  const handleCardNext = useCallback(() => handleNavigateNext(), [handleNavigateNext]);
+  const handleCardPrev = useCallback(() => {
+    if (clips.length === 0) return;
+    if (!selectedClipId) {
+      setSelectedClipId(clips[0].id);
+      return;
+    }
+    const currentIndex = clips.findIndex((c) => c.id === selectedClipId);
+    if (currentIndex > 0) {
+      setSelectedClipId(clips[currentIndex - 1].id);
+    } else {
+      setSelectedClipId(clips[clips.length - 1].id);
+    }
+  }, [clips, selectedClipId]);
+
+  const handleCardNext = useCallback(() => {
+    if (clips.length === 0) return;
+    if (!selectedClipId) {
+      setSelectedClipId(clips[0].id);
+      return;
+    }
+    const currentIndex = clips.findIndex((c) => c.id === selectedClipId);
+    if (currentIndex < clips.length - 1) {
+      setSelectedClipId(clips[currentIndex + 1].id);
+    } else {
+      setSelectedClipId(clips[0].id);
+    }
+  }, [clips, selectedClipId]);
 
   // Ctrl+Enter — copy the selected clip as plain text, without pasting
   const handleCopyPlainTextSelected = useCallback(async () => {
@@ -2145,11 +2190,13 @@ function App() {
                   draggingClipId={draggingClipId}
                   clipNumbering={settings?.clip_numbering || 'positional'}
                   gridScale={settings?.full_grid_scale ?? 1}
+                  gridColumns={gridColumns}
                   onRequestPreview={handleOpenPreview}
                   bulkSelectedIds={selectedClipIds}
                   onClipClick={handleClipClick}
                   onToggleBulkSelect={handleClipToggleSelect}
                   onRequestOcr={handleOcrRequest}
+                  onColumnsChange={setGridColumns}
                 />
                 <BulkActionBar
                   count={selectedClipIds.size}

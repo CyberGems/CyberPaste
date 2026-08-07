@@ -32,6 +32,7 @@ interface ClipListProps {
   onClipClick?: (id: string, e: React.MouseEvent) => void;
   onToggleBulkSelect?: (id: string) => void;
   onRequestOcr?: (id: string) => void;
+  onColumnsChange?: (columns: number) => void;
 }
 
 const BASE_CARD_WIDTH = 230;
@@ -62,6 +63,7 @@ export const ClipList: React.FC<ClipListProps> = ({
   onClipClick,
   onToggleBulkSelect,
   onRequestOcr,
+  onColumnsChange,
 }) => {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -112,6 +114,10 @@ export const ClipList: React.FC<ClipListProps> = ({
     : clips.length;
 
   const rowCount = isVertical ? Math.ceil(clips.length / columnCount) : 1;
+
+  useEffect(() => {
+    onColumnsChange?.(columnCount);
+  }, [columnCount, onColumnsChange]);
 
   const selectedClipIndex = clips.findIndex((c) => c.id === selectedClipId);
 

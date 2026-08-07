@@ -195,7 +195,7 @@ export const ClipCard = memo(
     const renderedContent = useMemo(() => {
       if (clip.clip_type === 'image') {
         return (
-          <div className="flex h-full w-full select-none items-center justify-center">
+          <div className="flex h-full w-full select-none items-center justify-center pb-6">
             {clip.content ? (
               <img
                 src={imageSrc ?? undefined}
