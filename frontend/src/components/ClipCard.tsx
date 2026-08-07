@@ -434,9 +434,8 @@ export const ClipCard = memo(
             )}
             <div className="relative flex flex-1 items-center gap-1.5 overflow-hidden">
               <span
-                className="inline-block whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.1em]"
+                className="inline-block whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.1em] text-secondary-foreground"
                 style={{
-                  color: `hsl(${appHue} 85% 75%)`,
                   animation: isLatest ? 'marquee 3s linear infinite' : 'none',
                 }}
               >
