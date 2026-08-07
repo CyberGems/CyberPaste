@@ -1209,7 +1209,7 @@ function App() {
     }
 
     const currentIndex = clips.findIndex((c) => c.id === selectedClipId);
-    if (settings?.view_mode === 'full' && settings?.scroll_direction === 'vertical') {
+    if (settings?.view_mode === 'full') {
       const cols = gridColumns || 1;
       if (currentIndex >= cols) {
         setSelectedClipId(clips[currentIndex - cols].id);
@@ -1225,7 +1225,7 @@ function App() {
         setSelectedClipId(clips[clips.length - 1].id);
       }
     }
-  }, [clips, selectedClipId, settings?.view_mode, settings?.scroll_direction, gridColumns]);
+  }, [clips, selectedClipId, settings?.view_mode, gridColumns]);
 
   const handleNavigateNext = useCallback(() => {
     if (clips.length === 0) return;
@@ -1236,7 +1236,7 @@ function App() {
     }
 
     const currentIndex = clips.findIndex((c) => c.id === selectedClipId);
-    if (settings?.view_mode === 'full' && settings?.scroll_direction === 'vertical') {
+    if (settings?.view_mode === 'full') {
       const cols = gridColumns || 1;
       if (currentIndex + cols < clips.length) {
         setSelectedClipId(clips[currentIndex + cols].id);
@@ -1251,7 +1251,7 @@ function App() {
         setSelectedClipId(clips[0].id);
       }
     }
-  }, [clips, selectedClipId, settings?.view_mode, settings?.scroll_direction, gridColumns]);
+  }, [clips, selectedClipId, settings?.view_mode, gridColumns]);
 
   // Folder navigation handlers (Left/Right arrows in compact mode)
   const handleFolderPrev = useCallback(() => {
