@@ -172,7 +172,7 @@
     "extractText": "Extraer texto (OCR)"
   },
   "settings": {
-    "title": "Ajustes",
+    "title": "Configuración",
     "general": "General",
     "ai": "IA",
     "maintenance": "Mantenimiento",

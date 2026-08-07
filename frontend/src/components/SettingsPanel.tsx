@@ -578,7 +578,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
           {/* Sidebar */}
           <div className="w-[150px] flex-shrink-0 border-r border-border bg-transparent px-2.5 py-3.5">
             <div className="mb-4 px-2.5">
-              <h1 className="text-[18px] font-bold tracking-tight text-foreground">
+              <h1 className="text-[14px] font-bold tracking-tight text-foreground">
                 {t('settings.title')}
               </h1>
             </div>
@@ -588,7 +588,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 className={clsx(
                   'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'general'
-                    ? 'border-l-[3px] border-cyan-400 bg-white/10 text-foreground shadow-none'
+                    ? 'border-l-[3px] border-primary bg-primary/10 text-primary shadow-none'
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
               >
@@ -600,7 +600,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 className={clsx(
                   'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'ai'
-                    ? 'border-l-[3px] border-cyan-400 bg-white/10 text-foreground shadow-none'
+                    ? 'border-l-[3px] border-primary bg-primary/10 text-primary shadow-none'
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
               >
@@ -612,7 +612,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 className={clsx(
                   'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'notifications'
-                    ? 'border-l-[3px] border-cyan-400 bg-white/10 text-foreground shadow-none'
+                    ? 'border-l-[3px] border-primary bg-primary/10 text-primary shadow-none'
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
               >
@@ -624,7 +624,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 className={clsx(
                   'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'maintenance'
-                    ? 'border-l-[3px] border-cyan-400 bg-white/10 text-foreground shadow-none'
+                    ? 'border-l-[3px] border-primary bg-primary/10 text-primary shadow-none'
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
               >
@@ -637,7 +637,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   className={clsx(
                     'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                     activeTab === 'about'
-                      ? 'border-l-[3px] border-cyan-400 bg-white/10 text-foreground shadow-none'
+                      ? 'border-l-[3px] border-primary bg-primary/10 text-primary shadow-none'
                       : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                   )}
                 >
@@ -725,7 +725,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
                   {/* Clipboard & Capture */}
                   <section className="space-y-4">
-                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-cyan-400/80">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
                       <Clipboard size={14} /> {t('settings.clipboardCapture')}
                     </h3>
                     <div className="rounded-xl border border-border bg-card p-4 space-y-4">
@@ -864,7 +864,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
                   {/* Sounds */}
                   <section className="space-y-4">
-                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-cyan-400/80">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
                       <Volume2 size={14} /> {t('settings.soundsSection')}
                     </h3>
                     <div className="rounded-xl border border-border bg-card p-4 space-y-4">
@@ -1845,7 +1845,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 <div className="animate-in fade-in slide-in-from-bottom-4 space-y-8 duration-500">
                   {/* Check for Updates */}
                   <section className="space-y-4">
-                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-cyan-400/80">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
                       <RotateCcw size={14} /> {t('settings.updates')}
                     </h3>
                     <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
@@ -1907,29 +1907,13 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-rose-400/80">
                       <Database size={14} /> {t('settings.dataManagement')}
                     </h3>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-3">
                       <button
                         onClick={confirmClearHistory}
-                        className="btn rounded-[4px] border border-destructive/20 bg-destructive/10 text-destructive hover:bg-destructive/20"
+                        className="btn rounded-[4px] border border-destructive/20 bg-destructive/10 text-destructive hover:bg-destructive/20 w-full"
                       >
                         <Trash2 size={16} className="mr-2" />
                         {t('settings.clearHistory')}
-                      </button>
-                      <button
-                        onClick={async () => {
-                          try {
-                            const count = await invoke<number>('remove_duplicate_clips');
-                            toast.success(t('settings.removeDuplicatesSuccess', { count }));
-                            const newSize = await invoke<number>('get_clipboard_history_size');
-                            setHistorySize(newSize);
-                          } catch (error) {
-                            console.error(error);
-                            toast.error(t('settings.failedToRemoveDuplicates', { error }));
-                          }
-                        }}
-                        className="btn btn-secondary rounded-[4px] text-xs"
-                      >
-                        {t('settings.removeDuplicates')}
                       </button>
                     </div>
                   </section>

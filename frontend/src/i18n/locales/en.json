@@ -172,7 +172,7 @@
     "extractText": "Extract Text (OCR)"
   },
   "settings": {
-    "title": "Settings",
+    "title": "Configuration",
     "general": "General",
     "ai": "AI",
     "maintenance": "Maintenance",

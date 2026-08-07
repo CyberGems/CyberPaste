@@ -179,15 +179,25 @@ pub fn run_app() {
                             }
 
                             if let Ok(win_size) = window.outer_size() {
-                                let clamped_x = pos.x.clamp(min_x, max_x - win_size.width as i32);
-                                let clamped_y = pos.y.clamp(min_y, max_y - win_size.height as i32);
+                                 let target_max_x = max_x - win_size.width as i32;
+                                 let target_max_y = max_y - win_size.height as i32;
+                                 let clamped_x = if min_x <= target_max_x {
+                                     pos.x.clamp(min_x, target_max_x)
+                                 } else {
+                                     pos.x
+                                 };
+                                 let clamped_y = if min_y <= target_max_y {
+                                     pos.y.clamp(min_y, target_max_y)
+                                 } else {
+                                     pos.y
+                                 };
 
-                                if clamped_x != pos.x || clamped_y != pos.y {
-                                    let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
-                                        x: clamped_x,
-                                        y: clamped_y,
-                                    }));
-                                }
+                                 if clamped_x != pos.x || clamped_y != pos.y {
+                                     let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
+                                         x: clamped_x,
+                                         y: clamped_y,
+                                     }));
+                                 }
                             }
                         }
                     }
