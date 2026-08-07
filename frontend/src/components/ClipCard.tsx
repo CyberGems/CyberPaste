@@ -381,17 +381,21 @@ export const ClipCard = memo(
                   e.stopPropagation();
                   onToggleBulkSelect();
                 }}
-                className={clsx(
-                  'absolute left-2 top-2 z-20 flex h-4 w-4 items-center justify-center rounded border transition-all',
-                  isBulkSelected
-                    ? 'border-primary bg-primary text-primary-foreground opacity-100'
-                    : hovered
-                      ? 'border-border bg-popover/85 text-muted-foreground opacity-75 hover:border-primary'
-                      : 'opacity-0'
-                )}
+                className="absolute left-0 top-0 z-20 flex h-8 w-8 items-center justify-center transition-all"
                 aria-label={isBulkSelected ? 'Deselect clip' : 'Select clip'}
               >
-                {isBulkSelected && <Check size={10} strokeWidth={3} />}
+                <div
+                  className={clsx(
+                    'flex h-4 w-4 items-center justify-center rounded border transition-all',
+                    isBulkSelected
+                      ? 'border-primary bg-primary text-primary-foreground opacity-100'
+                      : hovered
+                        ? 'border-border bg-popover/85 text-muted-foreground opacity-75 hover:border-primary'
+                        : 'opacity-0'
+                  )}
+                >
+                  {isBulkSelected && <Check size={10} strokeWidth={3} />}
+                </div>
               </button>
             </Tooltip>
           )}
@@ -490,10 +494,9 @@ export const ClipCard = memo(
                   </span>
                 )}
                 <div
-                  className="pointer-events-none h-1.5 w-1.5 rounded-full shadow-lg"
+                  className="pointer-events-none h-1.5 w-1.5 rounded-full shadow-lg bg-primary"
                   style={{
-                    backgroundColor: `hsl(${appHue} 85% 75%)`,
-                    boxShadow: `0 0 10px 1px hsl(${appHue} 85% 75% / 0.5)`,
+                    boxShadow: `0 0 8px 1px rgb(var(--primary-rgb) / 0.5)`,
                   }}
                 />
               </motion.div>
