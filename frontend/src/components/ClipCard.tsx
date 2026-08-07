@@ -562,11 +562,14 @@ export const ClipCard = memo(
             className={clsx(
               "absolute bottom-0 left-0 right-0 z-10 px-3 py-1.5",
               clip.clip_type === 'image'
-                ? "bg-gradient-to-t from-card via-card/70 to-transparent"
+                ? "bg-gradient-to-t from-card/95 via-card/50 to-transparent"
                 : "bg-gradient-to-t from-card via-card/100 to-transparent/0"
             )}
           >
-            <span className="text-[11px] font-medium text-muted-foreground/50">
+            <span className={clsx(
+              "text-[11px] font-medium transition-colors",
+              clip.clip_type === 'image' ? "text-muted-foreground/90 font-semibold" : "text-muted-foreground/50"
+            )}>
               {clip.clip_type === 'image' ? (
                 <div className="flex w-full items-center justify-between pr-6">
                   <div className="flex items-center gap-1.5">

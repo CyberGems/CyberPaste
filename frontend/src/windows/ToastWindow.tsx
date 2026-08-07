@@ -145,6 +145,10 @@ interface ToastThemeVars {
   iconColor: string;
   previewBg: string;
   previewBorder: string;
+  headerBorder: string;
+  headerText: string;
+  sourceAppText: string;
+  imageBorder: string;
 }
 
 function toastThemeVars(theme: 'cyberpaste' | 'dark' | 'light', gradient: string): ToastThemeVars {
@@ -160,6 +164,10 @@ function toastThemeVars(theme: 'cyberpaste' | 'dark' | 'light', gradient: string
       iconColor: '#0078D7',
       previewBg: 'bg-neutral-100/80',
       previewBorder: 'border-neutral-200',
+      headerBorder: 'border-black/5',
+      headerText: 'text-neutral-500',
+      sourceAppText: 'text-neutral-800',
+      imageBorder: 'border-black/10',
     };
   }
   if (theme === 'dark') {
@@ -174,6 +182,10 @@ function toastThemeVars(theme: 'cyberpaste' | 'dark' | 'light', gradient: string
       iconColor: '#B8BEC6',
       previewBg: 'bg-black/35',
       previewBorder: 'border-white/5',
+      headerBorder: 'border-white/5',
+      headerText: 'text-neutral-400',
+      sourceAppText: 'text-neutral-200',
+      imageBorder: 'border-white/10',
     };
   }
   // cyberpaste — current signature look
@@ -188,6 +200,10 @@ function toastThemeVars(theme: 'cyberpaste' | 'dark' | 'light', gradient: string
     iconColor: '#00F2FF',
     previewBg: 'bg-black/35',
     previewBorder: 'border-white/5',
+    headerBorder: 'border-white/5',
+    headerText: 'text-neutral-400',
+    sourceAppText: 'text-neutral-200',
+    imageBorder: 'border-white/10',
   };
 }
 
@@ -406,7 +422,7 @@ export function ToastWindow() {
           <div className="flex flex-col p-2.5 pb-3">
             {/* Header Row: Source Program info or general Title */}
             {toast.source_app ? (
-              <div className={`flex items-center gap-1.5 border-b pb-1.5 mb-2 text-xs font-semibold pr-7 border-white/5 text-neutral-400`}>
+              <div className={`flex items-center gap-1.5 border-b pb-1.5 mb-2 text-xs font-semibold pr-7 ${tv.headerBorder} ${tv.headerText}`}>
                 <div className="shrink-0 flex items-center">
                   {getHeaderClipIcon(toast.clip_type, toast.toast_type, tv.iconColor)}
                 </div>
@@ -422,7 +438,7 @@ export function ToastWindow() {
                     }}
                   />
                 ) : null}
-                <span className={`truncate max-w-[120px] text-neutral-200`}>{toast.source_app}</span>
+                <span className={`truncate max-w-[120px] ${tv.sourceAppText}`}>{toast.source_app}</span>
               </div>
             ) : (
               <div className="flex items-center gap-1.5 mb-2 pr-7">
@@ -439,7 +455,7 @@ export function ToastWindow() {
                 <img
                   src={`data:image/png;base64,${toast.image_preview}`}
                   alt=""
-                  className="max-h-12 max-w-[180px] rounded-md border border-white/10 object-contain shadow-md transition-transform duration-200 hover:scale-105"
+                  className={`max-h-12 max-w-[180px] rounded-md border object-contain shadow-md transition-transform duration-200 hover:scale-105 ${tv.imageBorder}`}
                 />
               </div>
             ) : (

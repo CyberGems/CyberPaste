@@ -87,7 +87,7 @@ function ContextMenuItem({ option, onClose }: { option: ContextMenuOption; onClo
           'flex w-full items-center rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors group',
           option.disabled ? 'pointer-events-none opacity-40' : '',
           option.danger
-            ? 'text-red-500 hover:bg-red-500/10'
+            ? 'text-foreground/90 hover:bg-red-500/10'
             : 'text-foreground/90 hover:bg-accent hover:text-primary'
         )}
       >
