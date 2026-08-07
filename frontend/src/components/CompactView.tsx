@@ -792,7 +792,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
 
   // Limpiar peek al cambiar la visibilidad de la ventana
   useEffect(() => {
-    const unlisten = listen<boolean>('window-visibility', (event) => {
+    const unlisten = listen<boolean>('window-visibility', () => {
       closePeek();
     });
     return () => {
@@ -1195,6 +1195,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 clipNumbering={clipNumbering}
                 isLoading={isLoading}
                 isFiltering={isFiltering}
+                isPeekVisible={!!peekClipId}
+                onClosePeek={closePeek}
                 emptyLabel={
                   isFiltering && clips.length > 0
                     ? t('compact.noMatchFilter') === 'compact.noMatchFilter'
@@ -1411,6 +1413,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
               onRowMouseEnter={handleRowMouseEnter}
               onRowMouseLeave={handleRowMouseLeave}
               isPeekVisible={!!peekClipId}
+              onClosePeek={closePeek}
             />
           </div>
 
@@ -1503,6 +1506,7 @@ const ClipRow = memo(function ClipRow({
   onToggleSelect,
   isPeekVisible,
   onRowMouseEnter,
+  onClosePeek,
 }: {
   clip: AppClip;
   index: number;
@@ -1524,6 +1528,7 @@ const ClipRow = memo(function ClipRow({
   onToggleSelect?: (id: string, multi: boolean) => void;
   isPeekVisible?: boolean;
   onRowMouseEnter?: (clip: AppClip, e: React.MouseEvent) => void;
+  onClosePeek?: () => void;
 }) {
   const { i18n } = useTranslation();
   const typeLabel = useMemo(() => {
@@ -1699,7 +1704,7 @@ const ClipRow = memo(function ClipRow({
           </div>
         </div>
 
-        <div className="flex flex-shrink-0 items-center gap-3 pr-2 self-stretch -my-1.5 py-1.5" onMouseOver={(e) => { e.stopPropagation(); closePeek(); }}>
+        <div className="flex flex-shrink-0 items-center gap-3 pr-2 self-stretch -my-1.5 py-1.5" onMouseOver={(e) => { e.stopPropagation(); onClosePeek?.(); }}>
           <span className="flex items-center gap-2 whitespace-nowrap text-[10px] text-muted-foreground/80">
             {index === 0 && !selectedFolder && (
               <span className="text-[8px] font-bold uppercase tracking-widest text-primary opacity-90">
@@ -1798,6 +1803,7 @@ type CompactListRowProps = {
   onRowMouseEnter?: (clip: AppClip, e: React.MouseEvent) => void;
   onRowMouseLeave?: () => void;
   isPeekVisible?: boolean;
+  onClosePeek?: () => void;
 };
 
 function CompactListRow({
@@ -1823,6 +1829,7 @@ function CompactListRow({
   onRowMouseEnter,
   onRowMouseLeave,
   isPeekVisible,
+  onClosePeek,
 }: RowComponentProps<CompactListRowProps>) {
   const clip = clips[index];
   if (!clip) return null;
@@ -1854,6 +1861,7 @@ function CompactListRow({
         onToggleSelect={onToggleClipSelect}
         isPeekVisible={isPeekVisible}
         onRowMouseEnter={onRowMouseEnter}
+        onClosePeek={onClosePeek}
       />
     </div>
   );
@@ -1884,6 +1892,7 @@ function CompactClipList({
   onRowMouseEnter,
   onRowMouseLeave,
   isPeekVisible,
+  onClosePeek,
 }: {
   clips: AppClip[];
   listRef: React.Ref<import('react-window').ListImperativeAPI>;
@@ -1913,6 +1922,7 @@ function CompactClipList({
   onRowMouseEnter?: (clip: AppClip, e: React.MouseEvent) => void;
   onRowMouseLeave?: () => void;
   isPeekVisible: boolean;
+  onClosePeek?: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   // Start with a sensible fallback so the list paints before the first ResizeObserver tick
@@ -1971,6 +1981,7 @@ function CompactClipList({
       onRowMouseEnter,
       onRowMouseLeave,
       isPeekVisible,
+      onClosePeek,
     }),
     [
       clips,
@@ -1992,6 +2003,7 @@ function CompactClipList({
       onRowMouseEnter,
       onRowMouseLeave,
       isPeekVisible,
+      onClosePeek,
     ]
   );
 

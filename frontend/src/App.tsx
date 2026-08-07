@@ -2190,7 +2190,6 @@ function App() {
                   draggingClipId={draggingClipId}
                   clipNumbering={settings?.clip_numbering || 'positional'}
                   gridScale={settings?.full_grid_scale ?? 1}
-                  gridColumns={gridColumns}
                   onRequestPreview={handleOpenPreview}
                   bulkSelectedIds={selectedClipIds}
                   onClipClick={handleClipClick}

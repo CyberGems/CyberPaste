@@ -25,7 +25,6 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
   sidebarWidth,
   resolveImageSrc,
   onCopy,
-  onPin,
   onDelete,
   onClose,
 }) => {

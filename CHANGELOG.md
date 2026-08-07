@@ -2,6 +2,27 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.7.0] — 2026-08-07
+
+### 🚀 Features
+
+- **New Brand Identity**:
+  - Replaced official application logo and system tray icons with the new brand icon.
+- **2D Keyboard Navigation**:
+  - Implemented true 2D grid navigation using arrow keys (`↑/↓` jump rows, `←/→` move between adjacent cards).
+
+### 🐛 Bug Fixes & UI Enhancements
+
+- **Light Theme Polish**:
+  - Extensively redesigned title bars, action buttons, and control structures for clean contrast.
+  - Redesigned image card overlays to clear metadata and ensure 100% legibility on any image background.
+  - Made the context menu and full-screen image preview modal fully theme-aware.
+  - Standardized LED indicator lights to use theme-based accent color (removing yellow lights).
+  - Adjusted Light theme toast notifications (header, program name, and progress bar) for perfect readability.
+- **Context Menu & Multiselect**:
+  - Hidden AI actions for non-textual (image/file) clips in the context menu.
+  - Enlarged multi-select checkbox click targets to prevent accidental window closure.
+
 ## [1.6.0] — 2026-08-01
 
 ### 🚀 Features
