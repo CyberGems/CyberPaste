@@ -161,6 +161,37 @@ pub fn run_app() {
         .manage(db_arc.clone())
         .on_window_event(|window, event| {
             match event {
+                tauri::WindowEvent::Moved(pos) => {
+                    if let Ok(monitors) = window.available_monitors() {
+                        if !monitors.is_empty() {
+                            let mut min_x = i32::MAX;
+                            let mut max_x = i32::MIN;
+                            let mut min_y = i32::MAX;
+                            let mut max_y = i32::MIN;
+
+                            for monitor in monitors {
+                                let m_pos = monitor.position();
+                                let m_size = monitor.size();
+                                min_x = min_x.min(m_pos.x);
+                                max_x = max_x.max(m_pos.x + m_size.width as i32);
+                                min_y = min_y.min(m_pos.y);
+                                max_y = max_y.max(m_pos.y + m_size.height as i32);
+                            }
+
+                            if let Ok(win_size) = window.outer_size() {
+                                let clamped_x = pos.x.clamp(min_x, max_x - win_size.width as i32);
+                                let clamped_y = pos.y.clamp(min_y, max_y - win_size.height as i32);
+
+                                if clamped_x != pos.x || clamped_y != pos.y {
+                                    let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
+                                        x: clamped_x,
+                                        y: clamped_y,
+                                    }));
+                                }
+                            }
+                        }
+                    }
+                }
                 tauri::WindowEvent::ThemeChanged(theme) => {
                     log::info!("THEME:System theme changed to: {:?}, win.theme(): {:?}", theme, window.theme());
                     let label = window.label().to_string();

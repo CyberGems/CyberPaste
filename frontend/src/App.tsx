@@ -18,6 +18,8 @@ import type { ContextMenuOption } from './components/ContextMenu';
 import { FolderModal } from './components/FolderModal';
 import { AiResultDialog } from './components/AiResultDialog';
 import { OcrResultModal } from './components/OcrResultModal';
+import { check } from '@tauri-apps/plugin-updater';
+import { UpdateModal } from './components/UpdateModal';
 import { useKeyboard } from './hooks/useKeyboard';
 import { useTheme } from './hooks/useTheme';
 import { useLanguage } from './hooks/useLanguage';
@@ -106,6 +108,8 @@ function App() {
   const [hasMore, setHasMore] = useState(true);
   const [theme, setTheme] = useState('system');
   const [settings, setSettings] = useState<Settings | null>(null);
+  const [updateAvailable, setUpdateAvailable] = useState<any>(null);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
   const settingsRef = useRef<Settings | null>(null);
   const isTogglingRef = useRef(false);
   const [viewModeFading, setViewModeFading] = useState(false);
@@ -229,6 +233,22 @@ function App() {
         }
         clearTimeout(timer);
         setIsLoading(false);
+
+        // Check for updates after 3 seconds if auto_check_updates is enabled
+        if (s.auto_check_updates) {
+          setTimeout(() => {
+            check({ timeout: 15000 })
+              .then((update) => {
+                if (update) {
+                  setUpdateAvailable(update);
+                  setShowUpdateModal(true);
+                }
+              })
+              .catch((err) => {
+                console.error('Auto-update check failed:', err);
+              });
+          }, 3000);
+        }
       })
       .catch((err) => {
         console.error('Failed to get settings:', err);
@@ -2313,6 +2333,12 @@ function App() {
           onSelect={(folderId) => {
             if (moveToFolderClipId) handleMoveToFolder(moveToFolderClipId, folderId);
           }}
+        />
+
+        <UpdateModal
+          isOpen={showUpdateModal}
+          update={updateAvailable}
+          onClose={() => setShowUpdateModal(false)}
         />
 
         <div

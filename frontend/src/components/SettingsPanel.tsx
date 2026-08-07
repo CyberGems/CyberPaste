@@ -16,7 +16,6 @@ import {
   ExternalLink,
   Terminal,
   Heart,
-  Flame,
   RotateCcw,
   Volume2,
   Clipboard,
@@ -31,13 +30,14 @@ import { useTheme } from '../hooks/useTheme';
 import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
 import { emit, listen } from '@tauri-apps/api/event';
-import { FlaskConical, Wrench } from 'lucide-react';
+import { Wrench } from 'lucide-react';
 import { getCurrentWindow, availableMonitors } from '@tauri-apps/api/window';
 import { getVersion } from '@tauri-apps/api/app';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { check } from '@tauri-apps/plugin-updater';
 import { systemToast as toast } from '../utils/toast';
 import { ConfirmDialog } from './ConfirmDialog';
+import { UpdateModal } from './UpdateModal';
 import { Select } from './ui/Select';
 import { ThemeCard, ThemeMode } from './ThemeCard';
 import { useShortcutRecorder } from 'use-shortcut-recorder';
@@ -152,6 +152,8 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
   const [showApiKey, setShowApiKey] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [appVersion, setAppVersion] = useState('');
+  const [updateAvailable, setUpdateAvailable] = useState<any>(null);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [monitorList, setMonitorList] = useState<{ name: string; index: number }[]>([]);
 
   useEffect(() => {
@@ -374,21 +376,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     message: '',
     action: async () => {},
   });
-
-  const handleResetLayout = async () => {
-    try {
-      await emit('reset-window-layout', {});
-      toast.success(t('settings.layoutRestored'));
-      // Small delay to let user see success message
-      setTimeout(() => {
-        onClose();
-      }, 800);
-    } catch (e) {
-      console.error(e);
-      toast.error(t('settings.failedToResetLayout'));
-    }
-  };
-
   const loadFolders = async () => {
     try {
       const data = await invoke<FolderItem[]>('get_folders');
@@ -1891,9 +1878,8 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           const update = await check({ timeout: 15000 });
                           toast.dismiss(loadingToast);
                           if (update) {
-                            toast.success(
-                              t('settings.updateAvailable', { version: update.version })
-                            );
+                            setUpdateAvailable(update);
+                            setShowUpdateModal(true);
                           } else {
                             toast.info(t('settings.noUpdates'));
                           }
@@ -1944,23 +1930,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         className="btn btn-secondary rounded-[4px] text-xs"
                       >
                         {t('settings.removeDuplicates')}
-                      </button>
-                    </div>
-                  </section>
-
-                  {/* Panic Room */}
-                  <section className="space-y-4">
-                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-rose-500/80">
-                      <Flame size={14} /> {t('settings.panicRoom')}
-                    </h3>
-                    <div className="flex flex-col gap-3 rounded-[4px] border border-rose-500/20 bg-rose-500/5 p-4">
-                      <p className="text-xs text-muted-foreground">{t('settings.panicRoomDesc')}</p>
-                      <button
-                        onClick={handleResetLayout}
-                        className="flex w-full items-center justify-center gap-2 rounded-[4px] bg-rose-500 py-2.5 font-bold text-white shadow-lg shadow-rose-500/20 transition-all hover:bg-rose-600"
-                      >
-                        <RotateCcw size={16} />
-                        {t('settings.resetLayoutVisibility')}
                       </button>
                     </div>
                   </section>
@@ -2024,33 +1993,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <p className="mt-1 text-[10px] text-muted-foreground">
                       {t('settings.backupDesc')}
                     </p>
-                  </section>
-
-                  {/* Debug */}
-                  <section className="space-y-4 border-t border-border pt-4">
-                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-muted-foreground">
-                      <FlaskConical size={14} /> {t('settings.debug')}
-                    </h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        onClick={() => {
-                          emit('load-demo-data');
-                          toast.info(t('settings.demoClipsLoaded'));
-                        }}
-                        className="btn rounded-[4px] border border-border bg-input text-xs text-foreground hover:bg-accent"
-                      >
-                        {t('settings.loadDemoClips')}
-                      </button>
-                      <button
-                        onClick={() => {
-                          emit('restore-actual-data');
-                          toast.info(t('settings.dataRestored'));
-                        }}
-                        className="btn rounded-[4px] border border-border bg-input text-xs text-foreground hover:bg-accent"
-                      >
-                        {t('settings.restoreActualData')}
-                      </button>
-                    </div>
                   </section>
                 </div>
               )}
@@ -2154,6 +2096,12 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
           </div>
         </div>
       </div>
+
+      <UpdateModal
+        isOpen={showUpdateModal}
+        update={updateAvailable}
+        onClose={() => setShowUpdateModal(false)}
+      />
     </>
   );
 }
