@@ -1759,36 +1759,39 @@ function App() {
           onClick: () => setMoveToFolderClipId(itemId),
         });
 
-        opts.push({
-          label: t('contextMenu.aiActions'),
-          icon: <Sparkles size={14} />,
-          subMenu: [
-            {
-              label: aiLabel(settings?.ai_title_summarize, 'Summarize', 'contextMenu.summarize'),
-              icon: <AlignLeft size={14} />,
-              onClick: () => handleAiAction(itemId, 'summarize', t('ai.summary')),
-            },
-            {
-              label: aiLabel(settings?.ai_title_translate, 'Translate', 'contextMenu.translate'),
-              icon: <Languages size={14} />,
-              onClick: () => handleAiAction(itemId, 'translate', t('ai.translation')),
-            },
-            {
-              label: aiLabel(
-                settings?.ai_title_explain_code,
-                'Explain Code',
-                'contextMenu.explainCode'
-              ),
-              icon: <Code2 size={14} />,
-              onClick: () => handleAiAction(itemId, 'explain_code', t('ai.codeExplanation')),
-            },
-            {
-              label: aiLabel(settings?.ai_title_fix_grammar, 'Fix Grammar', 'contextMenu.fixGrammar'),
-              icon: <CheckSquare size={14} />,
-              onClick: () => handleAiAction(itemId, 'fix_grammar', t('ai.grammarCheck')),
-            },
-          ],
-        });
+        // AI actions — only meaningful for textual clips
+        if (clip && clip.clip_type !== 'image' && clip.clip_type !== 'file') {
+          opts.push({
+            label: t('contextMenu.aiActions'),
+            icon: <Sparkles size={14} />,
+            subMenu: [
+              {
+                label: aiLabel(settings?.ai_title_summarize, 'Summarize', 'contextMenu.summarize'),
+                icon: <AlignLeft size={14} />,
+                onClick: () => handleAiAction(itemId, 'summarize', t('ai.summary')),
+              },
+              {
+                label: aiLabel(settings?.ai_title_translate, 'Translate', 'contextMenu.translate'),
+                icon: <Languages size={14} />,
+                onClick: () => handleAiAction(itemId, 'translate', t('ai.translation')),
+              },
+              {
+                label: aiLabel(
+                  settings?.ai_title_explain_code,
+                  'Explain Code',
+                  'contextMenu.explainCode'
+                ),
+                icon: <Code2 size={14} />,
+                onClick: () => handleAiAction(itemId, 'explain_code', t('ai.codeExplanation')),
+              },
+              {
+                label: aiLabel(settings?.ai_title_fix_grammar, 'Fix Grammar', 'contextMenu.fixGrammar'),
+                icon: <CheckSquare size={14} />,
+                onClick: () => handleAiAction(itemId, 'fix_grammar', t('ai.grammarCheck')),
+              },
+            ],
+          });
+        }
 
         opts.push({
           label: t('contextMenu.delete'),
