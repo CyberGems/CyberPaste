@@ -11,8 +11,8 @@ import './index.css';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
 attachConsole()
-  .then(() => console.log('[WinPaste] Tauri console attached successfully'))
-  .catch((err) => console.error('[WinPaste] Failed to attach Tauri console:', err));
+  .then(() => console.log('[CyberPaste] Tauri console attached successfully'))
+  .catch((err) => console.error('[CyberPaste] Failed to attach Tauri console:', err));
 
 const windowLabel = getCurrentWindow().label;
 

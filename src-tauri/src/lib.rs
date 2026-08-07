@@ -1013,7 +1013,8 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
 
                 let reference_bottom = monitor_pos.y + monitor_size.height as i32;
 
-                // Work in physical pixels to avoid webview DPI scale issues
+                // Work in physical pixels to avoid webview DPI scale issues.
+                // Full mode uses the same immediate presentation as Compact mode.
                 let logical_window_height = if saved_height > 100.0 {
                     saved_height
                 } else {
@@ -1021,29 +1022,19 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                 };
                 let window_width_px = work_area.size.width - (side_margin_px as u32 * 2);
                 let window_height_px = (logical_window_height * scale_factor) as u32;
-
                 let target_x = work_area.position.x + side_margin_px;
                 let target_y = reference_bottom - window_height_px as i32 - bottom_margin_px;
-                let start_y = reference_bottom;
 
-                // Set physical size before positioning
                 let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
                     width: window_width_px,
                     height: window_height_px,
                 }));
-                std::thread::sleep(std::time::Duration::from_millis(60));
-
-                let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
-                    x: target_x,
-                    y: start_y,
-                }));
-
-                log::debug!(
-                    "Animation coords: start_y={}, target_y={}, phys_w={}",
-                    start_y,
-                    target_y,
-                    window_width_px
-                );
+                let _ = window.set_position(tauri::Position::Physical(
+                    tauri::PhysicalPosition {
+                        x: target_x,
+                        y: target_y,
+                    },
+                ));
 
                 let current_theme = if theme_str == "light" {
                     tauri::Theme::Light
@@ -1057,40 +1048,12 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                 let _ = window.unminimize();
                 let _ = window.set_focus();
 
-                // Re-apply physical size after show to fix stale webview DPI
-                std::thread::sleep(std::time::Duration::from_millis(50));
+                // Re-apply size once after showing to ensure full width overrides
+                // any stale value restored by the window-state plugin.
                 let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
                     width: window_width_px,
                     height: window_height_px,
                 }));
-
-                let steps = 12;
-                let duration = std::time::Duration::from_millis(8);
-                let dy = (target_y - start_y) as f64 / steps as f64;
-
-                for i in 1..=steps {
-                    let current_y = start_y as f64 + dy * i as f64;
-                    let _ =
-                        window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
-                            x: target_x,
-                            y: current_y as i32,
-                        }));
-                    std::thread::sleep(duration);
-                }
-
-                let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
-                    x: target_x,
-                    y: target_y,
-                }));
-                let _ = window.set_focus();
-
-                // Final size apply after animation — ensures full width overrides window-state plugin
-                std::thread::sleep(std::time::Duration::from_millis(50));
-                let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
-                    width: window_width_px,
-                    height: window_height_px,
-                }));
-
                 let _ = window.set_always_on_top(true);
             }
         } else {
@@ -1194,20 +1157,16 @@ pub fn animate_window_hide(
                 let side_margin_px = (side_margin * scale_factor) as i32;
                 let bottom_margin_px = (bottom_margin * scale_factor) as i32;
                 let reference_bottom = monitor_pos.y + monitor_size.height as i32;
-                let start_y = reference_bottom - window_height_px as i32 - bottom_margin_px;
-                let target_y = reference_bottom;
-                let steps = 15;
-                let duration = std::time::Duration::from_millis(10);
-                let dy = (target_y - start_y) as f64 / steps as f64;
-                for i in 1..=steps {
-                    let current_y = start_y as f64 + dy * i as f64;
-                    let _ =
-                        window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
-                            x: work_area.position.x + side_margin_px,
-                            y: current_y as i32,
-                        }));
-                    std::thread::sleep(duration);
-                }
+                let target_y = reference_bottom - window_height_px as i32 - bottom_margin_px;
+
+                // Full mode hides immediately, matching Compact mode and avoiding
+                // the delayed slide animation that could expose intermediate frames.
+                let _ = window.set_position(tauri::Position::Physical(
+                    tauri::PhysicalPosition {
+                        x: work_area.position.x + side_margin_px,
+                        y: target_y,
+                    },
+                ));
                 let _ = window.hide();
             } else {
                 log::warn!("current_monitor returned None in animate_window_hide, forcing hide");
