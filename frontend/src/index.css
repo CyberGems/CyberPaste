@@ -315,7 +315,6 @@
   .pause-all-animations *::before,
   .pause-all-animations *::after {
     animation-play-state: paused !important;
-    transition: none !important;
   }
 
   .glass-effect {

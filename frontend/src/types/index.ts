@@ -84,6 +84,10 @@ export interface Settings {
   compact_last_position_y?: number | null;
   compact_auto_height?: boolean;
   compact_peek_enabled?: boolean;
+  compact_show_source_icon?: boolean;
+  compact_show_time?: boolean;
+  compact_show_type_icon?: boolean;
+  compact_show_number?: boolean;
   settings_window_width?: number | null;
   settings_window_height?: number | null;
   settings_window_x?: number | null;

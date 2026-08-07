@@ -2061,6 +2061,10 @@ function App() {
               isPinned={settings?.pinned}
               onTogglePin={handleTogglePin}
               compactPeekEnabled={settings?.compact_peek_enabled ?? true}
+              compactShowSourceIcon={settings?.compact_show_source_icon ?? true}
+              compactShowTime={settings?.compact_show_time ?? true}
+              compactShowTypeIcon={settings?.compact_show_type_icon ?? true}
+              compactShowNumber={settings?.compact_show_number ?? true}
               totalClipCount={totalClipCount}
               onFolderContextMenu={(e, folderId) => {
                 if (folderId) handleContextMenu(e, 'folder', folderId);

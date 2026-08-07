@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Instant;
+use std::sync::atomic::Ordering;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 
 /// Native clipboard read (avoids browser Clipboard API permission prompts).
@@ -1993,6 +1994,10 @@ pub async fn register_global_shortcut(
         .global_shortcut()
         .on_shortcut(shortcut, move |_app, _shortcut, event| {
             if event.state() == ShortcutState::Pressed {
+                if crate::IS_ANIMATING.load(Ordering::SeqCst) {
+                    log::info!("Hotkey ignored: Animation in progress");
+                    return;
+                }
                 if win_clone.is_visible().unwrap_or(false)
                     && win_clone.is_focused().unwrap_or(false)
                 {

@@ -24,6 +24,7 @@ import {
   Lock,
   Database,
   Bell,
+  Layers,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useTheme } from '../hooks/useTheme';
@@ -48,7 +49,7 @@ interface SettingsPanelProps {
   onClose: () => void;
 }
 
-type Tab = 'general' | 'ai' | 'notifications' | 'maintenance' | 'about';
+type Tab = 'general' | 'compact' | 'ai' | 'notifications' | 'maintenance' | 'about';
 
 function PromptEditor({
   label,
@@ -293,6 +294,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         compact_sidebar_collapsed: 'settings.compactSidebarCollapsed',
         type_to_search: 'settings.typeToSearch',
         compact_peek_enabled: 'settings.compactPeekEnabled',
+        compact_show_source_icon: 'settings.compactShowSourceIcon',
+        compact_show_time: 'settings.compactShowTime',
+        compact_show_type_icon: 'settings.compactShowTypeIcon',
+        compact_show_number: 'settings.compactShowNumber',
         toast_enabled: 'settings.toastEnabled',
         show_action_messages: 'settings.showActionMessages',
         auto_check_updates: 'settings.autoCheckUpdates',
@@ -596,6 +601,18 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 {t('settings.general')}
               </button>
               <button
+                onClick={() => setActiveTab('compact')}
+                className={clsx(
+                  'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
+                  activeTab === 'compact'
+                    ? 'border-l-[3px] border-primary bg-primary/10 text-primary shadow-none'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                )}
+              >
+                <Layers size={14} />
+                {t('settings.compactTab')}
+              </button>
+              <button
                 onClick={() => setActiveTab('ai')}
                 className={clsx(
                   'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
@@ -806,6 +823,25 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           />
                         </button>
                       </div>
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div>
+                          <span className="text-sm font-medium">{t('settings.typeToSearch')}</span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.typeToSearchDesc')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() =>
+                            updateSetting('type_to_search', !(settings.type_to_search ?? true))
+                          }
+                          className={`h-6 w-11 rounded-full transition-colors ${(settings.type_to_search ?? true) ? 'bg-primary' : 'bg-white/10'}`}
+                        >
+                          <span
+                            className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.type_to_search ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                          />
+                        </button>
+                      </div>
+
                       <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                         <div>
                           <span className="text-sm font-medium">
@@ -1026,129 +1062,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     </div>
                   </section>
 
-                  {/* Layout & Navigation */}
-                  <section className="space-y-4">
-                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-purple-400/80">
-                      <Layout size={14} /> {t('settings.layoutNavigation')}
-                    </h3>
-                    <div className="rounded-xl border border-border bg-card p-4 space-y-4">
 
-                      <div className="space-y-3">
-                        <label className="block">
-                          <span className="text-base font-medium">
-                            {t('settings.compactFolderLayout')}
-                          </span>
-                          <p className="text-xs text-muted-foreground">
-                            {t('settings.compactFolderLayoutDesc')}
-                          </p>
-                        </label>
-                        <Select
-                          value={settings.compact_folder_layout || 'vertical'}
-                          onChange={(val) => updateSetting('compact_folder_layout', val)}
-                          options={[
-                            { value: 'horizontal', label: t('settings.scrollHorizontal') },
-                            { value: 'vertical', label: t('settings.scrollVertical') },
-                          ]}
-                        />
-                        {(settings.compact_folder_layout || 'vertical') === 'vertical' && (
-                          <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                            <div>
-                              <span className="text-sm font-medium">
-                                {t('settings.compactSidebarCollapsed')}
-                              </span>
-                              <p className="text-xs text-muted-foreground">
-                                {t('settings.compactSidebarCollapsedDesc')}
-                              </p>
-                            </div>
-                            <button
-                              onClick={() =>
-                                updateSetting(
-                                  'compact_sidebar_collapsed',
-                                  !(settings.compact_sidebar_collapsed ?? false)
-                                )
-                              }
-                              className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_sidebar_collapsed ?? false) ? 'bg-primary' : 'bg-white/10'}`}
-                            >
-                              <span
-                                className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.compact_sidebar_collapsed ?? false) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                              />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                      <div className="space-y-3">
-                        <label className="block">
-                          <span className="text-base font-medium">
-                            {t('settings.compactViewPosition')}
-                          </span>
-                          <p className="text-xs text-muted-foreground">
-                            {t('settings.compactViewPositionDesc')}
-                          </p>
-                        </label>
-                        <Select
-                          value={settings.compact_view_position_mode || 'auto'}
-                          onChange={(val) => updateSetting('compact_view_position_mode', val)}
-                          options={[
-                            { value: 'auto', label: t('settings.positionAuto') },
-                            { value: 'cursor', label: t('settings.positionCursor') },
-                            { value: 'caret', label: t('settings.positionCaret') },
-                          ]}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                        <div>
-                          <span className="text-sm font-medium">{t('settings.typeToSearch')}</span>
-                          <p className="text-xs text-muted-foreground">
-                            {t('settings.typeToSearchDesc')}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() =>
-                            updateSetting('type_to_search', !(settings.type_to_search ?? true))
-                          }
-                          className={`h-6 w-11 rounded-full transition-colors ${(settings.type_to_search ?? true) ? 'bg-primary' : 'bg-white/10'}`}
-                        >
-                          <span
-                            className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.type_to_search ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                          />
-                        </button>
-                      </div>
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                        <div>
-                          <span className="text-sm font-medium">{t('settings.compactPeekEnabled')}</span>
-                          <p className="text-xs text-muted-foreground">
-                            {t('settings.compactPeekEnabledDesc')}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() =>
-                            updateSetting('compact_peek_enabled', !(settings.compact_peek_enabled ?? true))
-                          }
-                          className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_peek_enabled ?? true) ? 'bg-primary' : 'bg-white/10'}`}
-                        >
-                          <span
-                            className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.compact_peek_enabled ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                          />
-                        </button>
-                      </div>
-                      <div className="space-y-3">
-                        <label className="block">
-                          <span className="text-base font-medium">{t('settings.clipNumbering')}</span>
-                          <p className="text-xs text-muted-foreground">
-                            {t('settings.clipNumberingDesc')}
-                          </p>
-                        </label>
-                        <Select
-                          value={settings.clip_numbering || 'positional'}
-                          onChange={(val) => updateSetting('clip_numbering', val)}
-                          options={[
-                            { value: 'positional', label: t('settings.clipNumberingPositional') },
-                            { value: 'countdown', label: t('settings.clipNumberingCountdown') },
-                          ]}
-                        />
-                      </div>
-                    </div>
-                  </section>
 
                   {/* Folders Management */}
                   <section className="space-y-4">
@@ -1420,6 +1334,205 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             </div>
                           ))
                         )}
+                      </div>
+                    </div>
+                  </section>
+                </>
+              )}
+
+              {/* --- COMPACT MODE TAB --- */}
+              {activeTab === 'compact' && (
+                <>
+                  {/* Layout & Navigation */}
+                  <section className="space-y-4">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
+                      <Layout size={14} /> {t('settings.layoutNavigation')}
+                    </h3>
+                    <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+                      <div className="space-y-3 border-b border-border/60 pb-4">
+                        <label className="block">
+                          <span className="text-base font-medium">
+                            {t('settings.compactFolderLayout')}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.compactFolderLayoutDesc')}
+                          </p>
+                        </label>
+                        <Select
+                          value={settings.compact_folder_layout || 'vertical'}
+                          onChange={(val) => updateSetting('compact_folder_layout', val)}
+                          options={[
+                            { value: 'horizontal', label: t('settings.scrollHorizontal') },
+                            { value: 'vertical', label: t('settings.scrollVertical') },
+                          ]}
+                        />
+                        {(settings.compact_folder_layout || 'vertical') === 'vertical' && (
+                          <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                            <div>
+                              <span className="text-sm font-medium">
+                                {t('settings.compactSidebarCollapsed')}
+                              </span>
+                              <p className="text-xs text-muted-foreground">
+                                {t('settings.compactSidebarCollapsedDesc')}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() =>
+                                updateSetting(
+                                  'compact_sidebar_collapsed',
+                                  !(settings.compact_sidebar_collapsed ?? false)
+                                )
+                              }
+                              className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_sidebar_collapsed ?? false) ? 'bg-primary' : 'bg-white/10'}`}
+                            >
+                              <span
+                                className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.compact_sidebar_collapsed ?? false) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                              />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      <div className="space-y-3 border-b border-border/60 pb-4">
+                        <label className="block">
+                          <span className="text-base font-medium">
+                            {t('settings.compactViewPosition')}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.compactViewPositionDesc')}
+                          </p>
+                        </label>
+                        <Select
+                          value={settings.compact_view_position_mode || 'auto'}
+                          onChange={(val) => updateSetting('compact_view_position_mode', val)}
+                          options={[
+                            { value: 'auto', label: t('settings.positionAuto') },
+                            { value: 'cursor', label: t('settings.positionCursor') },
+                            { value: 'caret', label: t('settings.positionCaret') },
+                          ]}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3 border-b border-border/60 pb-4">
+                        <div>
+                          <span className="text-sm font-medium">{t('settings.compactPeekEnabled')}</span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.compactPeekEnabledDesc')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() =>
+                            updateSetting('compact_peek_enabled', !(settings.compact_peek_enabled ?? true))
+                          }
+                          className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_peek_enabled ?? true) ? 'bg-primary' : 'bg-white/10'}`}
+                        >
+                          <span
+                            className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.compact_peek_enabled ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                          />
+                        </button>
+                      </div>
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-base font-medium">{t('settings.clipNumbering')}</span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.clipNumberingDesc')}
+                          </p>
+                        </label>
+                        <Select
+                          value={settings.clip_numbering || 'positional'}
+                          onChange={(val) => updateSetting('clip_numbering', val)}
+                          options={[
+                            { value: 'positional', label: t('settings.clipNumberingPositional') },
+                            { value: 'countdown', label: t('settings.clipNumberingCountdown') },
+                          ]}
+                        />
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* Visibility Toggles */}
+                  <section className="space-y-4">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
+                      <Layers size={14} /> {t('settings.compactVisibility')}
+                    </h3>
+                    <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+                      {/* Show Source Icon */}
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div>
+                          <span className="text-sm font-medium">{t('settings.compactShowSourceIcon')}</span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.compactShowSourceIconDesc')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() =>
+                            updateSetting('compact_show_source_icon', !(settings.compact_show_source_icon ?? true))
+                          }
+                          className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_show_source_icon ?? true) ? 'bg-primary' : 'bg-white/10'}`}
+                        >
+                          <span
+                            className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.compact_show_source_icon ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Show Capture Time */}
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div>
+                          <span className="text-sm font-medium">{t('settings.compactShowTime')}</span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.compactShowTimeDesc')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() =>
+                            updateSetting('compact_show_time', !(settings.compact_show_time ?? true))
+                          }
+                          className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_show_time ?? true) ? 'bg-primary' : 'bg-white/10'}`}
+                        >
+                          <span
+                            className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.compact_show_time ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Show Type Icon */}
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div>
+                          <span className="text-sm font-medium">{t('settings.compactShowTypeIcon')}</span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.compactShowTypeIconDesc')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() =>
+                            updateSetting('compact_show_type_icon', !(settings.compact_show_type_icon ?? true))
+                          }
+                          className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_show_type_icon ?? true) ? 'bg-primary' : 'bg-white/10'}`}
+                        >
+                          <span
+                            className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.compact_show_type_icon ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Show Clip Number */}
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div>
+                          <span className="text-sm font-medium">{t('settings.compactShowNumber')}</span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.compactShowNumberDesc')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() =>
+                            updateSetting('compact_show_number', !(settings.compact_show_number ?? true))
+                          }
+                          className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_show_number ?? true) ? 'bg-primary' : 'bg-white/10'}`}
+                        >
+                          <span
+                            className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.compact_show_number ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                          />
+                        </button>
                       </div>
                     </div>
                   </section>

@@ -454,6 +454,10 @@ pub fn run_app() {
                 let win_clone = win.clone();
                 match app_handle.global_shortcut().on_shortcut(shortcut, move |_app, _shortcut, event| {
                     if event.state() == ShortcutState::Pressed {
+                        if crate::IS_ANIMATING.load(Ordering::SeqCst) {
+                            log::info!("Hotkey ignored: Animation in progress");
+                            return;
+                        }
                         if win_clone.is_visible().unwrap_or(false) && win_clone.is_focused().unwrap_or(false) {
                             crate::animate_window_hide(&win_clone, None);
                         } else {
@@ -802,8 +806,6 @@ pub fn animate_view_mode_transition(window: &tauri::WebviewWindow) {
 }
 
 pub fn animate_window_show(window: &tauri::WebviewWindow) {
-    let _ = window.emit("window-visibility", true);
-    let _ = rebuild_tray_menu(window.app_handle());
     // Safety guard to ensure IS_ANIMATING is always reset even on panic
     struct AnimationGuard;
     impl Drop for AnimationGuard {
@@ -833,6 +835,12 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
             log::warn!("Animation lock acquire timeout in show, forcing lock");
             IS_ANIMATING.store(true, Ordering::SeqCst);
         }
+
+        // Emit visibility AFTER acquiring the lock so that a concurrent
+        // animate_window_hide cannot flip React's isWindowActive to false
+        // before we even start showing.
+        let _ = window.emit("window-visibility", true);
+        let _ = rebuild_tray_menu(window.app_handle());
 
         let _guard = AnimationGuard;
         let (
@@ -1104,8 +1112,6 @@ pub fn animate_window_hide(
     window: &tauri::WebviewWindow,
     on_done: Option<Box<dyn FnOnce() + Send>>,
 ) {
-    let _ = window.emit("window-visibility", false);
-    let _ = rebuild_tray_menu(window.app_handle());
     // Safety guard to ensure IS_ANIMATING is always reset
     struct AnimationGuard;
     impl Drop for AnimationGuard {
@@ -1130,13 +1136,19 @@ pub fn animate_window_hide(
             retries += 1;
         }
         if !acquired {
-            log::warn!("Animation lock acquire timeout in hide, forcing hide");
-            let _ = window.hide();
+            // Another animation is in progress — do NOT emit window-visibility
+            // or force-hide, as that would cause flickering during show animation.
+            log::warn!("Animation lock acquire timeout in hide, skipping");
             if let Some(callback) = on_done {
                 callback();
             }
             return;
         }
+
+        // Emit visibility AFTER acquiring the lock so that a concurrent
+        // show animation's "window-visibility: true" is not overridden.
+        let _ = window.emit("window-visibility", false);
+        let _ = rebuild_tray_menu(window.app_handle());
 
         let _guard = AnimationGuard;
         let (side_margin, bottom_margin, view_mode, saved_height) = {

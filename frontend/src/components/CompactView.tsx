@@ -351,6 +351,10 @@ interface CompactViewProps {
   // NUEVO: micro-animación de entrada
   entranceAnim?: boolean;
   compactPeekEnabled?: boolean;
+  compactShowSourceIcon?: boolean;
+  compactShowTime?: boolean;
+  compactShowTypeIcon?: boolean;
+  compactShowNumber?: boolean;
 }
 
 export const CompactView: React.FC<CompactViewProps> = ({
@@ -404,6 +408,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
   onPinClip,
   entranceAnim = true,
   compactPeekEnabled = true,
+  compactShowSourceIcon = true,
+  compactShowTime = true,
+  compactShowTypeIcon = true,
+  compactShowNumber = true,
 }) => {
   const { t } = useTranslation();
   const folderScrollRef = useRef<HTMLDivElement>(null);
@@ -1197,6 +1205,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 isFiltering={isFiltering}
                 isPeekVisible={!!peekClipId}
                 onClosePeek={closePeek}
+                compactShowSourceIcon={compactShowSourceIcon}
+                compactShowTime={compactShowTime}
+                compactShowTypeIcon={compactShowTypeIcon}
+                compactShowNumber={compactShowNumber}
                 emptyLabel={
                   isFiltering && clips.length > 0
                     ? t('compact.noMatchFilter') === 'compact.noMatchFilter'
@@ -1414,6 +1426,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
               onRowMouseLeave={handleRowMouseLeave}
               isPeekVisible={!!peekClipId}
               onClosePeek={closePeek}
+              compactShowSourceIcon={compactShowSourceIcon}
+              compactShowTime={compactShowTime}
+              compactShowTypeIcon={compactShowTypeIcon}
+              compactShowNumber={compactShowNumber}
             />
           </div>
 
@@ -1507,6 +1523,10 @@ const ClipRow = memo(function ClipRow({
   isPeekVisible,
   onRowMouseEnter,
   onClosePeek,
+  compactShowSourceIcon = true,
+  compactShowTime = true,
+  compactShowTypeIcon = true,
+  compactShowNumber = true,
 }: {
   clip: AppClip;
   index: number;
@@ -1529,6 +1549,10 @@ const ClipRow = memo(function ClipRow({
   isPeekVisible?: boolean;
   onRowMouseEnter?: (clip: AppClip, e: React.MouseEvent) => void;
   onClosePeek?: () => void;
+  compactShowSourceIcon?: boolean;
+  compactShowTime?: boolean;
+  compactShowTypeIcon?: boolean;
+  compactShowNumber?: boolean;
 }) {
   const { i18n } = useTranslation();
   const typeLabel = useMemo(() => {
@@ -1643,11 +1667,13 @@ const ClipRow = memo(function ClipRow({
           className="flex min-w-0 flex-1 items-center gap-3"
           onMouseEnter={(e) => onRowMouseEnter?.(clip, e)}
         >
-          <div className="flex w-8 flex-shrink-0 items-center justify-center">
-            <span className="font-mono text-[10px] opacity-30">
-              #{clipNumbering === 'positional' ? index + 1 : totalCount - index}
-            </span>
-          </div>
+          {compactShowNumber && (
+            <div className="flex w-8 flex-shrink-0 items-center justify-center">
+              <span className="font-mono text-[10px] opacity-30">
+                #{clipNumbering === 'positional' ? index + 1 : totalCount - index}
+              </span>
+            </div>
+          )}
           <div className="flex min-w-0 flex-1 items-center gap-3">
             {clip.clip_type === 'image' ? (
               <>
@@ -1714,7 +1740,7 @@ const ClipRow = memo(function ClipRow({
             {clip.is_pinned && (
               <Pin size={10} className="-rotate-45 fill-primary/20 text-primary opacity-90" />
             )}
-            {(() => {
+            {compactShowTypeIcon && (() => {
               const TypeIcon =
                 clip.clip_type === 'image'
                   ? ImageIcon
@@ -1738,7 +1764,7 @@ const ClipRow = memo(function ClipRow({
                 </Tooltip>
               );
             })()}
-            {clip.source_icon && (
+            {compactShowSourceIcon && clip.source_icon && (
               <Tooltip label={clip.source_app || 'App'} placement="top" disabled={isPeekVisible}>
                 <img
                   src={`data:image/png;base64,${clip.source_icon}`}
@@ -1748,12 +1774,14 @@ const ClipRow = memo(function ClipRow({
                 />
               </Tooltip>
             )}
-            <Tooltip label={absoluteTimeLabel} placement="left" disabled={isPeekVisible}>
-              <span className="flex items-center gap-1">
-                <Clock size={10} className="text-current" />
-                {relativeTimeLabel}
-              </span>
-            </Tooltip>
+            {compactShowTime && (
+              <Tooltip label={absoluteTimeLabel} placement="left" disabled={isPeekVisible}>
+                <span className="flex items-center gap-1">
+                  <Clock size={10} className="text-current" />
+                  {relativeTimeLabel}
+                </span>
+              </Tooltip>
+            )}
           </span>
 
           <div
@@ -1804,6 +1832,10 @@ type CompactListRowProps = {
   onRowMouseLeave?: () => void;
   isPeekVisible?: boolean;
   onClosePeek?: () => void;
+  compactShowSourceIcon?: boolean;
+  compactShowTime?: boolean;
+  compactShowTypeIcon?: boolean;
+  compactShowNumber?: boolean;
 };
 
 function CompactListRow({
@@ -1830,6 +1862,10 @@ function CompactListRow({
   onRowMouseLeave,
   isPeekVisible,
   onClosePeek,
+  compactShowSourceIcon,
+  compactShowTime,
+  compactShowTypeIcon,
+  compactShowNumber,
 }: RowComponentProps<CompactListRowProps>) {
   const clip = clips[index];
   if (!clip) return null;
@@ -1862,6 +1898,10 @@ function CompactListRow({
         isPeekVisible={isPeekVisible}
         onRowMouseEnter={onRowMouseEnter}
         onClosePeek={onClosePeek}
+        compactShowSourceIcon={compactShowSourceIcon}
+        compactShowTime={compactShowTime}
+        compactShowTypeIcon={compactShowTypeIcon}
+        compactShowNumber={compactShowNumber}
       />
     </div>
   );
@@ -1893,6 +1933,10 @@ function CompactClipList({
   onRowMouseLeave,
   isPeekVisible,
   onClosePeek,
+  compactShowSourceIcon = true,
+  compactShowTime = true,
+  compactShowTypeIcon = true,
+  compactShowNumber = true,
 }: {
   clips: AppClip[];
   listRef: React.Ref<import('react-window').ListImperativeAPI>;
@@ -1923,6 +1967,10 @@ function CompactClipList({
   onRowMouseLeave?: () => void;
   isPeekVisible: boolean;
   onClosePeek?: () => void;
+  compactShowSourceIcon?: boolean;
+  compactShowTime?: boolean;
+  compactShowTypeIcon?: boolean;
+  compactShowNumber?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   // Start with a sensible fallback so the list paints before the first ResizeObserver tick
@@ -1982,6 +2030,10 @@ function CompactClipList({
       onRowMouseLeave,
       isPeekVisible,
       onClosePeek,
+      compactShowSourceIcon,
+      compactShowTime,
+      compactShowTypeIcon,
+      compactShowNumber,
     }),
     [
       clips,
@@ -2004,6 +2056,10 @@ function CompactClipList({
       onRowMouseLeave,
       isPeekVisible,
       onClosePeek,
+      compactShowSourceIcon,
+      compactShowTime,
+      compactShowTypeIcon,
+      compactShowNumber,
     ]
   );
 
