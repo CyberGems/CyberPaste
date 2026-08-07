@@ -88,13 +88,13 @@ function ContextMenuItem({ option, onClose }: { option: ContextMenuOption; onClo
           option.disabled ? 'pointer-events-none opacity-40' : '',
           option.danger
             ? 'text-red-500 hover:bg-red-500/10'
-            : 'text-foreground/90 hover:bg-white/10 hover:text-primary'
+            : 'text-foreground/90 hover:bg-accent hover:text-primary'
         )}
       >
         {option.icon && (
           <span className={clsx(
             "mr-2 flex items-center justify-center transition-colors shrink-0",
-            option.danger ? "text-red-500" : "text-zinc-400 group-hover:text-primary"
+            option.danger ? "text-red-500" : "text-muted-foreground group-hover:text-primary"
           )}>
             {option.icon}
           </span>
@@ -106,12 +106,12 @@ function ContextMenuItem({ option, onClose }: { option: ContextMenuOption; onClo
       {hasSubMenu && isOpen && (
         <div
           ref={subMenuRef}
-          className="absolute z-[210] min-w-[180px] rounded-xl border border-white/10 bg-zinc-900/95 p-1.5 shadow-2xl"
+          className="absolute z-[210] min-w-[180px] rounded-xl border border-border bg-popover/95 p-1.5 shadow-2xl backdrop-blur-md"
           style={{
             left: subPos.left,
             right: subPos.right,
             top: subPos.top,
-            boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)',
+            boxShadow: '0 10px 30px -10px rgba(0,0,0,0.25)',
           }}
           role="menu"
         >
@@ -177,12 +177,12 @@ export function ContextMenu({ x, y, options, onClose }: ContextMenuProps) {
   return (
     <div
       ref={menuRef}
-      className="fixed z-[200] min-w-[180px] rounded-xl border border-white/10 bg-zinc-900/95 p-1.5 shadow-2xl"
+      className="fixed z-[200] min-w-[180px] rounded-xl border border-border bg-popover/95 p-1.5 shadow-2xl backdrop-blur-md"
       style={{
         left: x,
         top: y,
         visibility: 'hidden',
-        boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)',
+        boxShadow: '0 10px 30px -10px rgba(0,0,0,0.25)',
       }}
       role="menu"
     >

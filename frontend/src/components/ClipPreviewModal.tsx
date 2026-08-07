@@ -104,9 +104,11 @@ export const ClipPreviewModal: React.FC<ClipPreviewModalProps> = ({
                 {detectedLang}
               </span>
             )}
-            <span className="text-[11px] text-muted-foreground/80">
-              {t('clipList.textLength', { count: clip.content_length })}
-            </span>
+            {clip.clip_type !== 'image' && (
+              <span className="text-[11px] text-muted-foreground/80">
+                {t('clipList.textLength', { count: clip.content_length })}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-1">
