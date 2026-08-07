@@ -355,7 +355,7 @@ export const ClipCard = memo(
               ? 'z-10 border'
               : isBulkSelected
                 ? 'border-2 border-primary bg-primary/5'
-                : 'border hover:-translate-y-1',
+                : 'border hover:border-primary/40',
             isDragging && 'pointer-events-none scale-95 cursor-grabbing opacity-40',
             'group'
           )}
@@ -505,7 +505,9 @@ export const ClipCard = memo(
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
+                  onMouseDown={(e) => e.stopPropagation()}
                   onClick={(e) => {
+                    e.preventDefault();
                     e.stopPropagation();
                     onPreview();
                   }}
@@ -523,7 +525,9 @@ export const ClipCard = memo(
                   x: hovered ? 0 : 20,
                 }}
                 transition={{ duration: 0.2, ease: 'easeOut' }}
+                onMouseDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   onCopy();
                   setCopied(true);
