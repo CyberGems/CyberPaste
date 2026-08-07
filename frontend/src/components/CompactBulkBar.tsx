@@ -38,19 +38,19 @@ export const CompactBulkBar: React.FC<CompactBulkBarProps> = ({
           transition={{ type: 'spring', stiffness: 500, damping: 32 }}
           className="absolute bottom-2 left-1/2 z-50 -translate-x-1/2"
         >
-          <div className="flex items-center gap-1.5 rounded-lg border border-cyan-500/25 bg-black/90 py-1 pl-2 pr-1 shadow-[0_4px_16px_rgba(0,0,0,0.5),0_0_8px_rgba(6,182,212,0.2)] backdrop-blur-md">
+          <div className="flex items-center gap-1.5 rounded-lg border border-primary/25 bg-popover py-1 pl-2 pr-1 shadow-2xl backdrop-blur-md">
             {/* Count badge */}
-            <span className="flex h-5 min-w-[20px] items-center justify-center rounded bg-cyan-500/20 px-1 font-mono text-[10px] font-bold text-cyan-300">
+            <span className="flex h-5 min-w-[20px] items-center justify-center rounded bg-primary/20 px-1 font-mono text-[10px] font-bold text-primary">
               {count}
             </span>
 
-            <div className="h-4 w-px bg-white/10" />
+            <div className="h-4 w-px bg-border" />
 
             {/* Copy */}
             <Tooltip label={t('compact.bulkCopy')} placement="top">
               <button
                 onClick={onCopy}
-                className="flex h-6 w-6 items-center justify-center rounded border border-transparent text-white/60 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white/90"
+                className="flex h-6 w-6 items-center justify-center rounded border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-accent hover:text-accent-foreground"
               >
                 <Copy size={12} />
               </button>
@@ -64,8 +64,8 @@ export const CompactBulkBar: React.FC<CompactBulkBarProps> = ({
                   className={clsx(
                     'flex h-6 w-6 items-center justify-center rounded border transition-all',
                     showFolderMenu
-                      ? 'border-cyan-500/40 bg-cyan-500/20 text-cyan-300'
-                      : 'border-transparent text-white/60 hover:border-white/20 hover:bg-white/10 hover:text-white/90'
+                      ? 'border-primary/45 bg-primary/20 text-primary'
+                      : 'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-accent-foreground'
                   )}
                 >
                   <FolderOpen size={12} />
@@ -73,13 +73,13 @@ export const CompactBulkBar: React.FC<CompactBulkBarProps> = ({
               </Tooltip>
 
               {showFolderMenu && (
-                <div className="absolute bottom-full left-0 z-50 mb-1 max-h-40 w-48 overflow-y-auto rounded-lg border border-white/10 bg-black/95 shadow-2xl">
+                <div className="absolute bottom-full left-0 z-50 mb-1 max-h-40 w-48 overflow-y-auto rounded-lg border border-border bg-popover shadow-2xl">
                   <button
                     onClick={() => {
                       onMoveToFolder(null);
                       setShowFolderMenu(false);
                     }}
-                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-[10px] text-white/70 hover:bg-white/10"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-[10px] text-foreground/75 hover:bg-accent hover:text-foreground"
                   >
                     📋 {t('folders.mainClipboard')}
                   </button>
@@ -90,7 +90,7 @@ export const CompactBulkBar: React.FC<CompactBulkBarProps> = ({
                         onMoveToFolder(f.id);
                         setShowFolderMenu(false);
                       }}
-                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-[10px] text-white/70 hover:bg-white/10"
+                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-[10px] text-foreground/75 hover:bg-accent hover:text-foreground"
                     >
                       📁 {f.name} ({f.item_count})
                     </button>
@@ -103,7 +103,7 @@ export const CompactBulkBar: React.FC<CompactBulkBarProps> = ({
             <Tooltip label={t('compact.bulkDelete')} placement="top">
               <button
                 onClick={onDelete}
-                className="flex h-6 w-6 items-center justify-center rounded border border-transparent text-rose-400/70 transition-colors hover:border-rose-500/30 hover:bg-rose-500/15 hover:text-rose-300"
+                className="flex h-6 w-6 items-center justify-center rounded border border-transparent text-destructive transition-colors hover:border-destructive/30 hover:bg-destructive/15 hover:text-destructive"
               >
                 <Trash2 size={12} />
               </button>
@@ -113,7 +113,7 @@ export const CompactBulkBar: React.FC<CompactBulkBarProps> = ({
             <Tooltip label={t('compact.bulkClear')} placement="top">
               <button
                 onClick={onClear}
-                className="flex h-6 w-6 items-center justify-center rounded border border-transparent text-white/40 transition-colors hover:bg-white/10 hover:text-white/80"
+                className="flex h-6 w-6 items-center justify-center rounded border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-accent hover:text-foreground"
               >
                 <X size={12} />
               </button>

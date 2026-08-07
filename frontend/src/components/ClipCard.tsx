@@ -342,7 +342,7 @@ export const ClipCard = memo(
           style={
             {
               '--app-hue': `${appHue}`,
-              borderColor: isSelected ? `hsl(${appHue} 60% 55%)` : 'rgba(255, 255, 255, 0.1)',
+              borderColor: isSelected ? `hsl(${appHue} 60% 55%)` : undefined,
               borderWidth: isSelected ? '2px' : '1px',
               boxShadow: isSelected
                 ? `0 0 25px hsl(${appHue} 60% 45% / 0.35), inset 0 0 15px hsl(${appHue} 60% 45% / 0.15), 0 0 0 3px hsl(${appHue} 60% 55% / 0.25)`
@@ -350,11 +350,11 @@ export const ClipCard = memo(
             } as React.CSSProperties
           }
           className={clsx(
-            'relative flex h-full w-full cursor-pointer select-none flex-col overflow-hidden rounded-2xl bg-card/80 shadow-lg transition-[border-color,box-shadow,opacity,transform] duration-150',
+            'relative flex h-full w-full cursor-pointer select-none flex-col overflow-hidden rounded-2xl bg-card/85 shadow-lg transition-[border-color,box-shadow,opacity,transform] duration-150 border-border',
             isSelected
               ? 'z-10 border'
               : isBulkSelected
-                ? 'border-2 border-cyan-400 bg-cyan-500/5'
+                ? 'border-2 border-primary bg-primary/5'
                 : 'border hover:-translate-y-1',
             isDragging && 'pointer-events-none scale-95 cursor-grabbing opacity-40',
             'group'
@@ -378,9 +378,9 @@ export const ClipCard = memo(
               className={clsx(
                 'absolute left-2 top-2 z-20 flex h-4 w-4 items-center justify-center rounded border transition-all',
                 isBulkSelected
-                  ? 'border-cyan-400 bg-cyan-500 text-black opacity-100'
+                  ? 'border-primary bg-primary text-primary-foreground opacity-100'
                   : hovered
-                    ? 'border-white/30 bg-black/50 opacity-70 hover:border-cyan-400/60'
+                    ? 'border-border bg-popover/85 text-muted-foreground opacity-75 hover:border-primary'
                     : 'opacity-0'
               )}
               aria-label={isBulkSelected ? 'Deselect clip' : 'Select clip'}
@@ -407,11 +407,11 @@ export const ClipCard = memo(
 
           <div
             data-el="clip-card-header"
-            className="relative z-10 flex flex-shrink-0 items-center gap-2 border-b border-white/5 bg-black/20 px-2.5 py-2 backdrop-blur-sm"
+            className="relative z-10 flex flex-shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2.5 py-2 backdrop-blur-sm"
           >
             {clip.source_icon && (
               <Tooltip label={clip.source_app || 'App'} placement="top">
-                <div className="flex items-center justify-center rounded-sm border border-white/5 bg-black/20 p-0.5">
+                <div className="flex items-center justify-center rounded-sm border border-border bg-muted/40 p-0.5">
                   <img
                     src={`data:image/png;base64,${clip.source_icon}`}
                     alt=""
@@ -495,7 +495,7 @@ export const ClipCard = memo(
                     e.stopPropagation();
                     onPreview();
                   }}
-                  className="relative z-10 mr-0.5 rounded-md p-1 text-foreground/70 hover:bg-white/10 hover:text-foreground"
+                  className="relative z-10 mr-0.5 rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
                   title={t('contextMenu.view')}
                 >
                   <Maximize2 size={12} />
@@ -515,7 +515,7 @@ export const ClipCard = memo(
                   setCopied(true);
                   setTimeout(() => setCopied(false), 2000);
                 }}
-                className="relative z-10 rounded-md p-1 text-foreground/70 hover:bg-white/10 hover:text-foreground"
+                className="relative z-10 rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
                 title={t('common.copyToClipboard')}
               >
                 {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
@@ -559,7 +559,7 @@ export const ClipCard = memo(
                           e.stopPropagation();
                           onRunOcr();
                         }}
-                        className="flex h-5 w-5 items-center justify-center rounded-md border border-cyan-500/25 bg-cyan-500/10 text-cyan-300 transition-colors hover:bg-cyan-500/25"
+                        className="flex h-5 w-5 items-center justify-center rounded-md border border-primary/25 bg-primary/10 text-primary transition-colors hover:bg-primary/25"
                         aria-label="Open OCR text"
                       >
                         <ScanText size={10} />
@@ -573,7 +573,7 @@ export const ClipCard = memo(
                 t('clipList.textLength', { count: clip.content_length })
               )}
             </span>
-            <div className="absolute bottom-1.5 right-3 flex items-center text-cyan-400 opacity-50 shadow-[0_0_10px_rgba(34,211,238,0.3)] transition-opacity group-hover:opacity-100">
+            <div className="absolute bottom-1.5 right-3 flex items-center text-primary opacity-65 transition-opacity group-hover:opacity-100">
               {(() => {
                 const TypeIcon =
                   clip.clip_type === 'image'

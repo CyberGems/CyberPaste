@@ -426,6 +426,20 @@ export const ControlBar: React.FC<ControlBarProps> = ({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const getContrastColor = (color: string) => {
+    if (theme !== 'light') return color;
+    switch (color) {
+      case '#22d3ee': return '#0891b2'; // Cyan
+      case '#a78bfa': return '#6d28d9'; // Purple
+      case '#f472b6': return '#db2777'; // Pink
+      case '#fbbf24': return '#b45309'; // Amber/brownish
+      case '#4ade80': return '#15803d'; // Green
+      case '#38bdf8': return '#0369a1'; // Sky
+      case '#fb923c': return '#c2410c'; // Orange
+      default: return color;
+    }
+  };
+
   return (
     <div
       className={clsx(
@@ -440,7 +454,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
       {/* ═══ HUD Status Strip — matches compact header style ═══ */}
       {showHud && (
         <div
-          className="relative flex shrink-0 select-none items-center justify-between overflow-hidden border-b border-t border-white/10 bg-white/5 px-3 backdrop-blur-md"
+          className="relative flex shrink-0 select-none items-center justify-between overflow-hidden border-b border-t border-border bg-muted/65 px-3 backdrop-blur-md"
           style={{ height: '34px' }}
         >
           <HudKeyframes />
@@ -450,7 +464,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               className="absolute inset-y-0 w-[25%]"
               style={{
                 background:
-                  'linear-gradient(90deg, transparent, rgba(6,182,212,0.05), transparent)',
+                  'linear-gradient(90deg, transparent, rgba(var(--primary-rgb),0.025), transparent)',
                 animation: isWindowActive ? 'hud-scan 4s ease-in-out infinite alternate' : 'none',
               }}
             />
@@ -464,7 +478,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             viewBox="0 0 8 8"
             fill="none"
           >
-            <path d="M0 8V0h8" stroke="rgba(6,182,212,0.6)" strokeWidth="1" />
+            <path d="M0 8V0h8" stroke="rgba(var(--primary-rgb),0.6)" strokeWidth="1" />
           </svg>
           {/* Corner brackets — top-right */}
           <svg
@@ -474,7 +488,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             viewBox="0 0 8 8"
             fill="none"
           >
-            <path d="M8 8V0H0" stroke="rgba(6,182,212,0.6)" strokeWidth="1" />
+            <path d="M8 8V0H0" stroke="rgba(var(--primary-rgb),0.6)" strokeWidth="1" />
           </svg>
           {/* Corner brackets — bottom-left */}
           <svg
@@ -484,7 +498,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             viewBox="0 0 8 8"
             fill="none"
           >
-            <path d="M0 0v8h8" stroke="rgba(99,102,241,0.5)" strokeWidth="1" />
+            <path d="M0 0v8h8" stroke="rgba(var(--primary-rgb),0.5)" strokeWidth="1" />
           </svg>
           {/* Corner brackets — bottom-right */}
           <svg
@@ -494,7 +508,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             viewBox="0 0 8 8"
             fill="none"
           >
-            <path d="M8 0v8H0" stroke="rgba(99,102,241,0.5)" strokeWidth="1" />
+            <path d="M8 0v8H0" stroke="rgba(var(--primary-rgb),0.5)" strokeWidth="1" />
           </svg>
 
           {/* ── LEFT: Logo + App Name (no badge — only compact has one) ── */}
@@ -502,7 +516,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             <div className="flex h-6 w-6 items-center justify-center overflow-hidden">
               <img src="/logo.png" alt="Logo" className="h-5 w-5 object-contain" />
             </div>
-            <span className="text-sm font-bold tracking-tight">CyberPaste</span>
+            <span className="text-sm font-bold tracking-tight text-foreground">CyberPaste</span>
           </div>
 
           {/* ── CENTER: Stat Chips ── */}
@@ -512,63 +526,69 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               icon={
                 <span className="relative flex h-1.5 w-1.5">
                   <span
-                    className="absolute inset-0 rounded-full bg-cyan-400"
+                    className={clsx(
+                      "absolute inset-0 rounded-full",
+                      theme === 'light' ? 'bg-cyan-600' : 'bg-cyan-400'
+                    )}
                     style={{
                       animation: isWindowActive ? 'hud-breathe 3s ease-in-out infinite' : 'none',
                     }}
                   />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-cyan-500" />
+                  <span className={clsx(
+                    "relative inline-flex h-1.5 w-1.5 rounded-full",
+                    theme === 'light' ? 'bg-cyan-700' : 'bg-cyan-500'
+                  )} />
                 </span>
               }
               value={totalClipCount}
-              color="#22d3ee"
+              color={getContrastColor('#22d3ee')}
               label="Clipboard"
             />
-            <div className="bg-white/8 h-3 w-px" />
-            <HudChip icon={<FileText size={11} />} value={textCount} color="#a78bfa" label="Text" />
-            <div className="bg-white/8 h-3 w-px" />
+            <div className="bg-border h-3 w-px" />
+            <HudChip icon={<FileText size={11} />} value={textCount} color={getContrastColor('#a78bfa')} label="Text" />
+            <div className="bg-border h-3 w-px" />
             <HudChip
               icon={<Code size={11} />}
               value={codeCount ?? 0}
-              color="#f472b6"
+              color={getContrastColor('#f472b6')}
               label="Code"
             />
-            <div className="bg-white/8 h-3 w-px" />
+            <div className="bg-border h-3 w-px" />
             <HudChip
               icon={<ImageIcon size={11} />}
               value={imageCount}
-              color="#fbbf24"
+              color={getContrastColor('#fbbf24')}
               label="Images"
             />
-            <div className="bg-white/8 h-3 w-px" />
+            <div className="bg-border h-3 w-px" />
             <HudChip
               icon={<Files size={11} />}
               value={fileCount ?? 0}
-              color="#4ade80"
+              color={getContrastColor('#4ade80')}
               label="Files"
             />
-            <div className="bg-white/8 h-3 w-px" />
+            <div className="bg-border h-3 w-px" />
             <HudChip
               icon={<FileCode size={11} />}
               value={(htmlCount ?? 0) + (rtfCount ?? 0)}
-              color="#38bdf8"
+              color={getContrastColor('#38bdf8')}
               label="Rich"
             />
-            <div className="bg-white/8 h-3 w-px" />
+            <div className="bg-border h-3 w-px" />
             <HudChip
               icon={<FolderIcon size={11} />}
               value={folders.length}
-              color="#fb923c"
+              color={getContrastColor('#fb923c')}
               label="Folders"
             />
             {selectedFolder && (
               <>
                 <div className="mx-1 h-3 w-px bg-cyan-500/20" />
-                <span className="flex items-center gap-1 text-[8px] font-medium tracking-wide text-cyan-400/60">
-                  <span className="rounded border border-cyan-500/15 bg-cyan-500/10 px-1 py-px font-bold text-cyan-400">
+                <span className="flex items-center gap-1 text-[8px] font-medium tracking-wide text-cyan-500/80">
+                  <span className="rounded border border-primary/20 bg-primary/10 px-1 py-px font-bold text-primary">
                     {currentFolderName}
                   </span>
-                  <span className="text-white/30">
+                  <span className="text-muted-foreground/60">
                     {folders.find((f) => f.id === selectedFolder)?.item_count || 0}
                   </span>
                 </span>
@@ -580,28 +600,28 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           <div className="z-10 flex flex-shrink-0 items-center gap-2">
             {/* Shortcut hint (cycling, fixed width to prevent layout shift) */}
             <div
-              className="flex w-[100px] items-center gap-1 text-[8px] text-white/25"
+              className="flex w-[100px] items-center gap-1 text-[8px] text-muted-foreground/60"
               title="Keyboard shortcuts"
             >
-              <Keyboard size={8} className="flex-shrink-0 text-white/20" />
+              <Keyboard size={8} className="flex-shrink-0 text-muted-foreground/40" />
               <div
                 key={hintIndex}
                 className="flex items-center gap-1"
                 style={{ animation: 'hud-hint-fade 0.5s ease-out' }}
               >
-                <span className="font-mono font-bold text-cyan-400/70">
+                <span className="font-mono font-bold text-primary opacity-80">
                   {HINTS[hintIndex].keys}
                 </span>
-                <span className="text-white/35">{HINTS[hintIndex].action}</span>
+                <span className="text-muted-foreground/80">{HINTS[hintIndex].action}</span>
               </div>
             </div>
 
             {/* Hotkey badge */}
             {hotkey && (
               <>
-                <div className="bg-white/8 h-3 w-px" />
+                <div className="bg-border h-3 w-px" />
                 <span
-                  className="rounded border border-indigo-500/15 bg-indigo-500/10 px-1 py-px font-mono text-[8px] font-bold text-indigo-400/60"
+                  className="rounded border border-primary/20 bg-primary/10 px-1 py-px font-mono text-[8px] font-bold text-primary"
                   title="Global hotkey"
                 >
                   {hotkey}
@@ -612,13 +632,13 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             {/* Last clip age */}
             {lastClipAge && (
               <>
-                <div className="bg-white/8 h-3 w-px" />
+                <div className="bg-border h-3 w-px" />
                 <div
-                  className="flex items-center gap-0.5 text-[8px] text-white/20"
+                  className="flex items-center gap-0.5 text-[8px] text-muted-foreground/60"
                   title={`Last clip: ${lastClipAge} ago`}
                 >
-                  <Clock size={8} className="text-cyan-400/40" />
-                  <span className="font-mono text-cyan-400/50">{lastClipAge}</span>
+                  <Clock size={8} className="text-primary/60" />
+                  <span className="font-mono text-primary/75">{lastClipAge}</span>
                 </div>
               </>
             )}
@@ -626,13 +646,13 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             {/* DB size */}
             {dbSizeBytes != null && dbSizeBytes > 0 && (
               <>
-                <div className="bg-white/8 h-3 w-px" />
+                <div className="bg-border h-3 w-px" />
                 <div
-                  className="flex items-center gap-0.5 text-[8px] text-white/20"
+                  className="flex items-center gap-0.5 text-[8px] text-muted-foreground/60"
                   title={`Database: ${formatBytes(dbSizeBytes)}`}
                 >
-                  <StorageIcon size={8} className="text-amber-400/40" />
-                  <span className="font-mono text-amber-400/50">{formatBytes(dbSizeBytes)}</span>
+                  <StorageIcon size={8} className="text-amber-500/60" />
+                  <span className="font-mono text-amber-600/90 dark:text-amber-400/75">{formatBytes(dbSizeBytes)}</span>
                 </div>
               </>
             )}
@@ -651,8 +671,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             className={clsx(
               'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all',
               showSearch
-                ? 'border-primary bg-primary text-white shadow-lg'
-                : 'border-transparent text-white/30 hover:border-white/10 hover:bg-white/10 hover:text-white/90 active:bg-white/15'
+                ? 'border-primary bg-primary text-primary-foreground shadow-lg'
+                : 'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
             )}
           >
             <Search size={16} />
@@ -682,34 +702,34 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               className={clsx(
                 'group relative flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1 text-sm font-bold transition-all',
                 highlightedFolderId === null && dragTargetFolderId === undefined
-                  ? 'border border-indigo-500/60 bg-indigo-500/30 text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.5)] ring-1 ring-indigo-500/40'
+                  ? 'border border-primary/50 bg-primary/20 text-primary shadow-[0_0_20px_rgba(var(--primary-rgb),0.25)] ring-1 ring-primary/30'
                   : dragTargetFolderId === null && isDragging
-                    ? 'border-transparent bg-primary/40 text-white ring-2 ring-primary'
-                    : 'border border-transparent bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60'
+                    ? 'border-transparent bg-primary/40 text-foreground ring-2 ring-primary'
+                    : 'border border-transparent bg-secondary/40 text-muted-foreground hover:bg-accent hover:text-foreground'
               )}
             >
               <div
                 className={clsx(
                   'flex h-5 w-5 items-center justify-center rounded-lg transition-colors',
                   highlightedFolderId === null
-                    ? 'bg-indigo-500/20'
-                    : 'bg-white/5 group-hover:bg-indigo-500/10'
+                    ? 'bg-primary/20'
+                    : 'bg-secondary/40 group-hover:bg-primary/10'
                 )}
               >
                 <Clock
                   size={14}
                   className={
                     highlightedFolderId === null
-                      ? 'text-indigo-400'
-                      : 'text-white/30 group-hover:text-indigo-400'
+                      ? 'text-primary'
+                      : 'text-muted-foreground/60 group-hover:text-primary'
                   }
                 />
               </div>
               <span
                 className={
                   highlightedFolderId === null
-                    ? 'text-indigo-300'
-                    : 'text-white/50 group-hover:text-indigo-300'
+                    ? 'text-primary font-bold'
+                    : 'text-muted-foreground group-hover:text-primary'
                 }
               >
                 Clipboard
@@ -717,7 +737,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               <span
                 className={clsx(
                   'ml-1 text-[10px] font-medium transition-opacity',
-                  highlightedFolderId === null ? 'opacity-80' : 'opacity-30 group-hover:opacity-80'
+                  highlightedFolderId === null ? 'opacity-80 text-primary' : 'opacity-55 group-hover:opacity-80 group-hover:text-primary'
                 )}
               >
                 {totalClipCount}
@@ -768,32 +788,32 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                     className={clsx(
                       'flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1 text-sm font-bold transition-all',
                       isSelected && dragTargetFolderId === undefined
-                        ? 'border ring-1 ring-white/10'
+                        ? 'border ring-1 ring-border/25 shadow-[0_0_20px_rgba(var(--primary-rgb),0.12)]'
                         : isDragTarget
-                          ? 'border-transparent bg-primary/40 text-white ring-2 ring-primary'
-                          : 'border border-transparent bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60',
+                          ? 'border-transparent bg-primary/40 text-foreground ring-2 ring-primary'
+                          : 'border border-transparent bg-secondary/40 text-muted-foreground hover:bg-accent hover:text-foreground',
                       draggingFolderId === folder.id && 'pointer-events-none scale-95 opacity-40'
                     )}
                   >
                     <div
                       className={clsx(
                         'flex h-5 w-5 items-center justify-center rounded-lg transition-colors',
-                        isSelected ? 'bg-white/10' : 'bg-white/5'
+                        isSelected ? 'bg-primary/10' : 'bg-secondary/45'
                       )}
                     >
                       <Icon
                         size={14}
                         style={{ color: folderColor }}
-                        className={isSelected ? '' : 'text-white/30'}
+                        className={isSelected ? '' : 'text-muted-foreground/60'}
                       />
                     </div>
-                    <span className={isSelected ? 'text-white' : 'text-white/50'}>
+                    <span className={isSelected ? 'text-foreground' : 'text-muted-foreground'}>
                       {folder.name}
                     </span>
                     <span
                       className={clsx(
                         'ml-1 text-[10px] font-medium transition-opacity',
-                        isSelected ? 'text-white/80' : 'opacity-30'
+                        isSelected ? 'text-foreground/80' : 'opacity-55'
                       )}
                     >
                       {folder.item_count}
@@ -813,7 +833,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             <Tooltip label={t('folders.addFolderBtn') || 'Add Folder'} placement="bottom">
               <button
                 onClick={onAddClick}
-                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-dashed border-white/20 bg-white/5 text-white/40 transition-all hover:border-white/10 hover:bg-white/10 hover:text-white/90 active:bg-white/15"
+                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-dashed border-border bg-secondary/40 text-muted-foreground transition-all hover:border-muted hover:bg-accent hover:text-foreground active:bg-accent/80"
               >
                 <Plus size={18} />
               </button>
@@ -823,23 +843,23 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           {/* Search Bar Overlay */}
           {showSearch && (
             <div className="animate-in fade-in zoom-in-95 absolute inset-0 z-10 flex items-center duration-300">
-              <div className="flex h-8 flex-1 items-center gap-3 rounded-lg border border-cyan-500/30 bg-zinc-950/80 px-4 shadow-[0_0_25px_rgba(6,182,212,0.15)] backdrop-blur-md">
-                <Search className="animate-pulse text-cyan-400" size={18} />
+              <div className="flex h-8 flex-1 items-center gap-3 rounded-lg border border-primary/30 bg-popover px-4 shadow-[0_0_25px_rgba(var(--primary-rgb),0.15)] backdrop-blur-md">
+                <Search className="animate-pulse text-primary" size={18} />
                 <div className="flex flex-1 items-center gap-2 overflow-hidden">
-                  <span className="whitespace-nowrap text-[10px] font-bold uppercase tracking-widest text-white/20">
+                  <span className="whitespace-nowrap text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
                     Searching in{' '}
-                    <span className="text-cyan-400/60">
+                    <span className="text-primary/80">
                       {selectedFolder
                         ? folders.find((f) => f.id === selectedFolder)?.name || 'Folder'
                         : 'Clipboard'}
                     </span>
                   </span>
-                  <div className="mx-1 h-4 w-px flex-shrink-0 bg-white/10" />
+                  <div className="mx-1 h-4 w-px flex-shrink-0 bg-border" />
                   <input
                     autoFocus
                     type="text"
                     placeholder="..."
-                    className="min-w-0 flex-1 bg-transparent py-1 text-sm text-white outline-none placeholder:text-white/10"
+                    className="min-w-0 flex-1 bg-transparent py-1 text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
                     onKeyDown={(e) => {
@@ -852,7 +872,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                     e.stopPropagation();
                     onSearchClick();
                   }}
-                  className="rounded-md p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                  className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                   title="Cancel Search (Esc)"
                 >
                   <X size={14} />
@@ -865,14 +885,14 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         <div className="flex shrink-0 items-center gap-0.5 pl-2">
           {/* Grid zoom controls (Full mode) */}
           {viewMode === 'full' && onGridScaleChange && gridScale !== undefined && (
-            <div className="flex items-center gap-0 rounded-md border border-white/5 bg-black/25 px-0.5">
+            <div className="flex items-center gap-0 rounded-md border border-border bg-secondary/40 px-0.5">
               <Tooltip label={t('common.zoomOut')} placement="top">
                 <button
                   onClick={() =>
                     onGridScaleChange(Math.max(0.6, Number((gridScale - 0.25).toFixed(2))))
                   }
                   disabled={gridScale <= 0.6}
-                  className="flex h-6 w-6 items-center justify-center rounded text-white/40 transition-colors hover:text-cyan-300 disabled:opacity-20"
+                  className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:text-primary disabled:opacity-20"
                 >
                   <ZoomOut size={12} />
                 </button>
@@ -883,7 +903,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               >
                 <button
                   onClick={() => onGridScaleChange(1)}
-                  className="min-w-[38px] cursor-pointer text-center font-mono text-[10px] font-bold tabular-nums text-cyan-300/80 hover:text-cyan-300"
+                  className="min-w-[38px] cursor-pointer text-center font-mono text-[10px] font-bold tabular-nums text-primary/80 hover:text-primary"
                 >
                   {Math.round(gridScale * 100)}%
                 </button>
@@ -894,7 +914,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                     onGridScaleChange(Math.min(1.75, Number((gridScale + 0.25).toFixed(2))))
                   }
                   disabled={gridScale >= 1.75}
-                  className="flex h-6 w-6 items-center justify-center rounded text-white/40 transition-colors hover:text-cyan-300 disabled:opacity-20"
+                  className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:text-primary disabled:opacity-20"
                 >
                   <ZoomIn size={12} />
                 </button>
@@ -906,7 +926,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             <Tooltip label={t('common.resetWindowSize')} placement="top">
               <button
                 onClick={onResetSize}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-white/30 transition-all hover:border-white/10 hover:bg-white/10 hover:text-white/90 active:bg-white/15"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80"
               >
                 <RotateCcw size={15} />
               </button>
@@ -921,8 +941,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                 className={clsx(
                   'flex h-8 w-8 items-center justify-center rounded-lg border transition-all',
                   showHud
-                    ? 'border-transparent text-white/30 hover:border-white/10 hover:bg-white/10 hover:text-white/90 active:bg-white/15'
-                    : 'border-cyan-500/30 bg-cyan-500/15 text-cyan-400'
+                    ? 'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
+                    : 'border-primary/30 bg-primary/15 text-primary'
                 )}
               >
                 {showHud ? <PanelTopClose size={15} /> : <PanelTop size={15} />}
@@ -940,15 +960,15 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                 className={clsx(
                   'flex h-8 w-8 items-center justify-center rounded-lg border transition-all focus:outline-none',
                   isPinned
-                    ? 'border-cyan-500/30 bg-cyan-500/20 text-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.4)]'
-                    : 'border-transparent text-white/30 hover:border-white/10 hover:bg-white/10 hover:text-white/90 active:bg-white/15'
+                    ? 'border-primary/30 bg-primary/20 text-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.4)]'
+                    : 'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
                 )}
               >
                 <Pin
                   size={15}
                   className={clsx(
                     'transition-transform duration-300',
-                    isPinned ? 'fill-cyan-400 text-cyan-400' : 'rotate-45'
+                    isPinned ? 'fill-primary text-primary' : 'rotate-45'
                   )}
                 />
               </button>
@@ -958,7 +978,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           <Tooltip label={t('settings.title')} placement="top">
             <button
               onClick={onMoreClick}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-white/30 transition-all hover:border-white/10 hover:bg-white/10 hover:text-white/90 active:bg-white/15"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80"
             >
               <Settings size={15} />
             </button>
@@ -971,7 +991,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           >
             <button
               onClick={onToggleMode}
-              className="group relative ml-1 flex h-8 items-center gap-1.5 overflow-hidden rounded-lg border border-cyan-500/40 bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 px-2 text-cyan-300 shadow-[0_0_8px_rgba(6,182,212,0.15)] transition-all duration-200 hover:border-cyan-400/70 hover:from-cyan-500/30 hover:to-indigo-500/30 hover:shadow-[0_0_16px_rgba(6,182,212,0.4)] active:scale-[0.98]"
+              className="group relative ml-1 flex h-8 items-center gap-1.5 overflow-hidden rounded-lg border border-primary/40 bg-gradient-to-r from-primary/20 to-primary/10 px-2 text-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.15)] transition-all duration-200 hover:border-primary/70 hover:from-primary/30 hover:to-primary/20 hover:shadow-[0_0_16px_rgba(var(--primary-rgb),0.4)] active:scale-[0.98]"
             >
               {/* shimmer sweep */}
               <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
@@ -986,7 +1006,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           <Tooltip label={t('common.closeWindow')} placement="top">
             <button
               onClick={() => (window as any).__TAURI_INTERNALS__.invoke('hide_window')}
-              className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-white/25 transition-all hover:border-rose-500/20 hover:bg-rose-500/15 hover:text-rose-400 active:bg-rose-500/25"
+              className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-rose-500/20 hover:bg-rose-500/15 hover:text-rose-400 active:bg-rose-500/25"
             >
               <X size={15} />
             </button>

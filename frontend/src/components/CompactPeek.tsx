@@ -134,14 +134,14 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
           onMouseLeave={onClose}
         >
           <div
-            className="flex w-full flex-col overflow-hidden rounded-xl border border-white/10 bg-[#151518] shadow-[0_8px_24px_rgba(0,0,0,0.5)]"
+            className="flex w-full flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-2xl"
             style={{ maxHeight: calculatedMaxHeight }}
           >
             {/* Header info bar / merged with action bar */}
-            <div className="flex h-9 flex-shrink-0 items-center justify-between border-b border-white/5 bg-[#1d1d22] px-3 text-[10px] font-medium tracking-wider uppercase text-white/40">
+            <div className="flex h-9 flex-shrink-0 items-center justify-between border-b border-border bg-muted/60 px-3 text-[10px] font-medium tracking-wider uppercase text-muted-foreground/80">
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-cyan-400 font-bold bg-cyan-950/40 border border-cyan-800/30 rounded px-1.5 py-0.5 text-[9px] tracking-widest">{t(`clipType.${clip.clip_type}`)}</span>
-                <span className="font-mono text-[9px] text-white/50 truncate">{infoLabel}</span>
+                <span className="text-primary font-bold bg-primary/15 border border-primary/25 rounded px-1.5 py-0.5 text-[9px] tracking-widest">{t(`clipType.${clip.clip_type}`)}</span>
+                <span className="font-mono text-[9px] text-muted-foreground/90 truncate">{infoLabel}</span>
               </div>
               
               {/* Action buttons merged in header */}
@@ -152,7 +152,7 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
                       onCopy(clip.id);
                       onClose();
                     }}
-                    className="flex h-6.5 w-6.5 items-center justify-center rounded-md text-white/50 hover:bg-white/10 hover:text-white transition-all duration-150 active:scale-95"
+                    className="flex h-6.5 w-6.5 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-all duration-150 active:scale-95"
                     style={{ width: '26px', height: '26px' }}
                   >
                     <Copy size={13} />
@@ -164,7 +164,7 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
                       onDelete(clip.id);
                       onClose();
                     }}
-                    className="flex h-6.5 w-6.5 items-center justify-center rounded-md text-rose-400/50 hover:bg-rose-500/15 hover:text-rose-400 transition-all duration-150 active:scale-95"
+                    className="flex h-6.5 w-6.5 items-center justify-center rounded-md text-destructive/70 hover:bg-destructive/15 hover:text-destructive transition-all duration-150 active:scale-95"
                     style={{ width: '26px', height: '26px' }}
                   >
                     <Trash2 size={13} />
@@ -177,7 +177,7 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
             <div className="min-h-0 flex-1 overflow-y-auto p-3">
               {isImage ? (
                 imageSrc ? (
-                  <div className="flex h-44 items-center justify-center overflow-hidden rounded-lg bg-[#0c0c0e] border border-white/10 p-1">
+                  <div className="flex h-44 items-center justify-center overflow-hidden rounded-lg bg-secondary/35 border border-border p-1">
                     <img
                       src={imageSrc}
                       alt="preview"
@@ -185,14 +185,14 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
                     />
                   </div>
                 ) : (
-                  <p className="text-[11px] italic text-white/40">{t('common.image')}</p>
+                  <p className="text-[11px] italic text-muted-foreground">{t('common.image')}</p>
                 )
               ) : textToShow ? (
-                <pre className="whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-white/85">
+                <pre className="whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-foreground/90">
                   {textToShow}
                 </pre>
               ) : (
-                <p className="text-[11px] italic text-white/40">{t('common.loading')}</p>
+                <p className="text-[11px] italic text-muted-foreground">{t('common.loading')}</p>
               )}
             </div>
           </div>

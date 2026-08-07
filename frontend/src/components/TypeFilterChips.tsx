@@ -61,14 +61,14 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
               className={clsx(
                 'flex h-[26px] flex-shrink-0 items-center gap-1 rounded-lg border px-2 text-[11px] font-medium transition-all',
                 selected
-                  ? 'border-cyan-500/40 bg-cyan-500/15 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.18)]'
-                  : 'border-white/5 bg-black/20 text-white/55 hover:border-white/15 hover:bg-black/30 hover:text-white/85'
+                  ? 'border-primary/40 bg-primary/15 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.18)]'
+                  : 'border-border bg-secondary/40 text-muted-foreground hover:border-border hover:bg-secondary/70 hover:text-foreground'
               )}
             >
               <Icon size={12} />
               <span className="whitespace-nowrap">{label}</span>
               {typeof count === 'number' && (
-                <span className="font-mono text-[9px] opacity-40">({count})</span>
+                <span className="font-mono text-[9px] opacity-65 text-muted-foreground">({count})</span>
               )}
             </button>
           </Tooltip>
@@ -79,7 +79,7 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
           <button
             type="button"
             onClick={() => onChange('all')}
-            className="flex h-[26px] w-[26px] flex-shrink-0 items-center justify-center rounded-lg border border-transparent text-white/30 transition-all hover:border-white/10 hover:bg-white/10 hover:text-white/80"
+            className="flex h-[26px] w-[26px] flex-shrink-0 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground"
             aria-label="Clear type filter"
           >
             <X size={12} />

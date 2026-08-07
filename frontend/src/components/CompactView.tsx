@@ -190,9 +190,9 @@ const TypeFilterDropdown: React.FC<{
           className={cn(
             'flex h-[30px] flex-shrink-0 items-center gap-1 rounded-lg border px-2 text-[11px] font-medium transition-all',
             isActive
-              ? 'border-cyan-500/40 bg-cyan-500/15 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.18)]'
-              : 'border-white/5 bg-black/20 text-white/55 hover:border-white/15 hover:bg-black/30 hover:text-white/85',
-            isOpen && 'border-cyan-400/60 bg-cyan-500/15 text-cyan-300'
+              ? 'border-primary/40 bg-primary/15 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.18)]'
+              : 'border-border bg-secondary/40 text-muted-foreground hover:border-border hover:bg-secondary/70 hover:text-foreground',
+            isOpen && 'border-primary/60 bg-primary/15 text-primary'
           )}
         >
           <SelectedIcon size={12} />
@@ -205,7 +205,7 @@ const TypeFilterDropdown: React.FC<{
       {isOpen && (
         <div
           id="compact-type-filter-menu"
-          className="fixed z-[200] overflow-hidden rounded-lg border border-cyan-500/25 bg-black/95 py-1 shadow-[0_8px_24px_rgba(0,0,0,0.55)] backdrop-blur-md"
+          className="fixed z-[200] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-[0_8px_24px_rgba(0,0,0,0.25)] backdrop-blur-md"
           style={{ top: menuPos.top, left: menuPos.left, width: menuPos.width }}
         >
           {TYPE_FILTER_OPTIONS.map((opt) => {
@@ -223,21 +223,21 @@ const TypeFilterDropdown: React.FC<{
                 className={cn(
                   'flex w-full items-center gap-2 px-2.5 py-1.5 text-[11px] transition-colors',
                   isSel
-                    ? 'bg-cyan-500/20 text-cyan-300'
-                    : 'text-white/70 hover:bg-white/10 hover:text-white'
+                    ? 'bg-primary/15 text-primary'
+                    : 'text-foreground/75 hover:bg-accent hover:text-foreground'
                 )}
               >
-                <OptIcon size={12} className={cn(isSel ? 'text-cyan-300' : 'text-white/60')} />
+                <OptIcon size={12} className={cn(isSel ? 'text-primary' : 'text-muted-foreground/80')} />
                 <span className="flex-1 text-left">{optLabel}</span>
                 <span
                   className={cn(
                     'px-1 font-mono text-[9px] opacity-40',
-                    isSel && 'text-cyan-300 opacity-85'
+                    isSel && 'text-primary opacity-85'
                   )}
                 >
                   ({counts[opt.value]})
                 </span>
-                {isSel && <Check size={11} className="text-cyan-400" />}
+                {isSel && <Check size={11} className="text-primary" />}
               </button>
             );
           })}
@@ -823,10 +823,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
     cn(
       'px-3 py-1 rounded-full text-[10px] font-medium transition-colors whitespace-nowrap flex items-center gap-1.5 border',
       isSelected && dragTargetFolderId === undefined
-        ? 'border-indigo-500/40 bg-indigo-500/15 shadow-[0_0_12px_rgba(99,102,241,0.2)] text-white/90'
+        ? 'border-primary/40 bg-primary/15 shadow-[0_0_12px_rgba(var(--primary-rgb),0.2)] text-foreground font-semibold'
         : isDragTarget && isDragging
-          ? 'bg-cyan-500/30 border-cyan-400 text-white'
-          : 'bg-white/5 hover:bg-white/10 border-transparent opacity-75 hover:opacity-100'
+          ? 'bg-primary/30 border-primary text-foreground'
+          : 'bg-secondary/40 hover:bg-accent border-transparent text-muted-foreground hover:text-accent-foreground'
     );
 
   const folderPillClassNamed = (
@@ -838,10 +838,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
     cn(
       'px-3 py-1 rounded-full text-[10px] font-medium transition-colors whitespace-nowrap flex items-center gap-1.5 border',
       isSelected && dragTargetFolderId === undefined
-        ? 'border-indigo-500/40 bg-indigo-500/15 shadow-[0_0_12px_rgba(99,102,241,0.2)] text-white/90'
+        ? 'border-primary/40 bg-primary/15 shadow-[0_0_12px_rgba(var(--primary-rgb),0.2)] text-foreground font-semibold'
         : isDragTarget && isDragging
-          ? 'bg-cyan-500/30 border-cyan-400 text-white'
-          : 'bg-white/5 hover:bg-white/10 border-transparent opacity-75 hover:opacity-100'
+          ? 'bg-primary/30 border-primary text-foreground'
+          : 'bg-secondary/40 hover:bg-accent border-transparent text-muted-foreground hover:text-accent-foreground'
     );
 
   const SIDEBAR_EXPANDED_W = 140;
@@ -868,14 +868,14 @@ export const CompactView: React.FC<CompactViewProps> = ({
       `}</style>
       {/* Header */}
       <div
-        className="relative flex h-12 flex-shrink-0 items-stretch justify-between overflow-hidden border-b border-white/10 bg-white/5 px-3 backdrop-blur-sm"
+        className="relative flex h-12 flex-shrink-0 items-stretch justify-between overflow-hidden border-b border-border bg-card/65 px-3 backdrop-blur-sm"
       >
         {/* Scan-line sweep (CSS-only, GPU-composited) - 50% opacity of full view */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div
             className="absolute inset-y-0 w-[25%]"
             style={{
-              background: 'linear-gradient(90deg, transparent, rgba(6,182,212,0.025), transparent)',
+              background: 'linear-gradient(90deg, transparent, rgba(var(--primary-rgb),0.025), transparent)',
               animation: isWindowActive
                 ? 'compact-scan 6.5s ease-in-out infinite alternate'
                 : 'none',
@@ -890,12 +890,12 @@ export const CompactView: React.FC<CompactViewProps> = ({
             <img src="/logo.png" alt="Logo" className="h-5 w-5 object-contain" data-tauri-drag-region />
           </div>
           <div data-tauri-drag-region className="flex items-baseline gap-1.5 min-w-0 flex-1">
-            <span data-tauri-drag-region className="text-sm font-bold tracking-tight truncate">
+            <span data-tauri-drag-region className="text-sm font-bold tracking-tight truncate text-foreground">
               CyberPaste
             </span>
             <span
               data-tauri-drag-region
-              className="rounded-sm border border-cyan-400/20 bg-cyan-400/10 px-1.5 text-[10px] font-medium uppercase tracking-widest text-cyan-400/80"
+              className="rounded-sm border border-primary/20 bg-primary/10 px-1.5 text-[10px] font-medium uppercase tracking-widest text-primary"
             >
               Compact
             </span>
@@ -912,15 +912,15 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 className={cn(
                   'flex h-8 w-8 items-center justify-center rounded-lg border transition-all focus:outline-none',
                   isPinned
-                    ? 'border-cyan-500/30 bg-cyan-500/20 text-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.4)]'
-                    : 'border-transparent text-white/30 hover:border-white/10 hover:bg-white/10 hover:text-white/90 active:bg-white/15'
+                    ? 'border-primary/30 bg-primary/20 text-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.4)]'
+                    : 'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
                 )}
               >
                 <Pin
                   size={14}
                   className={cn(
                     'transition-transform duration-300',
-                    isPinned ? 'fill-cyan-400 text-cyan-400' : 'rotate-45'
+                    isPinned ? 'fill-primary text-primary' : 'rotate-45'
                   )}
                 />
               </button>
@@ -933,7 +933,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
             >
               <button
                 onClick={onToggleLayout}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-white/30 transition-all hover:border-white/10 hover:bg-white/10 hover:text-white/90 active:bg-white/15"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80"
               >
                 {isVertical ? <PanelTop size={14} /> : <PanelLeftOpen size={14} />}
               </button>
@@ -942,7 +942,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
           <Tooltip label={t('common.resetDefaultSize')} placement="bottom">
             <button
               onClick={handleResetSize}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-white/30 transition-all hover:border-white/10 hover:bg-white/10 hover:text-white/90 active:bg-white/15"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80"
             >
               <RotateCcw size={14} />
             </button>
@@ -950,7 +950,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
           <Tooltip label={t('common.settings')} placement="bottom">
             <button
               onClick={onOpenSettings}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-white/30 transition-all hover:border-white/10 hover:bg-white/10 hover:text-white/90 active:bg-white/15"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80"
             >
               <Settings size={14} />
             </button>
@@ -960,7 +960,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
           <Tooltip label={t('common.fullMode')} placement="bottom">
             <button
               onClick={onToggleMode}
-              className="group relative ml-1 flex h-8 items-center gap-1.5 overflow-hidden rounded-lg border border-cyan-500/40 bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 px-2.5 text-[10px] font-bold uppercase tracking-widest text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.2)] transition-all duration-200 hover:border-cyan-400/70 hover:from-cyan-500/30 hover:to-indigo-500/30 hover:shadow-[0_0_18px_rgba(6,182,212,0.45)] active:scale-[0.98]"
+              className="group relative ml-1 flex h-8 items-center gap-1.5 overflow-hidden rounded-lg border border-primary/40 bg-gradient-to-r from-primary/20 to-primary/10 px-2.5 text-[10px] font-bold uppercase tracking-widest text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.2)] transition-all duration-200 hover:border-primary/70 hover:from-primary/30 hover:to-primary/20 hover:shadow-[0_0_18px_rgba(var(--primary-rgb),0.45)] active:scale-[0.98]"
             >
               {/* shimmer sweep */}
               <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
@@ -975,7 +975,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   (window as any).__TAURI_INTERNALS__?.invoke('hide_window')
                 )
               }
-              className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-white/25 transition-all hover:border-rose-500/20 hover:bg-rose-500/15 hover:text-rose-400 active:bg-rose-500/25"
+              className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-rose-500/20 hover:bg-rose-500/15 hover:text-rose-400 active:bg-rose-500/25"
             >
               <X size={14} />
             </button>
@@ -999,7 +999,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 <Tooltip label={t('common.expandSidebar')} placement="right">
                   <button
                     onClick={onToggleSidebar}
-                    className="flex h-full w-full items-center justify-center text-white/25 transition-colors hover:text-cyan-400/80"
+                    className="flex h-full w-full items-center justify-center text-muted-foreground/60 transition-colors hover:text-primary"
                     aria-label={t('common.expandSidebar')}
                   >
                     <ChevronRight size={12} strokeWidth={2} />
@@ -1022,10 +1022,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
                       className={cn(
                         'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-md border px-2 py-1.5 text-[11px] font-medium transition-all',
                         highlightedFolderId === null && dragTargetFolderId === undefined
-                          ? 'bg-indigo-500/12 border-indigo-500/35 text-white/90'
+                          ? 'bg-primary/15 border-primary/30 text-foreground font-semibold shadow-[0_0_8px_rgba(var(--primary-rgb),0.12)]'
                           : dragTargetFolderId === null && isDragging
-                            ? 'border-cyan-400 bg-cyan-500/30 text-white'
-                            : 'border-transparent opacity-70 hover:bg-accent hover:opacity-100'
+                            ? 'border-primary bg-primary/30 text-foreground'
+                            : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
                       )}
                       onMouseEnter={() => isDragging && onDragHover(null)}
                       onMouseLeave={onDragLeave}
@@ -1069,10 +1069,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
                             className={cn(
                               'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-md border px-2 py-1.5 text-[11px] font-medium transition-all',
                               isSelected && dragTargetFolderId === undefined
-                                ? 'bg-indigo-500/12 border-indigo-500/35 text-white/90'
+                                ? 'bg-primary/15 border-primary/30 text-foreground font-semibold shadow-[0_0_8px_rgba(var(--primary-rgb),0.12)]'
                                 : dragTargetFolderId === folder.id && isDragging
-                                  ? 'border-cyan-400 bg-cyan-500/30 text-white'
-                                  : 'border-transparent opacity-70 hover:bg-accent hover:opacity-100',
+                                  ? 'border-primary bg-primary/30 text-foreground'
+                                  : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground',
                               draggingFolderId === folder.id &&
                                 'pointer-events-none scale-95 opacity-40'
                             )}
@@ -1082,7 +1082,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                               size={11}
                               style={{ color: folder.color || undefined }}
                               className={
-                                isSelected ? 'text-primary' : 'flex-shrink-0 text-white/30'
+                                isSelected ? 'text-primary' : 'flex-shrink-0 text-muted-foreground/60'
                               }
                             />
                             <span className="min-w-0 flex-1 truncate text-left">{folder.name}</span>
@@ -1107,7 +1107,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     <Tooltip label={t('folders.addFolderBtn')} placement="right">
                       <button
                         onClick={onAddFolder}
-                        className="mx-1.5 flex flex-row items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-dashed border-white/15 bg-transparent px-2 py-1.5 text-[11px] font-medium text-white/35 transition-all hover:border-white/25 hover:text-white/70"
+                        className="mx-1.5 flex flex-row items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-dashed border-border bg-transparent px-2 py-1.5 text-[11px] font-medium text-muted-foreground/70 transition-all hover:border-muted hover:text-foreground"
                       >
                         <Plus size={11} />
                         <span className="min-w-0 flex-1 truncate text-left">
@@ -1123,7 +1123,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   <Tooltip label={t('common.collapseSidebar')} placement="right">
                     <button
                       onClick={onToggleSidebar}
-                      className="absolute right-0 top-1/2 z-10 flex h-6 w-3 -translate-y-1/2 items-center justify-center rounded-l-sm text-white/0 opacity-0 transition-opacity duration-150 hover:text-cyan-400 group-hover/sidebar:text-white/40 group-hover/sidebar:opacity-100"
+                      className="absolute right-0 top-1/2 z-10 flex h-6 w-3 -translate-y-1/2 items-center justify-center rounded-l-sm text-muted-foreground/0 opacity-0 transition-opacity duration-150 hover:text-primary group-hover/sidebar:text-muted-foreground/60 group-hover/sidebar:opacity-100"
                       aria-label={t('common.collapseSidebar')}
                     >
                       <ChevronLeft size={12} strokeWidth={2} />
@@ -1141,7 +1141,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
               <div className="flex items-center gap-1.5">
                 <div className="group relative min-w-0 flex-1">
                   <Search
-                    className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-40 transition-all group-focus-within:text-cyan-400 group-focus-within:opacity-100"
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 transition-all group-focus-within:text-primary group-focus-within:opacity-100"
                     size={14}
                   />
                   <input
@@ -1151,13 +1151,13 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     placeholder={t('common.search')}
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
-                    className="w-full rounded-lg border border-white/5 bg-black/20 py-1.5 pl-8 pr-8 text-sm transition-all focus:border-cyan-500/50 focus:bg-black/40 focus:outline-none"
+                    className="w-full rounded-lg border border-border bg-input py-1.5 pl-8 pr-8 text-sm text-foreground transition-all focus:border-primary/50 focus:bg-background focus:outline-none placeholder:text-muted-foreground/70"
                   />
                   {searchQuery && (
                     <Tooltip label={t('common.clearSearch') || 'Clear search'} placement="bottom">
                       <button
                         onClick={() => onSearchChange('')}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                       >
                         <X size={14} />
                       </button>
@@ -1241,7 +1241,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
             <div className="flex items-center gap-1.5">
               <div className="group relative min-w-0 flex-1">
                 <Search
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-40 transition-all group-focus-within:text-cyan-400 group-focus-within:opacity-100"
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 transition-all group-focus-within:text-primary group-focus-within:opacity-100"
                   size={14}
                 />
                 <input
@@ -1251,13 +1251,13 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   placeholder={t('common.search')}
                   value={searchQuery}
                   onChange={(e) => onSearchChange(e.target.value)}
-                  className="w-full rounded-lg border border-white/5 bg-black/20 py-1.5 pl-8 pr-8 text-sm transition-all focus:border-cyan-500/50 focus:bg-black/40 focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-input py-1.5 pl-8 pr-8 text-sm text-foreground transition-all focus:border-primary/50 focus:bg-background focus:outline-none placeholder:text-muted-foreground/70"
                 />
                 {searchQuery && (
                   <Tooltip label={t('common.clearSearch') || 'Clear search'} placement="bottom">
                     <button
                       onClick={() => onSearchChange('')}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                     >
                       <X size={14} />
                     </button>
@@ -1343,7 +1343,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                         <Icon
                           size={10}
                           style={{ color: folder.color || undefined }}
-                          className={isSelected ? 'text-primary' : 'text-white/30'}
+                          className={isSelected ? 'text-primary' : 'text-muted-foreground/60'}
                         />
                         {folder.name}
                         <span className={cn('text-[9px] opacity-40', isSelected && 'opacity-80')}>
@@ -1365,7 +1365,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 <Tooltip label={t('folders.addFolderBtn')} placement="bottom">
                   <button
                     onClick={onAddFolder}
-                    className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-dashed border-white/20 bg-white/5 px-2 py-1 text-[10px] font-medium text-white/40 transition-all hover:bg-white/10 hover:text-white/80"
+                    className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-dashed border-border bg-secondary/40 px-2 py-1 text-[10px] font-medium text-muted-foreground transition-all hover:bg-accent hover:text-foreground"
                   >
                     <Plus size={10} />
                     {t('folders.new')}
@@ -1417,8 +1417,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
           {/* Footer */}
           <div
             className={cn(
-              'flex flex-shrink-0 items-center justify-between border-t border-white/5 bg-black/10 p-2 font-mono text-[9px] tracking-tighter transition-opacity',
-              entranceAnim && !mounted ? 'opacity-0' : 'opacity-40'
+              'flex flex-shrink-0 items-center justify-between border-t border-border bg-muted/40 p-2 font-mono text-[9px] tracking-tighter transition-opacity text-muted-foreground/90',
+              entranceAnim && !mounted ? 'opacity-0' : 'opacity-80'
             )}
           >
             <span>
@@ -1624,12 +1624,12 @@ const ClipRow = memo(function ClipRow({
         className={clsx(
           'group relative flex h-10 w-full cursor-pointer items-center gap-3 overflow-hidden rounded-lg border px-2 py-1.5 transition-colors',
           isSelected
-            ? 'border-cyan-500/50 bg-cyan-500/20 shadow-[0_0_12px_rgba(6,182,212,0.3)]'
+            ? 'border-primary bg-primary/20 shadow-[0_0_12px_rgba(var(--primary-rgb),0.25)] text-foreground'
             : selectedClipId === clip.id
-              ? 'border-indigo-500/40 bg-indigo-500/15 shadow-[0_0_12px_rgba(99,102,241,0.2)]'
+              ? 'border-primary/40 bg-primary/10 shadow-[0_0_12px_rgba(var(--primary-rgb),0.12)] text-foreground'
               : showHover
-                ? 'border-cyan-500/30 bg-white/10'
-                : 'border-white/5 bg-white/5',
+                ? 'border-primary/30 bg-accent/60 text-foreground'
+                : 'border-border bg-card/45 text-foreground/90',
           reorderEnabled && !isDragging && 'cursor-grab',
           isDragging && 'pointer-events-none scale-95 cursor-grabbing opacity-40'
         )}
@@ -1646,7 +1646,7 @@ const ClipRow = memo(function ClipRow({
           <div className="flex min-w-0 flex-1 items-center gap-3">
             {clip.clip_type === 'image' ? (
               <>
-                <div className="flex h-8 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-white/10 bg-black/20">
+                <div className="flex h-8 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-muted/40">
                   {clip.content ? (
                     <img
                       src={getClipImageSrc(clip.content)}
@@ -1700,14 +1700,14 @@ const ClipRow = memo(function ClipRow({
         </div>
 
         <div className="flex flex-shrink-0 items-center gap-3 pr-2 self-stretch -my-1.5 py-1.5" onMouseOver={(e) => { e.stopPropagation(); closePeek(); }}>
-          <span className="flex items-center gap-2 whitespace-nowrap text-[10px] opacity-40">
+          <span className="flex items-center gap-2 whitespace-nowrap text-[10px] text-muted-foreground/80">
             {index === 0 && !selectedFolder && (
-              <span className="text-[8px] font-bold uppercase tracking-widest text-cyan-400/90">
+              <span className="text-[8px] font-bold uppercase tracking-widest text-primary opacity-90">
                 {t('common.latest')}
               </span>
             )}
             {clip.is_pinned && (
-              <Pin size={10} className="-rotate-45 fill-cyan-400/20 text-cyan-400 opacity-90" />
+              <Pin size={10} className="-rotate-45 fill-primary/20 text-primary opacity-90" />
             )}
             {(() => {
               const TypeIcon =
@@ -1727,7 +1727,7 @@ const ClipRow = memo(function ClipRow({
                   <span className="flex items-center justify-center">
                     <TypeIcon
                       size={11}
-                      className="text-cyan-400/90 opacity-70 shadow-[0_0_8px_rgba(34,211,238,0.4)] transition-opacity group-hover:opacity-100"
+                      className="text-primary opacity-75 transition-opacity group-hover:opacity-100"
                     />
                   </span>
                 </Tooltip>
@@ -1763,7 +1763,7 @@ const ClipRow = memo(function ClipRow({
                   e.stopPropagation();
                   onDelete(clip.id);
                 }}
-                className="rounded bg-red-500/20 p-1 text-red-400 transition-colors hover:bg-red-500/40"
+                className="rounded bg-destructive/15 p-1 text-destructive transition-colors hover:bg-destructive/25"
               >
                 <Trash2 size={12} />
               </button>
