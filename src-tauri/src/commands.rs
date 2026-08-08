@@ -2941,7 +2941,7 @@ pub async fn show_toast(
         *lock = Some(payload.clone());
     }
 
-    if let Some(win) = app.get_webview_window(window_label) {
+    let win = if let Some(win) = app.get_webview_window(window_label) {
         let _ = win.set_focusable(false);
         win.emit("update-toast", payload).map_err(|e| e.to_string())?;
 
@@ -2957,6 +2957,7 @@ pub async fn show_toast(
                 let _ = play_clipboard_sound(path_to_play);
             }
         }
+        win
     } else {
         tauri::WebviewWindowBuilder::new(
             &app,
@@ -2975,7 +2976,17 @@ pub async fn show_toast(
         .focusable(false)
         .visible(false) // hidden until positioned
         .build()
-        .map_err(|e| format!("Failed to create toast window: {}", e))?;
+        .map_err(|e| format!("Failed to create toast window: {}", e))?
+    };
+
+    #[cfg(target_os = "windows")]
+    {
+        let color = if manager.get().theme == "light" {
+            Some((255, 255, 255, 180))
+        } else {
+            Some((26, 27, 31, 180))
+        };
+        let _ = window_vibrancy::apply_acrylic(&win, color);
     }
 
     Ok(())
