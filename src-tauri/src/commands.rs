@@ -2920,6 +2920,11 @@ pub async fn show_toast(
         return Ok(());
     }
 
+    let is_action_message = clip_type.is_none() || clip_type.as_deref() == Some("welcome");
+    if is_action_message && !manager.get().show_action_messages {
+        return Ok(());
+    }
+
     let window_label = "toast";
     let payload = ToastPayload {
         message,

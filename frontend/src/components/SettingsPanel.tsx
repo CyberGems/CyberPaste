@@ -2052,8 +2052,8 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4 flex-shrink-0">
-                        <div className="flex h-[96px] w-[160px] flex-col justify-between rounded-lg border border-border bg-secondary p-1.5">
+                      <div className="flex-shrink-0">
+                        <div className="flex h-[80px] w-[130px] flex-col justify-between rounded-lg border border-border bg-secondary/40 p-1.5">
                           <div className="grid h-full w-full grid-cols-3 grid-rows-3 gap-1">
                             {[
                               {
@@ -2125,22 +2125,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               );
                             })}
                           </div>
-                        </div>
-                        <div className="text-[11px] font-semibold text-foreground bg-accent/30 border border-border px-2.5 py-1 rounded min-w-[90px] text-center shrink-0">
-                          {(() => {
-                            const activePosition = settings.toast_position || 'bottom-right';
-                            const found = [
-                              { value: 'top-left', label: t('settings.posTopLeft') },
-                              { value: 'top-center', label: t('settings.posTopCenter') },
-                              { value: 'top-right', label: t('settings.posTopRight') },
-                              { value: 'center-left', label: t('settings.posCenterLeft') },
-                              { value: 'center-right', label: t('settings.posCenterRight') },
-                              { value: 'bottom-left', label: t('settings.posBottomLeft') },
-                              { value: 'bottom-center', label: t('settings.posBottomCenter') },
-                              { value: 'bottom-right', label: t('settings.posBottomRight') },
-                            ].find((p) => p.value === activePosition);
-                            return found ? found.label : t('settings.posBottomRight');
-                          })()}
                         </div>
                       </div>
                     </div>
