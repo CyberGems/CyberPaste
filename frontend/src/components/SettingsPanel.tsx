@@ -144,7 +144,20 @@ const PROVIDER_MODELS: Record<string, { value: string; label: string }[]> = {
 };
 
 export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPanelProps) {
-  const [activeTab, setActiveTab] = useState<Tab>('general');
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab') as Tab;
+      if (
+        ['general', 'full', 'compact', 'ai', 'notifications', 'maintenance', 'about'].includes(
+          tabParam
+        )
+      ) {
+        return tabParam;
+      }
+    }
+    return 'general';
+  });
   const [settings, setSettings] = useState<Settings>(initialSettings);
   const [_historySize, setHistorySize] = useState<number>(0);
   const [recordingTarget, setRecordingTarget] = useState<'hotkey' | 'view_mode_hotkey' | null>(

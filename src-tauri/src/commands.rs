@@ -3640,27 +3640,17 @@ fn start_tray_menu_outside_click_watcher(app: AppHandle, win: tauri::WebviewWind
 
 #[tauri::command]
 pub async fn open_settings(app: AppHandle, tab: Option<String>) -> Result<(), String> {
-    open_settings_window(&app, false);
-
-    if let Some(tab) = tab {
-        tauri::async_runtime::spawn(async move {
-            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-            if let Some(settings_win) = app.get_webview_window("settings") {
-                let _ = settings_win.emit("open-tab", tab);
-            }
-        });
-    }
-
+    open_settings_window(&app, tab.as_deref());
     Ok(())
 }
 
-fn open_settings_window(app: &AppHandle, about_tab: bool) {
+fn open_settings_window(app: &AppHandle, tab: Option<&str>) {
     if let Some(settings_win) = app.get_webview_window("settings") {
         let _ = settings_win.unminimize();
         let _ = settings_win.show();
         let _ = settings_win.set_focus();
-        if about_tab {
-            let _ = settings_win.emit("open-tab", "about");
+        if let Some(t) = tab {
+            let _ = settings_win.emit("open-tab", t);
         }
         return;
     }
@@ -3669,10 +3659,15 @@ fn open_settings_window(app: &AppHandle, about_tab: bool) {
     let settings = manager.get();
     let reference_window = app.get_webview_window("main");
 
+    let url = match tab {
+        Some(t) => format!("index.html?window=settings&tab={}", t),
+        None => "index.html?window=settings".to_string(),
+    };
+
     let mut builder = tauri::WebviewWindowBuilder::new(
         app,
         "settings",
-        tauri::WebviewUrl::App("index.html?window=settings".into()),
+        tauri::WebviewUrl::App(url.into()),
     )
     .title("Settings")
     .inner_size(
@@ -3709,12 +3704,13 @@ fn open_settings_window(app: &AppHandle, about_tab: bool) {
 
     let _ = builder.build();
 
-    if about_tab {
+    if let Some(t) = tab {
         let app_clone = app.clone();
+        let t_string = t.to_string();
         tauri::async_runtime::spawn(async move {
             tokio::time::sleep(std::time::Duration::from_millis(500)).await;
             if let Some(settings_win) = app_clone.get_webview_window("settings") {
-                let _ = settings_win.emit("open-tab", "about");
+                let _ = settings_win.emit("open-tab", t_string);
             }
         });
     }
@@ -3745,8 +3741,8 @@ pub async fn tray_menu_action(app: AppHandle, action: String) -> Result<(), Stri
             let _ = crate::rebuild_tray_menu(&app);
             let _ = app.emit("clipboard-monitoring-state-changed", new_val);
         }
-        "settings" => open_settings_window(&app, false),
-        "about" => open_settings_window(&app, true),
+        "settings" => open_settings_window(&app, None),
+        "about" => open_settings_window(&app, Some("about")),
         "quit" => {
             app.exit(0);
         }
