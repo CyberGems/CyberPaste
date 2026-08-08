@@ -3040,42 +3040,43 @@ pub async fn set_toast_position(app: AppHandle, width: f64, height: f64) -> Resu
                 height: h_px,
             }));
 
-            let margin = (24.0 * scale_factor) as i32;
+            let margin_x = (16.0 * scale_factor) as i32;
+            let margin_y = (12.0 * scale_factor) as i32;
 
             let (target_x, target_y) = match position_setting.as_str() {
                 "top-right" => (
-                    work_area.position.x + work_area.size.width as i32 - w_px as i32 - margin,
-                    work_area.position.y + margin,
+                    work_area.position.x + work_area.size.width as i32 - w_px as i32 - margin_x,
+                    work_area.position.y + margin_y,
                 ),
-                "top-left" => (work_area.position.x + margin, work_area.position.y + margin),
+                "top-left" => (work_area.position.x + margin_x, work_area.position.y + margin_y),
                 "top-center" => (
                     work_area.position.x + (work_area.size.width as i32 - w_px as i32) / 2,
-                    work_area.position.y + margin,
+                    work_area.position.y + margin_y,
                 ),
                 "bottom-center" => (
                     work_area.position.x + (work_area.size.width as i32 - w_px as i32) / 2,
-                    work_area.position.y + work_area.size.height as i32 - h_px as i32 - margin,
+                    work_area.position.y + work_area.size.height as i32 - h_px as i32 - margin_y,
                 ),
                 "bottom-left" => (
-                    work_area.position.x + margin,
-                    work_area.position.y + work_area.size.height as i32 - h_px as i32 - margin,
+                    work_area.position.x + margin_x,
+                    work_area.position.y + work_area.size.height as i32 - h_px as i32 - margin_y,
                 ),
                 "bottom-right" => (
-                    work_area.position.x + work_area.size.width as i32 - w_px as i32 - margin,
-                    work_area.position.y + work_area.size.height as i32 - h_px as i32 - margin,
+                    work_area.position.x + work_area.size.width as i32 - w_px as i32 - margin_x,
+                    work_area.position.y + work_area.size.height as i32 - h_px as i32 - margin_y,
                 ),
                 "center-right" => (
-                    work_area.position.x + work_area.size.width as i32 - w_px as i32 - margin,
+                    work_area.position.x + work_area.size.width as i32 - w_px as i32 - margin_x,
                     work_area.position.y + (work_area.size.height as i32 - h_px as i32) / 2,
                 ),
                 "center-left" => (
-                    work_area.position.x + margin,
+                    work_area.position.x + margin_x,
                     work_area.position.y + (work_area.size.height as i32 - h_px as i32) / 2,
                 ),
                 // default to bottom-right
                 _ => (
-                    work_area.position.x + work_area.size.width as i32 - w_px as i32 - margin,
-                    work_area.position.y + work_area.size.height as i32 - h_px as i32 - margin,
+                    work_area.position.x + work_area.size.width as i32 - w_px as i32 - margin_x,
+                    work_area.position.y + work_area.size.height as i32 - h_px as i32 - margin_y,
                 ),
             };
             let _ = win.set_position(tauri::Position::Physical(tauri::PhysicalPosition {

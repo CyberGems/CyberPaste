@@ -337,7 +337,7 @@
     "autoCheckUpdatesDesc": "Buscar actualizaciones automáticamente al iniciar",
     "copyContent": "Copiar contenido",
     "showActionMessages": "Mensajes de Acción",
-    "showActionMessagesDesc": "Muestra mensajes como 'Abriendo Visor...' o 'Procesando...'",
+    "showActionMessagesDesc": "Muestra mensajes como 'Abriendo Visor', 'Procesando' o 'Activado'",
     "toasts": "Notificaciones",
     "enableToasts": "Habilitar Notificaciones",
     "enableToastsDesc": "Mostrar notificaciones en el escritorio.",

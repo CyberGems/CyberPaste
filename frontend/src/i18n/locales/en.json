@@ -337,7 +337,7 @@
     "autoCheckUpdatesDesc": "Automatically check for updates on startup",
     "copyContent": "Copy content",
     "showActionMessages": "Show Action Feedback",
-    "showActionMessagesDesc": "Display feedback messages like 'Opening Viewer...' or 'Processing...'",
+    "showActionMessagesDesc": "Show feedback messages like 'Opening Viewer', 'Processing' or 'Enabled'",
     "toasts": "Notifications",
     "enableToasts": "Enable Notifications",
     "enableToastsDesc": "Show notifications on desktop.",
