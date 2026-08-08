@@ -475,19 +475,19 @@ export function ToastWindow() {
                 <div className="shrink-0 flex items-center">
                   {getHeaderClipIcon(toast.clip_type, toast.toast_type, tv.iconColor)}
                 </div>
-                <span className="truncate font-medium">{title}</span>
-                <span className="text-[10px] font-normal text-neutral-500 lowercase px-0.5">{t('toasts.fromApp')}</span>
+                <span className="truncate font-medium text-[11px]">{title}</span>
+                <span className="text-[10px] font-normal text-neutral-500 lowercase px-0.5 shrink-0">{t('toasts.fromApp')}</span>
                 {toast.source_icon ? (
                   <img
                     src={`data:image/png;base64,${toast.source_icon}`}
                     alt=""
-                    className="w-3.5 h-3.5 object-contain rounded-sm"
+                    className="w-3.5 h-3.5 object-contain rounded-sm shrink-0"
                     onError={(e) => {
                       (e.target as HTMLElement).style.display = 'none';
                     }}
                   />
                 ) : null}
-                <span className={`min-w-0 max-w-[100px] truncate ${tv.sourceAppText}`}>{toast.source_app}</span>
+                <span className={`min-w-0 max-w-[110px] truncate text-[11px] ${tv.sourceAppText}`}>{toast.source_app}</span>
               </div>
             ) : (
               <div className="flex items-center gap-1.5 mb-2 pr-12">
