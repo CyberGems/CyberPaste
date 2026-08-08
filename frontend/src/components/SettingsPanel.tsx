@@ -25,6 +25,9 @@ import {
   Database,
   Bell,
   Layers,
+  Monitor,
+  Clock,
+  Send,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useTheme } from '../hooks/useTheme';
@@ -2031,32 +2034,26 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <label className="block">
-                        <span className="text-base font-medium">{t('settings.toastMonitor')}</span>
-                      </label>
-                      <Select
-                        value={settings.toast_monitor || 'primary'}
-                        onChange={(val) => updateSetting('toast_monitor', val)}
-                        options={[
-                          { value: 'primary', label: t('settings.toastMonitorPrimary') },
-                          ...monitorList.map((m) => ({
-                            value: m.index.toString(),
-                            label: m.name,
-                          })),
-                        ]}
-                      />
-                    </div>
-                  </div>
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                    {t('settings.locationSection')}
+                  </h3>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <label className="block">
-                        <span className="text-base font-medium">{t('settings.toastPosition')}</span>
-                      </label>
-                      <div className="flex items-center gap-4">
-                        <div className="flex h-[104px] w-[176px] flex-col justify-between rounded-lg border border-border bg-card p-1.5">
+                  <div className="rounded-xl border border-border bg-card p-4 divide-y divide-border/60">
+                    {/* Row 1: Posición de notificación */}
+                    <div className="flex items-start justify-between py-4 first:pt-0 last:pb-0 gap-4">
+                      <div className="flex gap-3">
+                        <Layout className="h-5 w-5 text-muted-foreground/80 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <span className="text-sm font-semibold block text-foreground">
+                            {t('settings.toastPositionTitle')}
+                          </span>
+                          <p className="text-xs text-muted-foreground/80 mt-1 max-w-[420px]">
+                            {t('settings.toastPositionDesc')}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 flex-shrink-0">
+                        <div className="flex h-[96px] w-[160px] flex-col justify-between rounded-lg border border-border bg-secondary p-1.5">
                           <div className="grid h-full w-full grid-cols-3 grid-rows-3 gap-1">
                             {[
                               {
@@ -2129,59 +2126,104 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             })}
                           </div>
                         </div>
-                        <div className="flex-1 space-y-1">
-                          <div className="text-[12px] font-medium text-foreground">
-                            {(() => {
-                              const activePosition = settings.toast_position || 'bottom-right';
-                              const found = [
-                                { value: 'top-left', label: t('settings.posTopLeft') },
-                                { value: 'top-center', label: t('settings.posTopCenter') },
-                                { value: 'top-right', label: t('settings.posTopRight') },
-                                { value: 'center-left', label: t('settings.posCenterLeft') },
-                                { value: 'center-right', label: t('settings.posCenterRight') },
-                                { value: 'bottom-left', label: t('settings.posBottomLeft') },
-                                { value: 'bottom-center', label: t('settings.posBottomCenter') },
-                                { value: 'bottom-right', label: t('settings.posBottomRight') },
-                              ].find((p) => p.value === activePosition);
-                              return found ? found.label : t('settings.posBottomRight');
-                            })()}
-                          </div>
-                          <div className="text-[10px] leading-tight text-muted-foreground/80">
-                            {t('settings.toastPositionDesc')}
-                          </div>
+                        <div className="text-[11px] font-semibold text-foreground bg-accent/30 border border-border px-2.5 py-1 rounded min-w-[90px] text-center shrink-0">
+                          {(() => {
+                            const activePosition = settings.toast_position || 'bottom-right';
+                            const found = [
+                              { value: 'top-left', label: t('settings.posTopLeft') },
+                              { value: 'top-center', label: t('settings.posTopCenter') },
+                              { value: 'top-right', label: t('settings.posTopRight') },
+                              { value: 'center-left', label: t('settings.posCenterLeft') },
+                              { value: 'center-right', label: t('settings.posCenterRight') },
+                              { value: 'bottom-left', label: t('settings.posBottomLeft') },
+                              { value: 'bottom-center', label: t('settings.posBottomCenter') },
+                              { value: 'bottom-right', label: t('settings.posBottomRight') },
+                            ].find((p) => p.value === activePosition);
+                            return found ? found.label : t('settings.posBottomRight');
+                          })()}
                         </div>
                       </div>
                     </div>
-                    <div className="space-y-3">
-                      <label className="block">
-                        <span className="text-base font-medium">{t('settings.toastDuration')}</span>
-                      </label>
-                      <Select
-                        value={(settings.toast_duration || 3000).toString()}
-                        onChange={(val) => updateSetting('toast_duration', parseInt(val))}
-                        options={[
-                          { value: '1500', label: t('settings.durationShort') },
-                          { value: '3000', label: t('settings.durationNormal') },
-                          { value: '5000', label: t('settings.durationLong') },
-                          { value: '8000', label: t('settings.durationVeryLong') },
-                        ]}
-                      />
+
+                    {/* Row 2: Monitor de notificación */}
+                    <div className="flex items-center justify-between py-4 gap-4">
+                      <div className="flex gap-3">
+                        <Monitor className="h-5 w-5 text-muted-foreground/80 flex-shrink-0" />
+                        <div>
+                          <span className="text-sm font-semibold block text-foreground">
+                            {t('settings.toastMonitorTitle')}
+                          </span>
+                          <p className="text-xs text-muted-foreground/80 mt-1 max-w-[420px]">
+                            {t('settings.toastMonitorDesc')}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="w-[180px] flex-shrink-0">
+                        <Select
+                          value={settings.toast_monitor || 'primary'}
+                          onChange={(val) => updateSetting('toast_monitor', val)}
+                          options={[
+                            { value: 'primary', label: t('settings.toastMonitorPrimary') },
+                            ...monitorList.map((m) => ({
+                              value: m.index.toString(),
+                              label: m.name,
+                            })),
+                          ]}
+                        />
+                      </div>
                     </div>
-                  </div>
 
+                    {/* Row 3: Duración de notificación */}
+                    <div className="flex items-center justify-between py-4 gap-4">
+                      <div className="flex gap-3">
+                        <Clock className="h-5 w-5 text-muted-foreground/80 flex-shrink-0" />
+                        <div>
+                          <span className="text-sm font-semibold block text-foreground">
+                            {t('settings.toastDurationTitle')}
+                          </span>
+                          <p className="text-xs text-muted-foreground/80 mt-1 max-w-[420px]">
+                            {t('settings.toastDurationDesc')}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="w-[180px] flex-shrink-0">
+                        <Select
+                          value={(settings.toast_duration || 3000).toString()}
+                          onChange={(val) => updateSetting('toast_duration', parseInt(val))}
+                          options={[
+                            { value: '1500', label: t('settings.durationShort') },
+                            { value: '3000', label: t('settings.durationNormal') },
+                            { value: '5000', label: t('settings.durationLong') },
+                            { value: '8000', label: t('settings.durationVeryLong') },
+                          ]}
+                        />
+                      </div>
+                    </div>
 
-
-                  <div className="pt-4">
-                    <button
-                      onClick={() => {
-                        import('../utils/toast').then((m) =>
-                          m.systemToast.success(t('settings.testToastMsg'))
-                        );
-                      }}
-                      className="btn btn-primary w-full rounded-[4px] border border-border"
-                    >
-                      {t('settings.testToast')}
-                    </button>
+                    {/* Row 4: Probar notificación */}
+                    <div className="flex items-center justify-between py-4 last:pb-0 gap-4">
+                      <div className="flex gap-3">
+                        <Send className="h-5 w-5 text-muted-foreground/80 flex-shrink-0" />
+                        <div>
+                          <span className="text-sm font-semibold block text-foreground">
+                            {t('settings.testNotificationTitle')}
+                          </span>
+                          <p className="text-xs text-muted-foreground/80 mt-1 max-w-[420px]">
+                            {t('settings.testNotificationDesc')}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          import('../utils/toast').then((m) =>
+                            m.systemToast.success(t('settings.testToastMsg'))
+                          );
+                        }}
+                        className="btn btn-primary px-5 py-1.5 text-xs font-semibold rounded-[4px] border border-border flex-shrink-0"
+                      >
+                        {t('settings.testToast')}
+                      </button>
+                    </div>
                   </div>
                 </section>
               )}
