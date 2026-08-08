@@ -200,56 +200,6 @@ fn correct_spanish_diacritics(text: &str) -> String {
     result
 }
 
-fn apply_gamma_correction(img: &mut image::RgbaImage, gamma: f32) {
-    let mut lut = [0u8; 256];
-    for i in 0..256 {
-        let normalized = i as f32 / 255.0;
-        let corrected = normalized.powf(gamma);
-        lut[i] = (corrected * 255.0).clamp(0.0, 255.0) as u8;
-    }
-
-    for pixel in img.pixels_mut() {
-        pixel[0] = lut[pixel[0] as usize];
-        pixel[1] = lut[pixel[1] as usize];
-        pixel[2] = lut[pixel[2] as usize];
-    }
-}
-
-fn apply_sharpening(img: &image::RgbaImage, amount: f32) -> image::RgbaImage {
-    let (w, h) = img.dimensions();
-    let mut output = img.clone();
-    if w < 3 || h < 3 {
-        return output;
-    }
-
-    let center_weight = 1.0 + amount * 4.0;
-    let neighbor_weight = -amount;
-
-    for y in 1..(h - 1) {
-        for x in 1..(w - 1) {
-            let mut new_px = [0u8; 4];
-            for c in 0..3 {
-                let center = img.get_pixel(x, y)[c] as f32;
-                let top = img.get_pixel(x, y - 1)[c] as f32;
-                let bottom = img.get_pixel(x, y + 1)[c] as f32;
-                let left = img.get_pixel(x - 1, y)[c] as f32;
-                let right = img.get_pixel(x + 1, y)[c] as f32;
-
-                let val = center * center_weight
-                    + top * neighbor_weight
-                    + bottom * neighbor_weight
-                    + left * neighbor_weight
-                    + right * neighbor_weight;
-
-                new_px[c] = val.clamp(0.0, 255.0) as u8;
-            }
-            new_px[3] = img.get_pixel(x, y)[3];
-            output.put_pixel(x, y, image::Rgba(new_px));
-        }
-    }
-    output
-}
-
 /// Preprocess and upscale image if needed to ensure the OCR engine gets high accuracy.
 /// This crops out dark borders, samples corner colors to pad with the correct background,
 /// and conditionally upscales extremely small images using Nearest neighbor filtering.
@@ -323,7 +273,7 @@ fn preprocess_and_upscale_image(png_bytes: &[u8]) -> Vec<u8> {
             let (pw, ph) = image::GenericImageView::dimensions(&processed_img);
             let longest = pw.max(ph);
 
-            let mut final_img = if longest < 200 {
+            let final_img = if longest < 200 {
                 // Upscale using Nearest neighbor for extremely small images to preserve sharp edges
                 let scale = 200.0 / longest as f32;
                 let new_w = ((pw as f32 * scale).round() as u32).max(1);
@@ -332,28 +282,6 @@ fn preprocess_and_upscale_image(png_bytes: &[u8]) -> Vec<u8> {
             } else {
                 processed_img
             };
-
-            // Commented out filters for debugging
-            // let mut rgba_buffer = final_img.to_rgba8();
-            // apply_gamma_correction(&mut rgba_buffer, 0.75);
-            // let sharpened = apply_sharpening(&rgba_buffer, 0.4);
-
-            // Apply binarization to clean up anti-aliasing/gradients and maximize contrast
-            // let mut binarized = sharpened;
-            // for pixel in binarized.pixels_mut() {
-            //     let luma = 0.299 * pixel[0] as f32 + 0.587 * pixel[1] as f32 + 0.114 * pixel[2] as f32;
-            //     if luma < 120.0 {
-            //         pixel[0] = 0;
-            //         pixel[1] = 0;
-            //         pixel[2] = 0;
-            //     } else {
-            //         pixel[0] = 255;
-            //         pixel[1] = 255;
-            //         pixel[2] = 255;
-            //     }
-            //     pixel[3] = 255; // Ensure the output is fully opaque to avoid WinRT OCR transparency issues
-            // }
-            // final_img = image::DynamicImage::ImageRgba8(binarized);
 
             let mut cursor = std::io::Cursor::new(Vec::new());
             if final_img.write_to(&mut cursor, image::ImageOutputFormat::Png).is_ok() {

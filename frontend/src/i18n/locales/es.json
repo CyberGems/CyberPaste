@@ -118,6 +118,11 @@
     "densityMedium": "Mediano",
     "densityLarge": "Grande"
   },
+  "full": {
+    "actionCopy": "Mover al portapapeles",
+    "actionPaste": "Mover al portapapeles y pegar",
+    "actionAutoInject": "Mover al portapapeles y simular Ctrl+V"
+  },
   "clipList": {
     "empty": "No hay clips aún",
     "emptyDesc": "Copia algo a tu portapapeles y aparecerá aquí.",
@@ -225,7 +230,7 @@
     "roundCorners": "Esquinas Redondeadas",
     "roundCornersDesc": "Redondea las esquinas (Windows 11). No aplica en modo Clear.",
     "autoPaste": "Pegado Automático",
-    "autoPasteDesc": "Pega el contenido automáticamente tras seleccionarlo",
+    "autoPasteDesc": "Pega en la aplicación anterior tras seleccionarlo y cierra CyberPaste (excepto si está fijado)",
     "autoInjectPaste": "Pegado por Inyección Automática",
     "autoInjectPasteDesc": "Simula Ctrl+V en lugar de Mayús+Insert para pegar",
     "resetViewOnPaste": "Restablecer búsqueda y vista al abrir / pegar",

@@ -118,6 +118,11 @@
     "densityMedium": "Medium",
     "densityLarge": "Large"
   },
+  "full": {
+    "actionCopy": "Copy to clipboard",
+    "actionPaste": "Copy to clipboard and paste",
+    "actionAutoInject": "Copy to clipboard and simulate Ctrl+V"
+  },
   "clipList": {
     "empty": "No clips yet",
     "emptyDesc": "Copy something to your clipboard and it will appear here.",
@@ -228,7 +233,7 @@
     "roundCorners": "Rounded Corners",
     "roundCornersDesc": "Round window corners via DWM (Windows 11). No effect on Clear mode.",
     "autoPaste": "Auto Paste",
-    "autoPasteDesc": "Automatically paste content after selection",
+    "autoPasteDesc": "Paste into the previous app after selection, then close CyberPaste (unless pinned)",
     "autoInjectPaste": "Auto-Inject Paste",
     "autoInjectPasteDesc": "Simulate Ctrl+V instead of Shift+Insert for pasting",
     "resetViewOnPaste": "Reset search and view on show / paste",

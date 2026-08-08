@@ -9,7 +9,6 @@ import {
   Check,
   MoveHorizontal,
   MoveVertical,
-  Maximize2,
   FileText,
   Code,
   Link,
@@ -70,6 +69,7 @@ interface ClipCardProps {
   showTime?: boolean;
   showTypeIcon?: boolean;
   showNumber?: boolean;
+  actionTooltip?: string;
 }
 
 export const ClipCard = memo(
@@ -86,7 +86,6 @@ export const ClipCard = memo(
       clipIndex,
       isLatest,
       isDragging,
-      onPreview,
       isBulkSelected = false,
       onToggleBulkSelect,
       onCardClick,
@@ -95,6 +94,7 @@ export const ClipCard = memo(
       showTime = true,
       showTypeIcon = true,
       showNumber = true,
+      actionTooltip,
     }: ClipCardProps,
     ref
   ) {
@@ -300,355 +300,317 @@ export const ClipCard = memo(
     };
 
     return (
-      <div
-        ref={ref}
-        data-el="clip-card"
-        data-clip-id={clip.id}
-        style={{
-          width: '100%',
-          maxWidth: 600,
-          height: `calc(100% - ${LAYOUT.CARD_VERTICAL_PADDING * 2}px)`,
-          position: 'relative',
-        }}
-        className="flex-shrink-0"
-        title={ocrTooltip || undefined}
-      >
-        {/* Drop indicator - before */}
-        {reorderEnabled && reorderDropIndicator === 'before' && (
-          <div className="absolute -top-1.5 left-0 right-0 z-30 h-1 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
-        )}
-        {/* Drop indicator - after */}
-        {reorderEnabled && reorderDropIndicator === 'after' && (
-          <div className="absolute -bottom-1.5 left-0 right-0 z-30 h-1 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
-        )}
+      <Tooltip label={actionTooltip} placement="top" disabled={!actionTooltip}>
         <div
-          data-el="clip-card-inner"
-          onMouseDown={(e) => {
-            // Left button only — right-click must not arm drag / grabbing cursor
-            if (e.button === 0) {
-              onDragStart(clip.id, e.clientX, e.clientY);
-            }
+          ref={ref}
+          data-el="clip-card"
+          data-clip-id={clip.id}
+          style={{
+            width: '100%',
+            maxWidth: 600,
+            height: `calc(100% - ${LAYOUT.CARD_VERTICAL_PADDING * 2}px)`,
+            position: 'relative',
           }}
-          draggable="false"
-          onMouseMove={handleMouseMove}
-          onMouseEnter={() => {
-            leftWhileMenuRef.current = false;
-            setHovered(true);
-          }}
-          onMouseLeave={() => {
-            if (menuHighlightRef.current) leftWhileMenuRef.current = true;
-            else setHovered(false);
-          }}
-          onClick={(e) => {
-            if (onCardClick && (e.ctrlKey || e.metaKey || e.shiftKey)) {
-              onCardClick(e);
-              return;
-            }
-            onPaste();
-          }}
-          onContextMenu={handleContextMenu}
-          style={
-            {
-              '--app-hue': `${appHue}`,
-              borderColor: isSelected ? `hsl(${appHue} 60% 55%)` : undefined,
-              borderWidth: isSelected ? '2px' : '1px',
-              boxShadow: isSelected
-                ? `0 0 25px hsl(${appHue} 60% 45% / 0.35), inset 0 0 15px hsl(${appHue} 60% 45% / 0.15), 0 0 0 3px hsl(${appHue} 60% 55% / 0.25)`
-                : 'none',
-            } as React.CSSProperties
-          }
-          className={clsx(
-            'relative flex h-full w-full cursor-pointer select-none flex-col overflow-hidden rounded-2xl border-border bg-card/85 shadow-lg transition-[border-color,box-shadow,opacity,transform] duration-150',
-            isSelected
-              ? 'z-10 border'
-              : isBulkSelected
-                ? 'border-2 border-primary bg-primary/5'
-                : 'border hover:border-primary/40',
-            isDragging && 'pointer-events-none scale-95 cursor-grabbing opacity-40',
-            'group'
-          )}
+          className="flex-shrink-0"
+          title={ocrTooltip || undefined}
         >
-          {/* Keyboard focus indicator (left edge cyan bar) */}
-          {isSelected && (
-            <div
-              data-el="clip-card-kb-focus"
-              className="pointer-events-none absolute bottom-2 left-0 top-2 w-0.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]"
-            />
+          {/* Drop indicator - before */}
+          {reorderEnabled && reorderDropIndicator === 'before' && (
+            <div className="absolute -top-1.5 left-0 right-0 z-30 h-1 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
           )}
-          {/* Bulk selection checkbox (top-left, visible on hover or when selected) */}
-          {onToggleBulkSelect && (
-            <Tooltip
-              label={isBulkSelected ? t('common.deselect') : t('common.select')}
-              placement="top"
-            >
-              <button
-                data-el="clip-card-bulk-check"
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onToggleBulkSelect();
-                }}
-                className="absolute left-0 top-0 z-20 flex h-8 w-8 items-center justify-center transition-all"
-                aria-label={isBulkSelected ? 'Deselect clip' : 'Select clip'}
-              >
-                <div
-                  className={clsx(
-                    'flex h-4 w-4 items-center justify-center rounded border transition-all',
-                    isBulkSelected
-                      ? 'border-primary bg-primary text-primary-foreground opacity-100'
-                      : hovered
-                        ? 'border-border bg-popover/85 text-muted-foreground opacity-75 hover:border-primary'
-                        : 'opacity-0'
-                  )}
-                >
-                  {isBulkSelected && <Check size={10} strokeWidth={3} />}
-                </div>
-              </button>
-            </Tooltip>
+          {/* Drop indicator - after */}
+          {reorderEnabled && reorderDropIndicator === 'after' && (
+            <div className="absolute -bottom-1.5 left-0 right-0 z-30 h-1 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
           )}
-
-          {/* Framer-motion spotlight border glow */}
-          {!isSelected && (
-            <motion.div
-              data-el="clip-card-glow"
-              className="pointer-events-none absolute -inset-px z-20 rounded-[17px] p-[2px]"
-              style={{
-                background: glowBackground,
-                WebkitMask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
-                WebkitMaskComposite: 'xor',
-                maskComposite: 'exclude',
-                opacity: hovered || menuHighlight ? 1 : 0,
-                transition: 'opacity 200ms',
-              }}
-            />
-          )}
-
           <div
-            data-el="clip-card-header"
-            className="relative z-10 flex flex-shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2.5 py-2 backdrop-blur-sm"
+            data-el="clip-card-inner"
+            onMouseDown={(e) => {
+              // Left button only — right-click must not arm drag / grabbing cursor
+              if (e.button === 0) {
+                onDragStart(clip.id, e.clientX, e.clientY);
+              }
+            }}
+            draggable="false"
+            onMouseMove={handleMouseMove}
+            onMouseEnter={() => {
+              leftWhileMenuRef.current = false;
+              setHovered(true);
+            }}
+            onMouseLeave={() => {
+              if (menuHighlightRef.current) leftWhileMenuRef.current = true;
+              else setHovered(false);
+            }}
+            onClick={(e) => {
+              if (onCardClick && (e.ctrlKey || e.metaKey || e.shiftKey)) {
+                onCardClick(e);
+                return;
+              }
+              onPaste();
+            }}
+            onContextMenu={handleContextMenu}
+            style={
+              {
+                '--app-hue': `${appHue}`,
+                borderColor: isSelected ? `hsl(${appHue} 60% 55%)` : undefined,
+                borderWidth: isSelected ? '2px' : '1px',
+                boxShadow: isSelected
+                  ? `0 0 25px hsl(${appHue} 60% 45% / 0.35), inset 0 0 15px hsl(${appHue} 60% 45% / 0.15), 0 0 0 3px hsl(${appHue} 60% 55% / 0.25)`
+                  : 'none',
+              } as React.CSSProperties
+            }
+            className={clsx(
+              'relative flex h-full w-full cursor-pointer select-none flex-col overflow-hidden rounded-2xl border-border bg-card/85 shadow-lg transition-[border-color,box-shadow,opacity,transform] duration-150',
+              isSelected
+                ? 'z-10 border'
+                : isBulkSelected
+                  ? 'border-2 border-primary bg-primary/5'
+                  : 'border hover:border-primary/40',
+              isDragging && 'pointer-events-none scale-95 cursor-grabbing opacity-40',
+              'group'
+            )}
           >
-            {showSourceIcon && clip.source_icon && (
+            {/* Keyboard focus indicator (left edge cyan bar) */}
+            {isSelected && (
               <div
-                className={clsx(
-                  'transition-opacity duration-150',
-                  hovered || isBulkSelected ? 'pointer-events-none opacity-0' : 'opacity-100'
-                )}
-              >
-                <Tooltip label={clip.source_app || 'App'} placement="top">
-                  <div className="flex items-center justify-center rounded-sm border border-border bg-muted/40 p-0.5">
-                    <img
-                      src={`data:image/png;base64,${clip.source_icon}`}
-                      alt=""
-                      draggable="false"
-                      className="h-3.5 w-3.5 object-contain"
-                    />
-                  </div>
-                </Tooltip>
-              </div>
+                data-el="clip-card-kb-focus"
+                className="pointer-events-none absolute bottom-2 left-0 top-2 w-0.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]"
+              />
             )}
-            {clip.is_pinned && (
-              <span
-                className="flex items-center text-cyan-400 opacity-80"
-                title={t('common.pinnedClip')}
+            {/* Bulk selection checkbox (top-left, visible on hover or when selected) */}
+            {onToggleBulkSelect && (
+              <Tooltip
+                label={isBulkSelected ? t('common.deselect') : t('common.select')}
+                placement="top"
               >
-                <Pin size={10} className="-rotate-45 fill-cyan-400/20" />
-              </span>
-            )}
-            {showNumber && clipIndex !== undefined && (
-              <span className="select-none font-mono text-[9px] opacity-20">#{clipIndex}</span>
-            )}
-            <div className="relative flex flex-1 items-center gap-1.5 overflow-hidden">
-              <span
-                className="inline-block whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.1em] text-secondary-foreground"
-                style={{
-                  animation: isLatest ? 'marquee 3s linear infinite' : 'none',
-                }}
-              >
-                {title}
-                {isLatest && (
-                  <>
-                    <span className="mx-3 opacity-30">•</span>
-                    {title}
-                    <span className="mx-3 opacity-30">•</span>
-                  </>
-                )}
-              </span>
-              {showTime && (
-                <Tooltip
-                  label={new Date(clip.created_at).toLocaleString(i18n.language || undefined, {
-                    dateStyle: 'full',
-                    timeStyle: 'medium',
-                  })}
-                  placement="top"
-                >
-                  <span className="whitespace-nowrap text-[9px] font-medium text-muted-foreground/50 transition-colors hover:text-cyan-300">
-                    • {getRelativeTime(clip.created_at, i18n.language)}
-                  </span>
-                </Tooltip>
-              )}
-            </div>
-            <div className="relative flex h-full min-w-[40px] items-center justify-end">
-              {/* LATEST badge + LED - slide together and fade out on hover */}
-              <motion.div
-                className="absolute right-2 flex items-center gap-1"
-                animate={{
-                  x: hovered ? -24 : 0,
-                  opacity: hovered ? 0 : 1,
-                }}
-                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              >
-                {isLatest && (
-                  <span className="select-none rounded bg-black/80 px-1 text-[8px] font-bold uppercase tracking-widest text-cyan-400/90">
-                    {t('common.latest')}
-                  </span>
-                )}
-                <div
-                  className="pointer-events-none h-1.5 w-1.5 rounded-full bg-primary shadow-lg"
-                  style={{
-                    boxShadow: `0 0 8px 1px rgb(var(--primary-rgb) / 0.5)`,
-                  }}
-                />
-              </motion.div>
-
-              {/* Preview + Copy buttons - slide in on hover */}
-              {hovered && onPreview && clip.clip_type === 'image' && (
-                <motion.button
-                  data-el="clip-card-preview-btn"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
+                <button
+                  data-el="clip-card-bulk-check"
                   onMouseDown={(e) => e.stopPropagation()}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    onPreview();
+                    onToggleBulkSelect();
                   }}
-                  className="relative z-10 mr-0.5 rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
-                  title={t('contextMenu.view')}
+                  className="absolute left-0 top-0 z-20 flex h-8 w-8 items-center justify-center transition-all"
+                  aria-label={isBulkSelected ? 'Deselect clip' : 'Select clip'}
                 >
-                  <Maximize2 size={12} />
-                </motion.button>
+                  <div
+                    className={clsx(
+                      'flex h-4 w-4 items-center justify-center rounded border transition-all',
+                      isBulkSelected
+                        ? 'border-primary bg-primary text-primary-foreground opacity-100'
+                        : hovered
+                          ? 'border-border bg-popover/85 text-muted-foreground opacity-75 hover:border-primary'
+                          : 'opacity-0'
+                    )}
+                  >
+                    {isBulkSelected && <Check size={10} strokeWidth={3} />}
+                  </div>
+                </button>
+              </Tooltip>
+            )}
+
+            {/* Framer-motion spotlight border glow */}
+            {!isSelected && (
+              <motion.div
+                data-el="clip-card-glow"
+                className="pointer-events-none absolute -inset-px z-20 rounded-[17px] p-[2px]"
+                style={{
+                  background: glowBackground,
+                  WebkitMask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
+                  WebkitMaskComposite: 'xor',
+                  maskComposite: 'exclude',
+                  opacity: hovered || menuHighlight ? 1 : 0,
+                  transition: 'opacity 200ms',
+                }}
+              />
+            )}
+
+            <div
+              data-el="clip-card-header"
+              className="relative z-10 flex flex-shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2.5 py-2 backdrop-blur-sm"
+            >
+              {showSourceIcon && clip.source_icon && (
+                <div
+                  className={clsx(
+                    'transition-opacity duration-150',
+                    hovered || isBulkSelected ? 'pointer-events-none opacity-0' : 'opacity-100'
+                  )}
+                >
+                  <Tooltip label={clip.source_app || 'App'} placement="top">
+                    <div className="flex items-center justify-center rounded-sm border border-border bg-muted/40 p-0.5">
+                      <img
+                        src={`data:image/png;base64,${clip.source_icon}`}
+                        alt=""
+                        draggable="false"
+                        className="h-3.5 w-3.5 object-contain"
+                      />
+                    </div>
+                  </Tooltip>
+                </div>
               )}
-              <motion.button
-                data-el="clip-card-copy-btn"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{
-                  opacity: hovered ? 1 : 0,
-                  x: hovered ? 0 : 20,
-                }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onCopy();
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 2000);
-                }}
-                className="relative z-10 rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
-                title={t('common.copyToClipboard')}
-              >
-                {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
-              </motion.button>
+              {clip.is_pinned && (
+                <span
+                  className="flex items-center text-cyan-400 opacity-80"
+                  title={t('common.pinnedClip')}
+                >
+                  <Pin size={10} className="-rotate-45 fill-cyan-400/20" />
+                </span>
+              )}
+              {showNumber && clipIndex !== undefined && (
+                <span className="select-none font-mono text-[9px] opacity-20">#{clipIndex}</span>
+              )}
+              <div className="relative flex flex-1 items-center gap-1.5 overflow-hidden">
+                <span
+                  className="inline-block whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.1em] text-secondary-foreground"
+                  style={{
+                    animation: isLatest ? 'marquee 3s linear infinite' : 'none',
+                  }}
+                >
+                  {title}
+                  {isLatest && (
+                    <>
+                      <span className="mx-3 opacity-30">•</span>
+                      {title}
+                      <span className="mx-3 opacity-30">•</span>
+                    </>
+                  )}
+                </span>
+                {showTime && (
+                  <Tooltip
+                    label={new Date(clip.created_at).toLocaleString(i18n.language || undefined, {
+                      dateStyle: 'full',
+                      timeStyle: 'medium',
+                    })}
+                    placement="top"
+                  >
+                    <span className="whitespace-nowrap text-[9px] font-medium text-muted-foreground/50 transition-colors hover:text-cyan-300">
+                      • {getRelativeTime(clip.created_at, i18n.language)}
+                    </span>
+                  </Tooltip>
+                )}
+              </div>
+              <div className="relative flex h-full min-w-[28px] items-center justify-end">
+                {/* Copy button slides in on hover */}
+                <motion.button
+                  data-el="clip-card-copy-btn"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{
+                    opacity: hovered ? 1 : 0,
+                    x: hovered ? 0 : 20,
+                  }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onCopy();
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="relative z-10 rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+                  title={t('common.copyToClipboard')}
+                >
+                  {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                </motion.button>
+              </div>
             </div>
-          </div>
 
-          <div
-            data-el="clip-card-content"
-            className={clsx(
-              'relative z-10 flex-1 overflow-hidden p-2',
-              clip.clip_type === 'image' ? 'bg-card/45' : 'bg-card/90'
-            )}
-          >
-            {renderedContent}
-            {clip.clip_type !== 'image' && (
-              <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-card/100 to-card/30" />
-            )}
-          </div>
-
-          <div
-            data-el="clip-card-footer"
-            className={clsx(
-              'absolute bottom-0 left-0 right-0 z-10 px-3 py-1.5',
-              clip.clip_type === 'image'
-                ? 'bg-gradient-to-t from-card/95 via-card/50 to-transparent'
-                : 'bg-gradient-to-t from-card via-card/100 to-transparent/0'
-            )}
-          >
-            <span
+            <div
+              data-el="clip-card-content"
               className={clsx(
-                'text-[11px] font-medium transition-colors',
-                clip.clip_type === 'image'
-                  ? 'font-semibold text-muted-foreground/90'
-                  : 'text-muted-foreground/50'
+                'relative z-10 flex-1 overflow-hidden p-2',
+                clip.clip_type === 'image' ? 'bg-card/45' : 'bg-card/90'
               )}
             >
-              {clip.clip_type === 'image' ? (
-                <div className="flex w-full items-center justify-between pr-6">
-                  <div className="flex items-center gap-1.5">
-                    <span className="flex items-center gap-0.5">
-                      <MoveHorizontal size={10} className="text-muted-foreground/60" />
-                      <span>{imageMetadata.width}</span>
-                    </span>
-                    <span className="text-[8px] opacity-40">×</span>
-                    <span className="flex items-center gap-0.5">
-                      <MoveVertical size={10} className="text-muted-foreground/60" />
-                      <span>{imageMetadata.height}</span>
-                    </span>
-                    <span className="ml-1 opacity-40">•</span>
-                    <span>{imageMetadata.sizeKb}KB</span>
-                  </div>
-                  {/* Quick OCR shortcut — pre-cached results open instantly */}
-                  {hasOcr && onRunOcr && (
-                    <Tooltip label={t('viewer.openOcrText')} placement="top">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onRunOcr();
-                        }}
-                        className="flex h-5 w-5 items-center justify-center rounded-md border border-primary/25 bg-primary/10 text-primary transition-colors hover:bg-primary/25"
-                        aria-label="Open OCR text"
-                      >
-                        <ScanText size={10} />
-                      </button>
-                    </Tooltip>
-                  )}
-                </div>
-              ) : clip.clip_type === 'file' ? (
-                `${clip.preview || t('common.file')}`
-              ) : (
-                t('clipList.textLength', { count: clip.content_length })
+              {renderedContent}
+              {clip.clip_type !== 'image' && (
+                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-card/100 to-card/30" />
               )}
-            </span>
-            {showTypeIcon && (
-              <div className="absolute bottom-1.5 right-3 flex items-center text-primary opacity-65 transition-opacity group-hover:opacity-100">
-                {(() => {
-                  const TypeIcon =
-                    clip.clip_type === 'image'
-                      ? ImageIcon
-                      : clip.clip_type === 'html' ||
-                          clip.clip_type === 'rtf' ||
-                          clip.clip_type === 'code'
-                        ? Code
-                        : clip.clip_type === 'url'
-                          ? Link
-                          : clip.clip_type === 'file'
-                            ? LucideFile
-                            : FileText;
-                  return (
-                    <Tooltip label={typeLabel} placement="top">
-                      <span className="flex items-center justify-center">
-                        <TypeIcon size={12} />
+            </div>
+
+            <div
+              data-el="clip-card-footer"
+              className={clsx(
+                'absolute bottom-0 left-0 right-0 z-10 px-3 py-1.5',
+                clip.clip_type === 'image'
+                  ? 'bg-gradient-to-t from-card/95 via-card/50 to-transparent'
+                  : 'bg-gradient-to-t from-card via-card/100 to-transparent/0'
+              )}
+            >
+              <span
+                className={clsx(
+                  'text-[11px] font-medium transition-colors',
+                  clip.clip_type === 'image'
+                    ? 'font-semibold text-muted-foreground/90'
+                    : 'text-muted-foreground/50'
+                )}
+              >
+                {clip.clip_type === 'image' ? (
+                  <div className="flex w-full items-center justify-between pr-6">
+                    <div className="flex items-center gap-1.5">
+                      <span className="flex items-center gap-0.5">
+                        <MoveHorizontal size={10} className="text-muted-foreground/60" />
+                        <span>{imageMetadata.width}</span>
                       </span>
-                    </Tooltip>
-                  );
-                })()}
-              </div>
-            )}
+                      <span className="text-[8px] opacity-40">×</span>
+                      <span className="flex items-center gap-0.5">
+                        <MoveVertical size={10} className="text-muted-foreground/60" />
+                        <span>{imageMetadata.height}</span>
+                      </span>
+                      <span className="ml-1 opacity-40">•</span>
+                      <span>{imageMetadata.sizeKb}KB</span>
+                    </div>
+                    {/* Quick OCR shortcut — pre-cached results open instantly */}
+                    {hasOcr && onRunOcr && (
+                      <Tooltip label={t('viewer.openOcrText')} placement="top">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRunOcr();
+                          }}
+                          className="flex h-5 w-5 items-center justify-center rounded-md border border-primary/25 bg-primary/10 text-primary transition-colors hover:bg-primary/25"
+                          aria-label="Open OCR text"
+                        >
+                          <ScanText size={10} />
+                        </button>
+                      </Tooltip>
+                    )}
+                  </div>
+                ) : clip.clip_type === 'file' ? (
+                  `${clip.preview || t('common.file')}`
+                ) : (
+                  t('clipList.textLength', { count: clip.content_length })
+                )}
+              </span>
+              {showTypeIcon && (
+                <div className="absolute bottom-1.5 right-3 flex items-center text-primary opacity-65 transition-opacity group-hover:opacity-100">
+                  {(() => {
+                    const TypeIcon =
+                      clip.clip_type === 'image'
+                        ? ImageIcon
+                        : clip.clip_type === 'html' ||
+                            clip.clip_type === 'rtf' ||
+                            clip.clip_type === 'code'
+                          ? Code
+                          : clip.clip_type === 'url'
+                            ? Link
+                            : clip.clip_type === 'file'
+                              ? LucideFile
+                              : FileText;
+                    return (
+                      <Tooltip label={typeLabel} placement="top">
+                        <span className="flex items-center justify-center">
+                          <TypeIcon size={12} />
+                        </span>
+                      </Tooltip>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      </Tooltip>
     );
   })
 );

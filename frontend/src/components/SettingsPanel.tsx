@@ -597,7 +597,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               <button
                 onClick={() => setActiveTab('general')}
                 className={clsx(
-                  'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
+                  'flex items-center gap-2 whitespace-nowrap rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'general'
                     ? 'border-l-[3px] border-primary bg-primary/10 text-primary shadow-none'
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
@@ -609,7 +609,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               <button
                 onClick={() => setActiveTab('full')}
                 className={clsx(
-                  'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
+                  'flex items-center gap-2 whitespace-nowrap rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'full'
                     ? 'border-l-[3px] border-primary bg-primary/10 text-primary shadow-none'
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
@@ -621,7 +621,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               <button
                 onClick={() => setActiveTab('compact')}
                 className={clsx(
-                  'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
+                  'flex items-center gap-2 whitespace-nowrap rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'compact'
                     ? 'border-l-[3px] border-primary bg-primary/10 text-primary shadow-none'
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'

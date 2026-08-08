@@ -160,8 +160,7 @@ use windows::Win32::UI::Shell::{
 };
 #[cfg(target_os = "windows")]
 use windows::Win32::UI::WindowsAndMessaging::{
-    DestroyIcon, DrawIconEx, GetForegroundWindow, GetIconInfo, GetWindowThreadProcessId, DI_NORMAL,
-    ICONINFO,
+    DestroyIcon, DrawIconEx, GetIconInfo, DI_NORMAL, ICONINFO,
 };
 
 // GLOBAL STATE: Store the hash of the clip we just pasted ourselves.
@@ -1015,7 +1014,7 @@ fn get_clipboard_owner_app_info() -> (
         };
 
         let mut path_buffer = [0u16; MAX_PATH as usize];
-        let mut path_size = GetModuleFileNameExW(Some(process_handle), None, &mut path_buffer);
+        let path_size = GetModuleFileNameExW(Some(process_handle), None, &mut path_buffer);
         let (mut app_name, mut app_icon, mut full_path) = if path_size > 0 {
             let full_path_str = String::from_utf16_lossy(&path_buffer[..path_size as usize]);
 

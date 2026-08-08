@@ -32,6 +32,7 @@ interface ClipListProps {
   showTime?: boolean;
   showTypeIcon?: boolean;
   showNumber?: boolean;
+  actionTooltip?: string;
   onRequestPreview?: (id: string) => void;
   bulkSelectedIds?: Set<string>;
   onClipClick?: (id: string, e: React.MouseEvent) => void;
@@ -68,6 +69,7 @@ export const ClipList: React.FC<ClipListProps> = ({
   showTime = true,
   showTypeIcon = true,
   showNumber = true,
+  actionTooltip,
   onRequestPreview,
   bulkSelectedIds,
   onClipClick,
@@ -224,6 +226,7 @@ export const ClipList: React.FC<ClipListProps> = ({
           showTime={showTime}
           showTypeIcon={showTypeIcon}
           showNumber={showNumber}
+          actionTooltip={actionTooltip}
         />
       </div>
     );

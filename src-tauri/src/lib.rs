@@ -853,8 +853,6 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
             mica_effect,
             theme_str,
             round_corners,
-            compact_last_x,
-            compact_last_y,
         ) = {
             let manager = window.state::<Arc<crate::settings_manager::SettingsManager>>();
             let s = manager.get();
@@ -876,8 +874,6 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                 s.mica_effect.clone(),
                 s.theme.clone(),
                 s.round_corners,
-                s.compact_last_position_x,
-                s.compact_last_position_y,
             )
         };
 
@@ -1254,14 +1250,13 @@ pub fn apply_window_effect(
             let _ = clear_mica(window);
         }
     }
-    let use_rounded = true;
     if let Ok(handle) = window.hwnd() {
         use windows::Win32::Foundation::HWND;
         use windows::Win32::Graphics::Dwm::{
             DwmSetWindowAttribute, DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_DONOTROUND, DWMWCP_ROUND,
         };
         let hwnd = HWND(handle.0 as _);
-        let corner_pref = if use_rounded {
+        let corner_pref = if round_corners {
             DWMWCP_ROUND.0
         } else {
             DWMWCP_DONOTROUND.0
@@ -1331,7 +1326,7 @@ fn generate_activation_sound_wav() -> Vec<u8> {
 
     // Deterministic random generator for the noise transient
     let mut state: u32 = 42;
-    let mut next_double = |state: &mut u32| -> f64 {
+    let next_double = |state: &mut u32| -> f64 {
         *state = state.wrapping_mul(1664525).wrapping_add(1013904223);
         (*state as f64) / (u32::MAX as f64)
     };

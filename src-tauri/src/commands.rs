@@ -342,21 +342,6 @@ pub async fn prune_history(pool: &SqlitePool, max_items: i64) -> Result<(), Stri
     Ok(())
 }
 
-async fn cleanup_all_clip_image_files(pool: &SqlitePool) -> Result<(), String> {
-    let all_paths: Vec<Option<String>> = sqlx::query_scalar(r#"SELECT file_path FROM clip_images"#)
-        .fetch_all(pool)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    for path in all_paths.into_iter().flatten() {
-        if !path.is_empty() {
-            crate::clipboard::remove_full_image_file(&path);
-        }
-    }
-
-    Ok(())
-}
-
 pub async fn migrate_images_to_files(pool: &SqlitePool) -> Result<(), String> {
     log::info!("Checking for legacy images to migrate...");
 

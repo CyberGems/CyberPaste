@@ -206,6 +206,11 @@ function App() {
   const effectiveTheme = useTheme(theme);
   useLanguage(settings?.language);
   const { t } = useTranslation();
+  const fullActionTooltip = settings?.auto_inject_paste
+    ? t('full.actionAutoInject')
+    : settings?.auto_paste
+      ? t('full.actionPaste')
+      : t('full.actionCopy');
 
   const appWindow = getCurrentWindow();
   const selectedFolderRef = useRef(selectedFolder);
@@ -2245,6 +2250,7 @@ function App() {
                   showTime={settings?.full_show_time ?? true}
                   showTypeIcon={settings?.full_show_type_icon ?? true}
                   showNumber={settings?.full_show_number ?? true}
+                  actionTooltip={fullActionTooltip}
                   onRequestPreview={handleOpenPreview}
                   bulkSelectedIds={selectedClipIds}
                   onClipClick={handleClipClick}
