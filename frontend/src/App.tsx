@@ -231,6 +231,9 @@ function App() {
         if (s.compact_type_filter && s.compact_type_filter !== 'all') {
           setCompactTypeFilter(s.compact_type_filter as any);
         }
+        if (s.full_type_filter) {
+          setFullTypeFilter(s.full_type_filter as FullTypeFilter);
+        }
         clearTimeout(timer);
         setIsLoading(false);
 
@@ -259,6 +262,9 @@ function App() {
     const unlisten = listen<Settings>('settings-changed', (event) => {
       setTheme(event.payload.theme);
       setSettings(event.payload);
+      if (event.payload.full_type_filter) {
+        setFullTypeFilter(event.payload.full_type_filter as FullTypeFilter);
+      }
     });
 
     // Listen for open-settings from tray
@@ -621,7 +627,7 @@ function App() {
 
           if (closestId && closestDist < 300) {
             const position: 'before' | 'after' = e.clientY < closestCenterY ? 'before' : 'after';
-            
+
             let finalTargetId = closestId;
             let finalPosition: 'before' | 'after' | null = position;
 
@@ -630,12 +636,19 @@ function App() {
 
             // Skip pinned redirect if hovering at the absolute first position in main clipboard
             // (that position triggers copy-to-clipboard on drop)
-            const isFirstPosMain = selectedFolderRef.current === null &&
+            const isFirstPosMain =
+              selectedFolderRef.current === null &&
               clipsRef.current.length > 0 &&
               closestId === clipsRef.current[0].id &&
               position === 'before';
 
-            if (!isFirstPosMain && draggedClip && !draggedClip.is_pinned && targetClip && targetClip.is_pinned) {
+            if (
+              !isFirstPosMain &&
+              draggedClip &&
+              !draggedClip.is_pinned &&
+              targetClip &&
+              targetClip.is_pinned
+            ) {
               const firstUnpinned = clipsRef.current.find((c) => !c.is_pinned);
               if (firstUnpinned) {
                 finalTargetId = firstUnpinned.id;
@@ -823,7 +836,8 @@ function App() {
     if (clipId && reorderClipId && reorderPos) {
       // Check if this is the first position in the main list (copy to clipboard)
       const isMainList = selectedFolderRef.current === null;
-      const isFirstPos = currentClips.length > 0 && reorderClipId === currentClips[0].id && reorderPos === 'before';
+      const isFirstPos =
+        currentClips.length > 0 && reorderClipId === currentClips[0].id && reorderPos === 'before';
 
       if (isMainList && isFirstPos && sourceFolderId === null) {
         handleCopy(clipId);
@@ -1850,7 +1864,11 @@ function App() {
                 onClick: () => handleAiAction(itemId, 'explain_code', t('ai.codeExplanation')),
               },
               {
-                label: aiLabel(settings?.ai_title_fix_grammar, 'Fix Grammar', 'contextMenu.fixGrammar'),
+                label: aiLabel(
+                  settings?.ai_title_fix_grammar,
+                  'Fix Grammar',
+                  'contextMenu.fixGrammar'
+                ),
                 icon: <CheckSquare size={14} />,
                 onClick: () => handleAiAction(itemId, 'fix_grammar', t('ai.grammarCheck')),
               },
@@ -2187,7 +2205,15 @@ function App() {
               {/* Type filter chips (Full mode) */}
               <TypeFilterChipRow
                 value={fullTypeFilter}
-                onChange={setFullTypeFilter}
+                onChange={(value) => {
+                  setFullTypeFilter(value);
+                  setSettings((prev) => {
+                    if (!prev) return prev;
+                    const next = { ...prev, full_type_filter: value };
+                    invoke('save_settings', { settings: next }).catch(console.error);
+                    return next;
+                  });
+                }}
                 counts={typeFilterCounts}
               />
 
@@ -2207,13 +2233,18 @@ function App() {
                   onLoadMore={loadMore}
                   onDragStart={startDrag}
                   onCardContextMenu={(e, clipId) => handleContextMenu(e, 'card', clipId)}
-                  scrollDirection="vertical"
+                  scrollDirection={settings?.full_scroll_direction || 'vertical'}
                   reorderTargetClipId={reorderTargetClipId}
                   reorderTargetPosition={reorderTargetPosition}
                   reorderEnabled={true}
                   draggingClipId={draggingClipId}
                   clipNumbering={settings?.clip_numbering || 'positional'}
                   gridScale={settings?.full_grid_scale ?? 1}
+                  gridColumns={settings?.full_grid_columns ?? 0}
+                  showSourceIcon={settings?.full_show_source_icon ?? true}
+                  showTime={settings?.full_show_time ?? true}
+                  showTypeIcon={settings?.full_show_type_icon ?? true}
+                  showNumber={settings?.full_show_number ?? true}
                   onRequestPreview={handleOpenPreview}
                   bulkSelectedIds={selectedClipIds}
                   onClipClick={handleClipClick}

@@ -78,6 +78,13 @@ export interface Settings {
   auto_check_updates?: boolean;
   full_show_hud?: boolean;
   full_grid_scale?: number;
+  full_grid_columns?: number; // 0 = automatic
+  full_scroll_direction?: 'horizontal' | 'vertical';
+  full_show_source_icon?: boolean;
+  full_show_time?: boolean;
+  full_show_type_icon?: boolean;
+  full_show_number?: boolean;
+  full_type_filter?: string; // 'all' | 'text' | 'code' | 'image' | 'url' | 'file'
   compact_row_height?: number; // 36 | 44 | 52
   compact_type_filter?: string; // 'all' | 'text' | 'code' | 'image' | 'url' | 'file'
   compact_last_position_x?: number | null;

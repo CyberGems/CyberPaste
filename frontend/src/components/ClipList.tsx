@@ -27,6 +27,11 @@ interface ClipListProps {
   draggingClipId?: string | null;
   clipNumbering?: 'positional' | 'countdown';
   gridScale?: number;
+  gridColumns?: number;
+  showSourceIcon?: boolean;
+  showTime?: boolean;
+  showTypeIcon?: boolean;
+  showNumber?: boolean;
   onRequestPreview?: (id: string) => void;
   bulkSelectedIds?: Set<string>;
   onClipClick?: (id: string, e: React.MouseEvent) => void;
@@ -58,6 +63,11 @@ export const ClipList: React.FC<ClipListProps> = ({
   draggingClipId,
   clipNumbering = 'positional',
   gridScale = 1,
+  gridColumns = 0,
+  showSourceIcon = true,
+  showTime = true,
+  showTypeIcon = true,
+  showNumber = true,
   onRequestPreview,
   bulkSelectedIds,
   onClipClick,
@@ -110,7 +120,12 @@ export const ClipList: React.FC<ClipListProps> = ({
   const effectiveCardWidth = BASE_CARD_WIDTH * gridScale;
   const effectiveRowHeight = Math.round(BASE_ROW_HEIGHT * gridScale);
   const columnCount = isVertical
-    ? Math.min(MAX_COLUMNS, Math.max(MIN_COLUMNS, Math.floor(containerWidth / effectiveCardWidth)))
+    ? gridColumns > 0
+      ? Math.min(MAX_COLUMNS, Math.max(MIN_COLUMNS, gridColumns))
+      : Math.min(
+          MAX_COLUMNS,
+          Math.max(MIN_COLUMNS, Math.floor(containerWidth / effectiveCardWidth))
+        )
     : clips.length;
 
   const rowCount = isVertical ? Math.ceil(clips.length / columnCount) : 1;
@@ -205,6 +220,10 @@ export const ClipList: React.FC<ClipListProps> = ({
           isDragging={draggingClipId === clip.id}
           onPreview={onRequestPreview ? () => onRequestPreview(clip.id) : undefined}
           onRunOcr={onRequestOcr ? () => onRequestOcr(clip.id) : undefined}
+          showSourceIcon={showSourceIcon}
+          showTime={showTime}
+          showTypeIcon={showTypeIcon}
+          showNumber={showNumber}
         />
       </div>
     );

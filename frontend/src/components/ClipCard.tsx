@@ -66,6 +66,10 @@ interface ClipCardProps {
   onToggleBulkSelect?: () => void;
   onCardClick?: (e: React.MouseEvent) => void;
   onRunOcr?: () => void;
+  showSourceIcon?: boolean;
+  showTime?: boolean;
+  showTypeIcon?: boolean;
+  showNumber?: boolean;
 }
 
 export const ClipCard = memo(
@@ -87,6 +91,10 @@ export const ClipCard = memo(
       onToggleBulkSelect,
       onCardClick,
       onRunOcr,
+      showSourceIcon = true,
+      showTime = true,
+      showTypeIcon = true,
+      showNumber = true,
     }: ClipCardProps,
     ref
   ) {
@@ -350,7 +358,7 @@ export const ClipCard = memo(
             } as React.CSSProperties
           }
           className={clsx(
-            'relative flex h-full w-full cursor-pointer select-none flex-col overflow-hidden rounded-2xl bg-card/85 shadow-lg transition-[border-color,box-shadow,opacity,transform] duration-150 border-border',
+            'relative flex h-full w-full cursor-pointer select-none flex-col overflow-hidden rounded-2xl border-border bg-card/85 shadow-lg transition-[border-color,box-shadow,opacity,transform] duration-150',
             isSelected
               ? 'z-10 border'
               : isBulkSelected
@@ -420,11 +428,11 @@ export const ClipCard = memo(
             data-el="clip-card-header"
             className="relative z-10 flex flex-shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2.5 py-2 backdrop-blur-sm"
           >
-            {clip.source_icon && (
+            {showSourceIcon && clip.source_icon && (
               <div
                 className={clsx(
                   'transition-opacity duration-150',
-                  hovered || isBulkSelected ? 'opacity-0 pointer-events-none' : 'opacity-100'
+                  hovered || isBulkSelected ? 'pointer-events-none opacity-0' : 'opacity-100'
                 )}
               >
                 <Tooltip label={clip.source_app || 'App'} placement="top">
@@ -447,7 +455,7 @@ export const ClipCard = memo(
                 <Pin size={10} className="-rotate-45 fill-cyan-400/20" />
               </span>
             )}
-            {clipIndex !== undefined && (
+            {showNumber && clipIndex !== undefined && (
               <span className="select-none font-mono text-[9px] opacity-20">#{clipIndex}</span>
             )}
             <div className="relative flex flex-1 items-center gap-1.5 overflow-hidden">
@@ -466,17 +474,19 @@ export const ClipCard = memo(
                   </>
                 )}
               </span>
-              <Tooltip
-                label={new Date(clip.created_at).toLocaleString(i18n.language || undefined, {
-                  dateStyle: 'full',
-                  timeStyle: 'medium',
-                })}
-                placement="top"
-              >
-                <span className="whitespace-nowrap text-[9px] font-medium text-muted-foreground/50 transition-colors hover:text-cyan-300">
-                  • {getRelativeTime(clip.created_at, i18n.language)}
-                </span>
-              </Tooltip>
+              {showTime && (
+                <Tooltip
+                  label={new Date(clip.created_at).toLocaleString(i18n.language || undefined, {
+                    dateStyle: 'full',
+                    timeStyle: 'medium',
+                  })}
+                  placement="top"
+                >
+                  <span className="whitespace-nowrap text-[9px] font-medium text-muted-foreground/50 transition-colors hover:text-cyan-300">
+                    • {getRelativeTime(clip.created_at, i18n.language)}
+                  </span>
+                </Tooltip>
+              )}
             </div>
             <div className="relative flex h-full min-w-[40px] items-center justify-end">
               {/* LATEST badge + LED - slide together and fade out on hover */}
@@ -494,7 +504,7 @@ export const ClipCard = memo(
                   </span>
                 )}
                 <div
-                  className="pointer-events-none h-1.5 w-1.5 rounded-full shadow-lg bg-primary"
+                  className="pointer-events-none h-1.5 w-1.5 rounded-full bg-primary shadow-lg"
                   style={{
                     boxShadow: `0 0 8px 1px rgb(var(--primary-rgb) / 0.5)`,
                   }}
@@ -547,8 +557,8 @@ export const ClipCard = memo(
           <div
             data-el="clip-card-content"
             className={clsx(
-              "relative z-10 flex-1 overflow-hidden p-2",
-              clip.clip_type === 'image' ? "bg-card/45" : "bg-card/90"
+              'relative z-10 flex-1 overflow-hidden p-2',
+              clip.clip_type === 'image' ? 'bg-card/45' : 'bg-card/90'
             )}
           >
             {renderedContent}
@@ -560,16 +570,20 @@ export const ClipCard = memo(
           <div
             data-el="clip-card-footer"
             className={clsx(
-              "absolute bottom-0 left-0 right-0 z-10 px-3 py-1.5",
+              'absolute bottom-0 left-0 right-0 z-10 px-3 py-1.5',
               clip.clip_type === 'image'
-                ? "bg-gradient-to-t from-card/95 via-card/50 to-transparent"
-                : "bg-gradient-to-t from-card via-card/100 to-transparent/0"
+                ? 'bg-gradient-to-t from-card/95 via-card/50 to-transparent'
+                : 'bg-gradient-to-t from-card via-card/100 to-transparent/0'
             )}
           >
-            <span className={clsx(
-              "text-[11px] font-medium transition-colors",
-              clip.clip_type === 'image' ? "text-muted-foreground/90 font-semibold" : "text-muted-foreground/50"
-            )}>
+            <span
+              className={clsx(
+                'text-[11px] font-medium transition-colors',
+                clip.clip_type === 'image'
+                  ? 'font-semibold text-muted-foreground/90'
+                  : 'text-muted-foreground/50'
+              )}
+            >
               {clip.clip_type === 'image' ? (
                 <div className="flex w-full items-center justify-between pr-6">
                   <div className="flex items-center gap-1.5">
@@ -607,29 +621,31 @@ export const ClipCard = memo(
                 t('clipList.textLength', { count: clip.content_length })
               )}
             </span>
-            <div className="absolute bottom-1.5 right-3 flex items-center text-primary opacity-65 transition-opacity group-hover:opacity-100">
-              {(() => {
-                const TypeIcon =
-                  clip.clip_type === 'image'
-                    ? ImageIcon
-                    : clip.clip_type === 'html' ||
-                        clip.clip_type === 'rtf' ||
-                        clip.clip_type === 'code'
-                      ? Code
-                      : clip.clip_type === 'url'
-                        ? Link
-                        : clip.clip_type === 'file'
-                          ? LucideFile
-                          : FileText;
-                return (
-                  <Tooltip label={typeLabel} placement="top">
-                    <span className="flex items-center justify-center">
-                      <TypeIcon size={12} />
-                    </span>
-                  </Tooltip>
-                );
-              })()}
-            </div>
+            {showTypeIcon && (
+              <div className="absolute bottom-1.5 right-3 flex items-center text-primary opacity-65 transition-opacity group-hover:opacity-100">
+                {(() => {
+                  const TypeIcon =
+                    clip.clip_type === 'image'
+                      ? ImageIcon
+                      : clip.clip_type === 'html' ||
+                          clip.clip_type === 'rtf' ||
+                          clip.clip_type === 'code'
+                        ? Code
+                        : clip.clip_type === 'url'
+                          ? Link
+                          : clip.clip_type === 'file'
+                            ? LucideFile
+                            : FileText;
+                  return (
+                    <Tooltip label={typeLabel} placement="top">
+                      <span className="flex items-center justify-center">
+                        <TypeIcon size={12} />
+                      </span>
+                    </Tooltip>
+                  );
+                })()}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -49,7 +49,7 @@ interface SettingsPanelProps {
   onClose: () => void;
 }
 
-type Tab = 'general' | 'compact' | 'ai' | 'notifications' | 'maintenance' | 'about';
+type Tab = 'general' | 'full' | 'compact' | 'ai' | 'notifications' | 'maintenance' | 'about';
 
 function PromptEditor({
   label,
@@ -171,15 +171,15 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
       .catch(console.error);
 
     // Initial pause state
-    invoke<boolean>('is_clipboard_monitoring_paused')
-      .then(setIsPaused)
-      .catch(console.error);
+    invoke<boolean>('is_clipboard_monitoring_paused').then(setIsPaused).catch(console.error);
   }, []);
 
   useEffect(() => {
     const unlisten = listen<string>('open-tab', (event) => {
       const tab = event.payload as Tab;
-      if (['general', 'ai', 'notifications', 'maintenance', 'about'].includes(tab)) {
+      if (
+        ['general', 'full', 'compact', 'ai', 'notifications', 'maintenance', 'about'].includes(tab)
+      ) {
         setActiveTab(tab);
       }
     });
@@ -271,10 +271,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
           if (updates.hotkey) {
             await invoke('register_global_shortcut', { hotkey: updates.hotkey });
           }
-          if (
-            'round_corners' in updates ||
-            'theme' in updates
-          ) {
+          if ('round_corners' in updates || 'theme' in updates) {
             await invoke('refresh_window');
           }
         } catch (error) {
@@ -298,6 +295,15 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         compact_show_time: 'settings.compactShowTime',
         compact_show_type_icon: 'settings.compactShowTypeIcon',
         compact_show_number: 'settings.compactShowNumber',
+        full_show_hud: 'settings.fullShowHud',
+        full_grid_scale: 'settings.fullGridScale',
+        full_grid_columns: 'settings.fullGridColumns',
+        full_scroll_direction: 'settings.fullScrollDirection',
+        full_show_source_icon: 'settings.fullShowSourceIcon',
+        full_show_time: 'settings.fullShowTime',
+        full_show_type_icon: 'settings.fullShowTypeIcon',
+        full_show_number: 'settings.fullShowNumber',
+        full_type_filter: 'settings.fullTypeFilter',
         toast_enabled: 'settings.toastEnabled',
         show_action_messages: 'settings.showActionMessages',
         auto_check_updates: 'settings.autoCheckUpdates',
@@ -601,6 +607,18 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 {t('settings.general')}
               </button>
               <button
+                onClick={() => setActiveTab('full')}
+                className={clsx(
+                  'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
+                  activeTab === 'full'
+                    ? 'border-l-[3px] border-primary bg-primary/10 text-primary shadow-none'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                )}
+              >
+                <Maximize2 size={14} />
+                {t('settings.fullTab')}
+              </button>
+              <button
                 onClick={() => setActiveTab('compact')}
                 className={clsx(
                   'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
@@ -676,7 +694,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
                       <SettingsIcon size={14} /> {t('settings.appearanceSection')}
                     </h3>
-                    <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+                    <div className="space-y-4 rounded-xl border border-border bg-card p-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-3">
                           <label className="block">
@@ -701,19 +719,23 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           <span className="text-base font-medium">{t('settings.theme')}</span>
                         </label>
                         <div role="radiogroup" className="flex flex-wrap gap-4 pt-1">
-                          {(['cyberpaste', 'dark', 'light', 'system'] as ThemeMode[]).map((mode) => (
-                            <ThemeCard
-                              key={mode}
-                              mode={mode}
-                              caption={
-                                mode === 'cyberpaste'
-                                  ? 'CyberPaste'
-                                  : t(`settings.theme${mode.charAt(0).toUpperCase() + mode.slice(1)}`)
-                              }
-                              selected={settings.theme === mode}
-                              onSelect={(m) => handleThemeChange(m)}
-                            />
-                          ))}
+                          {(['cyberpaste', 'dark', 'light', 'system'] as ThemeMode[]).map(
+                            (mode) => (
+                              <ThemeCard
+                                key={mode}
+                                mode={mode}
+                                caption={
+                                  mode === 'cyberpaste'
+                                    ? 'CyberPaste'
+                                    : t(
+                                        `settings.theme${mode.charAt(0).toUpperCase() + mode.slice(1)}`
+                                      )
+                                }
+                                selected={settings.theme === mode}
+                                onSelect={(m) => handleThemeChange(m)}
+                              />
+                            )
+                          )}
                         </div>
                       </div>
 
@@ -745,7 +767,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
                       <Clipboard size={14} /> {t('settings.clipboardCapture')}
                     </h3>
-                    <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+                    <div className="space-y-4 rounded-xl border border-border bg-card p-4">
                       <div className="space-y-3">
                         <label className="block">
                           <span className="text-sm font-bold uppercase tracking-tight text-primary/70">
@@ -807,7 +829,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
                       <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                         <div>
-                          <span className="text-sm font-medium">{t('settings.autoInjectPaste')}</span>
+                          <span className="text-sm font-medium">
+                            {t('settings.autoInjectPaste')}
+                          </span>
                           <p className="text-sm text-muted-foreground/80">
                             {t('settings.autoInjectPasteDesc')}
                           </p>
@@ -903,7 +927,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
                       <Volume2 size={14} /> {t('settings.soundsSection')}
                     </h3>
-                    <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+                    <div className="space-y-4 rounded-xl border border-border bg-card p-4">
                       {/* Clipboard Sound Group */}
                       <div className="flex flex-col gap-2 rounded-[4px] border border-border bg-secondary p-3">
                         <div className="flex items-center justify-between">
@@ -934,9 +958,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             <input
                               type="text"
                               value={settings.clipboard_sound_path || ''}
-                              onChange={(e) => updateSetting('clipboard_sound_path', e.target.value)}
+                              onChange={(e) =>
+                                updateSetting('clipboard_sound_path', e.target.value)
+                              }
                               placeholder={t('settings.soundPathPlaceholder')}
-                              className="flex-1 h-8 rounded-[4px] border border-border bg-input px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
+                              className="h-8 flex-1 rounded-[4px] border border-border bg-input px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
                             />
                             <button
                               onClick={async () => {
@@ -950,14 +976,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                   if (e !== 'No file selected') console.error(e);
                                 }
                               }}
-                              className="h-8 rounded-[4px] bg-accent px-3 text-xs font-medium transition-all hover:bg-accent/80 flex items-center justify-center flex-shrink-0"
+                              className="flex h-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent px-3 text-xs font-medium transition-all hover:bg-accent/80"
                             >
                               {t('common.browse')}
                             </button>
                             {settings.clipboard_sound_path && (
                               <button
                                 onClick={() => updateSetting('clipboard_sound_path', '')}
-                                className="h-8 w-8 rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 flex items-center justify-center flex-shrink-0"
+                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80"
                                 title={t('common.reset', { defaultValue: 'Reset to default' })}
                               >
                                 <RotateCcw size={14} />
@@ -973,7 +999,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                   console.error('Sound preview failed:', e);
                                 }
                               }}
-                              className="h-8 w-8 rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 flex items-center justify-center flex-shrink-0"
+                              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80"
                               title={t('settings.previewSound')}
                             >
                               <Volume2 size={14} />
@@ -1014,7 +1040,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               value={settings.startup_sound_path || ''}
                               onChange={(e) => updateSetting('startup_sound_path', e.target.value)}
                               placeholder={t('settings.soundPathPlaceholder')}
-                              className="flex-1 h-8 rounded-[4px] border border-border bg-input px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
+                              className="h-8 flex-1 rounded-[4px] border border-border bg-input px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
                             />
                             <button
                               onClick={async () => {
@@ -1028,14 +1054,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                   if (e !== 'No file selected') console.error(e);
                                 }
                               }}
-                              className="h-8 rounded-[4px] bg-accent px-3 text-xs font-medium transition-all hover:bg-accent/80 flex items-center justify-center flex-shrink-0"
+                              className="flex h-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent px-3 text-xs font-medium transition-all hover:bg-accent/80"
                             >
                               {t('common.browse')}
                             </button>
                             {settings.startup_sound_path && (
                               <button
                                 onClick={() => updateSetting('startup_sound_path', '')}
-                                className="h-8 w-8 rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 flex items-center justify-center flex-shrink-0"
+                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80"
                                 title={t('common.reset', { defaultValue: 'Reset to default' })}
                               >
                                 <RotateCcw size={14} />
@@ -1051,7 +1077,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                   console.error('Sound preview failed:', e);
                                 }
                               }}
-                              className="h-8 w-8 rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 flex items-center justify-center flex-shrink-0"
+                              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80"
                               title={t('settings.previewSound')}
                             >
                               <Volume2 size={14} />
@@ -1061,8 +1087,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
                     </div>
                   </section>
-
-
 
                   {/* Folders Management */}
                   <section className="space-y-4">
@@ -1340,6 +1364,120 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 </>
               )}
 
+              {/* --- FULL MODE TAB --- */}
+              {activeTab === 'full' && (
+                <>
+                  <section className="space-y-4">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
+                      <Layout size={14} /> {t('settings.fullLayout')}
+                    </h3>
+                    <div className="space-y-4 rounded-xl border border-border bg-card p-4">
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-base font-medium">
+                            {t('settings.fullGridScale')}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.fullGridScaleDesc')}
+                          </p>
+                        </label>
+                        <Select
+                          value={String(settings.full_grid_scale ?? 1)}
+                          onChange={(value) => updateSetting('full_grid_scale', Number(value))}
+                          options={[
+                            { value: '0.6', label: '60%' },
+                            { value: '0.75', label: '75%' },
+                            { value: '1', label: '100%' },
+                            { value: '1.25', label: '125%' },
+                            { value: '1.5', label: '150%' },
+                            { value: '1.75', label: '175%' },
+                          ]}
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-base font-medium">
+                            {t('settings.fullGridColumns')}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.fullGridColumnsDesc')}
+                          </p>
+                        </label>
+                        <Select
+                          value={String(settings.full_grid_columns ?? 0)}
+                          onChange={(value) => updateSetting('full_grid_columns', Number(value))}
+                          options={[
+                            { value: '0', label: t('settings.fullGridColumnsAuto') },
+                            ...[2, 3, 4, 5, 6, 7, 8].map((count) => ({
+                              value: String(count),
+                              label: t('settings.fullGridColumnsCount', { count }),
+                            })),
+                          ]}
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-base font-medium">
+                            {t('settings.fullScrollDirection')}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.fullScrollDirectionDesc')}
+                          </p>
+                        </label>
+                        <Select
+                          value={settings.full_scroll_direction || 'vertical'}
+                          onChange={(value) => updateSetting('full_scroll_direction', value)}
+                          options={[
+                            { value: 'vertical', label: t('settings.scrollVertical') },
+                            { value: 'horizontal', label: t('settings.scrollHorizontal') },
+                          ]}
+                        />
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="space-y-4">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
+                      <Eye size={14} /> {t('settings.fullVisibility')}
+                    </h3>
+                    <div className="space-y-3 rounded-xl border border-border bg-card p-4">
+                      {(
+                        [
+                          ['full_show_hud', 'fullShowHud'],
+                          ['full_show_source_icon', 'fullShowSourceIcon'],
+                          ['full_show_time', 'fullShowTime'],
+                          ['full_show_type_icon', 'fullShowTypeIcon'],
+                          ['full_show_number', 'fullShowNumber'],
+                        ] as const
+                      ).map(([key, translationKey]) => (
+                        <div
+                          key={key}
+                          className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3"
+                        >
+                          <div>
+                            <span className="text-sm font-medium">
+                              {t(`settings.${translationKey}`)}
+                            </span>
+                            <p className="text-xs text-muted-foreground">
+                              {t(`settings.${translationKey}Desc`)}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => updateSetting(key, !(settings[key] ?? true))}
+                            className={`h-6 w-11 rounded-full transition-colors ${(settings[key] ?? true) ? 'bg-primary' : 'bg-white/10'}`}
+                            aria-label={t(`settings.${translationKey}`)}
+                          >
+                            <span
+                              className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings[key] ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                            />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </>
+              )}
+
               {/* --- COMPACT MODE TAB --- */}
               {activeTab === 'compact' && (
                 <>
@@ -1348,7 +1486,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
                       <Layout size={14} /> {t('settings.layoutNavigation')}
                     </h3>
-                    <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+                    <div className="space-y-4 rounded-xl border border-border bg-card p-4">
                       <div className="space-y-3 border-b border-border/60 pb-4">
                         <label className="block">
                           <span className="text-base font-medium">
@@ -1412,16 +1550,21 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         />
                       </div>
 
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3 border-b border-border/60 pb-4">
+                      <div className="flex items-center justify-between rounded-[4px] border border-b border-border border-border/60 bg-secondary p-3 pb-4">
                         <div>
-                          <span className="text-sm font-medium">{t('settings.compactPeekEnabled')}</span>
+                          <span className="text-sm font-medium">
+                            {t('settings.compactPeekEnabled')}
+                          </span>
                           <p className="text-xs text-muted-foreground">
                             {t('settings.compactPeekEnabledDesc')}
                           </p>
                         </div>
                         <button
                           onClick={() =>
-                            updateSetting('compact_peek_enabled', !(settings.compact_peek_enabled ?? true))
+                            updateSetting(
+                              'compact_peek_enabled',
+                              !(settings.compact_peek_enabled ?? true)
+                            )
                           }
                           className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_peek_enabled ?? true) ? 'bg-primary' : 'bg-white/10'}`}
                         >
@@ -1432,7 +1575,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
                       <div className="space-y-3">
                         <label className="block">
-                          <span className="text-base font-medium">{t('settings.clipNumbering')}</span>
+                          <span className="text-base font-medium">
+                            {t('settings.clipNumbering')}
+                          </span>
                           <p className="text-xs text-muted-foreground">
                             {t('settings.clipNumberingDesc')}
                           </p>
@@ -1454,18 +1599,23 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
                       <Layers size={14} /> {t('settings.compactVisibility')}
                     </h3>
-                    <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+                    <div className="space-y-4 rounded-xl border border-border bg-card p-4">
                       {/* Show Source Icon */}
                       <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                         <div>
-                          <span className="text-sm font-medium">{t('settings.compactShowSourceIcon')}</span>
+                          <span className="text-sm font-medium">
+                            {t('settings.compactShowSourceIcon')}
+                          </span>
                           <p className="text-xs text-muted-foreground">
                             {t('settings.compactShowSourceIconDesc')}
                           </p>
                         </div>
                         <button
                           onClick={() =>
-                            updateSetting('compact_show_source_icon', !(settings.compact_show_source_icon ?? true))
+                            updateSetting(
+                              'compact_show_source_icon',
+                              !(settings.compact_show_source_icon ?? true)
+                            )
                           }
                           className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_show_source_icon ?? true) ? 'bg-primary' : 'bg-white/10'}`}
                         >
@@ -1478,14 +1628,19 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       {/* Show Capture Time */}
                       <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                         <div>
-                          <span className="text-sm font-medium">{t('settings.compactShowTime')}</span>
+                          <span className="text-sm font-medium">
+                            {t('settings.compactShowTime')}
+                          </span>
                           <p className="text-xs text-muted-foreground">
                             {t('settings.compactShowTimeDesc')}
                           </p>
                         </div>
                         <button
                           onClick={() =>
-                            updateSetting('compact_show_time', !(settings.compact_show_time ?? true))
+                            updateSetting(
+                              'compact_show_time',
+                              !(settings.compact_show_time ?? true)
+                            )
                           }
                           className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_show_time ?? true) ? 'bg-primary' : 'bg-white/10'}`}
                         >
@@ -1498,14 +1653,19 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       {/* Show Type Icon */}
                       <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                         <div>
-                          <span className="text-sm font-medium">{t('settings.compactShowTypeIcon')}</span>
+                          <span className="text-sm font-medium">
+                            {t('settings.compactShowTypeIcon')}
+                          </span>
                           <p className="text-xs text-muted-foreground">
                             {t('settings.compactShowTypeIconDesc')}
                           </p>
                         </div>
                         <button
                           onClick={() =>
-                            updateSetting('compact_show_type_icon', !(settings.compact_show_type_icon ?? true))
+                            updateSetting(
+                              'compact_show_type_icon',
+                              !(settings.compact_show_type_icon ?? true)
+                            )
                           }
                           className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_show_type_icon ?? true) ? 'bg-primary' : 'bg-white/10'}`}
                         >
@@ -1518,14 +1678,19 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       {/* Show Clip Number */}
                       <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                         <div>
-                          <span className="text-sm font-medium">{t('settings.compactShowNumber')}</span>
+                          <span className="text-sm font-medium">
+                            {t('settings.compactShowNumber')}
+                          </span>
                           <p className="text-xs text-muted-foreground">
                             {t('settings.compactShowNumberDesc')}
                           </p>
                         </div>
                         <button
                           onClick={() =>
-                            updateSetting('compact_show_number', !(settings.compact_show_number ?? true))
+                            updateSetting(
+                              'compact_show_number',
+                              !(settings.compact_show_number ?? true)
+                            )
                           }
                           className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_show_number ?? true) ? 'bg-primary' : 'bg-white/10'}`}
                         >
@@ -2023,7 +2188,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <div className="flex flex-col gap-3">
                       <button
                         onClick={confirmClearHistory}
-                        className="btn rounded-[4px] border border-destructive/20 bg-destructive/10 text-destructive hover:bg-destructive/20 w-full"
+                        className="btn w-full rounded-[4px] border border-destructive/20 bg-destructive/10 text-destructive hover:bg-destructive/20"
                       >
                         <Trash2 size={16} className="mr-2" />
                         {t('settings.clearHistory')}
