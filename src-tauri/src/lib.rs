@@ -592,6 +592,7 @@ pub fn run_app() {
             commands::reset_window_size,
             commands::center_window,
             commands::play_clipboard_sound,
+            commands::open_settings,
             commands::simulate_ctrl_v,
             commands::show_toast,
             commands::hide_toast,

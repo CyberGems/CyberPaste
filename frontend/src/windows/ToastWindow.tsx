@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { emit, listen } from '@tauri-apps/api/event';
+import { listen } from '@tauri-apps/api/event';
 import { getVersion } from '@tauri-apps/api/app';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -250,7 +250,7 @@ export function ToastWindow() {
   };
 
   const openNotificationSettings = () => {
-    emit('open-settings', 'notifications').catch(console.error);
+    invoke('open_settings', { tab: 'notifications' }).catch(console.error);
     closeToast();
   };
 
@@ -448,18 +448,18 @@ export function ToastWindow() {
                   e.stopPropagation();
                   openNotificationSettings();
                 }}
-                className={`rounded-md p-1 transition-colors ${tv.closeBtn}`}
+                className={`flex h-5 w-5 items-center justify-center rounded-md p-0 transition-colors ${tv.closeBtn}`}
                 title={t('toasts.configureNotifications')}
                 aria-label={t('toasts.configureNotifications')}
               >
-                <SettingsIcon className="h-3.5 w-3.5" />
+                <SettingsIcon className="h-3 w-3" />
               </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   closeToast();
                 }}
-                className={`rounded-md p-1 transition-colors ${tv.closeBtn}`}
+                className={`flex h-5 w-5 items-center justify-center rounded-md p-0 transition-colors ${tv.closeBtn}`}
                 title={t('toasts.tooltipClose')}
                 aria-label={t('toasts.tooltipClose')}
               >
@@ -471,7 +471,7 @@ export function ToastWindow() {
           <div className="flex flex-col p-2.5 pb-3">
             {/* Header Row: Source Program info or general Title */}
             {toast.source_app ? (
-              <div className={`flex items-center gap-1.5 border-b pb-1.5 mb-2 text-xs font-semibold pr-7 ${tv.headerBorder} ${tv.headerText}`}>
+              <div className={`flex min-w-0 items-center gap-1.5 border-b pb-1.5 mb-2 text-xs font-semibold pr-12 ${tv.headerBorder} ${tv.headerText}`}>
                 <div className="shrink-0 flex items-center">
                   {getHeaderClipIcon(toast.clip_type, toast.toast_type, tv.iconColor)}
                 </div>
@@ -487,10 +487,10 @@ export function ToastWindow() {
                     }}
                   />
                 ) : null}
-                <span className={`truncate max-w-[120px] ${tv.sourceAppText}`}>{toast.source_app}</span>
+                <span className={`min-w-0 max-w-[100px] truncate ${tv.sourceAppText}`}>{toast.source_app}</span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 mb-2 pr-7">
+              <div className="flex items-center gap-1.5 mb-2 pr-12">
                 <div className="shrink-0 flex items-center">
                   {getHeaderClipIcon(toast.clip_type, toast.toast_type, tv.iconColor)}
                 </div>
@@ -541,18 +541,18 @@ export function ToastWindow() {
                   e.stopPropagation();
                   openNotificationSettings();
                 }}
-                className={`rounded-md p-1 transition-colors ${tv.closeBtn}`}
+                className={`flex h-5 w-5 items-center justify-center rounded-md p-0 transition-colors ${tv.closeBtn}`}
                 title={t('toasts.configureNotifications')}
                 aria-label={t('toasts.configureNotifications')}
               >
-                <SettingsIcon className="h-3.5 w-3.5" />
+                <SettingsIcon className="h-3 w-3" />
               </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   closeToast();
                 }}
-                className={`rounded-md p-1 transition-colors ${tv.closeBtn}`}
+                className={`flex h-5 w-5 items-center justify-center rounded-md p-0 transition-colors ${tv.closeBtn}`}
                 title={t('toasts.tooltipClose')}
                 aria-label={t('toasts.tooltipClose')}
               >

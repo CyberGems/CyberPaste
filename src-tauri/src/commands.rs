@@ -3638,6 +3638,22 @@ fn start_tray_menu_outside_click_watcher(app: AppHandle, win: tauri::WebviewWind
     });
 }
 
+#[tauri::command]
+pub async fn open_settings(app: AppHandle, tab: Option<String>) -> Result<(), String> {
+    open_settings_window(&app, false);
+
+    if let Some(tab) = tab {
+        tauri::async_runtime::spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+            if let Some(settings_win) = app.get_webview_window("settings") {
+                let _ = settings_win.emit("open-tab", tab);
+            }
+        });
+    }
+
+    Ok(())
+}
+
 fn open_settings_window(app: &AppHandle, about_tab: bool) {
     if let Some(settings_win) = app.get_webview_window("settings") {
         let _ = settings_win.unminimize();

@@ -1,10 +1,9 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { emit, listen } from '@tauri-apps/api/event';
+import { listen } from '@tauri-apps/api/event';
 import { EditClipModal } from './components/EditClipModal';
 import { MoveToFolderModal } from './components/MoveToFolderModal';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { ClipboardItem as AppClipboardItem, FolderItem, Settings } from './types';
 import { ClipList } from './components/ClipList';
 import { ControlBar } from './components/ControlBar';
@@ -362,48 +361,11 @@ function App() {
       console.error('Failed to hide main window:', e);
     }
 
-    // Check if settings window already exists
-    const existingWin = await WebviewWindow.getByLabel('settings');
-    if (existingWin) {
-      try {
-        await invoke('focus_window', { label: 'settings' });
-        if (tab) {
-          await emit('open-tab', tab);
-        }
-      } catch (e) {
-        console.error('Failed to focus settings window:', e);
-        // Fallback to JS API if command fails (though command is preferred)
-        await existingWin.unminimize();
-        await existingWin.show();
-        await existingWin.setFocus();
-      }
-      return;
+    try {
+      await invoke('open_settings', { tab: tab ?? null });
+    } catch (e) {
+      console.error('Failed to open settings window:', e);
     }
-
-    const settingsWin = new WebviewWindow('settings', {
-      url: 'index.html?window=settings',
-      title: 'Settings',
-      width: 800,
-      height: 700,
-      resizable: true,
-      maximizable: true,
-      decorations: false, // We have our own title bar in SettingsPanel
-      transparent: false,
-      center: true,
-    });
-
-    settingsWin.once('tauri://created', function () {});
-    if (tab) {
-      settingsWin.once('tauri://created', () => {
-        setTimeout(() => {
-          emit('open-tab', tab).catch(console.error);
-        }, 250);
-      });
-    }
-
-    settingsWin.once('tauri://error', function (e) {
-      console.error('Error creating settings window', e);
-    });
   }, []);
 
   const loadClips = useCallback(
