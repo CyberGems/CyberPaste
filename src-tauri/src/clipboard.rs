@@ -546,7 +546,9 @@ async fn process_clipboard_change(
         let mut lock = LAST_STABLE_HASH.lock();
         if let Some(ref last_hash) = *lock {
             if last_hash == &clip_hash {
-                return;
+                log::debug!(
+                    "CLIPBOARD: Repeated hash detected; allowing it through for duplicate feedback"
+                );
             }
         }
         *lock = Some(clip_hash.clone());
@@ -808,10 +810,17 @@ async fn process_clipboard_change(
     // Play sound if enabled
     if let Some(manager) = app.try_state::<Arc<crate::settings_manager::SettingsManager>>() {
         let settings = manager.get();
-        if settings.clipboard_sound_enabled {
-            let _ = crate::commands::play_clipboard_sound(settings.clipboard_sound_path.clone());
+        if settings.clipboard_sound_enabled
+            && (!was_existing || settings.duplicate_toast_enabled)
+        {
+            let sound_path = if was_existing {
+                "default_duplicate".to_string()
+            } else {
+                settings.clipboard_sound_path.clone()
+            };
+            let _ = crate::commands::play_clipboard_sound(sound_path);
         }
-        if settings.toast_enabled {
+        if settings.toast_enabled && (!was_existing || settings.duplicate_toast_enabled) {
             let msg = if clip_preview.is_empty() {
                 "".to_string()
             } else if clip_preview.len() > 50 {
@@ -847,7 +856,9 @@ async fn process_clipboard_change(
             } else {
                 None
             };
-            let toast_type_str = if is_cut {
+            let toast_type_str = if was_existing {
+                "duplicate".to_string()
+            } else if is_cut {
                 "cut".to_string()
             } else {
                 "info".to_string()

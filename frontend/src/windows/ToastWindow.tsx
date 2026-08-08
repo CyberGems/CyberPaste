@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
+import { emit, listen } from '@tauri-apps/api/event';
 import { getVersion } from '@tauri-apps/api/app';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -22,6 +22,8 @@ import {
   Link as LinkIcon,
   Scissors as ScissorsIcon,
   CheckCircle2 as CheckIcon,
+  CopyCheck as DuplicateIcon,
+  Settings as SettingsIcon,
   AlertTriangle as AlertIcon,
   Info as InfoIcon,
 } from 'lucide-react';
@@ -29,7 +31,7 @@ import { Settings } from '../types';
 
 interface ToastPayload {
   message: string;
-  toast_type: 'success' | 'error' | 'info';
+  toast_type: 'success' | 'error' | 'info' | 'duplicate' | 'cut';
   clip_type?: string | null;
   image_preview?: string | null; // base64 thumbnail
   clip_uuid?: string | null;
@@ -39,10 +41,31 @@ interface ToastPayload {
 
 function getClipTitle(clipType: string | null | undefined, toastType: string | undefined, t: any): string {
   if (!clipType) {
+    if (toastType === 'duplicate') return t('toasts.titles.duplicate');
     if (toastType === 'success') return t('toasts.titles.success');
     if (toastType === 'error') return t('toasts.titles.error');
     if (toastType === 'cut') return t('toasts.titles.cut');
     return t('toasts.titles.info');
+  }
+  if (toastType === 'duplicate') {
+    switch (clipType) {
+      case 'image':
+        return t('toasts.titles.image_duplicate');
+      case 'text':
+        return t('toasts.titles.text_duplicate');
+      case 'code':
+        return t('toasts.titles.code_duplicate');
+      case 'html':
+        return t('toasts.titles.html_duplicate');
+      case 'rtf':
+        return t('toasts.titles.rtf_duplicate');
+      case 'file':
+        return t('toasts.titles.file_duplicate');
+      case 'url':
+        return t('toasts.titles.url_duplicate');
+      default:
+        return t('toasts.titles.fallback_duplicate');
+    }
   }
   if (toastType === 'cut') {
     switch (clipType) {
@@ -96,6 +119,9 @@ function getHeaderClipIcon(
   const cls = 'h-3.5 w-3.5';
   const pink = '#FF00D0';
 
+  if (toastType === 'duplicate') {
+    return <DuplicateIcon className={cls} style={{ color: '#F6C453' }} />;
+  }
   if (toastType === 'cut') {
     return <ScissorsIcon className={cls} style={{ color: pink }} />;
   }
@@ -223,6 +249,11 @@ export function ToastWindow() {
     }, 300);
   };
 
+  const openNotificationSettings = () => {
+    emit('open-settings', 'notifications').catch(console.error);
+    closeToast();
+  };
+
   const handleToastUpdate = async (payload: ToastPayload) => {
     const freshSettings = await invoke<Settings>('get_settings').catch(() => null);
     if (freshSettings) setSettings(freshSettings);
@@ -335,7 +366,10 @@ export function ToastWindow() {
   const themeId = resolveToastTheme(settings);
   // Cyan-leaning half of the CyberGems ramp: keeps the suite palette while staying
   // distinguishable from CyberSnap's toast, which owns the purple->magenta half.
-  const gradient = 'linear-gradient(90deg, #00F2FF, #00A8FF, #7A00FF)';
+  const gradient =
+    toast.toast_type === 'duplicate'
+      ? 'linear-gradient(90deg, #F6C453, #FF9F43, #00C2C7)'
+      : 'linear-gradient(90deg, #00F2FF, #00A8FF, #7A00FF)';
   const tv = toastThemeVars(themeId, gradient);
 
   const containerClasses = tv.container;
@@ -408,15 +442,30 @@ export function ToastWindow() {
               </p>
             </div>
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                closeToast();
-              }}
-              className={`absolute right-2 top-2 rounded-md p-1 transition-colors ${tv.closeBtn}`}
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
+            <div className="absolute right-2 top-2 flex items-center gap-0.5">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openNotificationSettings();
+                }}
+                className={`rounded-md p-1 transition-colors ${tv.closeBtn}`}
+                title={t('toasts.configureNotifications')}
+                aria-label={t('toasts.configureNotifications')}
+              >
+                <SettingsIcon className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  closeToast();
+                }}
+                className={`rounded-md p-1 transition-colors ${tv.closeBtn}`}
+                title={t('toasts.tooltipClose')}
+                aria-label={t('toasts.tooltipClose')}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
         ) : (
           <div className="flex flex-col p-2.5 pb-3">
@@ -450,6 +499,11 @@ export function ToastWindow() {
             )}
 
             {/* Content Row: Preview & Details */}
+            {toast.toast_type === 'duplicate' && (
+              <p className={`mb-1.5 text-[11px] font-medium ${themeId === 'light' ? 'text-amber-700' : 'text-amber-300'}`}>
+                {t('toasts.duplicateStatus')}
+              </p>
+            )}
             {hasImagePreview ? (
               <div className="flex justify-center w-full">
                 <img
@@ -481,15 +535,30 @@ export function ToastWindow() {
               </div>
             )}
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                closeToast();
-              }}
-              className={`absolute right-2.5 top-2.5 rounded-md p-1 transition-colors ${tv.closeBtn}`}
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
+            <div className="absolute right-2.5 top-2.5 flex items-center gap-0.5">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openNotificationSettings();
+                }}
+                className={`rounded-md p-1 transition-colors ${tv.closeBtn}`}
+                title={t('toasts.configureNotifications')}
+                aria-label={t('toasts.configureNotifications')}
+              >
+                <SettingsIcon className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  closeToast();
+                }}
+                className={`rounded-md p-1 transition-colors ${tv.closeBtn}`}
+                title={t('toasts.tooltipClose')}
+                aria-label={t('toasts.tooltipClose')}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
         )}
 

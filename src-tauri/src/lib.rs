@@ -508,6 +508,11 @@ pub fn run_app() {
                     let wav_bytes = generate_capture_sound_wav();
                     let _ = std::fs::write(&capture_sound_path, wav_bytes);
                 }
+                let duplicate_sound_path = data_dir.join("duplicate_sound.wav");
+                if !duplicate_sound_path.exists() {
+                    let wav_bytes = generate_duplicate_sound_wav();
+                    let _ = std::fs::write(&duplicate_sound_path, wav_bytes);
+                }
 
                 let manager = handle_for_toast.state::<Arc<SettingsManager>>();
                 let settings = manager.get();
@@ -1390,6 +1395,42 @@ pub fn generate_capture_sound_wav() -> Vec<u8> {
         let sample = (2.0 * std::f64::consts::PI * f0 * t).sin() * env_val * 0.20;
         let sample_clamped = sample.clamp(-1.0, 1.0);
         let sample_i16 = (sample_clamped * (i16::MAX as f64)) as i16;
+        wav.extend_from_slice(&sample_i16.to_le_bytes());
+    }
+
+    wav
+}
+
+pub fn generate_duplicate_sound_wav() -> Vec<u8> {
+    let sr = 44100;
+    let duration_ms = 170;
+    let n = sr * duration_ms / 1000;
+    let data_size = n * 2;
+    let mut wav = Vec::with_capacity(44 + data_size);
+
+    wav.extend_from_slice(b"RIFF");
+    wav.extend_from_slice(&((36 + data_size) as u32).to_le_bytes());
+    wav.extend_from_slice(b"WAVE");
+    wav.extend_from_slice(b"fmt ");
+    wav.extend_from_slice(&(16u32).to_le_bytes());
+    wav.extend_from_slice(&(1u16).to_le_bytes());
+    wav.extend_from_slice(&(1u16).to_le_bytes());
+    wav.extend_from_slice(&(sr as u32).to_le_bytes());
+    wav.extend_from_slice(&((sr * 2) as u32).to_le_bytes());
+    wav.extend_from_slice(&(2u16).to_le_bytes());
+    wav.extend_from_slice(&(16u16).to_le_bytes());
+    wav.extend_from_slice(b"data");
+    wav.extend_from_slice(&(data_size as u32).to_le_bytes());
+
+    for i in 0..n {
+        let t = i as f64 / sr as f64;
+        let first_note = t < 0.085;
+        let note_t = if first_note { t } else { t - 0.085 };
+        let frequency = if first_note { 920.0 } else { 680.0 };
+        let decay = if first_note { 52.0 } else { 42.0 };
+        let envelope = (-note_t * decay).exp() * (1.0 - (-note_t * 220.0).exp());
+        let sample = (2.0 * std::f64::consts::PI * frequency * note_t).sin() * envelope * 0.16;
+        let sample_i16 = (sample.clamp(-1.0, 1.0) * i16::MAX as f64) as i16;
         wav.extend_from_slice(&sample_i16.to_le_bytes());
     }
 

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
+import { emit, listen } from '@tauri-apps/api/event';
 import { EditClipModal } from './components/EditClipModal';
 import { MoveToFolderModal } from './components/MoveToFolderModal';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -274,8 +274,8 @@ function App() {
     });
 
     // Listen for open-settings from tray
-    const unlistenOpenSettings = listen('open-settings', () => {
-      openSettings();
+    const unlistenOpenSettings = listen<string>('open-settings', (event) => {
+      openSettings(event.payload);
     });
 
     // Listen for select-clip from toast click
@@ -354,7 +354,7 @@ function App() {
     };
   }, []);
 
-  const openSettings = useCallback(async () => {
+  const openSettings = useCallback(async (tab?: string) => {
     // Hide main window (with animation)
     try {
       await invoke('hide_window');
@@ -367,6 +367,9 @@ function App() {
     if (existingWin) {
       try {
         await invoke('focus_window', { label: 'settings' });
+        if (tab) {
+          await emit('open-tab', tab);
+        }
       } catch (e) {
         console.error('Failed to focus settings window:', e);
         // Fallback to JS API if command fails (though command is preferred)
@@ -390,6 +393,13 @@ function App() {
     });
 
     settingsWin.once('tauri://created', function () {});
+    if (tab) {
+      settingsWin.once('tauri://created', () => {
+        setTimeout(() => {
+          emit('open-tab', tab).catch(console.error);
+        }, 250);
+      });
+    }
 
     settingsWin.once('tauri://error', function (e) {
       console.error('Error creating settings window', e);

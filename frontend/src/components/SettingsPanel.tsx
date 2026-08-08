@@ -305,6 +305,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         full_show_number: 'settings.fullShowNumber',
         full_type_filter: 'settings.fullTypeFilter',
         toast_enabled: 'settings.toastEnabled',
+        duplicate_toast_enabled: 'settings.duplicateToasts',
         show_action_messages: 'settings.showActionMessages',
         auto_check_updates: 'settings.autoCheckUpdates',
         round_corners: 'settings.roundCorners',
@@ -1934,6 +1935,31 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     >
                       <div
                         className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.toast_enabled ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                    <div>
+                      <span className="text-base font-semibold">
+                        {t('settings.duplicateToasts')}
+                      </span>
+                      <p className="text-sm text-muted-foreground/80">
+                        {t('settings.duplicateToastsDesc')}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() =>
+                        updateSetting(
+                          'duplicate_toast_enabled',
+                          !(settings.duplicate_toast_enabled ?? true)
+                        )
+                      }
+                      className={`h-6 w-11 rounded-full transition-colors ${(settings.duplicate_toast_enabled ?? true) ? 'bg-primary' : 'bg-white/10'}`}
+                      aria-label={t('settings.duplicateToasts')}
+                    >
+                      <div
+                        className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.duplicate_toast_enabled ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
                       />
                     </button>
                   </div>

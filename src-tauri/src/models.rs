@@ -4,6 +4,10 @@ use std::sync::OnceLock;
 
 use std::collections::HashSet;
 
+fn default_true() -> bool {
+    true
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct AppSettings {
@@ -55,6 +59,8 @@ pub struct AppSettings {
     pub toast_position: String,
     pub toast_duration: i64,
     pub toast_enabled: bool,
+    #[serde(default = "default_true")]
+    pub duplicate_toast_enabled: bool,
     pub toast_monitor: String,
     pub toast_click_action: String,
     pub compact_view_position_mode: String, // "cursor" or "caret"
@@ -143,6 +149,7 @@ impl Default for AppSettings {
             toast_position: "bottom-center".to_string(),
             toast_duration: 3000,
             toast_enabled: true,
+            duplicate_toast_enabled: true,
             toast_monitor: "primary".to_string(),
             toast_click_action: "close".to_string(),
             compact_view_position_mode: "auto".to_string(),

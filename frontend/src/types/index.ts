@@ -65,6 +65,7 @@ export interface Settings {
   toast_position?: string;
   toast_duration?: number;
   toast_enabled?: boolean;
+  duplicate_toast_enabled?: boolean;
   toast_monitor?: string;
   toast_click_action?: 'none' | 'close' | 'open';
   compact_view_position_mode?: 'cursor' | 'caret' | 'auto';
