@@ -43,6 +43,8 @@ import { Select } from './ui/Select';
 import { ThemeCard, ThemeMode } from './ThemeCard';
 import { useShortcutRecorder } from 'use-shortcut-recorder';
 import { clsx } from 'clsx';
+import Tooltip from './Tooltip';
+
 
 interface SettingsPanelProps {
   settings: Settings;
@@ -577,18 +579,19 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
             <h2 className="text-[18px] font-bold tracking-tight text-foreground">CyberPaste</h2>
           </div>
           <div className="flex items-center gap-1">
-            <button
-              onClick={toggleMaximize}
-              className="icon-button flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-accent/50"
-              onMouseDown={(e) => e.stopPropagation()}
-              title={isMaximized ? t('common.restore') : t('common.maximize')}
-            >
-              {isMaximized ? (
-                <Square size={14} className="opacity-70" />
-              ) : (
-                <Maximize2 size={14} className="opacity-70" />
-              )}
-            </button>
+            <Tooltip label={isMaximized ? t('common.restore') : t('common.maximize')} placement="bottom">
+              <button
+                onClick={toggleMaximize}
+                className="icon-button flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-accent/50"
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                {isMaximized ? (
+                  <Square size={14} className="opacity-70" />
+                ) : (
+                  <Maximize2 size={14} className="opacity-70" />
+                )}
+              </button>
+            </Tooltip>
             <button
               onClick={onClose}
               className="icon-button flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-destructive/20 hover:text-destructive"
@@ -1011,29 +1014,31 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               {t('common.browse')}
                             </button>
                             {settings.clipboard_sound_path && (
-                              <button
-                                onClick={() => updateSetting('clipboard_sound_path', '')}
-                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80"
-                                title={t('common.reset', { defaultValue: 'Reset to default' })}
-                              >
-                                <RotateCcw size={14} />
-                              </button>
+                              <Tooltip label={t('common.reset', { defaultValue: 'Reset to default' })} placement="top">
+                                <button
+                                  onClick={() => updateSetting('clipboard_sound_path', '')}
+                                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80"
+                                >
+                                  <RotateCcw size={14} />
+                                </button>
+                              </Tooltip>
                             )}
-                            <button
-                              onClick={async () => {
-                                try {
-                                  await invoke('play_clipboard_sound', {
-                                    soundPath: settings.clipboard_sound_path || 'default_capture',
-                                  });
-                                } catch (e) {
-                                  console.error('Sound preview failed:', e);
-                                }
-                              }}
-                              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80"
-                              title={t('settings.previewSound')}
-                            >
-                              <Volume2 size={14} />
-                            </button>
+                            <Tooltip label={t('settings.previewSound')} placement="top">
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await invoke('play_clipboard_sound', {
+                                      soundPath: settings.clipboard_sound_path || 'default_capture',
+                                    });
+                                  } catch (e) {
+                                    console.error('Sound preview failed:', e);
+                                  }
+                                }}
+                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80"
+                              >
+                                <Volume2 size={14} />
+                              </button>
+                            </Tooltip>
                           </div>
                         )}
                       </div>
@@ -1089,29 +1094,31 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               {t('common.browse')}
                             </button>
                             {settings.startup_sound_path && (
-                              <button
-                                onClick={() => updateSetting('startup_sound_path', '')}
-                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80"
-                                title={t('common.reset', { defaultValue: 'Reset to default' })}
-                              >
-                                <RotateCcw size={14} />
-                              </button>
+                              <Tooltip label={t('common.reset', { defaultValue: 'Reset to default' })} placement="top">
+                                <button
+                                  onClick={() => updateSetting('startup_sound_path', '')}
+                                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80"
+                                >
+                                  <RotateCcw size={14} />
+                                </button>
+                              </Tooltip>
                             )}
-                            <button
-                              onClick={async () => {
-                                try {
-                                  await invoke('play_clipboard_sound', {
-                                    soundPath: settings.startup_sound_path || 'default_startup',
-                                  });
-                                } catch (e) {
-                                  console.error('Sound preview failed:', e);
-                                }
-                              }}
-                              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80"
-                              title={t('settings.previewSound')}
-                            >
-                              <Volume2 size={14} />
-                            </button>
+                            <Tooltip label={t('settings.previewSound')} placement="top">
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await invoke('play_clipboard_sound', {
+                                      soundPath: settings.startup_sound_path || 'default_startup',
+                                    });
+                                  } catch (e) {
+                                    console.error('Sound preview failed:', e);
+                                  }
+                                }}
+                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80"
+                              >
+                                <Volume2 size={14} />
+                              </button>
+                            </Tooltip>
                           </div>
                         )}
                       </div>
@@ -1195,20 +1202,22 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                       </span>
                                     </div>
                                     <div className="flex flex-shrink-0 items-center gap-1">
-                                      <button
-                                        onClick={() => startRenameFolder(folder)}
-                                        className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                                        title={t('folders.rename')}
-                                      >
-                                        <MoreHorizontal size={13} />
-                                      </button>
-                                      <button
-                                        onClick={() => handleDeleteFolder(folder.id)}
-                                        className="rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                                        title={t('common.delete')}
-                                      >
-                                        <Trash2 size={13} />
-                                      </button>
+                                      <Tooltip label={t('folders.rename')} placement="top">
+                                        <button
+                                          onClick={() => startRenameFolder(folder)}
+                                          className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                                        >
+                                          <MoreHorizontal size={13} />
+                                        </button>
+                                      </Tooltip>
+                                      <Tooltip label={t('common.delete')} placement="top">
+                                        <button
+                                          onClick={() => handleDeleteFolder(folder.id)}
+                                          className="rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                                        >
+                                          <Trash2 size={13} />
+                                        </button>
+                                      </Tooltip>
                                     </div>
                                   </>
                                 )}
@@ -1348,21 +1357,23 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           className="flex-1 rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
                           onKeyDown={(e) => e.key === 'Enter' && handleAddIgnoredApp()}
                         />
-                        <button
-                          onClick={handleBrowseFile}
-                          className="btn btn-secondary rounded-[4px] px-3"
-                          title={t('settings.browseExecutable')}
-                        >
-                          <FolderOpen size={16} />
-                        </button>
-                        <button
-                          onClick={handleAddIgnoredApp}
-                          disabled={!newIgnoredApp.trim()}
-                          className="btn btn-secondary rounded-[4px] px-3"
-                          title={t('settings.addToList')}
-                        >
-                          <Plus size={16} />
-                        </button>
+                        <Tooltip label={t('settings.browseExecutable')} placement="top">
+                          <button
+                            onClick={handleBrowseFile}
+                            className="btn btn-secondary rounded-[4px] px-3"
+                          >
+                            <FolderOpen size={16} />
+                          </button>
+                        </Tooltip>
+                        <Tooltip label={t('settings.addToList')} placement="top">
+                          <button
+                            onClick={handleAddIgnoredApp}
+                            disabled={!newIgnoredApp.trim()}
+                            className="btn btn-secondary rounded-[4px] px-3"
+                          >
+                            <Plus size={16} />
+                          </button>
+                        </Tooltip>
                       </div>
 
                       <div className="custom-scrollbar max-h-40 space-y-1 overflow-y-auto pr-1">

@@ -3,6 +3,8 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getVersion } from '@tauri-apps/api/app';
 import { useLanguage } from '../hooks/useLanguage';
+import Tooltip from '../components/Tooltip';
+
 
 function getWelcomeTitle(version: string, lang?: string): string {
   const vStr = version ? ` v${version}` : '';
@@ -443,28 +445,30 @@ export function ToastWindow() {
             </div>
 
             <div className="absolute right-2 top-2 flex items-center gap-0.5">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openNotificationSettings();
-                }}
-                className={`flex h-5 w-5 items-center justify-center rounded-md p-0 transition-colors ${tv.closeBtn}`}
-                title={t('toasts.configureNotifications')}
-                aria-label={t('toasts.configureNotifications')}
-              >
-                <SettingsIcon className="h-3 w-3" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  closeToast();
-                }}
-                className={`flex h-5 w-5 items-center justify-center rounded-md p-0 transition-colors ${tv.closeBtn}`}
-                title={t('toasts.tooltipClose')}
-                aria-label={t('toasts.tooltipClose')}
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
+              <Tooltip label={t('toasts.configureNotifications')} placement="bottom">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openNotificationSettings();
+                  }}
+                  className={`flex h-5 w-5 items-center justify-center rounded-md p-0 transition-colors ${tv.closeBtn}`}
+                  aria-label={t('toasts.configureNotifications')}
+                >
+                  <SettingsIcon className="h-3 w-3" />
+                </button>
+              </Tooltip>
+              <Tooltip label={t('toasts.tooltipClose')} placement="bottom">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    closeToast();
+                  }}
+                  className={`flex h-5 w-5 items-center justify-center rounded-md p-0 transition-colors ${tv.closeBtn}`}
+                  aria-label={t('toasts.tooltipClose')}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </Tooltip>
             </div>
           </div>
         ) : (
@@ -536,28 +540,30 @@ export function ToastWindow() {
             )}
 
             <div className="absolute right-2.5 top-2.5 flex items-center gap-0.5">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openNotificationSettings();
-                }}
-                className={`flex h-5 w-5 items-center justify-center rounded-md p-0 transition-colors ${tv.closeBtn}`}
-                title={t('toasts.configureNotifications')}
-                aria-label={t('toasts.configureNotifications')}
-              >
-                <SettingsIcon className="h-3 w-3" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  closeToast();
-                }}
-                className={`flex h-5 w-5 items-center justify-center rounded-md p-0 transition-colors ${tv.closeBtn}`}
-                title={t('toasts.tooltipClose')}
-                aria-label={t('toasts.tooltipClose')}
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
+              <Tooltip label={t('toasts.configureNotifications')} placement="bottom">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openNotificationSettings();
+                  }}
+                  className={`flex h-5 w-5 items-center justify-center rounded-md p-0 transition-colors ${tv.closeBtn}`}
+                  aria-label={t('toasts.configureNotifications')}
+                >
+                  <SettingsIcon className="h-3 w-3" />
+                </button>
+              </Tooltip>
+              <Tooltip label={t('toasts.tooltipClose')} placement="bottom">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    closeToast();
+                  }}
+                  className={`flex h-5 w-5 items-center justify-center rounded-md p-0 transition-colors ${tv.closeBtn}`}
+                  aria-label={t('toasts.tooltipClose')}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </Tooltip>
             </div>
           </div>
         )}
