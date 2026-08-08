@@ -698,7 +698,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-3">
                           <label className="block">
-                            <span className="text-base font-medium">{t('settings.language')}</span>
+                            <span className="text-sm font-medium">{t('settings.language')}</span>
                           </label>
                           <Select
                             value={settings.language || 'en'}
@@ -716,7 +716,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
                       <div className="space-y-3">
                         <label className="block">
-                          <span className="text-base font-medium">{t('settings.theme')}</span>
+                          <span className="text-sm font-medium">{t('settings.theme')}</span>
                         </label>
                         <div role="radiogroup" className="flex flex-wrap gap-4 pt-1">
                           {(['cyberpaste', 'dark', 'light', 'system'] as ThemeMode[]).map(
@@ -738,29 +738,29 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           )}
                         </div>
                       </div>
-
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                        <div>
-                          <span className="text-base font-semibold">
-                            {t('settings.startupWithWindows')}
-                          </span>
-                          <p className="text-sm text-muted-foreground/80">
-                            {t('settings.startupWithWindowsDesc')}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() =>
-                            updateSetting('startup_with_windows', !settings.startup_with_windows)
-                          }
-                          className={`h-6 w-11 rounded-full transition-colors ${settings.startup_with_windows ? 'bg-primary' : 'bg-white/10'}`}
-                        >
-                          <div
-                            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.startup_with_windows ? 'translate-x-5' : 'translate-x-0.5'}`}
-                          />
-                        </button>
-                      </div>
                     </div>
                   </section>
+
+                  <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
+                    <div>
+                      <span className="text-sm font-medium">
+                        {t('settings.startupWithWindows')}
+                      </span>
+                      <p className="text-sm text-muted-foreground/80">
+                        {t('settings.startupWithWindowsDesc')}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() =>
+                        updateSetting('startup_with_windows', !settings.startup_with_windows)
+                      }
+                      className={`h-6 w-11 rounded-full transition-colors ${settings.startup_with_windows ? 'bg-primary' : 'bg-white/10'}`}
+                    >
+                      <div
+                        className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.startup_with_windows ? 'translate-x-5' : 'translate-x-0.5'}`}
+                      />
+                    </button>
+                  </div>
 
                   {/* Clipboard & Capture */}
                   <section className="space-y-4">
@@ -770,9 +770,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <div className="space-y-4 rounded-xl border border-border bg-card p-4">
                       <div className="space-y-3">
                         <label className="block">
-                          <span className="text-sm font-bold uppercase tracking-tight text-primary/70">
-                            {t('settings.historyLimit')}
-                          </span>
+                          <span className="text-sm font-medium">{t('settings.historyLimit')}</span>
                           <p className="text-xs text-muted-foreground">
                             {t('settings.historyLimitDesc')}
                           </p>
@@ -792,25 +790,26 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                        <div>
-                          <span className="text-sm font-medium">
-                            {t('settings.pauseMonitoring')}
-                          </span>
-                          <p className="text-xs text-muted-foreground">
-                            {t('settings.pauseMonitoringDesc')}
-                          </p>
+                      <div className="border-b border-border/60 pb-4">
+                        <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                          <div>
+                            <span className="text-sm font-medium">
+                              {t('settings.pauseMonitoring')}
+                            </span>
+                            <p className="text-xs text-muted-foreground">
+                              {t('settings.pauseMonitoringDesc')}
+                            </p>
+                          </div>
+                          <button
+                            onClick={handleTogglePause}
+                            className={`h-6 w-11 rounded-full transition-colors ${isPaused ? 'bg-primary' : 'bg-white/10'}`}
+                          >
+                            <div
+                              className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${isPaused ? 'translate-x-5' : 'translate-x-0.5'}`}
+                            />
+                          </button>
                         </div>
-                        <button
-                          onClick={handleTogglePause}
-                          className={`h-6 w-11 rounded-full transition-colors ${isPaused ? 'bg-primary' : 'bg-white/10'}`}
-                        >
-                          <div
-                            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${isPaused ? 'translate-x-5' : 'translate-x-0.5'}`}
-                          />
-                        </button>
                       </div>
-
                       <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                         <div>
                           <span className="text-sm font-medium">{t('settings.autoPaste')}</span>
@@ -819,7 +818,13 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           </p>
                         </div>
                         <button
-                          onClick={() => updateSetting('auto_paste', !settings.auto_paste)}
+                          onClick={() => {
+                            const enabled = !settings.auto_paste;
+                            updateSettings({
+                              auto_paste: enabled,
+                              ...(!enabled ? { auto_inject_paste: false } : {}),
+                            });
+                          }}
                           className={`h-6 w-11 rounded-full transition-colors ${settings.auto_paste ? 'bg-primary' : 'bg-white/10'}`}
                         >
                           <div
@@ -827,8 +832,8 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           />
                         </button>
                       </div>
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                        <div>
+                      <div className="ml-4 flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div className="min-w-0 flex-1 pr-4">
                           <span className="text-sm font-medium">
                             {t('settings.autoInjectPaste')}
                           </span>
@@ -837,13 +842,24 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           </p>
                         </div>
                         <button
+                          disabled={!settings.auto_paste}
                           onClick={() =>
                             updateSetting('auto_inject_paste', !settings.auto_inject_paste)
                           }
-                          className={`h-6 w-11 rounded-full transition-colors ${settings.auto_inject_paste ? 'bg-primary' : 'bg-white/10'}`}
+                          className={`h-6 w-11 rounded-full transition-colors ${
+                            !settings.auto_paste
+                              ? 'cursor-not-allowed bg-white/5 opacity-40'
+                              : settings.auto_inject_paste
+                                ? 'bg-primary'
+                                : 'bg-white/10'
+                          }`}
                         >
                           <div
-                            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.auto_inject_paste ? 'translate-x-5' : 'translate-x-0.5'}`}
+                            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                              settings.auto_paste && settings.auto_inject_paste
+                                ? 'translate-x-5'
+                                : 'translate-x-0.5'
+                            }`}
                           />
                         </button>
                       </div>
@@ -867,7 +883,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
 
                       <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                        <div>
+                        <div className="min-w-0 flex-1 pr-4">
                           <span className="text-sm font-medium">
                             {t('settings.resetViewOnPaste')}
                           </span>
@@ -879,7 +895,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           onClick={() =>
                             updateSetting('reset_view_on_paste', !settings.reset_view_on_paste)
                           }
-                          className={`h-6 w-11 rounded-full transition-colors ${settings.reset_view_on_paste ? 'bg-primary' : 'bg-white/10'}`}
+                          className={`h-6 w-11 flex-shrink-0 rounded-full transition-colors ${settings.reset_view_on_paste ? 'bg-primary' : 'bg-white/10'}`}
                         >
                           <div
                             className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.reset_view_on_paste ? 'translate-x-5' : 'translate-x-0.5'}`}
@@ -888,7 +904,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
                       <div className="space-y-3">
                         <label className="block">
-                          <span className="text-sm font-bold uppercase tracking-tight text-primary/70">
+                          <span className="text-sm font-medium">
                             {t('settings.externalImageEditor')}
                           </span>
                           <p className="text-xs text-muted-foreground">
@@ -1090,7 +1106,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
                   {/* Folders Management */}
                   <section className="space-y-4">
-                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-blue-400/80">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
                       <FolderIcon size={14} /> {t('settings.manageFolders')}
                     </h3>
                     <div className="space-y-3">
@@ -1191,7 +1207,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
                   {/* Shortcuts */}
                   <section className="space-y-4">
-                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-amber-400/80">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
                       <Command size={14} /> {t('settings.shortcuts')}
                     </h3>
                     <div className="space-y-6">
@@ -1298,7 +1314,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
                   {/* Privacy */}
                   <section className="space-y-4">
-                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-emerald-400/80">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
                       <Lock size={14} /> {t('settings.privacy')}
                     </h3>
                     <div className="space-y-3">

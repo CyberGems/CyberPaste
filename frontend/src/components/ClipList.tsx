@@ -13,10 +13,8 @@ interface ClipListProps {
   hasMore: boolean;
   onLoadMore: () => void;
   onPaste: (id: string) => void;
-  onCopy: (id: string) => void;
   onDragStart: (clipId: string, startX: number, startY: number) => void;
   selectedClipId: string | null;
-  selectedFolder?: string | null;
   onCardContextMenu?: (e: React.MouseEvent, id: string) => void;
   resetToken?: number;
   viewMode?: 'full' | 'compact';
@@ -51,10 +49,8 @@ export const ClipList: React.FC<ClipListProps> = ({
   isLoading,
   onLoadMore,
   onPaste,
-  onCopy,
   onDragStart,
   selectedClipId,
-  selectedFolder,
   onCardContextMenu,
   resetToken = 0,
   scrollDirection = 'vertical',
@@ -208,13 +204,11 @@ export const ClipList: React.FC<ClipListProps> = ({
         <ClipCard
           clip={clip}
           clipIndex={clipNumbering === 'positional' ? index + 1 : clips.length - index}
-          isLatest={index === 0 && !selectedFolder}
           isSelected={selectedClipId === clip.id}
           isBulkSelected={bulkSelectedIds?.has(clip.id)}
           onToggleBulkSelect={onToggleBulkSelect ? () => onToggleBulkSelect(clip.id) : undefined}
           onCardClick={(e) => onClipClick?.(clip.id, e)}
           onPaste={() => onPaste(clip.id)}
-          onCopy={() => onCopy(clip.id)}
           onDragStart={onDragStart}
           onContextMenu={(e: React.MouseEvent) => onCardContextMenu?.(e, clip.id)}
           reorderDropIndicator={reorderTargetClipId === clip.id ? reorderTargetPosition : null}

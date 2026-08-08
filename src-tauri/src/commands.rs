@@ -986,7 +986,7 @@ pub async fn paste_clip(
                 let manager = app.state::<Arc<SettingsManager>>();
                 let settings = manager.get();
                 let auto_paste = settings.auto_paste;
-                let auto_inject = settings.auto_inject_paste;
+                let auto_inject = settings.auto_paste && settings.auto_inject_paste;
                 log::info!(
                     "paste_clip: auto_paste={}, auto_inject={}",
                     auto_paste,

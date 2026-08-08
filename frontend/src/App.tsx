@@ -206,11 +206,12 @@ function App() {
   const effectiveTheme = useTheme(theme);
   useLanguage(settings?.language);
   const { t } = useTranslation();
-  const fullActionTooltip = settings?.auto_inject_paste
-    ? t('full.actionAutoInject')
-    : settings?.auto_paste
-      ? t('full.actionPaste')
-      : t('full.actionCopy');
+  const fullActionTooltip =
+    settings?.auto_paste && settings?.auto_inject_paste
+      ? t('full.actionAutoInject')
+      : settings?.auto_paste
+        ? t('full.actionPaste')
+        : t('full.actionCopy');
 
   const appWindow = getCurrentWindow();
   const selectedFolderRef = useRef(selectedFolder);
@@ -2232,9 +2233,7 @@ function App() {
                   hasMore={hasMore}
                   resetToken={clipListResetToken}
                   selectedClipId={selectedClipId}
-                  selectedFolder={selectedFolder}
                   onPaste={handlePaste}
-                  onCopy={handleCopy}
                   onLoadMore={loadMore}
                   onDragStart={startDrag}
                   onCardContextMenu={(e, clipId) => handleContextMenu(e, 'card', clipId)}

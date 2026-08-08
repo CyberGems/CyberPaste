@@ -5,7 +5,6 @@ import { convertFileSrc } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 import { LAYOUT, PREVIEW_CHAR_LIMIT } from '../constants';
 import {
-  Copy,
   Check,
   MoveHorizontal,
   MoveVertical,
@@ -52,13 +51,11 @@ interface ClipCardProps {
   clip: ClipboardItem;
   isSelected: boolean;
   onPaste: () => void;
-  onCopy: () => void;
   onDragStart: (clipId: string, startX: number, startY: number) => void;
   onContextMenu?: (e: React.MouseEvent) => void;
   reorderDropIndicator?: 'before' | 'after' | null;
   reorderEnabled?: boolean;
   clipIndex?: number;
-  isLatest?: boolean;
   isDragging?: boolean;
   onPreview?: () => void;
   isBulkSelected?: boolean;
@@ -78,13 +75,11 @@ export const ClipCard = memo(
       clip,
       isSelected,
       onPaste,
-      onCopy,
       onDragStart,
       onContextMenu,
       reorderDropIndicator,
       reorderEnabled,
       clipIndex,
-      isLatest,
       isDragging,
       isBulkSelected = false,
       onToggleBulkSelect,
@@ -112,7 +107,6 @@ export const ClipCard = memo(
         return t('clipType.rtf') === 'clipType.rtf' ? 'Rich Text' : t('clipType.rtf');
       return t('clipType.text') === 'clipType.text' ? 'Text' : t('clipType.text');
     }, [clip.clip_type, t]);
-    const [copied, setCopied] = useState(false);
     const [hovered, setHovered] = useState(false);
     const title = clip.source_app || clip.clip_type.toUpperCase();
 
@@ -459,21 +453,9 @@ export const ClipCard = memo(
               {showNumber && clipIndex !== undefined && (
                 <span className="select-none font-mono text-[9px] opacity-20">#{clipIndex}</span>
               )}
-              <div className="relative flex flex-1 items-center gap-1.5 overflow-hidden">
-                <span
-                  className="inline-block whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.1em] text-secondary-foreground"
-                  style={{
-                    animation: isLatest ? 'marquee 3s linear infinite' : 'none',
-                  }}
-                >
+              <div className="relative flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
+                <span className="min-w-0 flex-1 truncate whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.1em] text-secondary-foreground">
                   {title}
-                  {isLatest && (
-                    <>
-                      <span className="mx-3 opacity-30">•</span>
-                      {title}
-                      <span className="mx-3 opacity-30">•</span>
-                    </>
-                  )}
                 </span>
                 {showTime && (
                   <Tooltip
@@ -483,35 +465,11 @@ export const ClipCard = memo(
                     })}
                     placement="top"
                   >
-                    <span className="whitespace-nowrap text-[9px] font-medium text-muted-foreground/50 transition-colors hover:text-cyan-300">
+                    <span className="flex-shrink-0 whitespace-nowrap text-[9px] font-medium text-muted-foreground/50 transition-colors hover:text-cyan-300">
                       • {getRelativeTime(clip.created_at, i18n.language)}
                     </span>
                   </Tooltip>
                 )}
-              </div>
-              <div className="relative flex h-full min-w-[28px] items-center justify-end">
-                {/* Copy button slides in on hover */}
-                <motion.button
-                  data-el="clip-card-copy-btn"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{
-                    opacity: hovered ? 1 : 0,
-                    x: hovered ? 0 : 20,
-                  }}
-                  transition={{ duration: 0.2, ease: 'easeOut' }}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onCopy();
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }}
-                  className="relative z-10 rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
-                  title={t('common.copyToClipboard')}
-                >
-                  {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
-                </motion.button>
               </div>
             </div>
 
