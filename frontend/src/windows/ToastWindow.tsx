@@ -52,21 +52,21 @@ function getClipTitle(clipType: string | null | undefined, toastType: string | u
   if (toastType === 'duplicate') {
     switch (clipType) {
       case 'image':
-        return t('toasts.titles.image_duplicate');
+        return t('toasts.titles.image_copied');
       case 'text':
-        return t('toasts.titles.text_duplicate');
+        return t('toasts.titles.text_copied');
       case 'code':
-        return t('toasts.titles.code_duplicate');
+        return t('toasts.titles.code_copied');
       case 'html':
-        return t('toasts.titles.html_duplicate');
+        return t('toasts.titles.html_copied');
       case 'rtf':
-        return t('toasts.titles.rtf_duplicate');
+        return t('toasts.titles.rtf_copied');
       case 'file':
-        return t('toasts.titles.file_duplicate');
+        return t('toasts.titles.file_copied');
       case 'url':
-        return t('toasts.titles.url_duplicate');
+        return t('toasts.titles.url_copied');
       default:
-        return t('toasts.titles.fallback_duplicate');
+        return t('toasts.titles.fallback_copied');
     }
   }
   if (toastType === 'cut') {
@@ -183,7 +183,7 @@ function toastThemeVars(theme: 'cyberpaste' | 'dark' | 'light', gradient: string
   if (theme === 'light') {
     return {
       container:
-        'bg-white/95 border border-black/10 text-neutral-900 shadow-[0_3px_18px_rgba(0,0,0,0.18)]',
+        'bg-white/80 backdrop-blur-md border border-black/10 text-neutral-900 shadow-[0_3px_18px_rgba(0,0,0,0.18)]',
       title: 'text-neutral-900',
       body: 'text-neutral-700',
       closeBtn: 'text-neutral-400 hover:bg-black/10 hover:text-neutral-700',
@@ -201,7 +201,7 @@ function toastThemeVars(theme: 'cyberpaste' | 'dark' | 'light', gradient: string
   if (theme === 'dark') {
     return {
       container:
-        'bg-[#16181B]/95 border border-white/10 text-neutral-100 shadow-[0_3px_18px_rgba(0,0,0,0.4)]',
+        'bg-[#16181B]/80 backdrop-blur-md border border-white/10 text-neutral-100 shadow-[0_3px_18px_rgba(0,0,0,0.4)]',
       title: 'text-neutral-100',
       body: 'text-neutral-300',
       closeBtn: 'text-neutral-500 hover:bg-white/10 hover:text-white',
@@ -219,7 +219,7 @@ function toastThemeVars(theme: 'cyberpaste' | 'dark' | 'light', gradient: string
   // cyberpaste — current signature look
   return {
     container:
-      'bg-[#1A1B1F]/95 border border-[rgba(0,200,215,0.627)] text-white shadow-[0_3px_18px_rgba(0,0,0,0.32)]',
+      'bg-[#1A1B1F]/80 backdrop-blur-md border border-[rgba(0,200,215,0.627)] text-white shadow-[0_3px_18px_rgba(0,0,0,0.32)]',
     title: 'text-white',
     body: 'text-neutral-300',
     closeBtn: 'text-neutral-500 hover:bg-white/10 hover:text-white',

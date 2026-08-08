@@ -471,7 +471,7 @@
     "ocrError": "OCR Error: {{error}}",
     "failedToCopyText": "Failed to copy text",
     "fromApp": "from",
-    "duplicateStatus": "Already in your history",
+    "duplicateStatus": "Duplicate detected in history",
     "tooltipNone": "Notification",
     "tooltipClose": "Close notification",
     "tooltipOpen": "Open clip",
