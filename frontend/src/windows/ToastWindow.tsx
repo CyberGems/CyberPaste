@@ -408,14 +408,14 @@ export function ToastWindow() {
   const originClass = isCentered ? 'origin-center' : 'origin-left';
 
   return (
-    <div
-      onClick={handleToastClick}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      className={`flex h-full w-full items-center ${isClickable ? 'cursor-pointer' : 'cursor-default'}`}
-      title={getTooltip()}
-      data-tauri-drag-region
-    >
+    <Tooltip label={getTooltip()} disabled={!isClickable} placement="top">
+      <div
+        onClick={handleToastClick}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        className={`flex h-full w-full items-center ${isClickable ? 'cursor-pointer' : 'cursor-default'}`}
+        data-tauri-drag-region
+      >
       <div
         className={`relative w-full overflow-hidden rounded-xl transition-all duration-300 ${containerClasses} ${isClosing ? 'translate-y-2 scale-95 opacity-0' : 'translate-y-0 scale-100 opacity-100'}`}
       >
@@ -582,5 +582,6 @@ export function ToastWindow() {
         </div>
       </div>
     </div>
+    </Tooltip>
   );
 }

@@ -2009,6 +2009,28 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     </button>
                   </div>
 
+                  <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                    <div>
+                      <span className="text-base font-semibold">
+                        {t('settings.toastClickAction')}
+                      </span>
+                      <p className="text-sm text-muted-foreground/80">
+                        {t('settings.toastClickActionDesc')}
+                      </p>
+                    </div>
+                    <div className="w-[180px] flex-shrink-0">
+                      <Select
+                        value={settings.toast_click_action || 'close'}
+                        onChange={(val) => updateSetting('toast_click_action', val)}
+                        options={[
+                          { value: 'none', label: t('settings.toastClickActionNone') },
+                          { value: 'close', label: t('settings.toastClickActionClose') },
+                          { value: 'open', label: t('settings.toastClickActionOpen') },
+                        ]}
+                      />
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-3">
                       <label className="block">
@@ -2092,17 +2114,17 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               const activePosition = settings.toast_position || 'bottom-right';
                               const isActive = activePosition === pos.value;
                               return (
-                                <button
-                                  key={pos.value}
-                                  type="button"
-                                  onClick={() => updateSetting('toast_position', pos.value)}
-                                  className={`relative rounded-[4px] transition-all hover:bg-accent focus:outline-none ${isActive ? 'border border-primary bg-primary/10' : 'border border-transparent'}`}
-                                  title={pos.label}
-                                >
-                                  <span
-                                    className={`absolute h-2 w-2 rounded-[2px] transition-colors ${pos.dotClass} ${isActive ? 'bg-primary shadow-[0_0_8px_var(--primary)]' : 'bg-white/20'}`}
-                                  />
-                                </button>
+                                <Tooltip key={pos.value} label={pos.label} placement="top">
+                                  <button
+                                    type="button"
+                                    onClick={() => updateSetting('toast_position', pos.value)}
+                                    className={`relative rounded-[4px] transition-all hover:bg-accent focus:outline-none ${isActive ? 'border border-primary bg-primary/10' : 'border border-transparent'}`}
+                                  >
+                                    <span
+                                      className={`absolute h-2 w-2 rounded-[2px] transition-colors ${pos.dotClass} ${isActive ? 'bg-primary shadow-[0_0_8px_var(--primary)]' : 'bg-white/20'}`}
+                                    />
+                                  </button>
+                                </Tooltip>
                               );
                             })}
                           </div>
@@ -2147,27 +2169,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <label className="block">
-                        <span className="text-base font-medium">
-                          {t('settings.toastClickAction')}
-                        </span>
-                        <p className="mt-0.5 text-[10px] leading-tight text-muted-foreground/80">
-                          {t('settings.toastClickActionDesc')}
-                        </p>
-                      </label>
-                      <Select
-                        value={settings.toast_click_action || 'close'}
-                        onChange={(val) => updateSetting('toast_click_action', val)}
-                        options={[
-                          { value: 'none', label: t('settings.toastClickActionNone') },
-                          { value: 'close', label: t('settings.toastClickActionClose') },
-                          { value: 'open', label: t('settings.toastClickActionOpen') },
-                        ]}
-                      />
-                    </div>
-                  </div>
+
 
                   <div className="pt-4">
                     <button
