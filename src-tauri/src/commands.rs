@@ -2979,16 +2979,6 @@ pub async fn show_toast(
         .map_err(|e| format!("Failed to create toast window: {}", e))?
     };
 
-    #[cfg(target_os = "windows")]
-    {
-        let color = if manager.get().theme == "light" {
-            Some((255, 255, 255, 180))
-        } else {
-            Some((26, 27, 31, 180))
-        };
-        let _ = window_vibrancy::apply_acrylic(&win, color);
-    }
-
     Ok(())
 }
 
