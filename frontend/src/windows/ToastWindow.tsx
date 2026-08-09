@@ -262,7 +262,8 @@ export function ToastWindow() {
 
     const isWelcome = payload.clip_type === 'welcome';
     const width = isWelcome ? 340 : 300;
-    const height = isWelcome ? 80 : 110;
+    const isDupImage = payload.clip_type === 'image' && payload.toast_type === 'duplicate';
+    const height = isWelcome ? 80 : (isDupImage ? 120 : 110);
     await invoke('set_toast_position', { width, height }).catch(console.error);
 
     setToast(payload);
