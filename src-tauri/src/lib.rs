@@ -600,6 +600,7 @@ pub fn run_app() {
             commands::set_toast_position,
             commands::toast_ready,
             commands::open_image_viewer,
+            commands::open_text_in_system_viewer,
             commands::run_ocr_for_clip,
             commands::update_ocr_text,
             commands::toggle_clipboard_monitoring,

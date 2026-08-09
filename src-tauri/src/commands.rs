@@ -3759,3 +3759,29 @@ pub async fn tray_menu_action(app: AppHandle, action: String) -> Result<(), Stri
     Ok(())
 }
 
+#[tauri::command]
+pub fn open_text_in_system_viewer(text: String) -> Result<(), String> {
+    log::info!("open_text_in_system_viewer called");
+    let temp_dir = std::env::temp_dir();
+    let temp_file_path = temp_dir.join(format!("cyberpaste_clip_{}.txt", uuid::Uuid::new_v4()));
+    std::fs::write(&temp_file_path, text).map_err(|e| e.to_string())?;
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::process::Command;
+        Command::new("cmd")
+            .args(["/C", "start", "", &temp_file_path.to_string_lossy()])
+            .spawn()
+            .map_err(|e| {
+                log::error!("Failed to open temp text file with default viewer: {}", e);
+                e.to_string()
+            })?;
+        Ok(())
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        Err("Not supported on this OS".to_string())
+    }
+}
+
+

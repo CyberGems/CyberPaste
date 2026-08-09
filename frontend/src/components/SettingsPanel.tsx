@@ -2087,6 +2087,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           { value: 'none', label: t('settings.toastClickActionNone') },
                           { value: 'close', label: t('settings.toastClickActionClose') },
                           { value: 'open', label: t('settings.toastClickActionOpen') },
+                          { value: 'system_viewer', label: t('settings.toastClickActionSystemViewer') },
                         ]}
                       />
                     </div>

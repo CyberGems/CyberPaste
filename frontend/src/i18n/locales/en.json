@@ -174,7 +174,10 @@
     "translate": "Translate (AI)",
     "explainCode": "Explain Code (AI)",
     "fixGrammar": "Fix Grammar (AI)",
-    "extractText": "Extract Text (OCR)"
+    "extractText": "Extract Text (OCR)",
+    "openInSystemViewer": "Open in system viewer",
+    "closeToast": "Close",
+    "openWindow": "Open Window"
   },
   "settings": {
     "title": "Configuration",
@@ -350,6 +353,7 @@
     "toastClickActionNone": "None",
     "toastClickActionClose": "Close",
     "toastClickActionOpen": "Open Window",
+    "toastClickActionSystemViewer": "Open in system viewer",
     "toastMonitor": "Monitor",
     "toastMonitorPrimary": "Primary Monitor",
     "toastPosition": "Position",

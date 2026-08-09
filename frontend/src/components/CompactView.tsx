@@ -1765,9 +1765,11 @@ const ClipRow = memo(function ClipRow({
         <div className="flex flex-shrink-0 items-center gap-3 pr-2 self-stretch -my-1.5 py-1.5" onMouseOver={(e) => { e.stopPropagation(); onClosePeek?.(); }}>
           <span className="flex items-center gap-2 whitespace-nowrap text-[10px] text-muted-foreground/80">
             {index === 0 && !selectedFolder && (
-              <span className="text-[8px] font-bold uppercase tracking-widest text-primary opacity-90">
-                {t('common.latest')}
-              </span>
+              <Tooltip label={t('common.latest')} placement="top">
+                <span className="flex items-center text-primary opacity-90">
+                  <Zap size={11} className="fill-primary/20" />
+                </span>
+              </Tooltip>
             )}
             {clip.is_pinned && (
               <Pin size={10} className="-rotate-45 fill-primary/20 text-primary opacity-90" />

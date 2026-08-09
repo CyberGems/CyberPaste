@@ -167,7 +167,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
 // If the next clipboard change matches this hash, we ignore it (don't update timestamp).
 static IGNORE_HASH: Lazy<parking_lot::Mutex<Option<String>>> =
     Lazy::new(|| parking_lot::Mutex::new(None));
-static LAST_STABLE_HASH: Lazy<parking_lot::Mutex<Option<String>>> =
+static LAST_STABLE_HASH: Lazy<parking_lot::Mutex<Option<(String, std::time::Instant)>>> =
     Lazy::new(|| parking_lot::Mutex::new(None));
 pub static CLIPBOARD_SYNC: Lazy<Arc<tokio::sync::Mutex<()>>> =
     Lazy::new(|| Arc::new(tokio::sync::Mutex::new(())));
@@ -544,14 +544,16 @@ async fn process_clipboard_change(
     // Stable Hash Check
     {
         let mut lock = LAST_STABLE_HASH.lock();
-        if let Some(ref last_hash) = *lock {
-            if last_hash == &clip_hash {
-                log::debug!(
-                    "CLIPBOARD: Repeated hash detected; allowing it through for duplicate feedback"
+        if let Some((ref last_hash, last_time)) = *lock {
+            if last_hash == &clip_hash && last_time.elapsed() < std::time::Duration::from_millis(2000) {
+                log::info!(
+                    "CLIPBOARD: Ignoring duplicate clipboard event within debounce window for hash {}",
+                    clip_hash
                 );
+                return;
             }
         }
-        *lock = Some(clip_hash.clone());
+        *lock = Some((clip_hash.clone(), std::time::Instant::now()));
     }
 
     // Check ignore self-paste
