@@ -151,6 +151,7 @@ interface ControlBarProps {
   isWindowActive?: boolean;
   gridScale?: number;
   onGridScaleChange?: (next: number) => void;
+  wheelFolderNavigation?: boolean;
 }
 
 export const ControlBar: React.FC<ControlBarProps> = ({
@@ -193,6 +194,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   isWindowActive = true,
   gridScale = 1,
   onGridScaleChange,
+  wheelFolderNavigation = false,
 }) => {
   const foldersRef = React.useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
@@ -237,6 +239,13 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   }, []);
 
   const handleWheel = (e: React.WheelEvent) => {
+    if (!wheelFolderNavigation) {
+      if (foldersRef.current) {
+        foldersRef.current.scrollLeft += e.deltaY;
+      }
+      return;
+    }
+
     e.preventDefault();
 
     if (wheelCooldownRef.current) return;

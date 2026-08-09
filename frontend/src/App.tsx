@@ -2063,6 +2063,7 @@ function App() {
               isWindowActive={isWindowActive}
               clips={clips}
               folders={folders}
+              wheelFolderNavigation={settings?.wheel_folder_navigation ?? false}
               selectedFolder={selectedFolder}
               selectedClipId={selectedClipId}
               onSelectFolder={handleSelectFolder}
@@ -2152,6 +2153,7 @@ function App() {
                 isWindowActive={isWindowActive}
                 style={{ height: LAYOUT.CONTROL_BAR_HEIGHT, flexShrink: 0 }}
                 folders={folders}
+                wheelFolderNavigation={settings?.wheel_folder_navigation ?? false}
                 selectedFolder={selectedFolder}
                 onSelectFolder={handleSelectFolder}
                 showSearch={showSearch}

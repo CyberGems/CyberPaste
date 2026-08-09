@@ -56,7 +56,7 @@ interface SettingsPanelProps {
   onClose: () => void;
 }
 
-type Tab = 'general' | 'full' | 'compact' | 'ai' | 'notifications' | 'maintenance' | 'about';
+type Tab = 'general' | 'folders' | 'full' | 'compact' | 'ai' | 'notifications' | 'maintenance' | 'about';
 
 function PromptEditor({
   label,
@@ -198,7 +198,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     const unlisten = listen<string>('open-tab', (event) => {
       const tab = event.payload as Tab;
       if (
-        ['general', 'full', 'compact', 'ai', 'notifications', 'maintenance', 'about'].includes(tab)
+        ['general', 'folders', 'full', 'compact', 'ai', 'notifications', 'maintenance', 'about'].includes(tab)
       ) {
         setActiveTab(tab);
       }
@@ -343,6 +343,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         toast_position: 'settings.toastPosition',
         toast_duration: 'settings.toastDuration',
         toast_click_action: 'settings.toastClickAction',
+        wheel_folder_navigation: 'settings.wheelFolderNavigation',
       };
 
       const keys = Object.keys(updates);
@@ -627,6 +628,18 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               >
                 <SettingsIcon size={14} />
                 {t('settings.general')}
+              </button>
+              <button
+                onClick={() => setActiveTab('folders')}
+                className={clsx(
+                  'flex items-center gap-2 whitespace-nowrap rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
+                  activeTab === 'folders'
+                    ? 'border-l-[3px] border-primary bg-primary/10 text-primary shadow-none'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                )}
+              >
+                <FolderIcon size={14} />
+                {t('settings.folders')}
               </button>
               <button
                 onClick={() => setActiveTab('full')}
@@ -1141,115 +1154,12 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     </div>
                   </section>
 
-                  {/* Folders Management */}
-                  <section className="space-y-4">
-                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
-                      <FolderIcon size={14} /> {t('settings.manageFolders')}
-                    </h3>
-                    <div className="space-y-3">
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={newFolderName}
-                          onChange={(e) => setNewFolderName(e.target.value)}
-                          placeholder={t('settings.newFolderPlaceholder')}
-                          className="flex-1 rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
-                          onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
-                        />
-                        <button
-                          onClick={handleCreateFolder}
-                          disabled={!newFolderName.trim()}
-                          className="btn btn-secondary flex items-center gap-1 rounded-[4px] px-3 py-1.5 text-xs"
-                        >
-                          <Plus size={14} />
-                          {t('settings.add')}
-                        </button>
-                      </div>
-
-                      <div className="custom-scrollbar max-h-40 space-y-1.5 overflow-y-auto pr-1">
-                        {folders.filter((f) => !f.is_system).length === 0 ? (
-                          <p className="rounded-lg border border-dashed border-border py-3 text-center text-xs text-muted-foreground">
-                            {t('settings.noFolders')}
-                          </p>
-                        ) : (
-                          folders
-                            .filter((f) => !f.is_system)
-                            .map((folder) => (
-                              <div
-                                key={folder.id}
-                                className="flex items-center justify-between rounded-lg border border-border/40 bg-card/30 px-3 py-1.5 text-xs transition-colors hover:border-border hover:bg-card/50"
-                              >
-                                {editingFolderId === folder.id ? (
-                                  <div className="flex flex-1 items-center gap-2">
-                                    <input
-                                      type="text"
-                                      value={renameValue}
-                                      onChange={(e) => setRenameValue(e.target.value)}
-                                      className="flex-1 rounded border border-input bg-background px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                                      autoFocus
-                                      onKeyDown={(e) => {
-                                        if (e.key === 'Enter') saveRenameFolder();
-                                        if (e.key === 'Escape') setEditingFolderId(null);
-                                      }}
-                                    />
-                                    <button
-                                      onClick={saveRenameFolder}
-                                      className="text-xs font-semibold text-primary hover:underline"
-                                    >
-                                      {t('common.save')}
-                                    </button>
-                                    <button
-                                      onClick={() => setEditingFolderId(null)}
-                                      className="text-xs text-muted-foreground hover:underline"
-                                    >
-                                      {t('common.cancel')}
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <>
-                                    <div className="flex min-w-0 flex-1 items-center gap-2">
-                                      <FolderIcon
-                                        size={14}
-                                        className="flex-shrink-0 text-blue-400"
-                                      />
-                                      <span className="truncate font-medium">{folder.name}</span>
-                                      <span className="flex-shrink-0 text-[10px] text-muted-foreground">
-                                        {t('folders.itemCount', { count: folder.item_count })}
-                                      </span>
-                                    </div>
-                                    <div className="flex flex-shrink-0 items-center gap-1">
-                                      <Tooltip label={t('folders.rename')} placement="top">
-                                        <button
-                                          onClick={() => startRenameFolder(folder)}
-                                          className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                                        >
-                                          <MoreHorizontal size={13} />
-                                        </button>
-                                      </Tooltip>
-                                      <Tooltip label={t('common.delete')} placement="top">
-                                        <button
-                                          onClick={() => handleDeleteFolder(folder.id)}
-                                          className="rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                                        >
-                                          <Trash2 size={13} />
-                                        </button>
-                                      </Tooltip>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            ))
-                        )}
-                      </div>
-                    </div>
-                  </section>
-
                   {/* Shortcuts */}
                   <section className="space-y-4">
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
                       <Command size={14} /> {t('settings.shortcuts')}
                     </h3>
-                    <div className="space-y-6">
+                    <div className="space-y-4 rounded-xl border border-border bg-card p-4">
                       <div className="space-y-3">
                         <label className="block">
                           <span className="text-sm font-medium">{t('settings.hotkey')}</span>
@@ -1356,7 +1266,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
                       <Lock size={14} /> {t('settings.privacy')}
                     </h3>
-                    <div className="space-y-3">
+                    <div className="space-y-4 rounded-xl border border-border bg-card p-4">
                       <label className="block">
                         <span className="text-sm font-medium">{t('settings.ignoredApps')}</span>
                         <p className="text-sm text-muted-foreground/80">
@@ -1416,6 +1326,141 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           ))
                         )}
                       </div>
+                    </div>
+                  </section>
+                </>
+              )}
+
+              {/* --- FOLDERS TAB --- */}
+              {activeTab === 'folders' && (
+                <>
+                  {/* Folders Management */}
+                  <section className="space-y-4">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
+                      <FolderIcon size={14} /> {t('settings.manageFolders')}
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newFolderName}
+                          onChange={(e) => setNewFolderName(e.target.value)}
+                          placeholder={t('settings.newFolderPlaceholder')}
+                          className="flex-1 rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
+                          onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
+                        />
+                        <button
+                          onClick={handleCreateFolder}
+                          disabled={!newFolderName.trim()}
+                          className="btn btn-secondary flex items-center gap-1 rounded-[4px] px-3 py-1.5 text-xs"
+                        >
+                          <Plus size={14} />
+                          {t('settings.add')}
+                        </button>
+                      </div>
+
+                      <div className="custom-scrollbar max-h-40 space-y-1.5 overflow-y-auto pr-1">
+                        {folders.filter((f) => !f.is_system).length === 0 ? (
+                          <p className="rounded-lg border border-dashed border-border py-3 text-center text-xs text-muted-foreground">
+                            {t('settings.noFolders')}
+                          </p>
+                        ) : (
+                          folders
+                            .filter((f) => !f.is_system)
+                            .map((folder) => (
+                              <div
+                                key={folder.id}
+                                className="flex items-center justify-between rounded-lg border border-border/40 bg-card/30 px-3 py-1.5 text-xs transition-colors hover:border-border hover:bg-card/50"
+                              >
+                                {editingFolderId === folder.id ? (
+                                  <div className="flex flex-1 items-center gap-2">
+                                    <input
+                                      type="text"
+                                      value={renameValue}
+                                      onChange={(e) => setRenameValue(e.target.value)}
+                                      className="flex-1 rounded border border-input bg-background px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                                      autoFocus
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') saveRenameFolder();
+                                        if (e.key === 'Escape') setEditingFolderId(null);
+                                      }}
+                                    />
+                                    <button
+                                      onClick={saveRenameFolder}
+                                      className="text-xs font-semibold text-primary hover:underline"
+                                    >
+                                      {t('common.save')}
+                                    </button>
+                                    <button
+                                      onClick={() => setEditingFolderId(null)}
+                                      className="text-xs text-muted-foreground hover:underline"
+                                    >
+                                      {t('common.cancel')}
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                                      <FolderIcon
+                                        size={14}
+                                        className="flex-shrink-0 text-blue-400"
+                                      />
+                                      <span className="truncate font-medium">{folder.name}</span>
+                                      <span className="flex-shrink-0 text-[10px] text-muted-foreground">
+                                        {t('folders.itemCount', { count: folder.item_count })}
+                                      </span>
+                                    </div>
+                                    <div className="flex flex-shrink-0 items-center gap-1">
+                                      <Tooltip label={t('folders.rename')} placement="top">
+                                        <button
+                                          onClick={() => startRenameFolder(folder)}
+                                          className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                                        >
+                                          <MoreHorizontal size={13} />
+                                        </button>
+                                      </Tooltip>
+                                      <Tooltip label={t('common.delete')} placement="top">
+                                        <button
+                                          onClick={() => handleDeleteFolder(folder.id)}
+                                          className="rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                                        >
+                                          <Trash2 size={13} />
+                                        </button>
+                                      </Tooltip>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            ))
+                        )}
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* Wheel Folder Navigation Option */}
+                  <section className="space-y-4">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
+                      <Layers size={14} /> {t('settings.appearanceBehavior')}
+                    </h3>
+                    <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
+                      <div>
+                        <span className="text-sm font-medium">
+                          {t('settings.wheelFolderNavigation')}
+                        </span>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {t('settings.wheelFolderNavigationDesc')}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() =>
+                          updateSetting('wheel_folder_navigation', !(settings.wheel_folder_navigation ?? false))
+                        }
+                        className={`h-6 w-11 flex-shrink-0 rounded-full transition-colors ${(settings.wheel_folder_navigation ?? false) ? 'bg-primary' : 'bg-white/10'}`}
+                      >
+                        <div
+                          className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.wheel_folder_navigation ?? false) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                        />
+                      </button>
                     </div>
                   </section>
                 </>

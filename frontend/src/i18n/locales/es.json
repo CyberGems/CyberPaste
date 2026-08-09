@@ -237,6 +237,8 @@
     "resetViewOnPasteDesc": "Limpia la búsqueda activa, regresa a la carpeta de Clipboard principal y se desplaza al inicio al abrir la ventana o pegar un clip",
     "typeToSearch": "Teclear para Buscar",
     "typeToSearchDesc": "Empieza a escribir en cualquier lugar para buscar clips en tiempo real",
+    "wheelFolderNavigation": "Navegación de carpetas con rueda",
+    "wheelFolderNavigationDesc": "Navega el contenido de las carpetas al girar la rueda del mouse sobre los tabs",
     "compactPeekEnabled": "Mostrar Vista Previa al Hover",
     "compactPeekEnabledDesc": "Muestra un panel flotante detallado con metadatos al pasar el ratón sobre las filas en modo compacto",
     "clipNumbering": "Numeración de Clips",

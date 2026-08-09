@@ -359,6 +359,7 @@ interface CompactViewProps {
   compactShowTime?: boolean;
   compactShowTypeIcon?: boolean;
   compactShowNumber?: boolean;
+  wheelFolderNavigation?: boolean;
 }
 
 export const CompactView: React.FC<CompactViewProps> = ({
@@ -418,6 +419,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   compactShowTime = true,
   compactShowTypeIcon = true,
   compactShowNumber = true,
+  wheelFolderNavigation = false,
 }) => {
   const { t } = useTranslation();
   const folderScrollRef = useRef<HTMLDivElement>(null);
@@ -533,6 +535,17 @@ export const CompactView: React.FC<CompactViewProps> = ({
   }, []);
 
   const handleWheel = (e: React.WheelEvent) => {
+    if (!wheelFolderNavigation) {
+      if (folderScrollRef.current) {
+        if (isVertical) {
+          folderScrollRef.current.scrollTop += e.deltaY;
+        } else {
+          folderScrollRef.current.scrollLeft += e.deltaY;
+        }
+      }
+      return;
+    }
+
     e.preventDefault();
 
     if (wheelCooldownRef.current) return;

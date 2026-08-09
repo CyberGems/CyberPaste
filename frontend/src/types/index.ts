@@ -100,6 +100,7 @@ export interface Settings {
   settings_window_height?: number | null;
   settings_window_x?: number | null;
   settings_window_y?: number | null;
+  wheel_folder_navigation?: boolean;
 }
 
 export type ClipType = 'text' | 'image' | 'html' | 'rtf' | 'file' | 'url' | 'code';
