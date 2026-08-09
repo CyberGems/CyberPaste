@@ -133,12 +133,12 @@ function WindowContent({ pal, w }: { pal: ThemePalette; w: number }) {
 /** Diagonal light/dark split for the "System / follows OS" card. */
 function SystemSplit({ w }: { w: number }) {
   const light = THEME_PALETTES.light;
-  const dark = THEME_PALETTES.dark;
-  const darkBg = dark.background;
+  const cyber = THEME_PALETTES.cyberpaste;
+  const cyberBg = cyber.background;
   const lightBg = light.background;
   return (
-    <div className="absolute inset-0" style={{ background: darkBg }}>
-      <WindowContent pal={dark} w={w} />
+    <div className="absolute inset-0" style={{ background: cyberBg }}>
+      <WindowContent pal={cyber} w={w} />
       {/* light half: clipped to the top-left triangle */}
       <div
         className="absolute inset-0"
@@ -160,8 +160,8 @@ export function ThemeCard({
   const [hover, setHover] = React.useState(false);
 
   const pal = THEME_PALETTES[mode];
-  // The glow of the "System" card uses the dark face's accent (matches CyberSnap).
-  const glowAccent = mode === 'system' ? THEME_PALETTES.dark.accent : pal.accent;
+  // The glow of the "System" card uses the cyberpaste face's accent.
+  const glowAccent = mode === 'system' ? THEME_PALETTES.cyberpaste.accent : pal.accent;
 
   const previewW = cardWidth - CARD_PAD * 2;
   const previewH = previewW * PREVIEW_ASPECT;

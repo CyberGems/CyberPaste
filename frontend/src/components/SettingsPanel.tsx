@@ -28,6 +28,8 @@ import {
   Monitor,
   Clock,
   Send,
+  Languages,
+  Palette,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useTheme } from '../hooks/useTheme';
@@ -714,12 +716,17 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
                       <SettingsIcon size={14} /> {t('settings.appearanceSection')}
                     </h3>
-                    <div className="space-y-4 rounded-xl border border-border bg-card p-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-3">
-                          <label className="block">
-                            <span className="text-sm font-medium">{t('settings.language')}</span>
-                          </label>
+                    <div className="rounded-xl border border-border bg-card divide-y divide-border">
+                      {/* Row 1: Language */}
+                      <div className="flex items-center justify-between p-4 gap-4">
+                        <div className="flex gap-3">
+                          <Languages className="h-5 w-5 text-muted-foreground/80 flex-shrink-0" />
+                          <div>
+                            <span className="text-sm font-medium block text-foreground">{t('settings.languageTitle')}</span>
+                            <span className="text-xs text-muted-foreground block mt-0.5">{t('settings.languageDesc')}</span>
+                          </div>
+                        </div>
+                        <div className="flex-shrink-0 w-[200px]">
                           <Select
                             value={settings.language || 'en'}
                             onChange={handleLanguageChange}
@@ -734,11 +741,17 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           />
                         </div>
                       </div>
-                      <div className="space-y-3">
-                        <label className="block">
-                          <span className="text-sm font-medium">{t('settings.theme')}</span>
-                        </label>
-                        <div role="radiogroup" className="flex flex-wrap gap-4 pt-1">
+
+                      {/* Row 2: Theme */}
+                      <div className="flex flex-col md:flex-row md:items-center justify-between p-4 gap-4">
+                        <div className="flex gap-3">
+                          <Palette className="h-5 w-5 text-muted-foreground/80 flex-shrink-0" />
+                          <div>
+                            <span className="text-sm font-medium block text-foreground">{t('settings.themeTitle')}</span>
+                            <span className="text-xs text-muted-foreground block mt-0.5">{t('settings.themeDesc')}</span>
+                          </div>
+                        </div>
+                        <div role="radiogroup" className="flex flex-wrap gap-4 pt-1 flex-shrink-0">
                           {(['cyberpaste', 'dark', 'light', 'system'] as ThemeMode[]).map(
                             (mode) => (
                               <ThemeCard
