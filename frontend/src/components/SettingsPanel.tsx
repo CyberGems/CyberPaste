@@ -2053,7 +2053,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         </div>
                       </div>
                       <div className="flex-shrink-0">
-                        <div className="flex h-[80px] w-[130px] flex-col justify-between rounded-lg border border-border bg-secondary/40 p-1.5">
+                        <div className="flex h-[80px] w-[130px] flex-col justify-between rounded-lg border border-border dark:bg-secondary/40 bg-secondary/80 p-1.5">
                           <div className="grid h-full w-full grid-cols-3 grid-rows-3 gap-1">
                             {[
                               {
@@ -2118,7 +2118,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                     className={`relative rounded-[4px] transition-all hover:bg-accent focus:outline-none ${isActive ? 'border border-primary bg-primary/10' : 'border border-transparent'}`}
                                   >
                                     <span
-                                      className={`absolute h-2 w-2 rounded-[2px] transition-colors ${pos.dotClass} ${isActive ? 'bg-primary shadow-[0_0_8px_var(--primary)]' : 'bg-white/20'}`}
+                                      className={`absolute h-2 w-2 rounded-[2px] transition-colors ${pos.dotClass} ${isActive ? 'bg-primary shadow-[0_0_8px_var(--primary)]' : 'dark:bg-white/20 bg-neutral-400'}`}
                                     />
                                   </button>
                                 </Tooltip>
