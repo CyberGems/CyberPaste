@@ -1030,6 +1030,7 @@ function App() {
         setShowSearch(false);
         setSelectedFolder(null);
         setCompactTypeFilter('all');
+        setFullTypeFilter('all');
         setClipListResetToken((prev) => prev + 1);
         if (clipsRef.current.length > 0) {
           setSelectedClipId(clipsRef.current[0].id);
@@ -1123,6 +1124,7 @@ function App() {
         setSearchQuery('');
         setShowSearch(false);
         setCompactTypeFilter('all');
+        setFullTypeFilter('all');
         handleSelectFolder(null);
       } else {
         refreshCurrentFolder();

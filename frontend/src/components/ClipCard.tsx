@@ -364,13 +364,7 @@ export const ClipCard = memo(
               'group'
             )}
           >
-            {/* Keyboard focus indicator (left edge cyan bar) */}
-            {isSelected && (
-              <div
-                data-el="clip-card-kb-focus"
-                className="pointer-events-none absolute bottom-2 left-0 top-2 w-0.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)] z-20"
-              />
-            )}
+
             {/* Bulk selection checkbox (top-left, visible on hover or when selected) */}
             {onToggleBulkSelect && (
               <Tooltip
