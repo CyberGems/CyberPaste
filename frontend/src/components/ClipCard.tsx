@@ -15,6 +15,7 @@ import {
   Image as ImageIcon,
   ScanText,
   Pin,
+  Zap,
 } from 'lucide-react';
 import { useMotionValue, useMotionTemplate, motion } from 'framer-motion';
 import Tooltip from './Tooltip';
@@ -449,6 +450,13 @@ export const ClipCard = memo(
                 >
                   <Pin size={10} className="-rotate-45 fill-cyan-400/20" />
                 </span>
+              )}
+              {clipIndex === 1 && (
+                <Tooltip label={t('common.latest')} placement="top">
+                  <span className="flex items-center text-cyan-400 opacity-90">
+                    <Zap size={11} className="fill-cyan-400/20" />
+                  </span>
+                </Tooltip>
               )}
               {showNumber && clipIndex !== undefined && (
                 <span className="select-none font-mono text-[9px] opacity-20">#{clipIndex}</span>
