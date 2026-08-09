@@ -707,7 +707,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
           {/* Content Area */}
           <div className="custom-scrollbar flex-1 overflow-y-auto p-6">
-            <div className="mx-auto max-w-2xl space-y-8">
+            <div className="w-full space-y-8">
               {/* --- GENERAL TAB --- */}
               {activeTab === 'general' && (
                 <>
@@ -718,7 +718,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     </h3>
                     <div className="rounded-xl border border-border bg-card divide-y divide-border">
                       {/* Row 1: Language */}
-                      <div className="flex items-center justify-between p-4 gap-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
                         <div className="flex gap-3">
                           <Languages className="h-5 w-5 text-muted-foreground/80 flex-shrink-0" />
                           <div>
@@ -726,7 +726,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             <span className="text-xs text-muted-foreground block mt-0.5">{t('settings.languageDesc')}</span>
                           </div>
                         </div>
-                        <div className="flex-shrink-0 w-[200px]">
+                        <div className="flex-shrink-0 w-full sm:w-[200px]">
                           <Select
                             value={settings.language || 'en'}
                             onChange={handleLanguageChange}
@@ -743,7 +743,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
 
                       {/* Row 2: Theme */}
-                      <div className="flex flex-col md:flex-row md:items-center justify-between p-4 gap-4">
+                      <div className="flex flex-col lg:flex-row lg:items-center justify-between p-4 gap-4">
                         <div className="flex gap-3">
                           <Palette className="h-5 w-5 text-muted-foreground/80 flex-shrink-0" />
                           <div>
