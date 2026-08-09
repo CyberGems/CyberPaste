@@ -3,6 +3,7 @@ import { ClipboardItem as AppClip, FolderItem } from '../types';
 import {
   Search,
   Maximize2,
+  Minimize2,
   Clock,
   Trash2,
   Folder as FolderIcon,
@@ -50,6 +51,7 @@ import {
   Smile,
   Sun,
   RotateCcw,
+  LayoutGrid,
   MoveHorizontal,
   MoveVertical,
   PanelLeftOpen,
@@ -308,6 +310,8 @@ interface CompactViewProps {
   onPaste: (id: string) => void;
   onDelete: (id: string) => void;
   onToggleMode: () => void;
+  isMaximized: boolean;
+  onToggleMaximize: () => void;
   onOpenSettings: () => void;
   isLoading: boolean;
   theme: 'light' | 'dark' | 'cyberpaste';
@@ -369,6 +373,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
   onPaste,
   onDelete,
   onToggleMode,
+  isMaximized,
+  onToggleMaximize,
   onOpenSettings,
   isLoading,
   theme,
@@ -964,15 +970,28 @@ export const CompactView: React.FC<CompactViewProps> = ({
             </button>
           </Tooltip>
 
+          <Tooltip
+            label={isMaximized ? t('common.restore') : t('common.maximize')}
+            placement="bottom"
+          >
+            <button
+              onClick={onToggleMaximize}
+              aria-label={isMaximized ? t('common.restore') : t('common.maximize')}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80"
+            >
+              {isMaximized ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+            </button>
+          </Tooltip>
+
           {/* View-toggle — primary action pill */}
-          <Tooltip label={t('common.fullMode')} placement="bottom">
+          <Tooltip label={t('common.switchToFull')} placement="bottom">
             <button
               onClick={onToggleMode}
               className="group relative ml-1 flex h-8 items-center gap-1.5 overflow-hidden rounded-lg border border-primary/40 bg-gradient-to-r from-primary/20 to-primary/10 px-2.5 text-[10px] font-bold uppercase tracking-widest text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.2)] transition-all duration-200 hover:border-primary/70 hover:from-primary/30 hover:to-primary/20 hover:shadow-[0_0_18px_rgba(var(--primary-rgb),0.45)] active:scale-[0.98]"
             >
               {/* shimmer sweep */}
               <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
-              <Maximize2 size={13} className="relative z-10 flex-shrink-0" />
+              <LayoutGrid size={13} className="relative z-10 flex-shrink-0" />
             </button>
           </Tooltip>
 

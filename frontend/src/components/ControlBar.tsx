@@ -5,6 +5,8 @@ import {
   Plus,
   Maximize2,
   Minimize2,
+  LayoutGrid,
+  List as ListIcon,
   X,
   Folder as FolderIcon,
   Zap,
@@ -134,6 +136,8 @@ interface ControlBarProps {
   theme: 'light' | 'dark' | 'cyberpaste';
   onToggleMode: () => void;
   viewMode: 'full' | 'compact';
+  isMaximized: boolean;
+  onToggleMaximize: () => void;
   isPinned: boolean;
   onTogglePin?: () => void;
   onResetSize?: () => void;
@@ -173,6 +177,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   theme,
   onToggleMode,
   viewMode,
+  isMaximized,
+  onToggleMaximize,
   isPinned,
   onTogglePin,
   onResetSize,
@@ -984,6 +990,16 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             </button>
           </Tooltip>
 
+          <Tooltip label={isMaximized ? t('common.restore') : t('common.maximize')} placement="top">
+            <button
+              onClick={onToggleMaximize}
+              aria-label={isMaximized ? t('common.restore') : t('common.maximize')}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80"
+            >
+              {isMaximized ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+            </button>
+          </Tooltip>
+
           {/* View-toggle — compact pill */}
           <Tooltip
             label={viewMode === 'full' ? t('common.switchToCompact') : t('common.switchToFull')}
@@ -996,9 +1012,9 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               {/* shimmer sweep */}
               <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
               {viewMode === 'full' ? (
-                <Minimize2 size={13} className="relative z-10 flex-shrink-0" />
+                <ListIcon size={13} className="relative z-10 flex-shrink-0" />
               ) : (
-                <Maximize2 size={13} className="relative z-10 flex-shrink-0" />
+                <LayoutGrid size={13} className="relative z-10 flex-shrink-0" />
               )}
             </button>
           </Tooltip>

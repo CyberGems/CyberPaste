@@ -213,6 +213,7 @@ function App() {
         : t('full.actionCopy');
 
   const appWindow = getCurrentWindow();
+  const [isMaximized, setIsMaximized] = useState(false);
   const selectedFolderRef = useRef(selectedFolder);
   selectedFolderRef.current = selectedFolder;
   const loadPerfIdRef = useRef(0);
@@ -220,8 +221,19 @@ function App() {
     typeof window !== 'undefined' &&
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
+  const handleToggleMaximize = useCallback(async () => {
+    try {
+      await appWindow.toggleMaximize();
+      setIsMaximized(await appWindow.isMaximized());
+    } catch (error) {
+      console.error('Failed to toggle window maximization:', error);
+    }
+  }, [appWindow]);
+
   useEffect(() => {
     console.log('App: Initializing...');
+
+    appWindow.isMaximized().then(setIsMaximized).catch(console.error);
 
     // Safety timeout for loading state
     const timer = setTimeout(() => {
@@ -308,6 +320,11 @@ function App() {
 
       // Only save if visible
       if (await appWindow.isVisible()) {
+        // Keep maximized dimensions out of the user's restored window size.
+        if (await appWindow.isMaximized()) {
+          return;
+        }
+
         // Guard: don't let full-width "leak" into compact mode saved width
         if (currentSettings.view_mode === 'compact' && logicalSize.width > 1000) {
           return;
@@ -328,7 +345,10 @@ function App() {
       }
     }, 1000);
 
-    const unlistenResize = appWindow.onResized(() => persistWindow());
+    const unlistenResize = appWindow.onResized(() => {
+      appWindow.isMaximized().then(setIsMaximized).catch(console.error);
+      persistWindow();
+    });
 
     // Debug only: load demo clips / restore actual data when triggered from settings
     const unlistenDemo = import.meta.env.DEV
@@ -2051,6 +2071,8 @@ function App() {
               onPaste={handlePaste}
               onDelete={handleDelete}
               onToggleMode={toggleViewMode}
+              isMaximized={isMaximized}
+              onToggleMaximize={handleToggleMaximize}
               onOpenSettings={openSettings}
               isLoading={isLoading}
               theme={effectiveTheme}
@@ -2167,6 +2189,8 @@ function App() {
                 // Add toggle button to ControlBar
                 onToggleMode={toggleViewMode}
                 viewMode={settings?.view_mode || 'compact'}
+                isMaximized={isMaximized}
+                onToggleMaximize={handleToggleMaximize}
                 isPinned={settings?.pinned ?? false}
                 onTogglePin={handleTogglePin}
                 onResetSize={handleResetSize}
