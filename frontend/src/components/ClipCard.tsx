@@ -368,7 +368,7 @@ export const ClipCard = memo(
             {isSelected && (
               <div
                 data-el="clip-card-kb-focus"
-                className="pointer-events-none absolute bottom-2 left-0 top-2 w-0.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]"
+                className="pointer-events-none absolute bottom-2 left-0 top-2 w-0.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)] z-20"
               />
             )}
             {/* Bulk selection checkbox (top-left, visible on hover or when selected) */}
@@ -424,6 +424,13 @@ export const ClipCard = memo(
               data-el="clip-card-header"
               className="relative z-10 flex flex-shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2.5 py-2 backdrop-blur-sm"
             >
+              {clipIndex === 1 && (
+                <Tooltip label={t('common.latest')} placement="top">
+                  <span className="flex items-center text-cyan-400 opacity-90">
+                    <Zap size={11} className="fill-cyan-400/20" />
+                  </span>
+                </Tooltip>
+              )}
               {showSourceIcon && clip.source_icon && (
                 <div
                   className={clsx(
@@ -450,13 +457,6 @@ export const ClipCard = memo(
                 >
                   <Pin size={10} className="-rotate-45 fill-cyan-400/20" />
                 </span>
-              )}
-              {clipIndex === 1 && (
-                <Tooltip label={t('common.latest')} placement="top">
-                  <span className="flex items-center text-cyan-400 opacity-90">
-                    <Zap size={11} className="fill-cyan-400/20" />
-                  </span>
-                </Tooltip>
               )}
               {showNumber && clipIndex !== undefined && (
                 <span className="select-none font-mono text-[9px] opacity-20">#{clipIndex}</span>
