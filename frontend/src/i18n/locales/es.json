@@ -433,7 +433,7 @@
     "modelPlaceholder": "gpt-4o, deepseek-chat, etc.",
     "baseUrlPlaceholder": "https://api.openai.com/v1",
     "customModel": "Modelo Personalizado...",
-    "updateNotReachable": "El servidor de actualizaciones no está accesible aún. Esto es normal si no se ha publicado ninguna versión.",
+    "updateNotReachable": "El servicio de actualización automática aún no está disponible. Puedes descargar la última versión desde la página de releases de GitHub.",
     "failedToSave": "Error al guardar ajustes",
     "layoutRestored": "¡Diseño restaurado a valores predeterminados!",
     "failedToResetLayout": "Error al enviar comando de restablecimiento",

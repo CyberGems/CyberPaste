@@ -38,15 +38,16 @@ jobs:
       - name: install dependencies
         run: npm install
 
-      - name: Conditionally Disable Updater
+      - name: Validate updater signing configuration
         env:
-          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
-          if ([string]::IsNullOrEmpty($env:TAURI_PRIVATE_KEY)) {
-            Write-Host "TAURI_PRIVATE_KEY is not set. Disabling updater config in tauri.conf.json..."
-            node -e "const fs = require('fs'); const config = JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json')); if (config.plugins && config.plugins.updater) { config.plugins.updater.active = false; } delete config.bundle.createUpdaterArtifacts; fs.writeFileSync('src-tauri/tauri.conf.json', JSON.stringify(config, null, 2));"
-          } else {
-            Write-Host "TAURI_PRIVATE_KEY is set. Keeping updater enabled."
+          if ([string]::IsNullOrEmpty($env:TAURI_SIGNING_PRIVATE_KEY)) {
+            throw "TAURI_SIGNING_PRIVATE_KEY is not configured in GitHub repository secrets."
+          }
+          if ([string]::IsNullOrEmpty($env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD)) {
+            throw "TAURI_SIGNING_PRIVATE_KEY_PASSWORD is not configured in GitHub repository secrets."
           }
           if (Test-Path pnpm-lock.yaml) { Remove-Item pnpm-lock.yaml }
 
@@ -64,10 +65,8 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
-          # TAURI_PRIVATE_KEY and TAURI_KEY_PASSWORD are required for the updater
-          # Ensure these are set in the GitHub repository secrets
-          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "CyberPaste ${{ github.ref_name }}"

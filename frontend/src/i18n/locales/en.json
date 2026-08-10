@@ -433,7 +433,7 @@
     "modelPlaceholder": "gpt-4o, deepseek-chat, etc.",
     "baseUrlPlaceholder": "https://api.openai.com/v1",
     "customModel": "Custom Model...",
-    "updateNotReachable": "Update server is not reachable yet. This is normal if no release version has been published.",
+    "updateNotReachable": "The automatic update service is not available yet. You can download the latest version from the GitHub releases page.",
     "failedToSave": "Failed to save settings",
     "layoutRestored": "Layout restored to defaults!",
     "failedToResetLayout": "Failed to send reset command",

@@ -2331,7 +2331,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           toast.dismiss(loadingToast);
                           const raw = typeof err === 'string' ? err : err?.message || String(err);
                           const msg = raw.length > 80 ? raw.slice(0, 80) + '...' : raw;
-                          if (/fetch|network|connect|timeout|404|not found/i.test(raw)) {
+                          if (
+                            /fetch|network|connect|timeout|404|not found|sending request|request for url|updater/i.test(
+                              raw
+                            )
+                          ) {
                             toast.info(t('settings.updateNotReachable'));
                           } else {
                             toast.error(`${t('settings.updateError')}: ${msg}`);
