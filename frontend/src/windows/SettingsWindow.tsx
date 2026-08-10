@@ -32,7 +32,12 @@ export function SettingsWindow() {
   useEffect(() => {
     const appWindow = getCurrentWindow();
     const persistWindow = debounce(async () => {
-      if (await appWindow.isMaximized()) return;
+      try {
+        if (await appWindow.isMinimized()) return;
+        if (await appWindow.isMaximized()) return;
+      } catch {
+        return;
+      }
 
       const currentSettings = settingsRef.current;
       if (!currentSettings) return;
