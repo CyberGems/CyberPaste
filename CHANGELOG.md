@@ -2,6 +2,31 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.9.0] — 2026-08-09
+
+### 🚀 Features
+- **Folders Tab in Settings**: Added a new Folders tab in Settings and made wheel folder navigation optional.
+- **Separate Window Maximization**: Decoupled window maximization status from view modes.
+- **Enhanced Toast Notifications**: Added a custom context menu for toasts, system viewer action, and self-duplication debouncing.
+- **Configurable Duplicate Notifications**: Allowed enabling/disabling of duplicate toast popups.
+- **Premium Tooltips**: Replaced native tooltips with premium styled Tooltip component throughout the application.
+- **Settings Redesign**: Redesigned the Location and Appearance sections to match the CyberSnap layout cards structure.
+
+### 🐛 Bug Fixes & Styling
+- **Toast Optimization**: Removed toast transparency across themes and resolved inactive dots contrast.
+- **Window Corner Issue**: Disabled native Tauri window acrylic blur on the toast window to fix corner rendering issues on Windows.
+- **Layout Alignment**: Aligned settings panel structure to match CyberSnap aesthetics, removed centered max-width constraint for full-width layout, and optimized layout breakpoints.
+- **Toast Margins**: Adjusted positioning margins and cleaned up the toast position grid.
+- **Duplicate Debouncing**: Improved duplicate detection alerts with updated titles and description copy.
+
+## [1.8.0] — 2026-08-08
+
+### 🚀 Features
+- **Automatic Updates & Safety**: Implemented automatic updates check, window boundary clamping, and cleaned up debug/panic UI.
+
+### ⚙️ CI/CD
+- **Optimized Releases**: Removed arm64 and msi build targets to generate only x64 NSIS installers.
+
 ## [1.7.0] — 2026-08-07
 
 ### 🚀 Features
