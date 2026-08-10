@@ -165,6 +165,13 @@ pub fn run_app() {
         .on_window_event(|window, event| {
             match event {
                 tauri::WindowEvent::Moved(pos) => {
+                    // The clamp is only for the hidden, borderless main window.
+                    // Applying it to settings can interfere with Windows'
+                    // minimize/restore transition and block the WebView.
+                    if window.label() != "main" {
+                        return;
+                    }
+
                     if let Ok(monitors) = window.available_monitors() {
                         if !monitors.is_empty() {
                             let mut min_x = i32::MAX;

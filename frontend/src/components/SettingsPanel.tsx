@@ -11,7 +11,6 @@ import {
   Eye,
   EyeOff,
   Maximize2,
-  Minus,
   Square,
   Info,
   ExternalLink,
@@ -256,14 +255,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
   useEffect(() => {
     const win = getCurrentWindow();
     win.isMaximized().then(setIsMaximized);
-
-    const unlisten = win.onResized(() => {
-      win.isMaximized().then(setIsMaximized);
-    });
-
-    return () => {
-      unlisten.then((f) => f());
-    };
   }, []);
 
   // Apply theme immediately when settings.theme changes
@@ -589,28 +580,19 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
       <div className="flex h-full select-none flex-col bg-background text-foreground">
         {/* Header */}
         <div
-          data-tauri-drag-region
           className="flex cursor-default items-center justify-between border-b border-border bg-transparent px-4 py-3"
         >
-          <div data-tauri-drag-region className="pointer-events-none flex items-center gap-3">
+          <div
+            data-tauri-drag-region
+            className="flex min-w-0 flex-1 items-center gap-3"
+          >
             <img src="/logo.png" alt="CyberPaste" className="h-5 w-5 object-contain" />
             <h2 className="text-[18px] font-bold tracking-tight text-foreground">CyberPaste</h2>
           </div>
           <div className="flex items-center gap-1">
-            <Tooltip label={t('common.minimize')} placement="bottom">
-              <button
-                onClick={async () => {
-                  const win = getCurrentWindow();
-                  await win.minimize();
-                }}
-                className="icon-button flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-accent/50"
-                onMouseDown={(e) => e.stopPropagation()}
-              >
-                <Minus size={14} className="opacity-70" />
-              </button>
-            </Tooltip>
             <Tooltip label={isMaximized ? t('common.restore') : t('common.maximize')} placement="bottom">
               <button
+                type="button"
                 onClick={toggleMaximize}
                 className="icon-button flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-accent/50"
                 onMouseDown={(e) => e.stopPropagation()}
@@ -623,6 +605,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               </button>
             </Tooltip>
             <button
+              type="button"
               onClick={onClose}
               className="icon-button flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-destructive/20 hover:text-destructive"
               onMouseDown={(e) => e.stopPropagation()}
