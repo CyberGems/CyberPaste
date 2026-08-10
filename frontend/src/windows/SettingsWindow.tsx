@@ -41,6 +41,34 @@ export function SettingsWindow() {
   const handleClose = async () => {
     const win = getCurrentWindow();
     try {
+      if (!(await win.isMaximized()) && !(await win.isMinimized())) {
+        const size = await win.innerSize();
+        const pos = await win.innerPosition();
+        const factor = await win.scaleFactor();
+
+        const logicalSize = size.toLogical(factor);
+        const logicalPos = pos.toLogical(factor);
+
+        if (logicalSize.width > 100 && logicalSize.height > 100) {
+          const currentSettings = settingsRef.current;
+          if (currentSettings) {
+            await invoke('save_settings', {
+              settings: {
+                ...currentSettings,
+                settings_window_width: logicalSize.width,
+                settings_window_height: logicalSize.height,
+                settings_window_x: logicalPos.x,
+                settings_window_y: logicalPos.y,
+              },
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to save settings window size/position:', e);
+    }
+
+    try {
       await win.close();
     } catch (e) {
       console.error('Failed to close settings window:', e);

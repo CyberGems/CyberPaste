@@ -161,37 +161,7 @@ pub fn run_app() {
         .manage(db_arc.clone())
         .on_window_event(|window, event| {
             match event {
-                tauri::WindowEvent::Resized(size) => {
-                    let label = window.label();
-                    if label == "settings" {
-                        if let (Ok(false), Ok(false)) = (window.is_minimized(), window.is_maximized()) {
-                            let manager = window.state::<std::sync::Arc<crate::settings_manager::SettingsManager>>();
-                            let scale_factor = window.scale_factor().unwrap_or(1.0);
-                            let logical_size: tauri::LogicalSize<f64> = size.to_logical(scale_factor);
-                            if logical_size.width > 100.0 && logical_size.height > 100.0 {
-                                let mut current = manager.get();
-                                current.settings_window_width = Some(logical_size.width);
-                                current.settings_window_height = Some(logical_size.height);
-                                let _ = manager.save(current);
-                            }
-                        }
-                    }
-                }
                 tauri::WindowEvent::Moved(pos) => {
-                    let label = window.label();
-                    if label == "settings" {
-                        if let (Ok(false), Ok(false)) = (window.is_minimized(), window.is_maximized()) {
-                            let manager = window.state::<std::sync::Arc<crate::settings_manager::SettingsManager>>();
-                            let scale_factor = window.scale_factor().unwrap_or(1.0);
-                            let logical_pos: tauri::LogicalPosition<i32> = pos.to_logical(scale_factor);
-                            if logical_pos.x > -10000 && logical_pos.y > -10000 {
-                                let mut current = manager.get();
-                                current.settings_window_x = Some(logical_pos.x);
-                                current.settings_window_y = Some(logical_pos.y);
-                                let _ = manager.save(current);
-                            }
-                        }
-                    }
                     if let Ok(monitors) = window.available_monitors() {
                         if !monitors.is_empty() {
                             let mut min_x = i32::MAX;
