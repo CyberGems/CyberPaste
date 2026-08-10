@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
+import { listen, emit } from '@tauri-apps/api/event';
 import { getVersion } from '@tauri-apps/api/app';
 import { useLanguage } from '../hooks/useLanguage';
 import Tooltip from '../components/Tooltip';
@@ -31,6 +31,7 @@ import {
   Pin,
   ExternalLink,
   Maximize2,
+  Pencil,
 } from 'lucide-react';
 import { Settings } from '../types';
 import { ContextMenu } from '../components/ContextMenu';
@@ -247,6 +248,7 @@ export function ToastWindow() {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [isPinned, setIsPinnedState] = useState(false);
   const isPinnedRef = useRef(false);
+  const toastCardRef = useRef<HTMLDivElement>(null);
 
   const setIsPinned = (val: boolean) => {
     isPinnedRef.current = val;
@@ -257,6 +259,30 @@ export function ToastWindow() {
   const isMouseInsideRef = useRef(false);
   const normalWidthRef = useRef(300);
   const normalHeightRef = useRef(110);
+
+  useEffect(() => {
+    if (!toast) return;
+
+    const measureAndResize = async () => {
+      if (toastCardRef.current) {
+        const rect = toastCardRef.current.getBoundingClientRect();
+        const measuredHeight = Math.ceil(rect.height);
+        if (measuredHeight > 0) {
+          const isWelcome = toast.clip_type === 'welcome';
+          const width = isWelcome ? 340 : 300;
+          const windowHeight = measuredHeight + 52; // Add 52px padding for tooltips
+          normalWidthRef.current = width;
+          normalHeightRef.current = windowHeight;
+          await invoke('set_toast_position', { width, height: windowHeight }).catch(console.error);
+        }
+      }
+    };
+
+    const frameId = requestAnimationFrame(() => {
+      measureAndResize();
+    });
+    return () => cancelAnimationFrame(frameId);
+  }, [toast]);
 
   const { t } = useLanguage(settings?.language);
 
@@ -305,7 +331,7 @@ export function ToastWindow() {
     const width = isWelcome ? 340 : 300;
     const isDupImage = payload.clip_type === 'image' && payload.toast_type === 'duplicate';
     const height = isWelcome ? 80 : (isDupImage ? 120 : 110);
-    const windowHeight = height + 40; // Add 40px padding for tooltips
+    const windowHeight = height + 52; // Add 52px padding for tooltips
     normalWidthRef.current = width;
     normalHeightRef.current = windowHeight;
     await invoke('set_toast_position', { width, height: windowHeight }).catch(console.error);
@@ -479,6 +505,28 @@ export function ToastWindow() {
       }
       return;
     }
+    if (clickAction === 'toggle_pin' && toast && toast.clip_uuid) {
+      invoke<boolean>('toggle_clip_pin', { uuid: toast.clip_uuid })
+        .then((newPinnedState) => {
+          setIsPinned(newPinnedState);
+          if (newPinnedState) {
+            if (hideTimeoutRef.current) {
+              clearTimeout(hideTimeoutRef.current);
+              hideTimeoutRef.current = null;
+            }
+            const bar = document.getElementById('toast-progress-bar');
+            if (bar) {
+              bar.style.animation = 'none';
+              bar.style.transition = 'none';
+              bar.style.transform = 'scaleX(1)';
+            }
+          } else {
+            startCloseTimer();
+          }
+        })
+        .catch(console.error);
+      return;
+    }
   };
 
   const handleContextMenu = async (e: React.MouseEvent) => {
@@ -514,6 +562,9 @@ export function ToastWindow() {
     }
     if (clickAction === 'system_viewer') {
       return t('contextMenu.openInSystemViewer');
+    }
+    if (clickAction === 'toggle_pin') {
+      return isPinned ? t('contextMenu.unpin') : t('contextMenu.pin');
     }
     return t('toasts.tooltipOpen');
   };
@@ -583,6 +634,17 @@ export function ToastWindow() {
       });
     }
 
+    if (toast.clip_type !== 'image') {
+      contextMenuOptions.push({
+        label: t('contextMenu.edit'),
+        icon: <Pencil className="h-3.5 w-3.5" />,
+        onClick: () => {
+          emit('edit-clip', toast.clip_uuid).catch(console.error);
+          closeToast();
+        }
+      });
+    }
+
     contextMenuOptions.push({
       label: t('contextMenu.openWindow'),
       icon: <Maximize2 className="h-3.5 w-3.5" />,
@@ -612,6 +674,7 @@ export function ToastWindow() {
       >
         <Tooltip label={getTooltip()} disabled={!isClickable} placement={tooltipPlacement}>
           <div
+            ref={toastCardRef}
             className={`relative w-full overflow-hidden rounded-xl transition-all duration-300 ${containerClasses} ${isClosing ? 'translate-y-2 scale-95 opacity-0' : 'translate-y-0 scale-100 opacity-100'}`}
           >
             {isWelcome ? (

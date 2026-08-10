@@ -2088,6 +2088,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           { value: 'close', label: t('settings.toastClickActionClose') },
                           { value: 'open', label: t('settings.toastClickActionOpen') },
                           { value: 'system_viewer', label: t('settings.toastClickActionSystemViewer') },
+                          { value: 'toggle_pin', label: t('settings.toastClickActionTogglePin') },
                         ]}
                       />
                     </div>

@@ -302,6 +302,24 @@ function App() {
       getCurrentWindow().setFocus().catch(console.error);
     });
 
+    // Listen for edit-clip from toast context menu
+    const unlistenEditClip = listen<string>('edit-clip', (event) => {
+      const clipId = event.payload;
+      console.log('[App] Editing clip from toast:', clipId);
+      invoke('show_window').catch(console.error);
+      invoke<AppClipboardItem>('get_clip', { clipId })
+        .then((fullClip) => {
+          setEditClip({
+            isOpen: true,
+            clipId: (fullClip as any).id || (fullClip as any).uuid,
+            content: (fullClip as any).content,
+          });
+        })
+        .catch((err) => {
+          console.error('Failed to fetch clip content for edit:', err);
+        });
+    });
+
     // Listen for reset-window-layout from settings
     const unlistenReset = listen('reset-window-layout', () => {
       handleResetSize();
@@ -367,6 +385,7 @@ function App() {
       unlisten.then((f) => f());
       unlistenOpenSettings.then((f) => f());
       unlistenSelectClip.then((f) => f());
+      unlistenEditClip.then((f) => f());
       unlistenReset.then((f) => f());
       unlistenResize.then((f) => f());
       unlistenDemo.then((fs) => fs.forEach((f) => f()));
