@@ -436,6 +436,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
     width: number;
     height: number;
   } | null>(null);
+  const isPeekVisible = !!peekClipId;
   const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // NUEVO: micro-animación de entrada
@@ -810,6 +811,14 @@ export const CompactView: React.FC<CompactViewProps> = ({
     }
   }, []);
 
+  const handleFolderHover = useCallback(
+    (folderId: string | null) => {
+      if (peekClipId) closePeek();
+      if (isDragging) onDragHover(folderId);
+    },
+    [closePeek, isDragging, onDragHover, peekClipId]
+  );
+
   // Limpiar peek al cambiar isDragging
   useEffect(() => {
     if (isDragging) {
@@ -1030,7 +1039,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
           <div
             className={cn(
               'group/sidebar relative flex-shrink-0 overflow-hidden border-r border-border bg-transparent transition-all duration-200',
-              compactSidebarCollapsed && 'hover:bg-accent/60'
+              compactSidebarCollapsed && 'hover:bg-accent/60',
+              isPeekVisible && 'blur-[3px]'
             )}
             style={{ width: sidebarWidth }}
           >
@@ -1067,7 +1077,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                             ? 'border-primary bg-primary/30 text-foreground'
                             : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
                       )}
-                      onMouseEnter={() => isDragging && onDragHover(null)}
+                      onMouseEnter={() => handleFolderHover(null)}
                       onMouseLeave={onDragLeave}
                     >
                       <Clock size={11} className="flex-shrink-0" />
@@ -1116,7 +1126,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                               draggingFolderId === folder.id &&
                                 'pointer-events-none scale-95 opacity-40'
                             )}
-                            onMouseEnter={() => isDragging && onDragHover(folder.id)}
+                            onMouseEnter={() => handleFolderHover(folder.id)}
                           >
                             <Icon
                               size={11}
@@ -1177,7 +1187,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
           {/* Content Area */}
           <div className="flex flex-1 flex-col overflow-hidden">
             {/* Search */}
-            <div className="flex-shrink-0 p-2">
+            <div className={cn('flex-shrink-0 p-2', isPeekVisible && 'blur-[3px]')}>
               <div className="flex items-center gap-1.5">
                 <div className="group relative min-w-0 flex-1">
                   <Search
@@ -1220,6 +1230,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
               <CompactClipList
                 clips={filteredClips}
                 listRef={clipListApiRef}
+                peekClipId={peekClipId}
                 selectedClipId={selectedClipId}
                 selectedFolder={selectedFolder}
                 onPaste={onPaste}
@@ -1261,7 +1272,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
             <div
               className={cn(
                 'flex flex-shrink-0 items-center justify-between border-t border-white/5 bg-black/10 p-2 font-mono text-[9px] tracking-tighter transition-opacity',
-                entranceAnim && !mounted ? 'opacity-0' : 'opacity-40'
+                entranceAnim && !mounted ? 'opacity-0' : 'opacity-40',
+                isPeekVisible && 'blur-[3px]'
               )}
             >
               <span>
@@ -1283,7 +1295,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
       ) : (
         /* === HORIZONTAL LAYOUT (existing) === */
         <>
-          <div className="flex-shrink-0 space-y-2 p-2">
+          <div className={cn('flex-shrink-0 space-y-2 p-2', isPeekVisible && 'blur-[3px]')}>
             <div className="flex items-center gap-1.5">
               <div className="group relative min-w-0 flex-1">
                 <Search
@@ -1335,7 +1347,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     highlightedFolderId === null,
                     dragTargetFolderId === null
                   )}
-                  onMouseEnter={() => isDragging && onDragHover(null)}
+                  onMouseEnter={() => handleFolderHover(null)}
                   onMouseLeave={onDragLeave}
                 >
                   <Clock size={10} />
@@ -1384,7 +1396,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                           draggingFolderId === folder.id &&
                             'pointer-events-none scale-95 opacity-40'
                         )}
-                        onMouseEnter={() => isDragging && onDragHover(folder.id)}
+                        onMouseEnter={() => handleFolderHover(folder.id)}
                       >
                         <Icon
                           size={10}
@@ -1425,6 +1437,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
             <CompactClipList
               clips={filteredClips}
               listRef={clipListApiRef}
+              peekClipId={peekClipId}
               selectedClipId={selectedClipId}
               selectedFolder={selectedFolder}
               onPaste={onPaste}
@@ -1469,7 +1482,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
           <div
             className={cn(
               'flex flex-shrink-0 items-center justify-between border-t border-border bg-muted/40 p-2 font-mono text-[9px] tracking-tighter transition-opacity text-muted-foreground/90',
-              entranceAnim && !mounted ? 'opacity-0' : 'opacity-80'
+              entranceAnim && !mounted ? 'opacity-0' : 'opacity-80',
+              isPeekVisible && 'blur-[3px]'
             )}
           >
             <span>
@@ -1553,6 +1567,7 @@ const ClipRow = memo(function ClipRow({
   isSelected = false,
   onToggleSelect,
   isPeekVisible,
+  peekClipId,
   onRowMouseEnter,
   onClosePeek,
   compactShowSourceIcon = true,
@@ -1579,6 +1594,7 @@ const ClipRow = memo(function ClipRow({
   isSelected?: boolean;
   onToggleSelect?: (id: string, multi: boolean) => void;
   isPeekVisible?: boolean;
+  peekClipId?: string | null;
   onRowMouseEnter?: (clip: AppClip, e: React.MouseEvent) => void;
   onClosePeek?: () => void;
   compactShowSourceIcon?: boolean;
@@ -1629,7 +1645,9 @@ const ClipRow = memo(function ClipRow({
   const menuHighlightRef = useRef(false);
   const leftWhileMenuRef = useRef(false);
   menuHighlightRef.current = menuHighlight;
-  const showHover = hovered || menuHighlight || selectedClipId === clip.id;
+  const isNavigationSelected = selectedClipId === clip.id && !(isPeekVisible && index === 0);
+  const showHover = hovered || menuHighlight || isNavigationSelected;
+  const shouldBlurForPeek = isPeekVisible && peekClipId !== clip.id;
 
   useEffect(() => {
     const onMenu = (e: Event) => {
@@ -1686,11 +1704,12 @@ const ClipRow = memo(function ClipRow({
           'group relative flex h-10 w-full cursor-pointer items-center gap-3 overflow-hidden rounded-lg border px-2 py-1.5 transition-colors',
           isSelected
             ? 'border-primary bg-primary/20 shadow-[0_0_12px_rgba(var(--primary-rgb),0.25)] text-foreground'
-            : selectedClipId === clip.id
+            : isNavigationSelected
               ? 'border-primary/40 bg-primary/10 shadow-[0_0_12px_rgba(var(--primary-rgb),0.12)] text-foreground'
               : showHover
                 ? 'border-primary/30 bg-accent/60 text-foreground'
                 : 'border-border bg-card/45 text-foreground/90',
+          shouldBlurForPeek && 'blur-[3px]',
           reorderEnabled && !isDragging && 'cursor-grab',
           isDragging && 'pointer-events-none scale-95 cursor-grabbing opacity-40'
         )}
@@ -1865,6 +1884,7 @@ type CompactListRowProps = {
   onRowMouseEnter?: (clip: AppClip, e: React.MouseEvent) => void;
   onRowMouseLeave?: () => void;
   isPeekVisible?: boolean;
+  peekClipId?: string | null;
   onClosePeek?: () => void;
   compactShowSourceIcon?: boolean;
   compactShowTime?: boolean;
@@ -1895,6 +1915,7 @@ function CompactListRow({
   onRowMouseEnter,
   onRowMouseLeave,
   isPeekVisible,
+  peekClipId,
   onClosePeek,
   compactShowSourceIcon,
   compactShowTime,
@@ -1930,6 +1951,7 @@ function CompactListRow({
         isSelected={selectedClipIds?.has(clip.id) ?? false}
         onToggleSelect={onToggleClipSelect}
         isPeekVisible={isPeekVisible}
+        peekClipId={peekClipId}
         onRowMouseEnter={onRowMouseEnter}
         onClosePeek={onClosePeek}
         compactShowSourceIcon={compactShowSourceIcon}
@@ -1966,6 +1988,7 @@ function CompactClipList({
   onRowMouseEnter,
   onRowMouseLeave,
   isPeekVisible,
+  peekClipId,
   onClosePeek,
   compactShowSourceIcon = true,
   compactShowTime = true,
@@ -2000,6 +2023,7 @@ function CompactClipList({
   onRowMouseEnter?: (clip: AppClip, e: React.MouseEvent) => void;
   onRowMouseLeave?: () => void;
   isPeekVisible: boolean;
+  peekClipId?: string | null;
   onClosePeek?: () => void;
   compactShowSourceIcon?: boolean;
   compactShowTime?: boolean;
@@ -2063,6 +2087,7 @@ function CompactClipList({
       onRowMouseEnter,
       onRowMouseLeave,
       isPeekVisible,
+      peekClipId,
       onClosePeek,
       compactShowSourceIcon,
       compactShowTime,
@@ -2089,6 +2114,7 @@ function CompactClipList({
       onRowMouseEnter,
       onRowMouseLeave,
       isPeekVisible,
+      peekClipId,
       onClosePeek,
       compactShowSourceIcon,
       compactShowTime,

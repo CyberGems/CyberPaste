@@ -11,6 +11,7 @@ import {
   Eye,
   EyeOff,
   Maximize2,
+  Minus,
   Square,
   Info,
   ExternalLink,
@@ -590,6 +591,19 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
             <h2 className="text-[18px] font-bold tracking-tight text-foreground">CyberPaste</h2>
           </div>
           <div className="flex items-center gap-1">
+            <Tooltip label={t('common.minimize')} placement="bottom">
+              <button
+                type="button"
+                onClick={async () => {
+                  const win = getCurrentWindow();
+                  await win.minimize();
+                }}
+                className="icon-button flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-accent/50"
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                <Minus size={14} className="opacity-70" />
+              </button>
+            </Tooltip>
             <Tooltip label={isMaximized ? t('common.restore') : t('common.maximize')} placement="bottom">
               <button
                 type="button"

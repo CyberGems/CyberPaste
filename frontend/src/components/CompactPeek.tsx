@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { Copy, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,20 +29,7 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
   onClose,
 }) => {
   const { t } = useTranslation();
-  const [visible, setVisible] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (clip && anchorRect) {
-      timerRef.current = setTimeout(() => setVisible(true), 500);
-    } else {
-      setVisible(false);
-    }
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      setVisible(false);
-    };
-  }, [clip?.id, anchorRect?.x, anchorRect?.y]);
+  const visible = Boolean(clip && anchorRect);
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -75,6 +62,15 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
     left,
     width,
   };
+
+  const sourceRowPadding = 2;
+  const sourceRowTop = Math.max(0, anchorRect.y - sourceRowPadding);
+  const sourceRowBottom = Math.min(
+    vh,
+    anchorRect.y + anchorRect.height + sourceRowPadding
+  );
+  const compactHeaderHeight = 48;
+  const topBlurHeight = Math.max(0, sourceRowTop - compactHeaderHeight);
 
   let calculatedMaxHeight = PEEK_MAX_HEIGHT;
   if (showAbove) {
@@ -122,6 +118,25 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
   return (
     <AnimatePresence>
       {visible && (
+        <>
+          <motion.div
+            key="peek-backdrop-top"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.12, ease: 'easeOut' }}
+            className="pointer-events-none fixed inset-x-0 top-12 z-[90] bg-background/[0.24] backdrop-blur-[20px]"
+            style={{ height: topBlurHeight }}
+          />
+          <motion.div
+            key="peek-backdrop-bottom"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.12, ease: 'easeOut' }}
+            className="pointer-events-none fixed inset-x-0 bottom-0 z-[90] bg-background/[0.24] backdrop-blur-[20px]"
+            style={{ top: sourceRowBottom }}
+          />
         <motion.div
           key={`peek-${clip.id}`}
           initial={{ opacity: 0, scale: 0.96 }}
@@ -139,7 +154,7 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
             {/* Header info bar / merged with action bar */}
             <div className="flex h-9 flex-shrink-0 items-center justify-between border-b border-border bg-muted/60 px-3 text-[10px] font-medium tracking-wider uppercase text-muted-foreground/80">
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-primary font-bold bg-primary/15 border border-primary/25 rounded px-1.5 py-0.5 text-[9px] tracking-widest">{t(`clipType.${clip.clip_type}`)}</span>
+                <span className="rounded-md border border-border/80 bg-background/40 px-1.5 py-0.5 text-[9px] font-semibold tracking-widest text-muted-foreground">{t(`clipType.${clip.clip_type}`)}</span>
                 <span className="font-mono text-[9px] text-muted-foreground/90 truncate">{infoLabel}</span>
               </div>
               
@@ -196,6 +211,7 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
             </div>
           </div>
         </motion.div>
+        </>
       )}
     </AnimatePresence>
   );
