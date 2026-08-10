@@ -392,7 +392,7 @@ function App() {
     };
   }, []);
 
-  const openSettings = useCallback(async (tab?: string) => {
+  const openSettings = useCallback(async (tab?: any) => {
     // Hide main window (with animation)
     try {
       await invoke('hide_window');
@@ -400,8 +400,9 @@ function App() {
       console.error('Failed to hide main window:', e);
     }
 
+    const tabStr = typeof tab === 'string' ? tab : null;
     try {
-      await invoke('open_settings', { tab: tab ?? null });
+      await invoke('open_settings', { tab: tabStr });
     } catch (e) {
       console.error('Failed to open settings window:', e);
     }

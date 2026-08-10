@@ -11,6 +11,7 @@ import {
   Eye,
   EyeOff,
   Maximize2,
+  Minus,
   Square,
   Info,
   ExternalLink,
@@ -435,17 +436,26 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     }
   }, []);
 
-  const handleAddIgnoredApp = async () => {
-    if (!newIgnoredApp.trim()) return;
+  const addAppToIgnored = async (appName: string) => {
+    const trimmed = appName.trim();
+    if (!trimmed) return;
     try {
-      await invoke('add_ignored_app', { appName: newIgnoredApp.trim() });
-      setIgnoredApps((prev) => [...prev, newIgnoredApp.trim()].sort());
-      setNewIgnoredApp('');
-      toast.success(t('settings.addedToIgnored', { name: newIgnoredApp.trim() }));
+      await invoke('add_ignored_app', { appName: trimmed });
+      setIgnoredApps((prev) => {
+        if (prev.includes(trimmed)) return prev;
+        return [...prev, trimmed].sort();
+      });
+      toast.success(t('settings.addedToIgnored', { name: trimmed }));
     } catch (e) {
       toast.error(t('settings.failedToAddIgnored', { error: e }));
       console.error(e);
     }
+  };
+
+  const handleAddIgnoredApp = async () => {
+    if (!newIgnoredApp.trim()) return;
+    await addAppToIgnored(newIgnoredApp);
+    setNewIgnoredApp('');
   };
 
   const handleBrowseFile = async () => {
@@ -454,8 +464,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         filterName: 'Executables',
         extensions: ['exe', 'app'],
       });
-      const filename = path.split(/[\\/]/).pop() || path;
-      setNewIgnoredApp(filename);
+      if (path) {
+        const filename = path.split(/[\\/]/).pop() || path;
+        await addAppToIgnored(filename);
+      }
     } catch (e) {
       console.log('File picker cancelled or failed', e);
     }
@@ -585,6 +597,18 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
             <h2 className="text-[18px] font-bold tracking-tight text-foreground">CyberPaste</h2>
           </div>
           <div className="flex items-center gap-1">
+            <Tooltip label={t('common.minimize')} placement="bottom">
+              <button
+                onClick={async () => {
+                  const win = getCurrentWindow();
+                  await win.minimize();
+                }}
+                className="icon-button flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-accent/50"
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                <Minus size={14} className="opacity-70" />
+              </button>
+            </Tooltip>
             <Tooltip label={isMaximized ? t('common.restore') : t('common.maximize')} placement="bottom">
               <button
                 onClick={toggleMaximize}
@@ -792,7 +816,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <span className="text-sm font-medium">
                         {t('settings.startupWithWindows')}
                       </span>
-                      <p className="text-sm text-muted-foreground/80">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {t('settings.startupWithWindowsDesc')}
                       </p>
                     </div>
@@ -859,7 +883,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                         <div>
                           <span className="text-sm font-medium">{t('settings.autoPaste')}</span>
-                          <p className="text-sm text-muted-foreground/80">
+                          <p className="text-xs text-muted-foreground mt-1">
                             {t('settings.autoPasteDesc')}
                           </p>
                         </div>
@@ -883,7 +907,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           <span className="text-sm font-medium">
                             {t('settings.autoInjectPaste')}
                           </span>
-                          <p className="text-sm text-muted-foreground/80">
+                          <p className="text-xs text-muted-foreground mt-1">
                             {t('settings.autoInjectPasteDesc')}
                           </p>
                         </div>
@@ -933,7 +957,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           <span className="text-sm font-medium">
                             {t('settings.resetViewOnPaste')}
                           </span>
-                          <p className="text-sm text-muted-foreground/80">
+                          <p className="text-xs text-muted-foreground mt-1">
                             {t('settings.resetViewOnPasteDesc')}
                           </p>
                         </div>
@@ -1269,7 +1293,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <div className="space-y-4 rounded-xl border border-border bg-card p-4">
                       <label className="block">
                         <span className="text-sm font-medium">{t('settings.ignoredApps')}</span>
-                        <p className="text-sm text-muted-foreground/80">
+                        <p className="text-xs text-muted-foreground mt-1">
                           {t('settings.ignoredAppsDesc')}
                         </p>
                       </label>
@@ -1291,21 +1315,12 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             <FolderOpen size={16} />
                           </button>
                         </Tooltip>
-                        <Tooltip label={t('settings.addToList')} placement="top">
-                          <button
-                            onClick={handleAddIgnoredApp}
-                            disabled={!newIgnoredApp.trim()}
-                            className="btn btn-secondary rounded-[4px] px-3"
-                          >
-                            <Plus size={16} />
-                          </button>
-                        </Tooltip>
                       </div>
 
                       <div className="custom-scrollbar max-h-40 space-y-1 overflow-y-auto pr-1">
                         {ignoredApps.length === 0 ? (
                           <div className="rounded-lg border border-dashed border-border p-4 text-center">
-                            <p className="text-sm text-muted-foreground/80">
+                            <p className="text-xs text-muted-foreground mt-1">
                               {t('settings.noIgnoredApps')}
                             </p>
                           </div>
@@ -1447,7 +1462,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         <span className="text-sm font-medium">
                           {t('settings.wheelFolderNavigation')}
                         </span>
-                        <p className="text-xs text-muted-foreground mt-0.5">
+                        <p className="text-xs text-muted-foreground mt-1">
                           {t('settings.wheelFolderNavigationDesc')}
                         </p>
                       </div>
@@ -1476,7 +1491,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <div className="space-y-4 rounded-xl border border-border bg-card p-4">
                       <div className="space-y-3">
                         <label className="block">
-                          <span className="text-base font-medium">
+                          <span className="text-sm font-medium">
                             {t('settings.fullGridScale')}
                           </span>
                           <p className="text-xs text-muted-foreground">
@@ -1498,7 +1513,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
                       <div className="space-y-3">
                         <label className="block">
-                          <span className="text-base font-medium">
+                          <span className="text-sm font-medium">
                             {t('settings.fullGridColumns')}
                           </span>
                           <p className="text-xs text-muted-foreground">
@@ -1519,7 +1534,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
                       <div className="space-y-3">
                         <label className="block">
-                          <span className="text-base font-medium">
+                          <span className="text-sm font-medium">
                             {t('settings.fullScrollDirection')}
                           </span>
                           <p className="text-xs text-muted-foreground">
@@ -1591,7 +1606,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <div className="space-y-4 rounded-xl border border-border bg-card p-4">
                       <div className="space-y-3 border-b border-border/60 pb-4">
                         <label className="block">
-                          <span className="text-base font-medium">
+                          <span className="text-sm font-medium">
                             {t('settings.compactFolderLayout')}
                           </span>
                           <p className="text-xs text-muted-foreground">
@@ -1634,7 +1649,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
                       <div className="space-y-3 border-b border-border/60 pb-4">
                         <label className="block">
-                          <span className="text-base font-medium">
+                          <span className="text-sm font-medium">
                             {t('settings.compactViewPosition')}
                           </span>
                           <p className="text-xs text-muted-foreground">
@@ -1677,7 +1692,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
                       <div className="space-y-3">
                         <label className="block">
-                          <span className="text-base font-medium">
+                          <span className="text-sm font-medium">
                             {t('settings.clipNumbering')}
                           </span>
                           <p className="text-xs text-muted-foreground">
@@ -1820,8 +1835,8 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   return (
                     <>
                       <section className="space-y-4">
-                        <h3 className="text-sm font-medium text-muted-foreground">
-                          {t('settings.aiConfiguration')}
+                        <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
+                          <BrainCircuit size={14} /> {t('settings.aiConfiguration')}
                         </h3>
 
                         <div className="space-y-3">
@@ -1949,8 +1964,8 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </section>
 
                       <section className="space-y-4 border-t border-border pt-4">
-                        <h3 className="text-sm font-medium text-muted-foreground">
-                          {t('settings.customPrompts')}
+                        <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
+                          <SettingsIcon size={14} /> {t('settings.customPrompts')}
                         </h3>
                         <p className="text-xs italic text-muted-foreground">
                           {t('settings.customPromptsDesc')}
@@ -2001,14 +2016,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               {/* --- NOTIFICATIONS TAB --- */}
               {activeTab === 'notifications' && (
                 <section className="space-y-4">
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    {t('settings.toasts')}
+                  <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
+                    <Bell size={14} /> {t('settings.toasts')}
                   </h3>
 
                   <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                     <div>
-                      <span className="text-base font-semibold">{t('settings.enableToasts')}</span>
-                      <p className="text-sm text-muted-foreground/80">
+                      <span className="text-sm font-medium">{t('settings.enableToasts')}</span>
+                      <p className="text-xs text-muted-foreground mt-1">
                         {t('settings.enableToastsDesc')}
                       </p>
                     </div>
@@ -2026,10 +2041,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
                   <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                     <div>
-                      <span className="text-base font-semibold">
+                      <span className="text-sm font-medium">
                         {t('settings.duplicateToasts')}
                       </span>
-                      <p className="text-sm text-muted-foreground/80">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {t('settings.duplicateToastsDesc')}
                       </p>
                     </div>
@@ -2051,10 +2066,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
                   <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                     <div>
-                      <span className="text-base font-semibold">
+                      <span className="text-sm font-medium">
                         {t('settings.showActionMessages')}
                       </span>
-                      <p className="text-sm text-muted-foreground/80">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {t('settings.showActionMessagesDesc')}
                       </p>
                     </div>
@@ -2072,10 +2087,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
                   <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                     <div>
-                      <span className="text-base font-semibold">
+                      <span className="text-sm font-medium">
                         {t('settings.toastClickAction')}
                       </span>
-                      <p className="text-sm text-muted-foreground/80">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {t('settings.toastClickActionDesc')}
                       </p>
                     </div>
@@ -2094,8 +2109,8 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     </div>
                   </div>
 
-                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                    {t('settings.locationSection')}
+                  <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
+                    <Layout size={14} /> {t('settings.locationSection')}
                   </h3>
 
                   <div className="rounded-xl border border-border bg-card p-4 divide-y divide-border/60">
@@ -2104,10 +2119,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <div className="flex gap-3">
                         <Layout className="h-5 w-5 text-muted-foreground/80 mt-0.5 flex-shrink-0" />
                         <div>
-                          <span className="text-sm font-semibold block text-foreground">
+                          <span className="text-sm font-medium block text-foreground">
                             {t('settings.toastPositionTitle')}
                           </span>
-                          <p className="text-xs text-muted-foreground/80 mt-1 max-w-[420px]">
+                          <p className="text-xs text-muted-foreground mt-1 max-w-[420px]">
                             {t('settings.toastPositionDesc')}
                           </p>
                         </div>
@@ -2175,7 +2190,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                   <button
                                     type="button"
                                     onClick={() => updateSetting('toast_position', pos.value)}
-                                    className={`relative rounded-[4px] transition-all hover:bg-accent focus:outline-none ${isActive ? 'border border-primary bg-primary/10' : 'border border-transparent'}`}
+                                    className={`relative rounded-[4px] transition-colors hover:bg-accent focus:outline-none ${isActive ? 'border border-primary bg-primary/10' : 'border border-transparent'}`}
                                   >
                                     <span
                                       className={`absolute h-2 w-2 rounded-[2px] transition-colors ${pos.dotClass} ${isActive ? 'bg-primary shadow-[0_0_8px_var(--primary)]' : 'dark:bg-white/20 bg-neutral-400'}`}
@@ -2194,10 +2209,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <div className="flex gap-3">
                         <Monitor className="h-5 w-5 text-muted-foreground/80 flex-shrink-0" />
                         <div>
-                          <span className="text-sm font-semibold block text-foreground">
+                          <span className="text-sm font-medium block text-foreground">
                             {t('settings.toastMonitorTitle')}
                           </span>
-                          <p className="text-xs text-muted-foreground/80 mt-1 max-w-[420px]">
+                          <p className="text-xs text-muted-foreground mt-1 max-w-[420px]">
                             {t('settings.toastMonitorDesc')}
                           </p>
                         </div>
@@ -2222,10 +2237,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <div className="flex gap-3">
                         <Clock className="h-5 w-5 text-muted-foreground/80 flex-shrink-0" />
                         <div>
-                          <span className="text-sm font-semibold block text-foreground">
+                          <span className="text-sm font-medium block text-foreground">
                             {t('settings.toastDurationTitle')}
                           </span>
-                          <p className="text-xs text-muted-foreground/80 mt-1 max-w-[420px]">
+                          <p className="text-xs text-muted-foreground mt-1 max-w-[420px]">
                             {t('settings.toastDurationDesc')}
                           </p>
                         </div>
@@ -2249,10 +2264,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <div className="flex gap-3">
                         <Send className="h-5 w-5 text-muted-foreground/80 flex-shrink-0" />
                         <div>
-                          <span className="text-sm font-semibold block text-foreground">
+                          <span className="text-sm font-medium block text-foreground">
                             {t('settings.testNotificationTitle')}
                           </span>
-                          <p className="text-xs text-muted-foreground/80 mt-1 max-w-[420px]">
+                          <p className="text-xs text-muted-foreground mt-1 max-w-[420px]">
                             {t('settings.testNotificationDesc')}
                           </p>
                         </div>

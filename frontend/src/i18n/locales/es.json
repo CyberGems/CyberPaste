@@ -288,7 +288,7 @@
     "fullTypeFilter": "Filtro por tipo",
     "hotkeyRecording": "Presiona las teclas...",
     "ignoredApps": "Aplicaciones Ignoradas",
-    "ignoredAppsDesc": "No capturar el portapapeles de estas apps",
+    "ignoredAppsDesc": "No capturar el portapapeles de estas apps (ingresa el nombre del proceso o la ruta absoluta)",
     "noIgnoredApps": "No hay aplicaciones ignoradas",
     "addApp": "Añadir Aplicación",
     "add": "Añadir",

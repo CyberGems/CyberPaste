@@ -291,7 +291,7 @@
     "fullTypeFilter": "Type Filter",
     "hotkeyRecording": "Press keys...",
     "ignoredApps": "Ignored Applications",
-    "ignoredAppsDesc": "Don't capture clipboard from these apps",
+    "ignoredAppsDesc": "Don't capture clipboard from these apps (enter process name or absolute path)",
     "noIgnoredApps": "No ignored applications",
     "addApp": "Add Application",
     "add": "Add",

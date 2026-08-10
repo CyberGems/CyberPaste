@@ -435,3 +435,12 @@
       0 0 0 1px rgba(0, 0, 0, 0.3) !important;
   }
 }
+
+/* Suppress default browser outline flash on click/focus */
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+  box-shadow: none;
+}

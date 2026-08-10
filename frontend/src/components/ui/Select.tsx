@@ -58,7 +58,7 @@ export function Select({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={clsx(
-          'flex w-full items-center justify-between rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] text-foreground transition-all duration-200 focus:outline-none focus:ring-0',
+          'flex w-full items-center justify-between rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] text-foreground transition-colors duration-200 focus:outline-none focus:ring-0',
           disabled && 'cursor-not-allowed opacity-50',
           isOpen && 'border-ring'
         )}
