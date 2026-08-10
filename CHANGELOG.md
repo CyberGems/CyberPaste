@@ -2,6 +2,17 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.9.1] — 2026-08-10
+
+### ✨ UI Enhancements
+- **Compact Peek Focus**: Added a focused background blur that keeps the title bar and source clip row clear while making surrounding clip text less distracting.
+- **Peek Interactions**: Synchronized peek visibility with selection styling and dismiss the peek immediately when hovering over folders.
+- **Peek Styling**: Refined peek badges with a neutral visual treatment and softened the background effect for a smoother transition.
+
+### 🐛 Bug Fixes & Settings
+- **Settings Window Stability**: Improved minimize and restore handling to prevent window-state deadlocks.
+- **Settings Controls**: Added a minimize button to the Settings window.
+
 ## [1.9.0] — 2026-08-09
 
 ### 🚀 Features
