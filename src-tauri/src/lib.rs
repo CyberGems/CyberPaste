@@ -154,6 +154,9 @@ pub fn run_app() {
             .with_state_flags(
                 tauri_plugin_window_state::StateFlags::POSITION | tauri_plugin_window_state::StateFlags::MAXIMIZED
             )
+            .with_filter(|window| {
+                window == "main"
+            })
             .build()
         )
         .plugin(tauri_plugin_opener::init())
