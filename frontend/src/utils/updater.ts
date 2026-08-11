@@ -9,9 +9,10 @@ export function formatUpdaterError(err: unknown): string {
 
   if (err instanceof Error) {
     const parts = [err.message?.trim()].filter(Boolean) as string[];
-    if (err.cause != null) {
-      const cause = formatUpdaterError(err.cause);
-      if (cause && cause !== parts[0]) parts.push(cause);
+    const cause = (err as Error & { cause?: unknown }).cause;
+    if (cause != null) {
+      const nested = formatUpdaterError(cause);
+      if (nested && nested !== parts[0]) parts.push(nested);
     }
     return parts.join(' — ') || 'Unknown error';
   }

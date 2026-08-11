@@ -2,6 +2,12 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.10.1] — 2026-08-11
+
+### 🔄 Updates & Branding
+- **Clearer Update Errors**: Update checks now show the real backend error in toasts and Settings, with copy support for diagnostics.
+- **Brand Consistency**: Replaced remaining Ciber-CR references with CyberGems across docs and product pages.
+
 ## [1.10.0] — 2026-08-11
 
 ### ✨ Editing & Contextual Actions
