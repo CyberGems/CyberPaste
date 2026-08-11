@@ -29,6 +29,7 @@ export interface TrayMenuState {
   hotkey: string;
   is_visible: boolean;
   is_paused: boolean;
+  update_available: boolean;
   language: string;
 }
 
@@ -197,8 +198,15 @@ export function TrayMenuWindow() {
         }}
         role="menu"
       >
-        <div className="px-3.5 pb-2.5 pt-3.5 text-center text-[12px] font-medium tracking-wide text-muted-foreground/70">
-          CyberPaste v{state?.version ?? '…'}
+        <div className="flex select-none cursor-default items-center justify-center gap-1.5 px-3.5 pb-2.5 pt-3.5 text-center text-[12px] font-medium tracking-wide text-muted-foreground/70">
+          <span>CyberPaste v{state?.version ?? '…'}</span>
+          {state?.update_available ? (
+            <span
+              className="h-2 w-2 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.85)]"
+              title={t('tray.updateAvailable', { defaultValue: 'Update available' })}
+              aria-label={t('tray.updateAvailable', { defaultValue: 'Update available' })}
+            />
+          ) : null}
         </div>
 
         <div className="mx-2.5 h-px bg-accent" />

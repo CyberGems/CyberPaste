@@ -2324,7 +2324,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           if (update) {
                             setUpdateAvailable(update);
                             setShowUpdateModal(true);
+                            toast.update(t('settings.updateAvailable', { version: update.version }));
+                            invoke('set_update_available', { available: true }).catch(console.error);
                           } else {
+                            invoke('set_update_available', { available: false }).catch(console.error);
                             toast.info(t('settings.noUpdates'));
                           }
                         } catch (err: any) {

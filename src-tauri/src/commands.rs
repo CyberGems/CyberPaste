@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Instant;
-use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicBool, Ordering};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 
 /// Native clipboard read (avoids browser Clipboard API permission prompts).
@@ -2906,7 +2906,7 @@ pub async fn toast_ready(
 pub async fn show_toast(
     app: AppHandle,
     message: String,
-    toast_type: String,            // "success", "error", "info"
+    toast_type: String,            // "success", "error", "info", "update"
     clip_type: Option<String>,     // "text", "image", "html", "rtf", "file", "url"
     image_preview: Option<String>, // base64 encoded tiny thumbnail for images
     clip_uuid: Option<String>,
@@ -2920,7 +2920,8 @@ pub async fn show_toast(
         return Ok(());
     }
 
-    let is_action_message = clip_type.is_none() || clip_type.as_deref() == Some("welcome");
+    let is_action_message =
+        toast_type != "update" && (clip_type.is_none() || clip_type.as_deref() == Some("welcome"));
     if is_action_message && !manager.get().show_action_messages {
         return Ok(());
     }
@@ -3295,11 +3296,13 @@ pub struct TrayMenuState {
     pub hotkey: String,
     pub is_visible: bool,
     pub is_paused: bool,
+    pub update_available: bool,
     pub language: String,
 }
 
 static TRAY_MENU_ANCHOR: std::sync::Mutex<Option<(i32, i32)>> = std::sync::Mutex::new(None);
 static TRAY_MENU_WATCH_GEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+static UPDATE_AVAILABLE: AtomicBool = AtomicBool::new(false);
 /// Set when a cold-created window still needs to be positioned+shown by `tray_menu_ready`.
 static TRAY_MENU_PENDING_SHOW: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
@@ -3395,6 +3398,7 @@ pub fn collect_tray_menu_state(app: &AppHandle) -> TrayMenuState {
         hotkey: settings.hotkey.clone(),
         is_visible,
         is_paused,
+        update_available: UPDATE_AVAILABLE.load(Ordering::SeqCst),
         language: settings.language.clone(),
     }
 }
@@ -3402,6 +3406,12 @@ pub fn collect_tray_menu_state(app: &AppHandle) -> TrayMenuState {
 #[tauri::command]
 pub fn get_tray_menu_state(app: AppHandle) -> TrayMenuState {
     collect_tray_menu_state(&app)
+}
+
+#[tauri::command]
+pub fn set_update_available(app: AppHandle, available: bool) -> Result<(), String> {
+    UPDATE_AVAILABLE.store(available, Ordering::SeqCst);
+    crate::rebuild_tray_menu(&app).map_err(|error| error.to_string())
 }
 
 #[tauri::command]

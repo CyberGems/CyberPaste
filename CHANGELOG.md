@@ -2,6 +2,13 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.9.3] — 2026-08-10
+
+### 🔔 Update Notifications
+- **Clearer Update Toasts**: Improved update messages, prevented truncation, and ensured update alerts remain visible independently of general action-message settings.
+- **Tray Update Indicator**: Added a glowing LED beside the CyberPaste branding when a new version is available.
+- **Tray Branding**: Prevented the text caret cursor from appearing over the tray menu branding.
+
 ## [1.9.2] — 2026-08-10
 
 ### 🔄 Updates & Reliability

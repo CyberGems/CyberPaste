@@ -19,6 +19,11 @@ export const systemToast = {
       console.error
     );
   },
+  update: (message: string, _options?: any) => {
+    invoke('show_toast', { message, toastType: 'update', clipType: null, imagePreview: null }).catch(
+      console.error
+    );
+  },
   loading: (message: string, _options?: any) => {
     invoke('show_toast', { message, toastType: 'info', clipType: null, imagePreview: null }).catch(
       console.error

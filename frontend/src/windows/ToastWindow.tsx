@@ -38,7 +38,7 @@ import { ContextMenu } from '../components/ContextMenu';
 
 interface ToastPayload {
   message: string;
-  toast_type: 'success' | 'error' | 'info' | 'duplicate' | 'cut';
+  toast_type: 'success' | 'error' | 'info' | 'update' | 'duplicate' | 'cut';
   clip_type?: string | null;
   image_preview?: string | null; // base64 thumbnail
   clip_uuid?: string | null;
@@ -48,6 +48,7 @@ interface ToastPayload {
 
 function getClipTitle(clipType: string | null | undefined, toastType: string | undefined, t: any): string {
   if (!clipType) {
+    if (toastType === 'update') return t('toasts.titles.updateAvailable');
     if (toastType === 'duplicate') return t('toasts.titles.duplicate');
     if (toastType === 'success') return t('toasts.titles.success');
     if (toastType === 'error') return t('toasts.titles.error');
@@ -788,7 +789,7 @@ export function ToastWindow() {
                       // When there is no source app, just render the message normally (e.g. system notification)
                       toast.message && (
                         <p
-                          className={`mt-0.5 line-clamp-2 break-words text-sm font-medium leading-snug ${tv.body}`}
+                          className={`mt-0.5 break-words text-sm font-medium leading-snug ${tv.body}`}
                         >
                           {toast.message}
                         </p>
