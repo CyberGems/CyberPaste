@@ -2,6 +2,15 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.10.0] — 2026-08-11
+
+### ✨ Editing & Contextual Actions
+- **Type-aware editing**: Edit modal titles now identify Text, HTML, Code, URL, Rich Text, and File clips.
+- **Live character counts**: Edit modal title bars show the current character count while typing.
+- **Context menu clarity**: Clip and toast context menus now use type-specific Edit actions.
+- **Toast discoverability**: Toast tooltips now hint that right-click opens the context menu.
+- **Modal polish**: Improved title alignment and removed forced uppercase styling from modal titles.
+
 ## [1.9.3] — 2026-08-10
 
 ### 🔔 Update Notifications

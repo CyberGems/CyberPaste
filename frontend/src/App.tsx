@@ -317,6 +317,7 @@ function App() {
             isOpen: true,
             clipId: (fullClip as any).id || (fullClip as any).uuid,
             content: (fullClip as any).content,
+            clipType: (fullClip as any).clip_type,
           });
         })
         .catch((err) => {
@@ -1625,10 +1626,16 @@ function App() {
     title: '',
     content: '',
   });
-  const [editClip, setEditClip] = useState<{ isOpen: boolean; clipId: string; content: string }>({
+  const [editClip, setEditClip] = useState<{
+    isOpen: boolean;
+    clipId: string;
+    content: string;
+    clipType: string;
+  }>({
     isOpen: false,
     clipId: '',
     content: '',
+    clipType: 'text',
   });
   const [moveToFolderClipId, setMoveToFolderClipId] = useState<string | null>(null);
 
@@ -1691,6 +1698,7 @@ function App() {
           isOpen: true,
           clipId: (fullClip as any).id || (fullClip as any).uuid,
           content: (fullClip as any).content,
+          clipType: (fullClip as any).clip_type,
         });
       })
       .catch((err) => {
@@ -1803,7 +1811,11 @@ function App() {
           });
         } else {
           opts.push({
-            label: t('contextMenu.edit'),
+            label: clip
+              ? t('contextMenu.editType', {
+                  type: t(`clipType.${clip.clip_type}`, { defaultValue: t('clipType.text') }),
+                })
+              : t('contextMenu.edit'),
             icon: <Pencil size={14} />,
             onClick: () => {
               if (!clip) return;
@@ -1813,6 +1825,7 @@ function App() {
                     isOpen: true,
                     clipId: (fullClip as any).id || (fullClip as any).uuid,
                     content: (fullClip as any).content,
+                    clipType: (fullClip as any).clip_type,
                   });
                 })
                 .catch((err) => {
@@ -1821,6 +1834,7 @@ function App() {
                     isOpen: true,
                     clipId: clip.id,
                     content: clip.content || clip.preview,
+                    clipType: clip.clip_type,
                   });
                 });
             },
@@ -2357,6 +2371,7 @@ function App() {
         <EditClipModal
           isOpen={editClip.isOpen}
           content={editClip.content}
+          clipType={editClip.clipType}
           onClose={() => setEditClip((prev) => ({ ...prev, isOpen: false }))}
           onSave={(newContent) => handleUpdateClipContent(editClip.clipId, newContent)}
         />

@@ -67,6 +67,7 @@
     "folderNamePlaceholder": "Nom du dossier"
   },
   "contextMenu": {
+    "editType": "Modifier {{type}}",
     "copy": "Copier",
     "copyPlainText": "Copier en texte brut",
     "noPlainText": "Pas de contenu en texte brut",
@@ -192,6 +193,7 @@
     "openOcrText": "Afficher le texte extrait"
   },
   "toasts": {
+    "tooltipWithContextMenu": "{{action}} · Cliquez avec le bouton droit pour ouvrir le menu contextuel",
     "clipsDeleted": "{{count}} éléments supprimés",
     "clipsMovedToFolder": "{{count}} éléments déplacés",
     "clipsMovedToMain": "{{count}} éléments déplacés vers le presse-papiers"

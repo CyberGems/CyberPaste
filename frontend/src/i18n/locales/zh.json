@@ -67,6 +67,7 @@
     "folderNamePlaceholder": "文件夹名称"
   },
   "contextMenu": {
+    "editType": "编辑{{type}}",
     "copy": "复制",
     "copyPlainText": "复制为纯文本",
     "noPlainText": "没有纯文本内容",
@@ -194,6 +195,7 @@
     "openOcrText": "显示提取的文本"
   },
   "toasts": {
+    "tooltipWithContextMenu": "{{action}} · 右键单击以打开上下文菜单",
     "clipsDeleted": "已删除 {{count}} 个剪辑",
     "clipsMovedToFolder": "已移动 {{count}} 个剪辑",
     "clipsMovedToMain": "已将 {{count}} 个剪辑移动到剪贴板"

@@ -7,6 +7,7 @@ import { useTextFieldContextMenu } from '../hooks/useTextFieldContextMenu';
 interface EditClipModalProps {
   isOpen: boolean;
   content: string;
+  clipType: string;
   onClose: () => void;
   onSave: (newContent: string) => void;
 }
@@ -14,6 +15,7 @@ interface EditClipModalProps {
 export const EditClipModal: React.FC<EditClipModalProps> = ({
   isOpen,
   content,
+  clipType,
   onClose,
   onSave,
 }) => {
@@ -49,6 +51,8 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
 
   if (!isOpen) return null;
 
+  const typeLabel = t(`clipType.${clipType}`, { defaultValue: t('clipType.text') });
+
   return (
     <div className="animate-in fade-in fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm duration-200">
       <div
@@ -57,9 +61,22 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
       >
         {/* Header */}
         <div className="flex flex-shrink-0 items-center justify-between border-b border-border bg-muted/30 px-5 py-3">
-          <div className="flex items-center gap-2 text-primary">
-            <Edit3 size={18} />
-            <h3 className="text-sm font-bold uppercase tracking-tight">{t('settings.editClip')}</h3>
+          <div className="flex min-w-0 items-center gap-2 text-primary">
+            <Edit3 className="shrink-0" size={18} />
+            <div className="flex min-w-0 items-baseline gap-2">
+              <h3 className="whitespace-nowrap text-sm font-bold leading-none tracking-tight">
+                {t('settings.editClip', { type: typeLabel })}
+              </h3>
+              <span
+                className="flex h-4 items-center self-center leading-none text-muted-foreground/50"
+                aria-hidden="true"
+              >
+                ⋅
+              </span>
+              <span className="whitespace-nowrap font-mono text-[11px] font-medium leading-none text-muted-foreground/80">
+                {t('clipList.textLength', { count: editedContent.length })}
+              </span>
+            </div>
           </div>
           <button
             onClick={onClose}

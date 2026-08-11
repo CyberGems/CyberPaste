@@ -555,19 +555,19 @@ export function ToastWindow() {
   };
 
   const getTooltip = () => {
+    let actionLabel: string;
     if (clickAction === 'none') {
-      return t('toasts.tooltipNone');
+      actionLabel = t('toasts.tooltipNone');
+    } else if (clickAction === 'close') {
+      actionLabel = t('toasts.tooltipClose');
+    } else if (clickAction === 'system_viewer') {
+      actionLabel = t('contextMenu.openInSystemViewer');
+    } else if (clickAction === 'toggle_pin') {
+      actionLabel = isPinned ? t('contextMenu.unpin') : t('contextMenu.pin');
+    } else {
+      actionLabel = t('toasts.tooltipOpen');
     }
-    if (clickAction === 'close') {
-      return t('toasts.tooltipClose');
-    }
-    if (clickAction === 'system_viewer') {
-      return t('contextMenu.openInSystemViewer');
-    }
-    if (clickAction === 'toggle_pin') {
-      return isPinned ? t('contextMenu.unpin') : t('contextMenu.pin');
-    }
-    return t('toasts.tooltipOpen');
+    return t('toasts.tooltipWithContextMenu', { action: actionLabel });
   };
 
   const isTopEdge = settings?.toast_position?.startsWith('top-') ?? false;
@@ -637,7 +637,11 @@ export function ToastWindow() {
 
     if (toast.clip_type !== 'image') {
       contextMenuOptions.push({
-        label: t('contextMenu.edit'),
+        label: toast.clip_type
+          ? t('contextMenu.editType', {
+              type: t(`clipType.${toast.clip_type}`, { defaultValue: t('clipType.text') }),
+            })
+          : t('contextMenu.edit'),
         icon: <Pencil className="h-3.5 w-3.5" />,
         onClick: () => {
           emit('edit-clip', toast.clip_uuid).catch(console.error);
@@ -673,7 +677,7 @@ export function ToastWindow() {
         className={`flex h-full w-full ${alignmentClass} ${isClickable ? 'cursor-pointer' : 'cursor-default'}`}
         data-tauri-drag-region
       >
-        <Tooltip label={getTooltip()} disabled={!isClickable} placement={tooltipPlacement}>
+        <Tooltip label={getTooltip()} placement={tooltipPlacement}>
           <div
             ref={toastCardRef}
             className={`relative w-full overflow-hidden rounded-xl transition-all duration-300 ${containerClasses} ${isClosing ? 'translate-y-2 scale-95 opacity-0' : 'translate-y-0 scale-100 opacity-100'}`}

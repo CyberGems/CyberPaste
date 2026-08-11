@@ -87,7 +87,7 @@ export function UpdateModal({ isOpen, update, onClose }: UpdateModalProps) {
         <div className="relative mb-5 flex items-center justify-between">
           <div className="flex items-center gap-2 text-primary">
             <Sparkles size={20} className="animate-pulse" />
-            <h3 className="text-lg font-bold tracking-wide uppercase">
+            <h3 className="text-lg font-bold tracking-wide">
               {t('settings.updatesTitle')}
             </h3>
           </div>

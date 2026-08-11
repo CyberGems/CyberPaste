@@ -99,7 +99,7 @@ export const OcrResultModal: React.FC<OcrResultModalProps> = ({
         <div className="flex flex-shrink-0 items-center justify-between border-b border-border bg-muted/30 px-5 py-3">
           <div className="flex items-center gap-2 text-primary">
             <FileText size={18} />
-            <h3 className="text-sm font-bold uppercase tracking-tight">
+            <h3 className="text-sm font-bold tracking-tight">
               {t('viewer.extractText') || 'Extract Text (OCR)'}
             </h3>
           </div>

@@ -67,6 +67,7 @@
     "folderNamePlaceholder": "Ordnername"
   },
   "contextMenu": {
+    "editType": "{{type}} bearbeiten",
     "copy": "Kopieren",
     "copyPlainText": "Als Klartext kopieren",
     "noPlainText": "Kein Klartext-Inhalt",
@@ -194,6 +195,7 @@
     "openOcrText": "Erkannten Text anzeigen"
   },
   "toasts": {
+    "tooltipWithContextMenu": "{{action}} · Rechtsklick, um das Kontextmenü zu öffnen",
     "clipsDeleted": "{{count}} Elemente gelöscht",
     "clipsMovedToFolder": "{{count}} Elemente verschoben",
     "clipsMovedToMain": "{{count}} Elemente in Zwischenablage verschoben"

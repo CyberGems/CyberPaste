@@ -67,6 +67,7 @@
     "folderNamePlaceholder": "フォルダー名"
   },
   "contextMenu": {
+    "editType": "{{type}}を編集",
     "copy": "コピー",
     "copyPlainText": "書式なしテキストとしてコピー",
     "noPlainText": "書式なしテキストがありません",
@@ -192,6 +193,7 @@
     "openOcrText": "抽出されたテキストを表示"
   },
   "toasts": {
+    "tooltipWithContextMenu": "{{action}} · 右クリックでコンテキストメニューを開く",
     "clipsDeleted": "{{count}} 件を削除しました",
     "clipsMovedToFolder": "{{count}} 件を移動しました",
     "clipsMovedToMain": "{{count}} 件をクリップボードに移動しました"

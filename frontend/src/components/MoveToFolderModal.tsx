@@ -26,7 +26,7 @@ export const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-shrink-0 items-center justify-between border-b border-border bg-muted/30 px-5 py-3">
-          <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-tight text-primary">
+          <h3 className="flex items-center gap-2 text-sm font-bold tracking-tight text-primary">
             <Folder size={16} />
             {t('folders.moveToFolder')}
           </h3>
