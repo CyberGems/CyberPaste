@@ -2,6 +2,13 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.9.2] — 2026-08-10
+
+### 🔄 Updates & Reliability
+- **Signed Automatic Updates**: Enabled reliable updater artifacts and release signatures so the application can detect and install new versions safely.
+- **Update Feedback**: Improved unavailable-update messaging and clarified the GitHub Releases fallback.
+- **Settings Controls**: Removed the mouse-click focus outline from configuration buttons while preserving keyboard focus visibility.
+
 ## [1.9.1] — 2026-08-10
 
 ### ✨ UI Enhancements
