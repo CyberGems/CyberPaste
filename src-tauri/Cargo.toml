@@ -1,6 +1,6 @@
 [package]
 name = "CyberPaste"
-version = "1.10.1"
+version = "1.10.2"
 default-run = "CyberPaste"
 description = "A beautiful clipboard history manager"
 authors = ["CyberGems"]
@@ -29,14 +29,14 @@ once_cell = "1"
 base64 = "0.22.1"
 tauri-plugin-autostart = "2"
 tauri-plugin-log = "2.8.0"
-tauri-plugin-updater = "2"
+tauri-plugin-updater = { version = "2", default-features = false, features = ["native-tls", "zip"] }
 tauri-plugin-process = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-single-instance = "2"
 tauri-plugin-notification = "2"
 log = "0.4.29"
 window-vibrancy = "0.7"
-reqwest = { version = "0.13.1", features = ["json"] }
+reqwest = { version = "0.13.1", default-features = false, features = ["json", "native-tls"] }
 dark-light = "2"
 tauri-plugin-clipboard-x = "2.0.1"
 tauri-plugin-window-state = "2"

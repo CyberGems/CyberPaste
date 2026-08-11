@@ -2,6 +2,11 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.10.2] — 2026-08-11
+
+### 🔄 Updates
+- **Reliable Update Checks on Windows**: Switched the updater HTTP/TLS stack to Windows native TLS (Schannel) to fix instant connection failures against GitHub Releases.
+
 ## [1.10.1] — 2026-08-11
 
 ### 🔄 Updates & Branding
