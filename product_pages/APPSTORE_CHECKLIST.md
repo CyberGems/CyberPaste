@@ -13,12 +13,12 @@ This checklist will guide you through the complete App Store submission process.
 
 ### To Enable GitHub Pages:
 
-1. Go to: https://github.com/Ciber-CR/CyberPaste/settings/pages
+1. Go to: https://github.com/CyberGems/CyberPaste/settings/pages
 2. Under "Source", select: **Deploy from a branch**
 3. Branch: **main**, Folder: **/docs/product_pages**
 4. Click **Save**
 5. Wait 2-3 minutes for deployment
-6. Verify site is live at: https://ciber-cr.github.io/CyberPaste/
+6. Verify site is live at: https://CyberGems.github.io/CyberPaste/
 
 ## 📋 Required URLs for App Store Connect
 
@@ -26,9 +26,9 @@ Once GitHub Pages is enabled, use these URLs in App Store Connect:
 
 | Field | URL |
 |-------|-----|
-| **Support URL** | `https://ciber-cr.github.io/CyberPaste/support.html` |
-| **Marketing URL** | `https://ciber-cr.github.io/CyberPaste/` |
-| **Privacy Policy URL** | `https://ciber-cr.github.io/CyberPaste/privacy.html` |
+| **Support URL** | `https://CyberGems.github.io/CyberPaste/support.html` |
+| **Marketing URL** | `https://CyberGems.github.io/CyberPaste/` |
+| **Privacy Policy URL** | `https://CyberGems.github.io/CyberPaste/privacy.html` |
 
 ## 🔧 Technical Requirements
 
@@ -140,7 +140,7 @@ Test these features in the sandboxed App Store build:
 
 ## 📞 Support Resources
 
-- **GitHub Pages Site**: https://ciber-cr.github.io/CyberPaste/
+- **GitHub Pages Site**: https://CyberGems.github.io/CyberPaste/
 - **Documentation**: See `docs/appstore_submit.md` and `docs/submit_to_appstore.md`
 - **Apple Developer**: https://developer.apple.com/
 - **App Store Connect**: https://appstoreconnect.apple.com/

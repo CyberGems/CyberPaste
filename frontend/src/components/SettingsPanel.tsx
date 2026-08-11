@@ -43,6 +43,7 @@ import { getVersion } from '@tauri-apps/api/app';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { check } from '@tauri-apps/plugin-updater';
 import { systemToast as toast } from '../utils/toast';
+import { formatUpdaterError, isUpdaterNetworkError } from '../utils/updater';
 import { ConfirmDialog } from './ConfirmDialog';
 import { UpdateModal } from './UpdateModal';
 import { Select } from './ui/Select';
@@ -176,6 +177,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
   const [appVersion, setAppVersion] = useState('');
   const [updateAvailable, setUpdateAvailable] = useState<any>(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [updateCheckError, setUpdateCheckError] = useState<string | null>(null);
   const [monitorList, setMonitorList] = useState<{ name: string; index: number }[]>([]);
 
   useEffect(() => {
@@ -2318,6 +2320,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <button
                       onClick={async () => {
                         const loadingToast = toast.loading(t('settings.checkingUpdates'));
+                        setUpdateCheckError(null);
                         try {
                           const update = await check({ timeout: 15000 });
                           toast.dismiss(loadingToast);
@@ -2330,20 +2333,18 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             invoke('set_update_available', { available: false }).catch(console.error);
                             toast.info(t('settings.noUpdates'));
                           }
-                        } catch (err: any) {
+                        } catch (err: unknown) {
                           toast.dismiss(loadingToast);
-                          const raw = typeof err === 'string' ? err : err?.message || String(err);
-                          const msg = raw.length > 80 ? raw.slice(0, 80) + '...' : raw;
-                          if (
-                            /fetch|network|connect|timeout|404|not found|sending request|request for url|updater/i.test(
-                              raw
-                            )
-                          ) {
-                            toast.info(t('settings.updateNotReachable'));
-                          } else {
-                            toast.error(`${t('settings.updateError')}: ${msg}`);
-                          }
+                          const raw = formatUpdaterError(err);
+                          setUpdateCheckError(raw);
                           console.error('Update check failed:', err);
+                          console.error('Update check failed (formatted):', raw);
+
+                          // Always surface the real backend message so we can diagnose failures.
+                          const prefix = isUpdaterNetworkError(raw)
+                            ? t('settings.updateNotReachable')
+                            : t('settings.updateError');
+                          toast.error(`${prefix}: ${raw}`);
                         }
                       }}
                       className="btn w-full rounded-[4px] border border-primary/20 bg-primary/10 text-primary hover:bg-primary/20"
@@ -2351,6 +2352,47 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <RotateCcw size={16} className="mr-2" />
                       {t('settings.checkForUpdates')}
                     </button>
+                    {updateCheckError && (
+                      <div className="space-y-2 rounded-[4px] border border-destructive/25 bg-destructive/5 p-3">
+                        <p className="text-[12px] font-semibold text-destructive">
+                          {t('settings.updateErrorDetails')}
+                        </p>
+                        <pre className="max-h-36 overflow-y-auto whitespace-pre-wrap break-all rounded bg-black/20 p-2 font-mono text-[11px] leading-relaxed text-destructive/90">
+                          {updateCheckError}
+                        </pre>
+                        <p className="text-[11px] text-muted-foreground">
+                          {t('settings.updateErrorHint')}
+                        </p>
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(updateCheckError);
+                                toast.success(t('settings.updateErrorCopied'));
+                              } catch (copyErr) {
+                                console.error('Failed to copy update error:', copyErr);
+                              }
+                            }}
+                            className="btn rounded-[4px] border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] text-foreground hover:bg-white/10"
+                          >
+                            {t('settings.updateErrorCopy')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              openUrl(
+                                'https://github.com/CyberGems/CyberPaste/releases/latest'
+                              ).catch(console.error);
+                            }}
+                            className="btn rounded-[4px] border border-primary/20 bg-primary/10 px-3 py-1.5 text-[11px] text-primary hover:bg-primary/20"
+                          >
+                            <ExternalLink size={12} className="mr-1.5" />
+                            {t('settings.updatesOpenReleasePage')}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </section>
 
                   {/* Data Management */}

@@ -33,13 +33,13 @@ A beautiful clipboard history manager for Windows, built with Rust + Tauri + Rea
 ### 1. Install via Winget
 
 ```bash
-winget install Ciber-CR.CyberPaste
+winget install CyberGems.CyberPaste
 ```
 
 ### 2. Download from GitHub Releases (Windows)
 
 Download the latest installer directly from:
-[https://github.com/Ciber-CR/CyberPaste/releases](https://github.com/Ciber-CR/CyberPaste/releases)
+[https://github.com/CyberGems/CyberPaste/releases](https://github.com/CyberGems/CyberPaste/releases)
 
 
 

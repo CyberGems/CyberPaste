@@ -24,6 +24,7 @@ import { useTheme } from './hooks/useTheme';
 import { useLanguage } from './hooks/useLanguage';
 import { useTranslation } from 'react-i18next';
 import { systemToast as toast } from './utils/toast';
+import { formatUpdaterError, isUpdaterNetworkError } from './utils/updater';
 import { LAYOUT } from './constants';
 import { generateDemoClips } from './debug/demoData';
 import {
@@ -269,7 +270,13 @@ function App() {
                 }
               })
               .catch((err) => {
+                const raw = formatUpdaterError(err);
                 console.error('Auto-update check failed:', err);
+                console.error('Auto-update check failed (formatted):', raw);
+                const prefix = isUpdaterNetworkError(raw)
+                  ? t('settings.updateNotReachable')
+                  : t('settings.updateError');
+                toast.error(`${prefix}: ${raw}`);
               });
           }, 3000);
         }

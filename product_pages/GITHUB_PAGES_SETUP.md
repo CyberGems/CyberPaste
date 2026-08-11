@@ -14,7 +14,7 @@ git push origin main
 
 ### Step 2: Enable GitHub Pages
 
-1. Go to your repository on GitHub: https://github.com/Ciber-CR/CyberPaste
+1. Go to your repository on GitHub: https://github.com/CyberGems/CyberPaste
 2. Click **Settings** (top navigation)
 3. Click **Pages** (left sidebar)
 4. Under **Source**:
@@ -27,16 +27,16 @@ git push origin main
 
 - GitHub will build and deploy your site (takes 2-3 minutes)
 - You'll see a green checkmark when it's ready
-- Your site will be live at: **https://ciber-cr.github.io/CyberPaste/**
+- Your site will be live at: **https://CyberGems.github.io/CyberPaste/**
 
 ### Step 4: Verify the pages
 
 Visit these URLs to make sure everything is working:
 
-- ✅ Landing page: https://ciber-cr.github.io/CyberPaste/
-- ✅ Privacy policy: https://ciber-cr.github.io/CyberPaste/privacy.html
-- ✅ Support page: https://ciber-cr.github.io/CyberPaste/support.html
-- ✅ Terms of service: https://ciber-cr.github.io/CyberPaste/terms.html
+- ✅ Landing page: https://CyberGems.github.io/CyberPaste/
+- ✅ Privacy policy: https://CyberGems.github.io/CyberPaste/privacy.html
+- ✅ Support page: https://CyberGems.github.io/CyberPaste/support.html
+- ✅ Terms of service: https://CyberGems.github.io/CyberPaste/terms.html
 
 ---
 
@@ -48,9 +48,9 @@ Once GitHub Pages is enabled, use these URLs when filling out your App Store Con
 
 | Field in App Store Connect | URL to Use |
 |---------------------------|------------|
-| **Support URL** | `https://ciber-cr.github.io/CyberPaste/support.html` |
-| **Marketing URL** (optional) | `https://ciber-cr.github.io/CyberPaste/` |
-| **Privacy Policy URL** | `https://ciber-cr.github.io/CyberPaste/privacy.html` |
+| **Support URL** | `https://CyberGems.github.io/CyberPaste/support.html` |
+| **Marketing URL** (optional) | `https://CyberGems.github.io/CyberPaste/` |
+| **Privacy Policy URL** | `https://CyberGems.github.io/CyberPaste/privacy.html` |
 
 ### Where to enter these URLs
 

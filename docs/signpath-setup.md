@@ -11,14 +11,14 @@ A valid Authenticode signature eliminates false positive AV detections from ML-b
 | Handle | `CyberPaste` |
 | Type | `Program` |
 | License | `GPL-3.0` — https://opensource.org/licenses/GPL-3.0 |
-| Repository URL | https://github.com/Ciber-CR/CyberPaste |
-| Homepage URL | https://github.com/Ciber-CR/CyberPaste |
-| Download URL | https://github.com/Ciber-CR/CyberPaste/releases |
+| Repository URL | https://github.com/CyberGems/CyberPaste |
+| Homepage URL | https://github.com/CyberGems/CyberPaste |
+| Download URL | https://github.com/CyberGems/CyberPaste/releases |
 | Privacy Policy URL | *(blank — no user data collected or transmitted)* |
 | Wikipedia URL | *(blank)* |
 | Tagline | `Free, open-source clipboard history manager for Windows` |
 | Description | `CyberPaste is a lightweight, privacy-first clipboard history manager for Windows, built with Rust and Tauri. All data is stored locally with no telemetry or cloud sync.` |
-| Reputation | Available on winget (`winget install Ciber-CR.CyberPaste`), which requires passing Microsoft's official validation pipeline including antivirus scanning and human moderation review. GitHub releases: https://github.com/Ciber-CR/CyberPaste/releases |
+| Reputation | Available on winget (`winget install CyberGems.CyberPaste`), which requires passing Microsoft's official validation pipeline including antivirus scanning and human moderation review. GitHub releases: https://github.com/CyberGems/CyberPaste/releases |
 | User Full Name | *(your real name)* |
 | User Email | *(your email)* |
 | Build System | `GitHub Actions` |

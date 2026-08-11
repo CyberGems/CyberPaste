@@ -6,26 +6,26 @@ This directory contains the GitHub Pages website for CyberPaste, including all p
 
 ### Required for App Store Submission
 
-1. **[index.html](https://ciber-cr.github.io/CyberPaste/)** - Main landing page
+1. **[index.html](https://CyberGems.github.io/CyberPaste/)** - Main landing page
    - Product overview and features
    - Screenshots (light and dark mode)
    - Keyboard shortcuts
    - Download links
    - Used as the **Marketing URL** for App Store submission
 
-2. **[privacy.html](https://ciber-cr.github.io/CyberPaste/privacy.html)** - Privacy Policy
+2. **[privacy.html](https://CyberGems.github.io/CyberPaste/privacy.html)** - Privacy Policy
    - Comprehensive privacy policy explaining data handling
    - Required for App Store submission
    - Used as the **Privacy Policy URL**
 
-3. **[support.html](https://ciber-cr.github.io/CyberPaste/support.html)** - Support Page
+3. **[support.html](https://CyberGems.github.io/CyberPaste/support.html)** - Support Page
    - FAQ section
    - Contact information
    - Bug reporting instructions
    - System requirements
    - Used as the **Support URL** for App Store submission
 
-4. **[terms.html](https://ciber-cr.github.io/CyberPaste/terms.html)** - Terms of Service
+4. **[terms.html](https://CyberGems.github.io/CyberPaste/terms.html)** - Terms of Service
    - End User License Agreement (EULA)
    - GPL-3.0 license information
    - User responsibilities and disclaimers
@@ -40,15 +40,15 @@ To enable GitHub Pages for this site:
 4. Select folder: **/docs/product_pages**
 5. Click **Save**
 
-The site will be available at: `https://ciber-cr.github.io/CyberPaste/`
+The site will be available at: `https://CyberGems.github.io/CyberPaste/`
 
 ## URLs for App Store Connect
 
 When submitting CyberPaste to the Mac App Store, use these URLs:
 
-- **Support URL**: `https://ciber-cr.github.io/CyberPaste/support.html`
-- **Marketing URL**: `https://ciber-cr.github.io/CyberPaste/`
-- **Privacy Policy URL**: `https://ciber-cr.github.io/CyberPaste/privacy.html`
+- **Support URL**: `https://CyberGems.github.io/CyberPaste/support.html`
+- **Marketing URL**: `https://CyberGems.github.io/CyberPaste/`
+- **Privacy Policy URL**: `https://CyberGems.github.io/CyberPaste/privacy.html`
 
 ## Updating the Site
 
