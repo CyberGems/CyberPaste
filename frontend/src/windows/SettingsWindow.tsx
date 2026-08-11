@@ -80,7 +80,7 @@ export function SettingsWindow() {
   }
 
   return (
-    <div className="h-screen">
+    <div className="settings-window h-screen">
       <div className="h-full overflow-hidden bg-background text-foreground">
         <SettingsPanel settings={settings} onClose={handleClose} />
       </div>

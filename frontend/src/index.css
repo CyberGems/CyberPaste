@@ -248,6 +248,18 @@
     @apply bg-destructive text-destructive-foreground hover:bg-destructive/90;
   }
 
+  /* Tactile press feedback scoped to the settings window. */
+  .settings-window button:not(:disabled) {
+    transition-property: transform, filter, background-color, box-shadow;
+    transition-duration: 120ms;
+    transition-timing-function: ease-out;
+  }
+
+  .settings-window button:not(:disabled):active {
+    transform: scale(0.975);
+    filter: brightness(0.88);
+  }
+
   .icon-button {
     @apply rounded-lg p-2 text-muted-foreground transition-all duration-200 hover:bg-accent hover:text-foreground;
   }
@@ -360,7 +372,7 @@
   }
 
   /* Settings section headers spacing */
-  .dark section.space-y-4 {
+  .dark section.space-y-4:not(:first-child) {
     margin-top: 1.5rem;
   }
   .dark section.space-y-4 > h3 {
