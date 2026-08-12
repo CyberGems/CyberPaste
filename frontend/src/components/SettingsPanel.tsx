@@ -2482,7 +2482,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <img
                         src="/logo.png"
                         alt="CyberPaste Logo"
-                        className="animate-in fade-in zoom-in h-28 w-28 object-contain duration-1000"
+                        className="animate-in fade-in zoom-in h-28 w-28 object-contain drop-shadow-[0_0_16px_rgba(var(--primary-rgb),0.2)] duration-1000"
                       />
                     </div>
                     <div>

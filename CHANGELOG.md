@@ -2,6 +2,12 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.10.4] — 2026-08-12
+
+### 🎨 Branding Polish
+- **Updated application icons**: Refreshed the app, taskbar, tray, and platform icon resources.
+- **About logo glow**: Added back a subtle glow while allowing the logo's own frame to remain visible.
+
 ## [1.10.3] — 2026-08-11
 
 ### ✨ Compact View & Polish
