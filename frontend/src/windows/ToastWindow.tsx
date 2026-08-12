@@ -32,6 +32,11 @@ import {
   ExternalLink,
   Maximize2,
   Pencil,
+  Sparkles,
+  AlignLeft,
+  Languages,
+  Code2,
+  CheckSquare,
 } from 'lucide-react';
 import { Settings } from '../types';
 import { ContextMenu } from '../components/ContextMenu';
@@ -542,7 +547,7 @@ export function ToastWindow() {
     }
 
     const isBottomEdge = settings?.toast_position?.startsWith('bottom-') ?? true;
-    const menuHeight = 220;
+    const menuHeight = 260;
 
     // Resize window to allow context menu to render without being cut off
     await invoke('set_toast_position', {
@@ -580,6 +585,8 @@ export function ToastWindow() {
   const tooltipPlacement = isBottomEdge ? 'top' : 'bottom';
 
   const contextMenuOptions = [];
+  const aiLabel = (custom: string | undefined, englishDefault: string, key: string) =>
+    custom && custom.trim() && custom.trim() !== englishDefault ? custom.trim() : t(key);
 
   if (toast.clip_uuid) {
     contextMenuOptions.push({
@@ -647,6 +654,71 @@ export function ToastWindow() {
           emit('edit-clip', toast.clip_uuid).catch(console.error);
           closeToast();
         }
+      });
+    }
+
+    if (toast.clip_type !== 'image' && toast.clip_type !== 'file') {
+      contextMenuOptions.push({
+        label: t('contextMenu.aiActions'),
+        icon: <Sparkles className="h-3.5 w-3.5" />,
+        subMenu: [
+          {
+            label: aiLabel(settings?.ai_title_summarize, 'Summarize', 'contextMenu.summarize'),
+            icon: <AlignLeft className="h-3.5 w-3.5" />,
+            onClick: () => {
+              emit('ai-action-from-toast', {
+                clipId: toast.clip_uuid,
+                action: 'summarize',
+                title: t('ai.summary'),
+              }).catch(console.error);
+              closeToast();
+            },
+          },
+          {
+            label: aiLabel(settings?.ai_title_translate, 'Translate', 'contextMenu.translate'),
+            icon: <Languages className="h-3.5 w-3.5" />,
+            onClick: () => {
+              emit('ai-action-from-toast', {
+                clipId: toast.clip_uuid,
+                action: 'translate',
+                title: t('ai.translation'),
+              }).catch(console.error);
+              closeToast();
+            },
+          },
+          {
+            label: aiLabel(
+              settings?.ai_title_explain_code,
+              'Explain Code',
+              'contextMenu.explainCode'
+            ),
+            icon: <Code2 className="h-3.5 w-3.5" />,
+            onClick: () => {
+              emit('ai-action-from-toast', {
+                clipId: toast.clip_uuid,
+                action: 'explain_code',
+                title: t('ai.codeExplanation'),
+              }).catch(console.error);
+              closeToast();
+            },
+          },
+          {
+            label: aiLabel(
+              settings?.ai_title_fix_grammar,
+              'Fix Grammar',
+              'contextMenu.fixGrammar'
+            ),
+            icon: <CheckSquare className="h-3.5 w-3.5" />,
+            onClick: () => {
+              emit('ai-action-from-toast', {
+                clipId: toast.clip_uuid,
+                action: 'fix_grammar',
+                title: t('ai.grammarCheck'),
+              }).catch(console.error);
+              closeToast();
+            },
+          },
+        ],
       });
     }
 

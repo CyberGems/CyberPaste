@@ -1735,6 +1735,21 @@ function App() {
     }
   };
 
+  useEffect(() => {
+    const unlisten = listen<{
+      clipId: string;
+      action: string;
+      title: string;
+    }>('ai-action-from-toast', (event) => {
+      invoke('show_window').catch(console.error);
+      handleAiAction(event.payload.clipId, event.payload.action, event.payload.title);
+    });
+
+    return () => {
+      unlisten.then((cleanup) => cleanup());
+    };
+  }, []);
+
   const handleContextMenu = useCallback(
     (e: React.MouseEvent, type: 'card' | 'folder', itemId: string) => {
       e.preventDefault();
