@@ -1,6 +1,6 @@
 [package]
 name = "CyberPaste"
-version = "1.10.2"
+version = "1.10.3"
 default-run = "CyberPaste"
 description = "A beautiful clipboard history manager"
 authors = ["CyberGems"]

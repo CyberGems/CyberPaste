@@ -2,6 +2,11 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.10.3] — 2026-08-11
+
+### ✨ Compact View & Polish
+- **Image Peek Trigger**: Restructured the compact image hover logic so that the detailed metadata preview popover is only displayed when hovering over the image thumbnail itself, not the entire row.
+
 ## [1.10.2] — 2026-08-11
 
 ### 🔄 Updates
