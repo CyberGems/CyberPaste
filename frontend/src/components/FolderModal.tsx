@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   Check,
+  Save,
   Zap,
   Flame,
   Star,
@@ -132,24 +133,27 @@ export const FolderModal: React.FC<FolderModalProps> = ({
 
   return (
     <div className="animate-in fade-in fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm duration-200">
-      <div className="animate-in zoom-in-95 flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-white/10 bg-zinc-900 shadow-2xl shadow-black/50 duration-200">
+      <div className="animate-in zoom-in-95 flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-primary/20 bg-card shadow-[0_0_50px_rgba(var(--primary-rgb),0.15)] duration-300" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="flex flex-shrink-0 items-center justify-between border-b border-white/5 bg-white/5 p-4">
-          <h3 className="text-lg font-bold text-white">
-            {mode === 'create' ? t('folders.createNew') : t('folders.rename')}
-          </h3>
+        <div className="flex flex-shrink-0 items-center justify-between border-b border-border bg-muted/30 px-5 py-3">
+          <div className="flex min-w-0 items-center gap-2 text-primary">
+            <Folder className="shrink-0" size={18} />
+            <h3 className="whitespace-nowrap text-sm font-bold leading-none tracking-tight">
+              {mode === 'create' ? t('folders.createNew') : t('folders.rename')}
+            </h3>
+          </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+            className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-white/10"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
         <div className="custom-scrollbar flex-1 space-y-6 overflow-y-auto p-5">
           {/* Name Input */}
           <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-widest text-white/40">
+            <label className="text-xs font-bold text-white/40">
               {t('folders.folderName')}
             </label>
             <input
@@ -160,16 +164,21 @@ export const FolderModal: React.FC<FolderModalProps> = ({
               onChange={handleChange}
               onContextMenu={onContextMenu}
               placeholder="e.g. Work Projects"
-              className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-white transition-all focus:border-cyan-500/50 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+              className="w-full rounded-xl border border-border bg-background/50 p-3 text-foreground transition-all focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
             />
           </div>
 
           {/* Icon Selector */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold uppercase tracking-widest text-white/40">
-                Select Identity
-              </label>
+              <div className="space-y-0.5">
+                <label className="text-xs font-bold text-white/40">
+                  {t('folders.iconLabel')}
+                </label>
+                <p className="text-[11px] text-muted-foreground/50">
+                  {t('folders.iconHelper')}
+                </p>
+              </div>
               <div className="flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-2 py-0.5">
                 {selectedIcon &&
                   IconMap[selectedIcon] &&
@@ -177,15 +186,14 @@ export const FolderModal: React.FC<FolderModalProps> = ({
                     size: 14,
                     style: { color: selectedColor || undefined },
                   })}
-                <span className="font-mono text-[10px] text-white/60">{selectedIcon}</span>
+                <span className="max-w-[120px] truncate font-mono text-[10px] text-white/60">
+                  {name.trim() || selectedIcon}
+                </span>
               </div>
             </div>
 
-            {/* Icons Grid - Cyber */}
-            <div className="space-y-2">
-              <span className="text-[10px] font-bold uppercase tracking-tight text-cyan-400">
-                Cyber Gradients
-              </span>
+            <div className="space-y-4">
+              {/* Icons Grid - Cyber */}
               <div className="grid grid-cols-10 gap-2">
                 {FOLDER_ICONS.cyber.map((item, i) => {
                   const Icon = IconMap[item.id] || Zap;
@@ -208,13 +216,8 @@ export const FolderModal: React.FC<FolderModalProps> = ({
                   );
                 })}
               </div>
-            </div>
 
-            {/* Icons Grid - Mono */}
-            <div className="space-y-2">
-              <span className="text-[10px] font-bold uppercase tracking-tight text-white/30">
-                Minimalist Mono
-              </span>
+              {/* Icons Grid - Mono */}
               <div className="grid grid-cols-10 gap-2">
                 {FOLDER_ICONS.mono.map((iconName) => {
                   const Icon = IconMap[iconName] || Folder;
@@ -242,19 +245,19 @@ export const FolderModal: React.FC<FolderModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 border-t border-white/5 bg-white/5 p-4">
+        <div className="flex flex-shrink-0 justify-end gap-2 border-t border-border bg-muted/30 px-5 py-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-white/60 transition-colors hover:text-white"
+            className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-white/5"
           >
             {t('common.cancel')}
           </button>
           <button
             onClick={() => onSave(name, selectedIcon, selectedColor)}
             disabled={!name.trim()}
-            className="flex items-center gap-2 rounded-xl bg-cyan-600 px-6 py-2 text-sm font-bold text-white shadow-lg shadow-cyan-900/20 transition-all hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <Check size={18} />
+            {mode === 'create' ? <Check size={14} /> : <Save size={14} />}
             {mode === 'create' ? t('common.create') : t('common.save')}
           </button>
         </div>

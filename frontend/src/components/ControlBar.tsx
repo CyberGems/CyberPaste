@@ -63,6 +63,7 @@ import {
   HardDrive as StorageIcon,
 } from 'lucide-react';
 import { FolderItem } from '../types';
+import { CONTEXT_MENU_EVENT, type ContextMenuEventDetail } from '../utils/contextMenuEvents';
 import { clsx } from 'clsx';
 import { useTranslation } from 'react-i18next';
 import Tooltip from './Tooltip';
@@ -222,6 +223,21 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   const wheelCooldownRef = useRef(false);
   const wheelAccumulatorRef = useRef(0);
   const wheelResetTimeoutRef = useRef<any>(null);
+
+  const [contextMenuFolderId, setContextMenuFolderId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const onMenu = (e: Event) => {
+      const detail = (e as CustomEvent<ContextMenuEventDetail>).detail;
+      if (detail && detail.open && detail.highlightId) {
+        setContextMenuFolderId(detail.highlightId);
+      } else {
+        setContextMenuFolderId(null);
+      }
+    };
+    window.addEventListener(CONTEXT_MENU_EVENT, onMenu);
+    return () => window.removeEventListener(CONTEXT_MENU_EVENT, onMenu);
+  }, []);
 
   // Sync highlightedFolderId with selectedFolder when not wheel scrolling
   useEffect(() => {
@@ -762,6 +778,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             {folders.map((folder) => {
               const isSelected = highlightedFolderId === folder.id;
               const isDragTarget = dragTargetFolderId === folder.id;
+              const isMenuHighlighted = contextMenuFolderId === folder.id;
               const Icon = IconMap[folder.icon || 'FolderIcon'] || FolderIcon;
               const folderColor = folder.color || '#22d3ee';
 
@@ -806,7 +823,9 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                         ? 'border ring-1 ring-border/25 shadow-[0_0_20px_rgba(var(--primary-rgb),0.12)]'
                         : isDragTarget
                           ? 'border-transparent bg-primary/40 text-foreground ring-2 ring-primary'
-                          : 'border border-transparent bg-secondary/40 text-muted-foreground hover:bg-accent hover:text-foreground',
+                          : isMenuHighlighted
+                            ? 'border-transparent bg-accent text-foreground'
+                            : 'border border-transparent bg-secondary/40 text-muted-foreground hover:bg-accent hover:text-foreground',
                       draggingFolderId === folder.id && 'pointer-events-none scale-95 opacity-40'
                     )}
                   >

@@ -1932,7 +1932,7 @@ function App() {
       } else {
         options = [
           {
-            label: t('common.rename'),
+            label: t('common.edit'),
             icon: <Pencil size={14} />,
             onClick: () => {
               setFolderModalMode('rename');
@@ -1956,7 +1956,7 @@ function App() {
         x: e.clientX,
         y: e.clientY,
         options,
-        highlightId: type === 'card' ? itemId : null,
+        highlightId: itemId,
       });
     },
     [t, handleToggleClipPin]

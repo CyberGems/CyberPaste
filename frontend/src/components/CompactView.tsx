@@ -856,30 +856,53 @@ export const CompactView: React.FC<CompactViewProps> = ({
     [peekClipId, filteredClips]
   );
 
-  const folderPillClass = (_folderId: string | null, isSelected: boolean, isDragTarget: boolean) =>
-    cn(
+  const [contextMenuFolderId, setContextMenuFolderId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const onMenu = (e: Event) => {
+      const detail = (e as CustomEvent<ContextMenuEventDetail>).detail;
+      if (detail && detail.open && detail.highlightId) {
+        setContextMenuFolderId(detail.highlightId);
+      } else {
+        setContextMenuFolderId(null);
+      }
+    };
+    window.addEventListener(CONTEXT_MENU_EVENT, onMenu);
+    return () => window.removeEventListener(CONTEXT_MENU_EVENT, onMenu);
+  }, []);
+
+  const folderPillClass = (folderId: string | null, isSelected: boolean, isDragTarget: boolean) => {
+    const isMenuHighlighted = contextMenuFolderId !== null && contextMenuFolderId === folderId;
+    return cn(
       'px-3 py-1 rounded-full text-[10px] font-medium transition-colors whitespace-nowrap flex items-center gap-1.5 border',
       isSelected && dragTargetFolderId === undefined
         ? 'border-primary/40 bg-primary/15 shadow-[0_0_12px_rgba(var(--primary-rgb),0.2)] text-foreground font-semibold'
         : isDragTarget && isDragging
           ? 'bg-primary/30 border-primary text-foreground'
-          : 'bg-secondary/40 hover:bg-accent border-transparent text-muted-foreground hover:text-accent-foreground'
+          : isMenuHighlighted
+            ? 'bg-accent text-accent-foreground border-transparent'
+            : 'bg-secondary/40 hover:bg-accent border-transparent text-muted-foreground hover:text-accent-foreground'
     );
+  };
 
   const folderPillClassNamed = (
-    _folderId: string,
+    folderId: string,
     isSelected: boolean,
     isDragTarget: boolean,
     _color?: string | null
-  ) =>
-    cn(
+  ) => {
+    const isMenuHighlighted = contextMenuFolderId !== null && contextMenuFolderId === folderId;
+    return cn(
       'px-3 py-1 rounded-full text-[10px] font-medium transition-colors whitespace-nowrap flex items-center gap-1.5 border',
       isSelected && dragTargetFolderId === undefined
         ? 'border-primary/40 bg-primary/15 shadow-[0_0_12px_rgba(var(--primary-rgb),0.2)] text-foreground font-semibold'
         : isDragTarget && isDragging
           ? 'bg-primary/30 border-primary text-foreground'
-          : 'bg-secondary/40 hover:bg-accent border-transparent text-muted-foreground hover:text-accent-foreground'
+          : isMenuHighlighted
+            ? 'bg-accent text-accent-foreground border-transparent'
+            : 'bg-secondary/40 hover:bg-accent border-transparent text-muted-foreground hover:text-accent-foreground'
     );
+  };
 
   const SIDEBAR_EXPANDED_W = 140;
   const SIDEBAR_COLLAPSED_W = 16;
@@ -1123,7 +1146,9 @@ export const CompactView: React.FC<CompactViewProps> = ({
                                 ? 'bg-primary/15 border-primary/30 text-foreground font-semibold shadow-[0_0_8px_rgba(var(--primary-rgb),0.12)]'
                                 : dragTargetFolderId === folder.id && isDragging
                                   ? 'border-primary bg-primary/30 text-foreground'
-                                  : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground',
+                                  : contextMenuFolderId === folder.id
+                                    ? 'border-transparent bg-accent text-foreground'
+                                    : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground',
                               draggingFolderId === folder.id &&
                                 'pointer-events-none scale-95 opacity-40'
                             )}
