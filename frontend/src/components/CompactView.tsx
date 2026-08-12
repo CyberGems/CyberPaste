@@ -787,7 +787,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
     }
 
     if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const rowEl = (e.currentTarget as HTMLElement).closest('[data-clip-id]') || (e.currentTarget as HTMLElement);
+    const rect = rowEl.getBoundingClientRect();
     peekTimerRef.current = setTimeout(() => {
       setPeekClipId(clip.id);
       setPeekAnchor({ x: rect.left, y: rect.top, width: rect.width, height: rect.height });
@@ -1569,6 +1570,7 @@ const ClipRow = memo(function ClipRow({
   isPeekVisible,
   peekClipId,
   onRowMouseEnter,
+  onRowMouseLeave,
   onClosePeek,
   compactShowSourceIcon = true,
   compactShowTime = true,
@@ -1596,6 +1598,7 @@ const ClipRow = memo(function ClipRow({
   isPeekVisible?: boolean;
   peekClipId?: string | null;
   onRowMouseEnter?: (clip: AppClip, e: React.MouseEvent) => void;
+  onRowMouseLeave?: () => void;
   onClosePeek?: () => void;
   compactShowSourceIcon?: boolean;
   compactShowTime?: boolean;
@@ -1716,7 +1719,11 @@ const ClipRow = memo(function ClipRow({
       >
         <div
           className="flex min-w-0 flex-1 items-center gap-3"
-          onMouseEnter={(e) => onRowMouseEnter?.(clip, e)}
+          onMouseEnter={(e) => {
+            if (clip.clip_type !== 'image') {
+              onRowMouseEnter?.(clip, e);
+            }
+          }}
         >
           {compactShowNumber && (
             <div className="flex w-8 flex-shrink-0 items-center justify-center">
@@ -1728,7 +1735,16 @@ const ClipRow = memo(function ClipRow({
           <div className="flex min-w-0 flex-1 items-center gap-3">
             {clip.clip_type === 'image' ? (
               <>
-                <div className="flex h-8 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-muted/40">
+                <div
+                  className="flex h-8 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-muted/40"
+                  onMouseEnter={(e) => {
+                    e.stopPropagation();
+                    onRowMouseEnter?.(clip, e);
+                  }}
+                  onMouseLeave={() => {
+                    onRowMouseLeave?.();
+                  }}
+                >
                   {clip.content ? (
                     <img
                       src={getClipImageSrc(clip.content)}
@@ -1953,6 +1969,7 @@ function CompactListRow({
         isPeekVisible={isPeekVisible}
         peekClipId={peekClipId}
         onRowMouseEnter={onRowMouseEnter}
+        onRowMouseLeave={onRowMouseLeave}
         onClosePeek={onClosePeek}
         compactShowSourceIcon={compactShowSourceIcon}
         compactShowTime={compactShowTime}
