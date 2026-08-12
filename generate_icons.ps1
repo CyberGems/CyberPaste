@@ -2,7 +2,7 @@
 # ./generate_icons.ps1 -InputImage ./src-tauri/icons/icon.png
 
 param (
-    [string]$InputImage = "./src-tauri/icons/icon_light_blue_gradient"
+    [string]$InputImage = "./artifacts/icon.png"
 )
 
 # Check if Tauri CLI is available
@@ -29,10 +29,20 @@ $trayDest = "src-tauri/icons/tray.png"
 
 if (Test-Path $traySource) {
     Copy-Item -Path $traySource -Destination $trayDest -Force
-    Write-Host "Created $trayDest from 32x32 icon."
+    Copy-Item -Path $traySource -Destination "src-tauri/icons/tray_white.png" -Force
+    Write-Host "Created tray icons from 32x32 icon."
 } else {
     Write-Warning "Could not find 32x32.png to create tray.png"
 }
+
+# Keep the in-app logo and browser favicon synchronized with the generated icon.
+Copy-Item -Path $InputImage -Destination "frontend/public/logo.png" -Force
+$InputIcon = [IO.Path]::ChangeExtension($InputImage, ".ico")
+if (Test-Path $InputIcon) {
+    Copy-Item -Path $InputIcon -Destination "src-tauri/icons/icon.ico" -Force
+}
+Copy-Item -Path "src-tauri/icons/icon.ico" -Destination "frontend/public/icon.ico" -Force
+Write-Host "Updated frontend logo and favicon."
 
 
 if ($LASTEXITCODE -eq 0) {

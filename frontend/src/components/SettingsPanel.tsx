@@ -2478,7 +2478,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               {activeTab === 'about' && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 space-y-8 duration-500">
                   <div className="flex flex-col items-center space-y-4 py-6 text-center">
-                    <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-3xl border border-primary/20 bg-primary/10 shadow-[0_0_40px_rgba(var(--primary-rgb),0.15)]">
+                    <div className="flex h-32 w-32 items-center justify-center">
                       <img
                         src="/logo.png"
                         alt="CyberPaste Logo"
