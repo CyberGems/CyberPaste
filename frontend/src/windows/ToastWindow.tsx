@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen, emit } from '@tauri-apps/api/event';
 import { getVersion } from '@tauri-apps/api/app';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useLanguage } from '../hooks/useLanguage';
 import Tooltip from '../components/Tooltip';
 
@@ -263,8 +264,10 @@ export function ToastWindow() {
 
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMouseInsideRef = useRef(false);
+  const TOAST_BLEED = 24;
+  const TOAST_VERTICAL_BLEED = 104;
   const normalWidthRef = useRef(300);
-  const normalHeightRef = useRef(110);
+  const normalHeightRef = useRef(110 + TOAST_VERTICAL_BLEED);
 
   useEffect(() => {
     if (!toast) return;
@@ -276,10 +279,13 @@ export function ToastWindow() {
         if (measuredHeight > 0) {
           const isWelcome = toast.clip_type === 'welcome';
           const width = isWelcome ? 340 : 300;
-          const windowHeight = measuredHeight + 52; // Add 52px padding for tooltips
+          const windowHeight = measuredHeight + TOAST_VERTICAL_BLEED;
           normalWidthRef.current = width;
           normalHeightRef.current = windowHeight;
-          await invoke('set_toast_position', { width, height: windowHeight }).catch(console.error);
+          await invoke('set_toast_position', {
+            width: width + TOAST_BLEED * 2,
+            height: windowHeight,
+          }).catch(console.error);
         }
       }
     };
@@ -295,6 +301,7 @@ export function ToastWindow() {
   const closeToast = () => {
     setIsClosing(true);
     setIsPinned(false);
+    getCurrentWindow().setFocusable(false).catch(console.error);
     setTimeout(() => {
       invoke('hide_toast').catch(console.error);
     }, 300);
@@ -337,15 +344,19 @@ export function ToastWindow() {
     const width = isWelcome ? 340 : 300;
     const isDupImage = payload.clip_type === 'image' && payload.toast_type === 'duplicate';
     const height = isWelcome ? 80 : (isDupImage ? 120 : 110);
-    const windowHeight = height + 52; // Add 52px padding for tooltips
+    const windowHeight = height + TOAST_VERTICAL_BLEED;
     normalWidthRef.current = width;
     normalHeightRef.current = windowHeight;
-    await invoke('set_toast_position', { width, height: windowHeight }).catch(console.error);
+    await invoke('set_toast_position', {
+      width: width + TOAST_BLEED * 2,
+      height: windowHeight,
+    }).catch(console.error);
 
     setToast(payload);
     setIsClosing(false);
     isMouseInsideRef.current = false;
     setContextMenu(null);
+    getCurrentWindow().setFocusable(false).catch(console.error);
 
     let isClipPinned = false;
     if (payload.clip_uuid) {
@@ -415,6 +426,23 @@ export function ToastWindow() {
     }
   };
 
+  const closeContextMenu = async () => {
+    setContextMenu(null);
+    await invoke('set_toast_position', {
+      width: normalWidthRef.current + TOAST_BLEED * 2,
+      height: normalHeightRef.current
+    }).catch(console.error);
+    await getCurrentWindow().setFocusable(false).catch(console.error);
+
+    if (!isMouseInsideRef.current) {
+      const bar = document.getElementById('toast-progress-bar');
+      if (bar) {
+        bar.style.animationPlayState = 'running';
+      }
+      startCloseTimer();
+    }
+  };
+
 
   useEffect(() => {
     document.documentElement.classList.add('toast-window');
@@ -436,6 +464,15 @@ export function ToastWindow() {
     const onOsTheme = () => setSettings((s) => (s ? { ...s } : s));
     media.addEventListener('change', onOsTheme);
 
+    const win = getCurrentWindow();
+    const unlistenFocus = win.onFocusChanged(({ payload: focused }) => {
+      if (!focused) {
+        window.setTimeout(() => {
+          closeContextMenu();
+        }, 80);
+      }
+    });
+
     // Notify backend that toast window is ready, and request any pending toast payload
     invoke<ToastPayload | null>('toast_ready', {
       width: window.innerWidth,
@@ -451,6 +488,7 @@ export function ToastWindow() {
     return () => {
       unlisten.then((f) => f());
       unlistenSettings.then((f) => f());
+      unlistenFocus.then((f) => f());
       media.removeEventListener('change', onOsTheme);
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
     };
@@ -547,11 +585,18 @@ export function ToastWindow() {
     }
 
     const isBottomEdge = settings?.toast_position?.startsWith('bottom-') ?? true;
-    const menuHeight = 260;
+    const hasAiActions = Boolean(
+      toast?.clip_uuid && toast.clip_type !== 'image' && toast.clip_type !== 'file'
+    );
+    const menuHeight = hasAiActions ? 420 : 260;
+
+    const toastWindow = getCurrentWindow();
+    await toastWindow.setFocusable(true).catch(console.error);
+    await toastWindow.setFocus().catch(console.error);
 
     // Resize window to allow context menu to render without being cut off
     await invoke('set_toast_position', {
-      width: normalWidthRef.current,
+      width: normalWidthRef.current + TOAST_BLEED * 2,
       height: normalHeightRef.current + menuHeight
     }).catch(console.error);
 
@@ -746,7 +791,7 @@ export function ToastWindow() {
         onContextMenu={handleContextMenu}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        className={`flex h-full w-full ${alignmentClass} ${isClickable ? 'cursor-pointer' : 'cursor-default'}`}
+        className={`flex h-full w-full p-6 ${alignmentClass} ${isClickable ? 'cursor-pointer' : 'cursor-default'}`}
         data-tauri-drag-region
       >
         <Tooltip label={getTooltip()} placement={tooltipPlacement}>
@@ -923,22 +968,8 @@ export function ToastWindow() {
           x={contextMenu.x}
           y={contextMenu.y}
           options={contextMenuOptions}
-          onClose={async () => {
-            setContextMenu(null);
-            // Restore normal window size
-            await invoke('set_toast_position', {
-              width: normalWidthRef.current,
-              height: normalHeightRef.current
-            }).catch(console.error);
-
-            if (!isMouseInsideRef.current) {
-              const bar = document.getElementById('toast-progress-bar');
-              if (bar) {
-                bar.style.animationPlayState = 'running';
-              }
-              startCloseTimer();
-            }
-          }}
+          subMenuPlacement="below"
+          onClose={closeContextMenu}
         />
       )}
     </>

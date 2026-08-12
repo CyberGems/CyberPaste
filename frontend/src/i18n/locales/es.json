@@ -467,6 +467,7 @@
     "translation": "Traducción de IA",
     "codeExplanation": "Explicación de Código",
     "grammarCheck": "Revisión Gramatical",
+    "apiKeyMissing": "Falta la clave API de IA en Ajustes.",
     "error": "Error de IA: {{error}}"
   },
   "toasts": {

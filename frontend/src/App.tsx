@@ -1731,7 +1731,11 @@ function App() {
     } catch (error) {
       toast.dismiss();
       console.error('AI Processing Failed:', error);
-      toast.error(t('ai.error', { error: String(error) }));
+      const errorMessage = String(error);
+      const detail = /AI API Key is missing in settings/i.test(errorMessage)
+        ? t('ai.apiKeyMissing')
+        : errorMessage;
+      toast.error(t('ai.error', { error: detail }));
     }
   };
 

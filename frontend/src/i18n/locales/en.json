@@ -467,6 +467,7 @@
     "translation": "AI Translation",
     "codeExplanation": "Code Explanation",
     "grammarCheck": "Grammar Check",
+    "apiKeyMissing": "The AI API key is missing from Settings.",
     "error": "AI Error: {{error}}"
   },
   "toasts": {

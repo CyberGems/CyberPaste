@@ -16,13 +16,30 @@ interface ContextMenuProps {
   y: number;
   options: ContextMenuOption[];
   onClose: () => void;
+  subMenuPlacement?: 'side' | 'below';
 }
 
-function ContextMenuItem({ option, onClose }: { option: ContextMenuOption; onClose: () => void }) {
+function ContextMenuItem({
+  option,
+  onClose,
+  subMenuPlacement = 'side',
+}: {
+  option: ContextMenuOption;
+  onClose: () => void;
+  subMenuPlacement?: 'side' | 'below';
+}) {
+  const SUBMENU_HOVER_DELAY = 140;
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const subMenuRef = useRef<HTMLDivElement>(null);
+  const openTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [subPos, setSubPos] = useState<{ left?: string; right?: string; top?: string }>({ left: '100%' });
+
+  useEffect(() => {
+    return () => {
+      if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
+    };
+  }, []);
 
   useLayoutEffect(() => {
     if (!isOpen || !subMenuRef.current || !containerRef.current) return;
@@ -56,8 +73,15 @@ function ContextMenuItem({ option, onClose }: { option: ContextMenuOption; onClo
     <div
       ref={containerRef}
       className="relative"
-      onMouseEnter={() => setIsOpen(true)}
-      onMouseLeave={() => setIsOpen(false)}
+      onMouseEnter={() => {
+        if (!hasSubMenu) return;
+        if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
+        openTimeoutRef.current = setTimeout(() => setIsOpen(true), SUBMENU_HOVER_DELAY);
+      }}
+      onMouseLeave={() => {
+        if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
+        setIsOpen(false);
+      }}
     >
       <button
         type="button"
@@ -107,17 +131,30 @@ function ContextMenuItem({ option, onClose }: { option: ContextMenuOption; onClo
         <div
           ref={subMenuRef}
           className="absolute z-[210] min-w-[180px] rounded-xl border border-border bg-popover/95 p-1.5 shadow-2xl backdrop-blur-md"
-          style={{
-            left: subPos.left,
-            right: subPos.right,
-            top: subPos.top,
-            boxShadow: '0 10px 30px -10px rgba(0,0,0,0.25)',
-          }}
+          style={
+            subMenuPlacement === 'below'
+              ? {
+                  left: 0,
+                  top: '100%',
+                  boxShadow: '0 10px 30px -10px rgba(0,0,0,0.25)',
+                }
+              : {
+                  left: subPos.left,
+                  right: subPos.right,
+                  top: subPos.top,
+                  boxShadow: '0 10px 30px -10px rgba(0,0,0,0.25)',
+                }
+          }
           role="menu"
         >
           <div className="flex flex-col gap-0.5">
             {option.subMenu!.map((subOpt, index) => (
-              <ContextMenuItem key={index} option={subOpt} onClose={onClose} />
+              <ContextMenuItem
+                key={index}
+                option={subOpt}
+                onClose={onClose}
+                subMenuPlacement={subMenuPlacement}
+              />
             ))}
           </div>
         </div>
@@ -126,7 +163,13 @@ function ContextMenuItem({ option, onClose }: { option: ContextMenuOption; onClo
   );
 }
 
-export function ContextMenu({ x, y, options, onClose }: ContextMenuProps) {
+export function ContextMenu({
+  x,
+  y,
+  options,
+  onClose,
+  subMenuPlacement = 'side',
+}: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Position before paint — mutate DOM directly to avoid a second React render.
@@ -159,16 +202,25 @@ export function ContextMenu({ x, y, options, onClose }: ContextMenuProps) {
         onClose();
       }
     };
+    const onClick = (e: MouseEvent) => {
+      const el = menuRef.current;
+      if (!el) return;
+      if (!el.contains(e.target as Node)) {
+        onClose();
+      }
+    };
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     const onBlur = () => onClose();
 
     window.addEventListener('pointerdown', onPointerDown, true);
+    window.addEventListener('click', onClick, true);
     window.addEventListener('keydown', onKeyDown, true);
     window.addEventListener('blur', onBlur);
     return () => {
       window.removeEventListener('pointerdown', onPointerDown, true);
+      window.removeEventListener('click', onClick, true);
       window.removeEventListener('keydown', onKeyDown, true);
       window.removeEventListener('blur', onBlur);
     };
@@ -188,7 +240,12 @@ export function ContextMenu({ x, y, options, onClose }: ContextMenuProps) {
     >
       <div className="flex flex-col gap-0.5">
         {options.map((option, index) => (
-          <ContextMenuItem key={index} option={option} onClose={onClose} />
+          <ContextMenuItem
+            key={index}
+            option={option}
+            onClose={onClose}
+            subMenuPlacement={subMenuPlacement}
+          />
         ))}
       </div>
     </div>
