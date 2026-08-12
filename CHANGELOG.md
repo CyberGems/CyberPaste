@@ -2,6 +2,11 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.10.5] — 2026-08-12
+
+### ✨ Toast Polish
+- **Shorter context-menu hint**: Simplified the toast tooltip text to reduce visual clutter.
+
 ## [1.10.4] — 2026-08-12
 
 ### 🎨 Branding Polish

@@ -497,7 +497,7 @@
     "tooltipNone": "Notification",
     "tooltipClose": "Close notification",
     "tooltipOpen": "Open clip",
-    "tooltipWithContextMenu": "{{action}} · Right-click to open the context menu",
+    "tooltipWithContextMenu": "{{action}} - Right-click for menu",
     "configureNotifications": "Configure notifications",
     "clipsDeleted": "{{count}} clips deleted",
     "clipsMovedToFolder": "{{count}} clips moved",
