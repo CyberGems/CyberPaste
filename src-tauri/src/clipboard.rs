@@ -251,15 +251,48 @@ struct ClipboardImageRead {
     source_type: &'static str,
 }
 
+fn clipboard_has_files() -> bool {
+    ClipboardContext::new()
+        .ok()
+        .map(|ctx| ctx.has(ContentFormat::Files))
+        .unwrap_or(false)
+}
+
+/// Canonical pixel identity: version prefix + width + height + RGBA8.
+/// `DynamicImage::as_bytes()` is not unique across color types or dimensions
+/// (e.g. 100×100 RGB and 50×200 RGB with the same byte sequence collide).
+fn validated_rgba8(width: u32, height: u32, rgba: Vec<u8>) -> Result<(u32, u32, Vec<u8>), String> {
+    let expected_len = (width as usize)
+        .checked_mul(height as usize)
+        .and_then(|px| px.checked_mul(4))
+        .ok_or_else(|| "image dimensions overflow".to_string())?;
+    if width == 0 || height == 0 || rgba.len() != expected_len {
+        return Err("invalid clipboard image buffer".to_string());
+    }
+    Ok((width, height, rgba))
+}
+
+const IMAGE_HASH_VERSION: &[u8] = b"cp-img-v1";
+
+fn calculate_image_hash(width: u32, height: u32, rgba: &[u8]) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(IMAGE_HASH_VERSION);
+    hasher.update(width.to_le_bytes());
+    hasher.update(height.to_le_bytes());
+    hasher.update(rgba);
+    format!("{:x}", hasher.finalize())
+}
+
 fn read_clipboard_image_with_clipboard_rs(
     source_type: &'static str,
 ) -> Result<ClipboardImageRead, String> {
     let ctx = ClipboardContext::new().map_err(|e| e.to_string())?;
     let image = ctx.get_image().map_err(|e| e.to_string())?;
-    let (width, height) = image.get_size();
 
-    let dynamic_image = image.get_dynamic_image().map_err(|e| e.to_string())?;
-    let raw_hash = calculate_hash(dynamic_image.as_bytes());
+    let rgba_image = image.to_rgba8().map_err(|e| e.to_string())?;
+    let (width, height, rgba) =
+        validated_rgba8(rgba_image.width(), rgba_image.height(), rgba_image.into_raw())?;
+    let raw_hash = calculate_image_hash(width, height, &rgba);
 
     let png_bytes = image
         .to_png()
@@ -302,42 +335,46 @@ async fn process_clipboard_change(
     let mut metadata = String::new();
     let mut found_content = false;
 
-    // Try Image (in-memory path, no temp file write).
+    // Files (CF_HDROP) before image: Explorer/Office often attach a CF_DIB
+    // thumbnail or file-type icon that would otherwise collapse distinct copies
+    // into one "duplicate image".
     log::debug!("CLIPBOARD: Attempting to read image from clipboard");
     let image_read_started = std::time::Instant::now();
-    if let Ok(read_image_result) = read_clipboard_image_fast() {
-        image_read_ms = image_read_started.elapsed().as_millis();
-        log::debug!(
-            "CLIPBOARD: Image read successfully, source_type={}, takes {} ms",
-            read_image_result.source_type,
-            image_read_ms
-        );
+    if !clipboard_has_files() {
+        if let Ok(read_image_result) = read_clipboard_image_fast() {
+            image_read_ms = image_read_started.elapsed().as_millis();
+            log::debug!(
+                "CLIPBOARD: Image read successfully, source_type={}, takes {} ms",
+                read_image_result.source_type,
+                image_read_ms
+            );
 
-        let bytes = read_image_result.png_bytes;
-        let width = read_image_result.width;
-        let height = read_image_result.height;
-        image_decode_ms = read_image_result.decode_ms;
-        let size_bytes = bytes.len();
-        clip_hash = read_image_result.raw_hash;
-        clip_content = Vec::new();
-        full_image_content = Some(bytes);
-        clip_type = "image";
-        clip_preview = "[Image]".to_string();
-        metadata = serde_json::json!({
-            "width": width,
-            "height": height,
-            "format": "png",
-            "size_bytes": size_bytes
-        })
-        .to_string();
-        found_content = true;
-        log::debug!(
-            "CLIPBOARD: Found image: {}x{}, source_type={}, png_bytes={}",
-            width,
-            height,
-            read_image_result.source_type,
-            size_bytes
-        );
+            let bytes = read_image_result.png_bytes;
+            let width = read_image_result.width;
+            let height = read_image_result.height;
+            image_decode_ms = read_image_result.decode_ms;
+            let size_bytes = bytes.len();
+            clip_hash = read_image_result.raw_hash;
+            clip_content = Vec::new();
+            full_image_content = Some(bytes);
+            clip_type = "image";
+            clip_preview = "[Image]".to_string();
+            metadata = serde_json::json!({
+                "width": width,
+                "height": height,
+                "format": "png",
+                "size_bytes": size_bytes
+            })
+            .to_string();
+            found_content = true;
+            log::debug!(
+                "CLIPBOARD: Found image: {}x{}, source_type={}, png_bytes={}",
+                width,
+                height,
+                read_image_result.source_type,
+                size_bytes
+            );
+        }
     }
 
     if !found_content {
@@ -624,8 +661,9 @@ async fn process_clipboard_change(
 
     let db_lookup_started = std::time::Instant::now();
     let existing_uuid: Option<String> =
-        sqlx::query_scalar::<_, String>(r#"SELECT uuid FROM clips WHERE content_hash = ? AND folder_id IS NULL"#)
+        sqlx::query_scalar::<_, String>(r#"SELECT uuid FROM clips WHERE content_hash = ? AND folder_id IS NULL AND clip_type = ?"#)
             .bind(&clip_hash)
+            .bind(clip_type)
             .fetch_optional(pool)
             .await
             .unwrap_or(None);
@@ -1898,5 +1936,54 @@ mod tests {
         assert!(rtf.starts_with("{\\rtf"));
         let plain = strip_rtf_tags(rtf);
         assert!(is_code_snippet(&plain), "plain={plain}");
+    }
+
+    fn solid_rgba(width: u32, height: u32, pixel: [u8; 4]) -> Vec<u8> {
+        pixel
+            .iter()
+            .cycle()
+            .take((width * height * 4) as usize)
+            .copied()
+            .collect()
+    }
+
+    #[test]
+    fn image_hash_includes_dimensions() {
+        let red = [255, 0, 0, 255];
+        let a = calculate_image_hash(100, 100, &solid_rgba(100, 100, red));
+        let b = calculate_image_hash(50, 200, &solid_rgba(50, 200, red));
+        assert_ne!(
+            a, b,
+            "same pixel bytes at different sizes must not collide"
+        );
+    }
+
+    #[test]
+    fn image_hash_distinguishes_pixels_at_same_size() {
+        let a = calculate_image_hash(16, 16, &solid_rgba(16, 16, [10, 20, 30, 255]));
+        let b = calculate_image_hash(16, 16, &solid_rgba(16, 16, [10, 20, 31, 255]));
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn image_hash_is_stable_for_identical_rgba() {
+        let pixels = solid_rgba(8, 8, [1, 2, 3, 255]);
+        assert_eq!(
+            calculate_image_hash(8, 8, &pixels),
+            calculate_image_hash(8, 8, &pixels)
+        );
+    }
+
+    #[test]
+    fn validated_rgba8_rejects_empty_image() {
+        assert!(validated_rgba8(0, 0, vec![]).is_err());
+        assert!(validated_rgba8(2, 2, vec![0; 3]).is_err());
+    }
+
+    #[test]
+    fn validated_rgba8_accepts_matching_buffer() {
+        let (w, h, bytes) = validated_rgba8(1, 1, vec![1, 2, 3, 255]).expect("valid");
+        assert_eq!((w, h), (1, 1));
+        assert_eq!(bytes, vec![1, 2, 3, 255]);
     }
 }
