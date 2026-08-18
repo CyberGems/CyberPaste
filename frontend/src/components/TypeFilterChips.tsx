@@ -7,6 +7,8 @@ import {
   Link,
   File as LucideFile,
   X,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -32,12 +34,16 @@ interface TypeFilterChipRowProps {
   value: FullTypeFilter;
   onChange: (v: FullTypeFilter) => void;
   counts: Partial<Record<FullTypeFilter, number>>;
+  gridScale?: number;
+  onGridScaleChange?: (next: number) => void;
 }
 
 export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
   value,
   onChange,
   counts,
+  gridScale,
+  onGridScaleChange,
 }) => {
   const { t } = useTranslation();
   const isActive = value !== 'all';
@@ -45,46 +51,91 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
   return (
     <div
       data-el="type-filter-row"
-      className="no-scrollbar flex w-full items-center gap-1 overflow-x-auto px-4 pb-1 pt-0.5"
+      className="flex w-full items-center gap-2 px-4 pb-1.5 pt-2.5"
     >
-      {FULL_TYPE_FILTER_OPTIONS.map((opt) => {
-        const Icon = opt.icon;
-        const selected = opt.value === value;
-        const labelRaw = t(opt.labelKey);
-        const label = labelRaw === opt.labelKey ? opt.value : labelRaw;
-        const count = counts[opt.value];
-        return (
-          <Tooltip key={opt.value} label={label} placement="bottom">
+      <div className="no-scrollbar flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
+        {FULL_TYPE_FILTER_OPTIONS.map((opt) => {
+          const Icon = opt.icon;
+          const selected = opt.value === value;
+          const labelRaw = t(opt.labelKey);
+          const label = labelRaw === opt.labelKey ? opt.value : labelRaw;
+          const count = counts[opt.value];
+          return (
+            <Tooltip key={opt.value} label={label} placement="bottom">
+              <button
+                type="button"
+                onClick={() => onChange(opt.value)}
+                className={clsx(
+                  'flex h-7 flex-shrink-0 items-center gap-1.5 rounded-lg border px-2 text-[11px] font-medium leading-none transition-all',
+                  selected
+                    ? 'border-primary/40 bg-primary/15 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.18)]'
+                    : 'border-border bg-secondary/40 text-muted-foreground hover:border-border hover:bg-secondary/70 hover:text-foreground'
+                )}
+              >
+                <Icon size={12} className="shrink-0" />
+                <span className="whitespace-nowrap leading-none">{label}</span>
+                {typeof count === 'number' && (
+                  <span className="font-mono text-[10px] leading-none tabular-nums opacity-70">
+                    ({count})
+                  </span>
+                )}
+              </button>
+            </Tooltip>
+          );
+        })}
+        {isActive && (
+          <Tooltip label={t('common.clearSearch') || 'Clear filter'} placement="bottom">
             <button
               type="button"
-              onClick={() => onChange(opt.value)}
-              className={clsx(
-                'flex h-[26px] flex-shrink-0 items-center gap-1 rounded-lg border px-2 text-[11px] font-medium transition-all',
-                selected
-                  ? 'border-primary/40 bg-primary/15 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.18)]'
-                  : 'border-border bg-secondary/40 text-muted-foreground hover:border-border hover:bg-secondary/70 hover:text-foreground'
-              )}
+              onClick={() => onChange('all')}
+              className="flex h-[26px] w-[26px] flex-shrink-0 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground"
+              aria-label="Clear type filter"
             >
-              <Icon size={12} />
-              <span className="whitespace-nowrap">{label}</span>
-              {typeof count === 'number' && (
-                <span className="font-mono text-[9px] opacity-65 text-muted-foreground">({count})</span>
-              )}
+              <X size={12} />
             </button>
           </Tooltip>
-        );
-      })}
-      {isActive && (
-        <Tooltip label={t('common.clearSearch') || 'Clear filter'} placement="bottom">
-          <button
-            type="button"
-            onClick={() => onChange('all')}
-            className="flex h-[26px] w-[26px] flex-shrink-0 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground"
-            aria-label="Clear type filter"
+        )}
+      </div>
+
+      {onGridScaleChange && gridScale !== undefined && (
+        <div className="flex shrink-0 items-center gap-0 rounded-md border border-border bg-secondary/40 px-0.5">
+          <Tooltip label={t('common.zoomOut')} placement="bottom">
+            <button
+              type="button"
+              onClick={() =>
+                onGridScaleChange(Math.max(0.6, Number((gridScale - 0.25).toFixed(2))))
+              }
+              disabled={gridScale <= 0.6}
+              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:text-primary disabled:opacity-20"
+            >
+              <ZoomOut size={12} />
+            </button>
+          </Tooltip>
+          <Tooltip
+            label={`${t('common.zoom')}: ${Math.round(gridScale * 100)}%`}
+            placement="bottom"
           >
-            <X size={12} />
-          </button>
-        </Tooltip>
+            <button
+              type="button"
+              onClick={() => onGridScaleChange(1)}
+              className="min-w-[38px] cursor-pointer text-center font-mono text-[10px] font-bold tabular-nums text-primary/80 hover:text-primary"
+            >
+              {Math.round(gridScale * 100)}%
+            </button>
+          </Tooltip>
+          <Tooltip label={t('common.zoomIn')} placement="bottom">
+            <button
+              type="button"
+              onClick={() =>
+                onGridScaleChange(Math.min(1.75, Number((gridScale + 0.25).toFixed(2))))
+              }
+              disabled={gridScale >= 1.75}
+              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:text-primary disabled:opacity-20"
+            >
+              <ZoomIn size={12} />
+            </button>
+          </Tooltip>
+        </div>
       )}
     </div>
   );

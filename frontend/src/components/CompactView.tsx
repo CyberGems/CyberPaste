@@ -1819,7 +1819,11 @@ const ClipRow = memo(function ClipRow({
               </Tooltip>
             )}
             {clip.is_pinned && (
-              <Pin size={10} className="-rotate-45 fill-primary/20 text-primary opacity-90" />
+              <Tooltip label={t('common.pinnedClip')} placement="top" disabled={isPeekVisible}>
+                <span className="flex items-center text-primary opacity-90">
+                  <Pin size={10} className="-rotate-45 fill-primary/20" />
+                </span>
+              </Tooltip>
             )}
             {compactShowTypeIcon && (() => {
               const TypeIcon =

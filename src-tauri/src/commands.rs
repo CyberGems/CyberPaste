@@ -1787,7 +1787,8 @@ pub async fn get_clip_stats(
             SUM(CASE WHEN clip_type = 'code' THEN 1 ELSE 0 END) as code,
             SUM(CASE WHEN clip_type = 'file' THEN 1 ELSE 0 END) as files,
             SUM(CASE WHEN clip_type = 'html' THEN 1 ELSE 0 END) as html,
-            SUM(CASE WHEN clip_type = 'rtf' THEN 1 ELSE 0 END) as rtf
+            SUM(CASE WHEN clip_type = 'rtf' THEN 1 ELSE 0 END) as rtf,
+            COALESCE(SUM(CASE WHEN clip_type = 'url' THEN 1 ELSE 0 END), 0) as urls
          FROM clips WHERE is_deleted = 0 AND folder_id IS NULL"#,
     )
     .fetch_one(pool)
@@ -1801,6 +1802,7 @@ pub async fn get_clip_stats(
     let files: i64 = row.get(4);
     let html: i64 = row.get(5);
     let rtf: i64 = row.get(6);
+    let urls: i64 = row.get(7);
 
     Ok(serde_json::json!({
         "total": total,
@@ -1809,7 +1811,8 @@ pub async fn get_clip_stats(
         "code": code,
         "files": files,
         "html": html,
-        "rtf": rtf
+        "rtf": rtf,
+        "urls": urls
     }))
 }
 

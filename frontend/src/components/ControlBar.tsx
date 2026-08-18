@@ -51,14 +51,8 @@ import {
   Sun,
   Pin,
   RotateCcw,
-  FileText,
-  ZoomIn,
-  ZoomOut,
   PanelTop,
   PanelTopClose,
-  Image as ImageIcon,
-  FileCode,
-  Files,
   Keyboard,
   HardDrive as StorageIcon,
 } from 'lucide-react';
@@ -127,12 +121,6 @@ interface ControlBarProps {
   onDragHover: (folderId: string | null) => void;
   onDragLeave: () => void;
   totalClipCount: number;
-  imageCount: number;
-  textCount: number;
-  codeCount?: number;
-  fileCount?: number;
-  htmlCount?: number;
-  rtfCount?: number;
   onFolderContextMenu: (e: React.MouseEvent, folderId: string) => void;
   theme: 'light' | 'dark' | 'cyberpaste';
   onToggleMode: () => void;
@@ -146,12 +134,9 @@ interface ControlBarProps {
   hotkey?: string;
   showHud?: boolean;
   onToggleHud?: () => void;
-  lastClipTime?: string | null;
   dbSizeBytes?: number;
   onReorderFolder?: (folderId: string, targetId: string, position: 'before' | 'after') => void;
   isWindowActive?: boolean;
-  gridScale?: number;
-  onGridScaleChange?: (next: number) => void;
   wheelFolderNavigation?: boolean;
 }
 
@@ -169,12 +154,6 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   onDragLeave,
   dragTargetFolderId,
   totalClipCount,
-  imageCount,
-  textCount,
-  codeCount,
-  fileCount,
-  htmlCount,
-  rtfCount,
   onFolderContextMenu,
   theme,
   onToggleMode,
@@ -189,20 +168,17 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   hotkey,
   showHud = true,
   onToggleHud,
-  lastClipTime,
   dbSizeBytes,
   onReorderFolder,
   isWindowActive = true,
-  gridScale = 1,
-  onGridScaleChange,
   wheelFolderNavigation = false,
 }) => {
   const foldersRef = React.useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
 
   const currentFolderName = selectedFolder
-    ? folders.find((f) => f.id === selectedFolder)?.name || 'Folder'
-    : 'Clipboard';
+    ? folders.find((f) => f.id === selectedFolder)?.name || t('detailPanel.folder')
+    : t('folders.clipboard');
 
   // Folder Reorder Drag State (Simulated)
   const [draggingFolderId, setDraggingFolderId] = React.useState<string | null>(null);
@@ -412,11 +388,11 @@ export const ControlBar: React.FC<ControlBarProps> = ({
 
   // ── Shortcut hint cycling ──
   const HINTS = [
-    { keys: 'Ctrl+F', action: 'Search' },
-    { keys: 'Enter', action: 'Paste' },
-    { keys: 'Del', action: 'Delete' },
-    { keys: 'Ctrl+P', action: 'Pin' },
-    { keys: 'Esc', action: 'Close' },
+    { keys: 'Ctrl+F', action: t('common.search') },
+    { keys: 'Enter', action: t('contextMenu.paste') },
+    { keys: 'Del', action: t('common.delete') },
+    { keys: 'Ctrl+P', action: t('contextMenu.pin') },
+    { keys: 'Esc', action: t('common.close') },
   ];
   const [hintIndex, setHintIndex] = useState(0);
   useEffect(() => {
@@ -425,31 +401,6 @@ export const ControlBar: React.FC<ControlBarProps> = ({
     return () => clearInterval(timer);
   }, [isWindowActive]);
 
-  // ── Last clip age (live-updating) ──
-  const [lastClipAge, setLastClipAge] = useState('');
-  useEffect(() => {
-    if (!lastClipTime) {
-      setLastClipAge('');
-      return;
-    }
-    if (!isWindowActive) return;
-    const update = () => {
-      const diffMs = Date.now() - new Date(lastClipTime).getTime();
-      if (diffMs < 0) {
-        setLastClipAge('now');
-        return;
-      }
-      const secs = Math.floor(diffMs / 1000);
-      if (secs < 60) setLastClipAge(`${secs}s`);
-      else if (secs < 3600) setLastClipAge(`${Math.floor(secs / 60)}m`);
-      else if (secs < 86400) setLastClipAge(`${Math.floor(secs / 3600)}h`);
-      else setLastClipAge(`${Math.floor(secs / 86400)}d`);
-    };
-    update();
-    const timer = setInterval(update, 5000);
-    return () => clearInterval(timer);
-  }, [lastClipTime, isWindowActive]);
-
   // ── DB size formatting ──
   const formatBytes = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -457,24 +408,13 @@ export const ControlBar: React.FC<ControlBarProps> = ({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const getContrastColor = (color: string) => {
-    if (theme !== 'light') return color;
-    switch (color) {
-      case '#22d3ee': return '#0891b2'; // Cyan
-      case '#a78bfa': return '#6d28d9'; // Purple
-      case '#f472b6': return '#db2777'; // Pink
-      case '#fbbf24': return '#b45309'; // Amber/brownish
-      case '#4ade80': return '#15803d'; // Green
-      case '#38bdf8': return '#0369a1'; // Sky
-      case '#fb923c': return '#c2410c'; // Orange
-      default: return color;
-    }
-  };
+  const headerBtnClass =
+    'flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80';
 
   return (
     <div
       className={clsx(
-        'relative z-10 flex flex-col bg-card/50 backdrop-blur-md',
+        'relative z-10 flex flex-col bg-card/65 backdrop-blur-sm',
         theme === 'light' ? 'text-slate-900' : 'text-white'
       )}
       style={{
@@ -482,221 +422,174 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
       }}
     >
-      {/* ═══ HUD Status Strip — matches compact header style ═══ */}
-      {showHud && (
-        <div
-          className="relative flex shrink-0 select-none items-center justify-between overflow-hidden border-b border-t border-border bg-muted/65 px-3 backdrop-blur-md"
-          style={{ height: '34px' }}
-        >
-          <HudKeyframes />
-          {/* Scan-line sweep (CSS-only, GPU-composited) */}
-          <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div
-              className="absolute inset-y-0 w-[25%]"
-              style={{
-                background:
-                  'linear-gradient(90deg, transparent, rgba(var(--primary-rgb),0.025), transparent)',
-                animation: isWindowActive ? 'hud-scan 4s ease-in-out infinite alternate' : 'none',
-              }}
-            />
+      {/* ═══ Header — logo, optional info, window actions ═══ */}
+      <div className="relative flex h-11 shrink-0 select-none items-center justify-between overflow-hidden border-b border-border bg-card/65 px-3 backdrop-blur-sm">
+        <HudKeyframes />
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div
+            className="absolute inset-y-0 w-[25%]"
+            style={{
+              background:
+                'linear-gradient(90deg, transparent, rgba(var(--primary-rgb),0.025), transparent)',
+              animation: isWindowActive ? 'hud-scan 4s ease-in-out infinite alternate' : 'none',
+            }}
+          />
+        </div>
+
+        <div className="z-10 flex shrink-0 items-center gap-2">
+          <div className="flex h-6 w-6 items-center justify-center overflow-hidden">
+            <img src="/logo.png" alt="Logo" className="h-5 w-5 object-contain" />
           </div>
+          <span className="text-sm font-bold tracking-tight text-foreground">CyberPaste</span>
+        </div>
 
-          {/* Corner brackets — top-left */}
-          <svg
-            className="pointer-events-none absolute left-0 top-0 opacity-30"
-            width="8"
-            height="8"
-            viewBox="0 0 8 8"
-            fill="none"
-          >
-            <path d="M0 8V0h8" stroke="rgba(var(--primary-rgb),0.6)" strokeWidth="1" />
-          </svg>
-          {/* Corner brackets — top-right */}
-          <svg
-            className="pointer-events-none absolute right-0 top-0 opacity-30"
-            width="8"
-            height="8"
-            viewBox="0 0 8 8"
-            fill="none"
-          >
-            <path d="M8 8V0H0" stroke="rgba(var(--primary-rgb),0.6)" strokeWidth="1" />
-          </svg>
-          {/* Corner brackets — bottom-left */}
-          <svg
-            className="pointer-events-none absolute bottom-0 left-0 opacity-20"
-            width="8"
-            height="8"
-            viewBox="0 0 8 8"
-            fill="none"
-          >
-            <path d="M0 0v8h8" stroke="rgba(var(--primary-rgb),0.5)" strokeWidth="1" />
-          </svg>
-          {/* Corner brackets — bottom-right */}
-          <svg
-            className="pointer-events-none absolute bottom-0 right-0 opacity-20"
-            width="8"
-            height="8"
-            viewBox="0 0 8 8"
-            fill="none"
-          >
-            <path d="M8 0v8H0" stroke="rgba(var(--primary-rgb),0.5)" strokeWidth="1" />
-          </svg>
-
-          {/* ── LEFT: Logo + App Name (no badge — only compact has one) ── */}
-          <div className="z-10 flex flex-shrink-0 items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center overflow-hidden">
-              <img src="/logo.png" alt="Logo" className="h-5 w-5 object-contain" />
-            </div>
-            <span className="text-sm font-bold tracking-tight text-foreground">CyberPaste</span>
-          </div>
-
-          {/* ── CENTER: Stat Chips ── */}
-          <div className="z-10 flex items-center gap-1.5">
-            {/* Clipboard stat uses breathing LED instead of Clock icon */}
-            <HudChip
-              icon={
-                <span className="relative flex h-1.5 w-1.5">
-                  <span
-                    className={clsx(
-                      "absolute inset-0 rounded-full",
-                      theme === 'light' ? 'bg-cyan-600' : 'bg-cyan-400'
-                    )}
-                    style={{
-                      animation: isWindowActive ? 'hud-breathe 3s ease-in-out infinite' : 'none',
-                    }}
-                  />
-                  <span className={clsx(
-                    "relative inline-flex h-1.5 w-1.5 rounded-full",
-                    theme === 'light' ? 'bg-cyan-700' : 'bg-cyan-500'
-                  )} />
-                </span>
-              }
-              value={totalClipCount}
-              color={getContrastColor('#22d3ee')}
-              label="Clipboard"
-            />
-            <div className="bg-border h-3 w-px" />
-            <HudChip icon={<FileText size={11} />} value={textCount} color={getContrastColor('#a78bfa')} label="Text" />
-            <div className="bg-border h-3 w-px" />
-            <HudChip
-              icon={<Code size={11} />}
-              value={codeCount ?? 0}
-              color={getContrastColor('#f472b6')}
-              label="Code"
-            />
-            <div className="bg-border h-3 w-px" />
-            <HudChip
-              icon={<ImageIcon size={11} />}
-              value={imageCount}
-              color={getContrastColor('#fbbf24')}
-              label="Images"
-            />
-            <div className="bg-border h-3 w-px" />
-            <HudChip
-              icon={<Files size={11} />}
-              value={fileCount ?? 0}
-              color={getContrastColor('#4ade80')}
-              label="Files"
-            />
-            <div className="bg-border h-3 w-px" />
-            <HudChip
-              icon={<FileCode size={11} />}
-              value={(htmlCount ?? 0) + (rtfCount ?? 0)}
-              color={getContrastColor('#38bdf8')}
-              label="Rich"
-            />
-            <div className="bg-border h-3 w-px" />
-            <HudChip
-              icon={<FolderIcon size={11} />}
-              value={folders.length}
-              color={getContrastColor('#fb923c')}
-              label="Folders"
-            />
-            {selectedFolder && (
-              <>
-                <div className="mx-1 h-3 w-px bg-cyan-500/20" />
-                <span className="flex items-center gap-1 text-[8px] font-medium tracking-wide text-cyan-500/80">
-                  <span className="rounded border border-primary/20 bg-primary/10 px-1 py-px font-bold text-primary">
-                    {currentFolderName}
+        {showHud && (
+          <div className="z-10 mx-3 hidden min-w-0 flex-1 items-center justify-center gap-2 sm:flex">
+            <Tooltip label={t('common.keyboardShortcuts')} placement="bottom">
+              <div className="flex w-[108px] items-center gap-1 text-[10px] text-muted-foreground/70">
+                <Keyboard size={10} className="flex-shrink-0 text-muted-foreground/40" />
+                <div
+                  key={hintIndex}
+                  className="flex items-center gap-1"
+                  style={{ animation: 'hud-hint-fade 0.5s ease-out' }}
+                >
+                  <span className="font-mono font-bold text-primary opacity-80">
+                    {HINTS[hintIndex].keys}
                   </span>
-                  <span className="text-muted-foreground/60">
-                    {folders.find((f) => f.id === selectedFolder)?.item_count || 0}
+                  <span className="truncate text-muted-foreground/80">
+                    {HINTS[hintIndex].action}
                   </span>
-                </span>
-              </>
-            )}
-          </div>
-
-          {/* ── RIGHT: Status Info ── */}
-          <div className="z-10 flex flex-shrink-0 items-center gap-2">
-            {/* Shortcut hint (cycling, fixed width to prevent layout shift) */}
-            <div
-              className="flex w-[100px] items-center gap-1 text-[8px] text-muted-foreground/60"
-              title="Keyboard shortcuts"
-            >
-              <Keyboard size={8} className="flex-shrink-0 text-muted-foreground/40" />
-              <div
-                key={hintIndex}
-                className="flex items-center gap-1"
-                style={{ animation: 'hud-hint-fade 0.5s ease-out' }}
-              >
-                <span className="font-mono font-bold text-primary opacity-80">
-                  {HINTS[hintIndex].keys}
-                </span>
-                <span className="text-muted-foreground/80">{HINTS[hintIndex].action}</span>
+                </div>
               </div>
-            </div>
+            </Tooltip>
 
-            {/* Hotkey badge */}
             {hotkey && (
               <>
                 <div className="bg-border h-3 w-px" />
-                <span
-                  className="rounded border border-primary/20 bg-primary/10 px-1 py-px font-mono text-[8px] font-bold text-primary"
-                  title="Global hotkey"
-                >
-                  {hotkey}
-                </span>
+                <Tooltip label={t('common.globalHotkey')} placement="bottom">
+                  <span className="rounded border border-primary/20 bg-primary/10 px-1.5 py-px font-mono text-[10px] font-bold text-primary">
+                    {hotkey}
+                  </span>
+                </Tooltip>
               </>
             )}
 
-            {/* Last clip age */}
-            {lastClipAge && (
-              <>
-                <div className="bg-border h-3 w-px" />
-                <div
-                  className="flex items-center gap-0.5 text-[8px] text-muted-foreground/60"
-                  title={`Last clip: ${lastClipAge} ago`}
-                >
-                  <Clock size={8} className="text-primary/60" />
-                  <span className="font-mono text-primary/75">{lastClipAge}</span>
-                </div>
-              </>
-            )}
-
-            {/* DB size */}
             {dbSizeBytes != null && dbSizeBytes > 0 && (
               <>
                 <div className="bg-border h-3 w-px" />
-                <div
-                  className="flex items-center gap-0.5 text-[8px] text-muted-foreground/60"
-                  title={`Database: ${formatBytes(dbSizeBytes)}`}
+                <Tooltip
+                  label={`${t('common.databaseSize')}: ${formatBytes(dbSizeBytes)}`}
+                  placement="bottom"
                 >
-                  <StorageIcon size={8} className="text-amber-500/60" />
-                  <span className="font-mono text-amber-600/90 dark:text-amber-400/75">{formatBytes(dbSizeBytes)}</span>
-                </div>
+                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground/70">
+                    <StorageIcon size={10} className="text-amber-500/60" />
+                    <span className="font-mono text-amber-600/90 dark:text-amber-400/75">
+                      {formatBytes(dbSizeBytes)}
+                    </span>
+                  </div>
+                </Tooltip>
               </>
             )}
           </div>
+        )}
+
+        {!showHud && <div className="min-w-0 flex-1" />}
+
+        <div className="z-10 flex shrink-0 items-center gap-0.5">
+          {onResetSize && (
+            <Tooltip label={t('common.resetWindowSize')} placement="bottom">
+              <button onClick={onResetSize} className={headerBtnClass}>
+                <RotateCcw size={15} />
+              </button>
+            </Tooltip>
+          )}
+
+          {onToggleHud && (
+            <Tooltip label={showHud ? t('common.hideHud') : t('common.showHud')} placement="bottom">
+              <button
+                onClick={onToggleHud}
+                className={clsx(
+                  headerBtnClass,
+                  !showHud && 'border-primary/30 bg-primary/15 text-primary hover:text-primary'
+                )}
+              >
+                {showHud ? <PanelTopClose size={15} /> : <PanelTop size={15} />}
+              </button>
+            </Tooltip>
+          )}
+
+          {onTogglePin && (
+            <Tooltip
+              label={isPinned ? t('common.unpinWindow') : t('common.pinWindow')}
+              placement="bottom"
+            >
+              <button
+                onClick={onTogglePin}
+                className={clsx(
+                  headerBtnClass,
+                  'focus:outline-none',
+                  isPinned &&
+                    'border-primary/30 bg-primary/20 text-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.4)]'
+                )}
+              >
+                <Pin
+                  size={15}
+                  className={clsx(
+                    'transition-transform duration-300',
+                    isPinned ? 'fill-primary text-primary' : 'rotate-45'
+                  )}
+                />
+              </button>
+            </Tooltip>
+          )}
+
+          <Tooltip label={t('settings.title')} placement="bottom">
+            <button onClick={onMoreClick} className={headerBtnClass}>
+              <Settings size={15} />
+            </button>
+          </Tooltip>
+
+          <Tooltip label={isMaximized ? t('common.restore') : t('common.maximize')} placement="bottom">
+            <button
+              onClick={onToggleMaximize}
+              aria-label={isMaximized ? t('common.restore') : t('common.maximize')}
+              className={headerBtnClass}
+            >
+              {isMaximized ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+            </button>
+          </Tooltip>
+
+          <Tooltip
+            label={viewMode === 'full' ? t('common.switchToCompact') : t('common.switchToFull')}
+            placement="bottom"
+          >
+            <button
+              onClick={onToggleMode}
+              className="group relative ml-1 flex h-8 items-center gap-1.5 overflow-hidden rounded-lg border border-primary/40 bg-gradient-to-r from-primary/20 to-primary/10 px-2 text-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.15)] transition-all duration-200 hover:border-primary/70 hover:from-primary/30 hover:to-primary/20 hover:shadow-[0_0_16px_rgba(var(--primary-rgb),0.4)] active:scale-[0.98]"
+            >
+              <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+              {viewMode === 'full' ? (
+                <ListIcon size={13} className="relative z-10 flex-shrink-0" />
+              ) : (
+                <LayoutGrid size={13} className="relative z-10 flex-shrink-0" />
+              )}
+            </button>
+          </Tooltip>
+
+          <Tooltip label={t('common.closeWindow')} placement="bottom">
+            <button
+              onClick={() => (window as any).__TAURI_INTERNALS__.invoke('hide_window')}
+              className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-rose-500/20 hover:bg-rose-500/15 hover:text-rose-400 active:bg-rose-500/25"
+            >
+              <X size={15} />
+            </button>
+          </Tooltip>
         </div>
-      )}
+      </div>
 
       {/* ── Main Toolbar ── */}
       <div className="flex min-w-0 flex-1 items-center gap-1 px-4">
-        <Tooltip
-          label={t('common.searchPlaceholder')?.replace('... (Ctrl+F)', '') || 'Search'}
-          placement="top"
-        >
+        <Tooltip label={t('common.search')} placement="top">
           <button
             onClick={onSearchClick}
             className={clsx(
@@ -740,7 +633,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               )}
             >
               <Clock size={12} className="flex-shrink-0" />
-              <span>Clipboard</span>
+              <span>{t('folders.clipboard')}</span>
               <span
                 className={clsx(
                   'text-[10px] tabular-nums opacity-35',
@@ -839,12 +732,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                 <Search className="animate-pulse text-primary" size={18} />
                 <div className="flex flex-1 items-center gap-2 overflow-hidden">
                   <span className="whitespace-nowrap text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
-                    Searching in{' '}
-                    <span className="text-primary/80">
-                      {selectedFolder
-                        ? folders.find((f) => f.id === selectedFolder)?.name || 'Folder'
-                        : 'Clipboard'}
-                    </span>
+                    {t('common.searchingIn')}{' '}
+                    <span className="text-primary/80">{currentFolderName}</span>
                   </span>
                   <div className="mx-1 h-4 w-px flex-shrink-0 bg-border" />
                   <input
@@ -859,188 +748,28 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                     }}
                   />
                 </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSearchClick();
-                  }}
-                  className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                  title="Cancel Search (Esc)"
+                <Tooltip
+                  label={`${t('common.clearSearch')} (${t('common.esc')})`}
+                  placement="bottom"
                 >
-                  <X size={14} />
-                </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSearchClick();
+                    }}
+                    className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  >
+                    <X size={14} />
+                  </button>
+                </Tooltip>
               </div>
             </div>
           )}
-        </div>
-
-        <div className="flex shrink-0 items-center gap-0.5 pl-2">
-          {/* Grid zoom controls (Full mode) */}
-          {viewMode === 'full' && onGridScaleChange && gridScale !== undefined && (
-            <div className="flex items-center gap-0 rounded-md border border-border bg-secondary/40 px-0.5">
-              <Tooltip label={t('common.zoomOut')} placement="top">
-                <button
-                  onClick={() =>
-                    onGridScaleChange(Math.max(0.6, Number((gridScale - 0.25).toFixed(2))))
-                  }
-                  disabled={gridScale <= 0.6}
-                  className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:text-primary disabled:opacity-20"
-                >
-                  <ZoomOut size={12} />
-                </button>
-              </Tooltip>
-              <Tooltip
-                label={`${t('common.zoom')}: ${Math.round(gridScale * 100)}%`}
-                placement="top"
-              >
-                <button
-                  onClick={() => onGridScaleChange(1)}
-                  className="min-w-[38px] cursor-pointer text-center font-mono text-[10px] font-bold tabular-nums text-primary/80 hover:text-primary"
-                >
-                  {Math.round(gridScale * 100)}%
-                </button>
-              </Tooltip>
-              <Tooltip label={t('common.zoomIn')} placement="top">
-                <button
-                  onClick={() =>
-                    onGridScaleChange(Math.min(1.75, Number((gridScale + 0.25).toFixed(2))))
-                  }
-                  disabled={gridScale >= 1.75}
-                  className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:text-primary disabled:opacity-20"
-                >
-                  <ZoomIn size={12} />
-                </button>
-              </Tooltip>
-            </div>
-          )}
-
-          {onResetSize && (
-            <Tooltip label={t('common.resetWindowSize')} placement="top">
-              <button
-                onClick={onResetSize}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80"
-              >
-                <RotateCcw size={15} />
-              </button>
-            </Tooltip>
-          )}
-
-          {/* HUD strip toggle */}
-          {onToggleHud && (
-            <Tooltip label={showHud ? t('common.hideHud') : t('common.showHud')} placement="top">
-              <button
-                onClick={onToggleHud}
-                className={clsx(
-                  'flex h-8 w-8 items-center justify-center rounded-lg border transition-all',
-                  showHud
-                    ? 'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
-                    : 'border-primary/30 bg-primary/15 text-primary'
-                )}
-              >
-                {showHud ? <PanelTopClose size={15} /> : <PanelTop size={15} />}
-              </button>
-            </Tooltip>
-          )}
-
-          {onTogglePin && (
-            <Tooltip
-              label={isPinned ? t('common.unpinWindow') : t('common.pinWindow')}
-              placement="top"
-            >
-              <button
-                onClick={onTogglePin}
-                className={clsx(
-                  'flex h-8 w-8 items-center justify-center rounded-lg border transition-all focus:outline-none',
-                  isPinned
-                    ? 'border-primary/30 bg-primary/20 text-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.4)]'
-                    : 'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
-                )}
-              >
-                <Pin
-                  size={15}
-                  className={clsx(
-                    'transition-transform duration-300',
-                    isPinned ? 'fill-primary text-primary' : 'rotate-45'
-                  )}
-                />
-              </button>
-            </Tooltip>
-          )}
-
-          <Tooltip label={t('settings.title')} placement="top">
-            <button
-              onClick={onMoreClick}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80"
-            >
-              <Settings size={15} />
-            </button>
-          </Tooltip>
-
-          <Tooltip label={isMaximized ? t('common.restore') : t('common.maximize')} placement="top">
-            <button
-              onClick={onToggleMaximize}
-              aria-label={isMaximized ? t('common.restore') : t('common.maximize')}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80"
-            >
-              {isMaximized ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-            </button>
-          </Tooltip>
-
-          {/* View-toggle — compact pill */}
-          <Tooltip
-            label={viewMode === 'full' ? t('common.switchToCompact') : t('common.switchToFull')}
-            placement="top"
-          >
-            <button
-              onClick={onToggleMode}
-              className="group relative ml-1 flex h-8 items-center gap-1.5 overflow-hidden rounded-lg border border-primary/40 bg-gradient-to-r from-primary/20 to-primary/10 px-2 text-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.15)] transition-all duration-200 hover:border-primary/70 hover:from-primary/30 hover:to-primary/20 hover:shadow-[0_0_16px_rgba(var(--primary-rgb),0.4)] active:scale-[0.98]"
-            >
-              {/* shimmer sweep */}
-              <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
-              {viewMode === 'full' ? (
-                <ListIcon size={13} className="relative z-10 flex-shrink-0" />
-              ) : (
-                <LayoutGrid size={13} className="relative z-10 flex-shrink-0" />
-              )}
-            </button>
-          </Tooltip>
-
-          <Tooltip label={t('common.closeWindow')} placement="top">
-            <button
-              onClick={() => (window as any).__TAURI_INTERNALS__.invoke('hide_window')}
-              className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-rose-500/20 hover:bg-rose-500/15 hover:text-rose-400 active:bg-rose-500/25"
-            >
-              <X size={15} />
-            </button>
-          </Tooltip>
         </div>
       </div>
     </div>
   );
 };
-
-/* ── HUD Stat Chip (icon + label + value) ──────────────────────────── */
-const HudChip: React.FC<{ icon: React.ReactNode; value: number; color: string; label?: string }> =
-  React.memo(({ icon, value, color, label }) => (
-    <div
-      className="flex items-center gap-1.5 px-1"
-      title={label ? `${value} ${label}` : String(value)}
-    >
-      <span style={{ color: `${color}88` }}>{icon}</span>
-      {label && (
-        <span
-          className="text-[10px] font-medium uppercase tracking-wide"
-          style={{ color: `${color}99` }}
-        >
-          {label}
-        </span>
-      )}
-      <span className="font-mono text-[12px] font-bold tabular-nums" style={{ color }}>
-        {value}
-      </span>
-    </div>
-  ));
-HudChip.displayName = 'HudChip';
 
 /* ── Inject HUD keyframes (rendered once via React) ────────────────── */
 const HudKeyframes = () => (
@@ -1048,10 +777,6 @@ const HudKeyframes = () => (
     @keyframes hud-scan {
       0%   { transform: translateX(-100%); }
       100% { transform: translateX(400%); }
-    }
-    @keyframes hud-breathe {
-      0%, 100% { opacity: .3; transform: scale(1); }
-      50%      { opacity: .8; transform: scale(1.8); }
     }
     @keyframes hud-hint-fade {
       0%   { opacity: 0; transform: translateY(4px); }

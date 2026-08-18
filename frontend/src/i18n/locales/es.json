@@ -48,6 +48,10 @@
     "zoomOut": "Reducir",
     "showHud": "Mostrar barra de información",
     "hideHud": "Ocultar barra de información",
+    "keyboardShortcuts": "Atajos de teclado",
+    "globalHotkey": "Atajo global",
+    "databaseSize": "Tamaño de la base de datos",
+    "searchingIn": "Buscando en",
     "yes": "Sí",
     "clipDetails": "Detalles del clip",
     "select": "Seleccionar",
@@ -134,6 +138,7 @@
   },
   "folders": {
     "all": "[Clipboard]",
+    "clipboard": "Portapapeles",
     "addFolder": "Añadir carpeta",
     "createFolder": "Crear carpeta",
     "renameFolder": "Editar carpeta",

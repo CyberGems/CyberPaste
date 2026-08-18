@@ -48,6 +48,10 @@
     "zoomOut": "Zoom Out",
     "showHud": "Show info bar",
     "hideHud": "Hide info bar",
+    "keyboardShortcuts": "Keyboard shortcuts",
+    "globalHotkey": "Global hotkey",
+    "databaseSize": "Database size",
+    "searchingIn": "Searching in",
     "yes": "Yes",
     "clipDetails": "Clip details",
     "select": "Select",
@@ -134,6 +138,7 @@
   },
   "folders": {
     "all": "[Clipboard]",
+    "clipboard": "Clipboard",
     "addFolder": "Add folder",
     "createFolder": "Create folder",
     "renameFolder": "Edit folder",

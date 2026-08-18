@@ -445,12 +445,11 @@ export const ClipCard = memo(
                 </div>
               )}
               {clip.is_pinned && (
-                <span
-                  className="flex items-center text-cyan-400 opacity-80"
-                  title={t('common.pinnedClip')}
-                >
-                  <Pin size={10} className="-rotate-45 fill-cyan-400/20" />
-                </span>
+                <Tooltip label={t('common.pinnedClip')} placement="top">
+                  <span className="flex items-center text-cyan-400 opacity-80">
+                    <Pin size={10} className="-rotate-45 fill-cyan-400/20" />
+                  </span>
+                </Tooltip>
               )}
               {showNumber && clipIndex !== undefined && (
                 <span className="select-none font-mono text-[9px] opacity-20">#{clipIndex}</span>

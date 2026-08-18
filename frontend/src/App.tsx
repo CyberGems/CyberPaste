@@ -1024,6 +1024,7 @@ function App() {
   const [fileCount, setFileCount] = useState(0);
   const [htmlCount, setHtmlCount] = useState(0);
   const [rtfCount, setRtfCount] = useState(0);
+  const [urlCount, setUrlCount] = useState(0);
 
   const refreshTotalCount = useCallback(async () => {
     try {
@@ -1035,6 +1036,7 @@ function App() {
         files: number;
         html: number;
         rtf: number;
+        urls: number;
       }>('get_clip_stats');
       setTotalClipCount(stats.total);
       setImageCount(stats.images);
@@ -1043,6 +1045,7 @@ function App() {
       setFileCount(stats.files || 0);
       setHtmlCount(stats.html || 0);
       setRtfCount(stats.rtf || 0);
+      setUrlCount(stats.urls || 0);
     } catch (e) {
       console.error('Failed to get clip stats', e);
     }
@@ -1055,14 +1058,14 @@ function App() {
       text: textCount,
       code: codeTotal,
       image: imageCount,
-      url: clipsRef.current.filter((c) => c.clip_type === 'url').length,
+      url: urlCount,
       file: fileCount,
     };
     return {
       ...perType,
       all: perType.text + perType.code + perType.image + perType.url + perType.file,
     };
-  }, [textCount, codeCount, htmlCount, rtfCount, imageCount, fileCount, clips]);
+  }, [textCount, codeCount, htmlCount, rtfCount, imageCount, fileCount, urlCount]);
 
   useEffect(() => {
     refreshTotalCount();
@@ -2277,12 +2280,6 @@ function App() {
                 onDragHover={handleDragHover}
                 onDragLeave={handleDragLeave}
                 totalClipCount={totalClipCount}
-                imageCount={imageCount}
-                textCount={textCount}
-                codeCount={codeCount}
-                fileCount={fileCount}
-                htmlCount={htmlCount}
-                rtfCount={rtfCount}
                 onFolderContextMenu={(e, folderId) => {
                   if (folderId) handleContextMenu(e, 'folder', folderId);
                 }}
@@ -2296,11 +2293,8 @@ function App() {
                 onTogglePin={handleTogglePin}
                 onResetSize={handleResetSize}
                 hotkey={settings?.hotkey}
-                lastClipTime={clips[0]?.created_at ?? null}
                 dbSizeBytes={dbSizeBytes}
                 onReorderFolder={handleReorderFolder}
-                gridScale={settings?.full_grid_scale ?? 1}
-                onGridScaleChange={handleGridScaleChange}
                 showHud={settings?.full_show_hud ?? true}
                 onToggleHud={handleToggleHud}
               />
@@ -2318,6 +2312,8 @@ function App() {
                   });
                 }}
                 counts={typeFilterCounts}
+                gridScale={settings?.full_grid_scale ?? 1}
+                onGridScaleChange={handleGridScaleChange}
               />
 
               <main
