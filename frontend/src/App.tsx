@@ -74,6 +74,26 @@ const getImageMimeType = (metadata: string | null): string => {
   return 'image/png';
 };
 
+/** Main list slot 1 is the live capture; unpinned drops skip it and frozen pinned slots. */
+function firstUnpinnedDropTarget<T extends { is_pinned?: boolean }>(
+  clips: T[],
+  isMainList: boolean
+): T | undefined {
+  return clips.find((c, i) => {
+    if (c.is_pinned) return false;
+    if (isMainList && i === 0) return false;
+    return true;
+  });
+}
+
+function isLiveMainListClip(
+  clipId: string | null | undefined,
+  clips: { id: string }[],
+  selectedFolder: string | null
+): boolean {
+  return selectedFolder === null && !!clipId && clips[0]?.id === clipId;
+}
+
 // Debounce utility for window persistence
 function debounce<T extends (...args: any[]) => any>(fn: T, delay: number) {
   let timeoutId: any;
@@ -679,7 +699,8 @@ function App() {
               targetClip &&
               targetClip.is_pinned
             ) {
-              const firstUnpinned = clipsRef.current.find((c) => !c.is_pinned);
+              const isMainList = selectedFolderRef.current === null;
+              const firstUnpinned = firstUnpinnedDropTarget(clipsRef.current, isMainList);
               if (firstUnpinned) {
                 finalTargetId = firstUnpinned.id;
                 finalPosition = 'before';
@@ -905,7 +926,7 @@ function App() {
 
           // Redirect if target is pinned and dragged is not pinned
           if (draggedClip && !draggedClip.is_pinned && targetClip && targetClip.is_pinned) {
-            const firstUnpinned = currentClips.find((c) => !c.is_pinned);
+            const firstUnpinned = firstUnpinnedDropTarget(currentClips, isMainList);
             if (firstUnpinned) {
               finalReorderClipId = firstUnpinned.id;
               finalReorderPos = 'before';
@@ -1110,20 +1131,26 @@ function App() {
   const handleToggleClipPin = useCallback(
     async (clipId: string | null) => {
       if (!clipId) return;
+      const current = clipsRef.current.find((c) => c.id === clipId);
+      if (
+        isLiveMainListClip(clipId, clipsRef.current, selectedFolderRef.current) &&
+        !current?.is_pinned
+      ) {
+        toast.info(t('toasts.cannotPinLatestClip'));
+        return;
+      }
       try {
         const newPinnedState = await invoke<boolean>('toggle_clip_pin', { uuid: clipId });
         setClips((prevClips) =>
           prevClips.map((c) => (c.id === clipId ? { ...c, is_pinned: newPinnedState } : c))
         );
-        // Since changing pin status changes order, refresh the current folder/clipboard list to get correct new sorting!
-        refreshCurrentFolder();
         toast.success(newPinnedState ? t('toasts.clipPinned') : t('toasts.clipUnpinned'));
       } catch (error) {
         console.error('Failed to toggle clip pin:', error);
         toast.error(t('toasts.togglePinFailed'));
       }
     },
-    [refreshCurrentFolder]
+    [t]
   );
 
   const getFullImageBlob = useCallback(
@@ -1890,9 +1917,17 @@ function App() {
           });
         }
 
+        const pinLatestDisabled =
+          isLiveMainListClip(itemId, clipsRef.current, selectedFolderRef.current) &&
+          !clip?.is_pinned;
         opts.push({
-          label: clip?.is_pinned ? t('contextMenu.unpin') : t('contextMenu.pin'),
+          label: pinLatestDisabled
+            ? t('contextMenu.pinLatestDisabled')
+            : clip?.is_pinned
+              ? t('contextMenu.unpin')
+              : t('contextMenu.pin'),
           icon: clip?.is_pinned ? <PinOff size={14} /> : <Pin size={14} />,
+          disabled: pinLatestDisabled,
           onClick: () => handleToggleClipPin(itemId),
         });
 
@@ -2206,9 +2241,7 @@ function App() {
               onBulkCopy={handleBulkCopy}
               onBulkDelete={handleBulkDelete}
               onBulkMove={handleBulkMove}
-              onPinClip={(id) => {
-                invoke('toggle_clip_pin', { clipId: id }).catch(console.error);
-              }}
+              onPinClip={handleToggleClipPin}
             />
           ) : (
             <div
@@ -2350,6 +2383,10 @@ function App() {
                   <ClipDetailPanel
                     clip={clips.find((c) => c.id === selectedClipId) || null}
                     folders={folders}
+                    pinDisabled={
+                      isLiveMainListClip(selectedClipId, clips, selectedFolder) &&
+                      !clips.find((c) => c.id === selectedClipId)?.is_pinned
+                    }
                     onClose={() => setDetailPanelOpen(false)}
                     onCopy={handleCopy}
                     onPin={handleToggleClipPin}

@@ -673,27 +673,11 @@ async fn process_clipboard_change(
     let emitted_id = if let Some(existing_id) = existing_uuid {
         was_existing = true;
 
-        let is_pinned: bool =
-            sqlx::query_scalar("SELECT is_pinned FROM clips WHERE uuid = ?")
-                .bind(&existing_id)
-                .fetch_one(pool)
-                .await
-                .unwrap_or(false);
-
-        let new_sort_order = if is_pinned {
-            0
-        } else {
-            sqlx::query_scalar::<_, i64>("SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips")
-                .fetch_one(pool)
-                .await
-                .unwrap_or(0)
-        };
-
         if clip_type == "image" {
             let _ = sqlx::query(
                 r#"
                 UPDATE clips
-                SET created_at = CURRENT_TIMESTAMP,
+                SET created_at = CASE WHEN is_pinned = 1 THEN created_at ELSE CURRENT_TIMESTAMP END,
                     is_deleted = 0,
                     folder_id = NULL,
                     source_app = ?,
@@ -701,8 +685,7 @@ async fn process_clipboard_change(
                     content = ?,
                     text_preview = ?,
                     metadata = ?,
-                    is_thumbnail = 0,
-                    sort_order = ?
+                    is_thumbnail = 0
                 WHERE uuid = ?
                 "#,
             )
@@ -711,7 +694,6 @@ async fn process_clipboard_change(
             .bind(&clip_content)
             .bind(&clip_preview)
             .bind(Some(metadata.clone()))
-            .bind(new_sort_order)
             .bind(&existing_id)
             .execute(pool)
             .await;
@@ -743,15 +725,13 @@ async fn process_clipboard_change(
         } else {
             let _ = sqlx::query(r#"
                 UPDATE clips 
-                SET created_at = CURRENT_TIMESTAMP, 
-                    sort_order = ?, 
+                SET created_at = CASE WHEN is_pinned = 1 THEN created_at ELSE CURRENT_TIMESTAMP END, 
                     is_deleted = 0, 
                     folder_id = NULL,
                     source_app = ?, 
                     source_icon = ? 
                 WHERE uuid = ?
             "#)
-                .bind(new_sort_order)
                 .bind(&source_app)
                 .bind(&source_icon)
                 .bind(&existing_id)
@@ -762,7 +742,9 @@ async fn process_clipboard_change(
     } else {
         let clip_uuid = Uuid::new_v4().to_string();
 
-        let new_sort_order = sqlx::query_scalar::<_, i64>("SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips")
+        let new_sort_order = sqlx::query_scalar::<_, i64>(
+            "SELECT COALESCE(MAX(sort_order), 0) + 1 FROM clips WHERE is_deleted = 0 AND folder_id IS NULL",
+        )
             .fetch_one(pool)
             .await
             .unwrap_or(0);
@@ -823,6 +805,10 @@ async fn process_clipboard_change(
         }
         clip_uuid
     };
+
+    if let Err(e) = db.place_at_live_slot(&emitted_id).await {
+        log::warn!("place_at_live_slot failed for {}: {}", emitted_id, e);
+    }
 
     // Prune history in background to avoid blocking the clipboard loop
     let pool_clone = pool.clone();

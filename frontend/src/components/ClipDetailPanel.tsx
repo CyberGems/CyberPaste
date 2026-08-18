@@ -32,6 +32,7 @@ function formatBytes(n: number): string {
 interface ClipDetailPanelProps {
   clip: ClipboardItem | null;
   folders: FolderItem[];
+  pinDisabled?: boolean;
   onClose: () => void;
   onCopy: (id: string) => void;
   onPin: (id: string) => void;
@@ -52,6 +53,7 @@ const DetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label,
 export const ClipDetailPanel: React.FC<ClipDetailPanelProps> = ({
   clip,
   folders,
+  pinDisabled = false,
   onClose,
   onCopy,
   onPin,
@@ -209,13 +211,24 @@ export const ClipDetailPanel: React.FC<ClipDetailPanelProps> = ({
               </button>
             </Tooltip>
             <Tooltip
-              label={clip.is_pinned ? t('contextMenu.unpin') : t('contextMenu.pin')}
+              label={
+                pinDisabled
+                  ? t('toasts.cannotPinLatestClip')
+                  : clip.is_pinned
+                    ? t('contextMenu.unpin')
+                    : t('contextMenu.pin')
+              }
               placement="top"
             >
               <button
                 onClick={() => onPin(clip.id)}
+                disabled={pinDisabled}
                 className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-white/10 ${
-                  clip.is_pinned ? 'text-cyan-400' : 'text-white/50 hover:text-white'
+                  pinDisabled
+                    ? 'cursor-not-allowed text-white/25'
+                    : clip.is_pinned
+                      ? 'text-cyan-400'
+                      : 'text-white/50 hover:text-white'
                 }`}
               >
                 {clip.is_pinned ? <PinOff size={14} /> : <Pin size={14} />}

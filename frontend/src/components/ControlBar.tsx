@@ -717,7 +717,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           <div
             ref={foldersRef}
             className={clsx(
-              'no-scrollbar flex flex-1 items-center gap-4 overflow-x-auto transition-all duration-500 ease-in-out',
+              'no-scrollbar flex flex-1 items-center gap-1 overflow-x-auto transition-all duration-500 ease-in-out',
               showSearch
                 ? 'pointer-events-none invisible scale-95 opacity-0'
                 : 'visible scale-100 opacity-100'
@@ -731,47 +731,23 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               data-folder-id="clipboard"
               data-selected={highlightedFolderId === null}
               className={clsx(
-                'group relative flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1 text-sm font-bold transition-all',
+                'flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 text-[12px] font-medium transition-all',
                 highlightedFolderId === null && dragTargetFolderId === undefined
-                  ? 'border border-primary/50 bg-primary/20 text-primary shadow-[0_0_20px_rgba(var(--primary-rgb),0.25)] ring-1 ring-primary/30'
+                  ? 'border-primary/30 bg-primary/15 font-semibold text-foreground shadow-[0_0_8px_rgba(var(--primary-rgb),0.12)]'
                   : dragTargetFolderId === null && isDragging
-                    ? 'border-transparent bg-primary/40 text-foreground ring-2 ring-primary'
-                    : 'border border-transparent bg-secondary/40 text-muted-foreground hover:bg-accent hover:text-foreground'
+                    ? 'border-primary bg-primary/30 text-foreground'
+                    : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
               )}
             >
-              <div
-                className={clsx(
-                  'flex h-5 w-5 items-center justify-center rounded-lg transition-colors',
-                  highlightedFolderId === null
-                    ? 'bg-primary/20'
-                    : 'bg-secondary/40 group-hover:bg-primary/10'
-                )}
-              >
-                <Clock
-                  size={14}
-                  className={
-                    highlightedFolderId === null
-                      ? 'text-primary'
-                      : 'text-muted-foreground/60 group-hover:text-primary'
-                  }
-                />
-              </div>
-              <span
-                className={
-                  highlightedFolderId === null
-                    ? 'text-primary font-bold'
-                    : 'text-muted-foreground group-hover:text-primary'
-                }
-              >
-                Clipboard
-              </span>
+              <Clock size={12} className="flex-shrink-0" />
+              <span>Clipboard</span>
               <span
                 className={clsx(
-                  'ml-1 text-[10px] font-medium transition-opacity',
-                  highlightedFolderId === null ? 'opacity-80 text-primary' : 'opacity-55 group-hover:opacity-80 group-hover:text-primary'
+                  'text-[10px] tabular-nums opacity-35',
+                  highlightedFolderId === null && 'opacity-70'
                 )}
               >
-                {totalClipCount}
+                ({totalClipCount})
               </span>
             </button>
 
@@ -780,17 +756,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               const isDragTarget = dragTargetFolderId === folder.id;
               const isMenuHighlighted = contextMenuFolderId === folder.id;
               const Icon = IconMap[folder.icon || 'FolderIcon'] || FolderIcon;
-              const folderColor = folder.color || '#22d3ee';
-
-              const activeStyle =
-                isSelected && dragTargetFolderId === undefined
-                  ? {
-                      borderColor: `${folderColor}80`,
-                      backgroundColor: `${folderColor}20`,
-                      boxShadow: `0 0 20px ${folderColor}40, inset 0 0 10px ${folderColor}15`,
-                      color: folderColor,
-                    }
-                  : undefined;
+              const folderColor = folder.color || undefined;
 
               return (
                 <React.Fragment key={folder.id}>
@@ -816,41 +782,33 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                     onContextMenu={(e) => onFolderContextMenu(e, folder.id)}
                     onMouseEnter={() => isDragging && onDragHover(folder.id)}
                     data-selected={isSelected}
-                    style={activeStyle}
                     className={clsx(
-                      'flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1 text-sm font-bold transition-all',
+                      'flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 text-[12px] font-medium transition-all',
                       isSelected && dragTargetFolderId === undefined
-                        ? 'border ring-1 ring-border/25 shadow-[0_0_20px_rgba(var(--primary-rgb),0.12)]'
+                        ? 'border-primary/30 bg-primary/15 font-semibold text-foreground shadow-[0_0_8px_rgba(var(--primary-rgb),0.12)]'
                         : isDragTarget
-                          ? 'border-transparent bg-primary/40 text-foreground ring-2 ring-primary'
+                          ? 'border-primary bg-primary/30 text-foreground'
                           : isMenuHighlighted
                             ? 'border-transparent bg-accent text-foreground'
-                            : 'border border-transparent bg-secondary/40 text-muted-foreground hover:bg-accent hover:text-foreground',
+                            : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground',
                       draggingFolderId === folder.id && 'pointer-events-none scale-95 opacity-40'
                     )}
                   >
-                    <div
-                      className={clsx(
-                        'flex h-5 w-5 items-center justify-center rounded-lg transition-colors',
-                        isSelected ? 'bg-primary/10' : 'bg-secondary/45'
-                      )}
-                    >
-                      <Icon
-                        size={14}
-                        style={{ color: folderColor }}
-                        className={isSelected ? '' : 'text-muted-foreground/60'}
-                      />
-                    </div>
-                    <span className={isSelected ? 'text-foreground' : 'text-muted-foreground'}>
-                      {folder.name}
-                    </span>
+                    <Icon
+                      size={12}
+                      style={{ color: folderColor }}
+                      className={
+                        isSelected ? 'text-primary' : 'flex-shrink-0 text-muted-foreground/60'
+                      }
+                    />
+                    <span>{folder.name}</span>
                     <span
                       className={clsx(
-                        'ml-1 text-[10px] font-medium transition-opacity',
-                        isSelected ? 'text-foreground/80' : 'opacity-55'
+                        'text-[10px] tabular-nums opacity-35',
+                        isSelected && 'opacity-70'
                       )}
                     >
-                      {folder.item_count}
+                      ({folder.item_count || 0})
                     </span>
                   </button>
                   {folderReorderTargetId === folder.id &&
@@ -867,7 +825,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             <Tooltip label={t('folders.addFolderBtn') || 'Add Folder'} placement="bottom">
               <button
                 onClick={onAddClick}
-                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-dashed border-border bg-secondary/40 text-muted-foreground transition-all hover:border-muted hover:bg-accent hover:text-foreground active:bg-accent/80"
+                className="flex h-8 flex-shrink-0 items-center justify-center rounded-md border border-dashed border-border bg-transparent px-2 text-muted-foreground/70 transition-all hover:border-muted hover:text-foreground"
               >
                 <Plus size={18} />
               </button>

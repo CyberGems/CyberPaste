@@ -492,6 +492,12 @@ fn type_matches_filter(filter: &Option<ClipTypeFilter>) -> Vec<&'static str> {
     }
 }
 
+/// Visual order is `sort_order` in both the main list and folders.
+/// Pinned clips keep their slots; new items flow through unpinned holes.
+fn clips_order_by_clause() -> &'static str {
+    "ORDER BY sort_order ASC, created_at DESC"
+}
+
 #[tauri::command]
 pub async fn get_clips(
     filter_id: Option<String>,
@@ -532,9 +538,10 @@ pub async fn get_clips(
                 let sql = format!(
                     r#"
                     SELECT * FROM clips WHERE is_deleted = 0 AND folder_id = ? {}
-                    ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?
+                    {} LIMIT ? OFFSET ?
                 "#,
-                    in_placeholders
+                    in_placeholders,
+                    clips_order_by_clause()
                 );
                 let mut q = sqlx::query_as(&sql).bind(numeric_id);
                 for t in &type_clause {
@@ -555,9 +562,10 @@ pub async fn get_clips(
             let sql = format!(
                 r#"
                 SELECT * FROM clips WHERE is_deleted = 0 AND folder_id IS NULL {}
-                ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?
+                {} LIMIT ? OFFSET ?
             "#,
-                in_placeholders
+                in_placeholders,
+                clips_order_by_clause()
             );
             let mut q = sqlx::query_as(&sql);
             for t in &type_clause {
@@ -844,17 +852,18 @@ pub async fn paste_clip(
                 }
             }
 
-            // Manually perform the LRU bump (update created_at and sort_order unless pinned or in folder)
-            let _ =
-                sqlx::query(r#"
-                    UPDATE clips 
-                    SET created_at = CASE WHEN is_pinned = 1 OR folder_id IS NOT NULL THEN created_at ELSE CURRENT_TIMESTAMP END, 
-                        sort_order = CASE WHEN is_pinned = 1 OR folder_id IS NOT NULL THEN sort_order ELSE (SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips) END 
-                    WHERE uuid = ?
-                "#)
-                    .bind(&uuid)
-                    .execute(pool)
-                    .await;
+            // LRU bump: unpinned main-list clips go to the live slot; pinned/folder clips stay.
+            let _ = sqlx::query(
+                r#"
+                UPDATE clips
+                SET created_at = CASE WHEN is_pinned = 1 OR folder_id IS NOT NULL THEN created_at ELSE CURRENT_TIMESTAMP END
+                WHERE uuid = ?
+                "#,
+            )
+            .bind(&uuid)
+            .execute(pool)
+            .await;
+            let _ = db.place_at_live_slot(&uuid).await;
 
             // If reset_view_on_paste is enabled and the clip is in a folder, copy it to the main clipboard
             let manager = app.state::<Arc<SettingsManager>>();
@@ -869,37 +878,22 @@ pub async fn paste_clip(
                 .unwrap_or(None);
 
                 if let Some(hist_uuid) = existing_history_uuid {
-                    let (is_pinned, clip_folder_id): (bool, Option<i64>) =
-                        sqlx::query_as("SELECT is_pinned, folder_id FROM clips WHERE uuid = ?")
-                            .bind(&hist_uuid)
-                            .fetch_one(pool)
-                            .await
-                            .unwrap_or((false, None));
-
-                    let new_sort_order = if is_pinned || clip_folder_id.is_some() {
-                        0
-                    } else {
-                        sqlx::query_scalar::<_, i64>("SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips")
-                            .fetch_one(pool)
-                            .await
-                            .unwrap_or(0)
-                    };
-
                     let _ = sqlx::query(
                         r#"
-                        UPDATE clips 
-                        SET created_at = CURRENT_TIMESTAMP, 
-                            sort_order = CASE WHEN is_pinned = 1 OR folder_id IS NOT NULL THEN sort_order ELSE ? END
+                        UPDATE clips
+                        SET created_at = CASE WHEN is_pinned = 1 THEN created_at ELSE CURRENT_TIMESTAMP END
                         WHERE uuid = ?
                         "#,
                     )
-                    .bind(new_sort_order)
-                    .bind(hist_uuid)
+                    .bind(&hist_uuid)
                     .execute(pool)
                     .await;
+                    let _ = db.place_at_live_slot(&hist_uuid).await;
                 } else {
                     let new_uuid = uuid::Uuid::new_v4().to_string();
-                    let new_sort_order = sqlx::query_scalar::<_, i64>("SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips")
+                    let new_sort_order = sqlx::query_scalar::<_, i64>(
+                        "SELECT COALESCE(MAX(sort_order), 0) + 1 FROM clips WHERE is_deleted = 0 AND folder_id IS NULL",
+                    )
                         .fetch_one(pool)
                         .await
                         .unwrap_or(0);
@@ -926,6 +920,8 @@ pub async fn paste_clip(
                     .bind(new_sort_order)
                     .execute(pool)
                     .await;
+
+                    let _ = db.place_at_live_slot(&new_uuid).await;
 
                     if clip.clip_type == "image" {
                         use sqlx::Row;
@@ -1282,6 +1278,24 @@ pub async fn move_to_folder(
         }
     }
 
+    if folder_id_parsed.is_none() {
+        let result = sqlx::query(r#"UPDATE clips SET folder_id = NULL WHERE uuid = ?"#)
+            .bind(&uuid)
+            .execute(pool)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        if result.rows_affected() == 0 {
+            log::warn!("move_to_folder: No clip found with uuid={}", uuid);
+            return Err("Clip not found".to_string());
+        }
+
+        db.place_in_main_list(&uuid)
+            .await
+            .map_err(|e| e.to_string())?;
+        return Ok(());
+    }
+
     let new_sort_order = db
         .get_and_prepare_first_unpinned_slot(folder_id_parsed, Some(&uuid))
         .await
@@ -1310,95 +1324,9 @@ pub async fn reorder_clip(
     position: String,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<(), String> {
-    let pool = &db.pool;
-
-    let mut tx = pool.begin().await.map_err(|e| e.to_string())?;
-
-    let (clip_sort, target_sort): (i64, i64) = sqlx::query_as(
-        r#"
-        SELECT c.sort_order, t.sort_order FROM clips c
-        JOIN clips t ON t.uuid = ?
-        WHERE c.uuid = ?
-        "#,
-    )
-    .bind(&target_uuid)
-    .bind(&clip_uuid)
-    .fetch_optional(&mut *tx)
-    .await
-    .map_err(|e| e.to_string())?
-    .ok_or("Clip or target not found")?;
-
-    let folder_sub = format!(
-        "IFNULL(folder_id, -1) = IFNULL((SELECT folder_id FROM clips WHERE uuid = '{}'), -1) AND is_deleted = 0",
-        target_uuid.replace('\'', "''")
-    );
-
-    if position == "before" {
-        if clip_sort < target_sort {
-            // Moving clip forward: shift (clip_sort, target_sort) down by 1
-            sqlx::query(&format!(
-                "UPDATE clips SET sort_order = sort_order - 1 WHERE {} AND sort_order > {} AND sort_order < {}",
-                folder_sub, clip_sort, target_sort
-            ))
-            .execute(&mut *tx).await.map_err(|e| e.to_string())?;
-            sqlx::query("UPDATE clips SET sort_order = ? WHERE uuid = ?")
-                .bind(target_sort - 1)
-                .bind(&clip_uuid)
-                .execute(&mut *tx)
-                .await
-                .map_err(|e| e.to_string())?;
-        } else {
-            // Moving clip backward: shift [target_sort, clip_sort) up by 1
-            sqlx::query(&format!(
-                "UPDATE clips SET sort_order = sort_order + 1 WHERE {} AND sort_order >= {} AND sort_order < {}",
-                folder_sub, target_sort, clip_sort
-            ))
-            .execute(&mut *tx).await.map_err(|e| e.to_string())?;
-            sqlx::query("UPDATE clips SET sort_order = ? WHERE uuid = ?")
-                .bind(target_sort)
-                .bind(&clip_uuid)
-                .execute(&mut *tx)
-                .await
-                .map_err(|e| e.to_string())?;
-        }
-    } else {
-        // position == "after"
-        if clip_sort > target_sort {
-            // Moving clip backward: shift (target_sort, clip_sort) up by 1
-            sqlx::query(&format!(
-                "UPDATE clips SET sort_order = sort_order + 1 WHERE {} AND sort_order > {} AND sort_order < {}",
-                folder_sub, target_sort, clip_sort
-            ))
-            .execute(&mut *tx).await.map_err(|e| e.to_string())?;
-            sqlx::query("UPDATE clips SET sort_order = ? WHERE uuid = ?")
-                .bind(target_sort + 1)
-                .bind(&clip_uuid)
-                .execute(&mut *tx)
-                .await
-                .map_err(|e| e.to_string())?;
-        } else {
-            // Moving clip forward: shift (target_sort, clip_sort] down by 1, then shift (target_sort, ∞) up...
-            // Actually: shift everything > target_sort up by 1, then set clip to target_sort + 1
-            // But we need to account for the clip's old position being vacated
-            // Simplest: shift (target_sort, ∞) up by 1, set clip to target_sort + 1
-            sqlx::query(&format!(
-                "UPDATE clips SET sort_order = sort_order + 1 WHERE {} AND sort_order > {}",
-                folder_sub, target_sort
-            ))
-            .execute(&mut *tx)
-            .await
-            .map_err(|e| e.to_string())?;
-            sqlx::query("UPDATE clips SET sort_order = ? WHERE uuid = ?")
-                .bind(target_sort + 1)
-                .bind(&clip_uuid)
-                .execute(&mut *tx)
-                .await
-                .map_err(|e| e.to_string())?;
-        }
-    }
-
-    tx.commit().await.map_err(|e| e.to_string())?;
-    Ok(())
+    db.reorder_clip_visual(&clip_uuid, &target_uuid, &position)
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -1640,9 +1568,10 @@ pub async fn search_clips(
                 let sql = format!(
                     r#"
                     SELECT * FROM clips WHERE is_deleted = 0 AND folder_id = ? AND (text_preview LIKE ? OR content LIKE ?) {}
-                    ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?
+                    {} LIMIT ? OFFSET ?
                 "#,
-                    in_placeholders
+                    in_placeholders,
+                    clips_order_by_clause()
                 );
                 let mut q = sqlx::query_as(&sql)
                     .bind(numeric_id)
@@ -1664,9 +1593,10 @@ pub async fn search_clips(
             let sql = format!(
                 r#"
                 SELECT * FROM clips WHERE is_deleted = 0 AND folder_id IS NULL AND (text_preview LIKE ? OR content LIKE ?) {}
-                ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?
+                {} LIMIT ? OFFSET ?
             "#,
-                in_placeholders
+                in_placeholders,
+                clips_order_by_clause()
             );
             let mut q = sqlx::query_as(&sql)
                 .bind(&search_pattern)

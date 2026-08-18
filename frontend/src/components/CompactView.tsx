@@ -737,14 +737,16 @@ export const CompactView: React.FC<CompactViewProps> = ({
     }
   };
 
-  // Auto-scroll to selected clip in the virtualized list
+  // Follow keyboard/selection moves only. Do not run when the clip array is
+  // patched in place (pin, metadata, …) or the list jumps back to the selected row.
   useEffect(() => {
     if (!selectedClipId) return;
     const idx = filteredClips.findIndex((c) => c.id === selectedClipId);
     if (idx >= 0) {
       clipListApiRef.current?.scrollToRow({ index: idx, align: 'smart', behavior: 'smooth' });
     }
-  }, [selectedClipId, filteredClips, clipListApiRef]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- filteredClips is read, not a trigger
+  }, [selectedClipId]);
 
   const handleRowsRendered = useCallback(
     (visible: { startIndex: number; stopIndex: number }) => {
@@ -871,38 +873,17 @@ export const CompactView: React.FC<CompactViewProps> = ({
     return () => window.removeEventListener(CONTEXT_MENU_EVENT, onMenu);
   }, []);
 
-  const folderPillClass = (folderId: string | null, isSelected: boolean, isDragTarget: boolean) => {
-    const isMenuHighlighted = contextMenuFolderId !== null && contextMenuFolderId === folderId;
-    return cn(
-      'px-3 py-1 rounded-full text-[10px] font-medium transition-colors whitespace-nowrap flex items-center gap-1.5 border',
+  const folderTabClass = (isSelected: boolean, isDragTarget: boolean, isMenuHighlighted = false) =>
+    cn(
+      'flex items-center gap-1.5 whitespace-nowrap rounded-md border px-2 py-1.5 text-[11px] font-medium transition-all',
       isSelected && dragTargetFolderId === undefined
-        ? 'border-primary/40 bg-primary/15 shadow-[0_0_12px_rgba(var(--primary-rgb),0.2)] text-foreground font-semibold'
+        ? 'border-primary/30 bg-primary/15 font-semibold text-foreground shadow-[0_0_8px_rgba(var(--primary-rgb),0.12)]'
         : isDragTarget && isDragging
-          ? 'bg-primary/30 border-primary text-foreground'
+          ? 'border-primary bg-primary/30 text-foreground'
           : isMenuHighlighted
-            ? 'bg-accent text-accent-foreground border-transparent'
-            : 'bg-secondary/40 hover:bg-accent border-transparent text-muted-foreground hover:text-accent-foreground'
+            ? 'border-transparent bg-accent text-foreground'
+            : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
     );
-  };
-
-  const folderPillClassNamed = (
-    folderId: string,
-    isSelected: boolean,
-    isDragTarget: boolean,
-    _color?: string | null
-  ) => {
-    const isMenuHighlighted = contextMenuFolderId !== null && contextMenuFolderId === folderId;
-    return cn(
-      'px-3 py-1 rounded-full text-[10px] font-medium transition-colors whitespace-nowrap flex items-center gap-1.5 border',
-      isSelected && dragTargetFolderId === undefined
-        ? 'border-primary/40 bg-primary/15 shadow-[0_0_12px_rgba(var(--primary-rgb),0.2)] text-foreground font-semibold'
-        : isDragTarget && isDragging
-          ? 'bg-primary/30 border-primary text-foreground'
-          : isMenuHighlighted
-            ? 'bg-accent text-accent-foreground border-transparent'
-            : 'bg-secondary/40 hover:bg-accent border-transparent text-muted-foreground hover:text-accent-foreground'
-    );
-  };
 
   const SIDEBAR_EXPANDED_W = 140;
   const SIDEBAR_COLLAPSED_W = 16;
@@ -1368,18 +1349,20 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   onClick={() => onSelectFolder(null)}
                   data-folder-id="clipboard"
                   data-selected={highlightedFolderId === null}
-                  className={folderPillClass(
-                    null,
+                  className={folderTabClass(
                     highlightedFolderId === null,
                     dragTargetFolderId === null
                   )}
                   onMouseEnter={() => handleFolderHover(null)}
                   onMouseLeave={onDragLeave}
                 >
-                  <Clock size={10} />
+                  <Clock size={11} />
                   {t('folders.all')}
                   <span
-                    className={cn('text-[9px] opacity-40', selectedFolder === null && 'opacity-80')}
+                    className={cn(
+                      'flex-shrink-0 text-[10px] tabular-nums opacity-35',
+                      selectedFolder === null && 'opacity-70'
+                    )}
                   >
                     ({totalClipCount})
                   </span>
@@ -1413,11 +1396,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
                         data-selected={isSelected}
                         onContextMenu={(e) => onFolderContextMenu?.(e, folder.id)}
                         className={cn(
-                          folderPillClassNamed(
-                            folder.id,
+                          folderTabClass(
                             isSelected,
                             dragTargetFolderId === folder.id,
-                            folder.color
+                            contextMenuFolderId === folder.id
                           ),
                           draggingFolderId === folder.id &&
                             'pointer-events-none scale-95 opacity-40'
@@ -1425,12 +1407,17 @@ export const CompactView: React.FC<CompactViewProps> = ({
                         onMouseEnter={() => handleFolderHover(folder.id)}
                       >
                         <Icon
-                          size={10}
+                          size={11}
                           style={{ color: folder.color || undefined }}
                           className={isSelected ? 'text-primary' : 'text-muted-foreground/60'}
                         />
                         {folder.name}
-                        <span className={cn('text-[9px] opacity-40', isSelected && 'opacity-80')}>
+                        <span
+                          className={cn(
+                            'flex-shrink-0 text-[10px] tabular-nums opacity-35',
+                            isSelected && 'opacity-70'
+                          )}
+                        >
                           ({folder.item_count || 0})
                         </span>
                       </button>
@@ -1449,7 +1436,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 <Tooltip label={t('folders.addFolderBtn')} placement="bottom">
                   <button
                     onClick={onAddFolder}
-                    className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-dashed border-border bg-secondary/40 px-2 py-1 text-[10px] font-medium text-muted-foreground transition-all hover:bg-accent hover:text-foreground"
+                    className="flex items-center gap-1.5 whitespace-nowrap rounded-md border border-dashed border-border bg-transparent px-2 py-1.5 text-[11px] font-medium text-muted-foreground/70 transition-all hover:border-muted hover:text-foreground"
                   >
                     <Plus size={10} />
                     {t('folders.new')}
