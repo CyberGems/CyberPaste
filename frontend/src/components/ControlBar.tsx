@@ -492,14 +492,6 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         {!showHud && <div className="min-w-0 flex-1" />}
 
         <div className="z-10 flex shrink-0 items-center gap-0.5">
-          {onResetSize && (
-            <Tooltip label={t('common.resetWindowSize')} placement="bottom">
-              <button onClick={onResetSize} className={headerBtnClass}>
-                <RotateCcw size={15} />
-              </button>
-            </Tooltip>
-          )}
-
           {onTogglePin && (
             <Tooltip
               label={isPinned ? t('common.unpinWindow') : t('common.pinWindow')}
@@ -521,6 +513,14 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                     isPinned ? 'fill-primary text-primary' : 'rotate-45'
                   )}
                 />
+              </button>
+            </Tooltip>
+          )}
+
+          {onResetSize && (
+            <Tooltip label={t('common.resetWindowSize')} placement="bottom">
+              <button onClick={onResetSize} className={headerBtnClass}>
+                <RotateCcw size={15} />
               </button>
             </Tooltip>
           )}

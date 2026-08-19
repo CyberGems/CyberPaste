@@ -2183,6 +2183,7 @@ function App() {
               compactShowTime={settings?.compact_show_time ?? true}
               compactShowTypeIcon={settings?.compact_show_type_icon ?? true}
               compactShowNumber={settings?.compact_show_number ?? true}
+              compactShowScrollbar={settings?.compact_show_scrollbar ?? true}
               totalClipCount={totalClipCount}
               onFolderContextMenu={(e, folderId) => {
                 if (folderId) handleContextMenu(e, 'folder', folderId);
@@ -2324,7 +2325,7 @@ function App() {
                   onLoadMore={loadMore}
                   onDragStart={startDrag}
                   onCardContextMenu={(e, clipId) => handleContextMenu(e, 'card', clipId)}
-                  scrollDirection={settings?.full_scroll_direction || 'vertical'}
+                  scrollDirection="vertical"
                   reorderTargetClipId={reorderTargetClipId}
                   reorderTargetPosition={reorderTargetPosition}
                   reorderEnabled={true}
@@ -2336,6 +2337,7 @@ function App() {
                   showTime={settings?.full_show_time ?? true}
                   showTypeIcon={settings?.full_show_type_icon ?? true}
                   showNumber={settings?.full_show_number ?? true}
+                  showScrollbar={settings?.full_show_scrollbar ?? true}
                   actionTooltip={fullActionTooltip}
                   onRequestPreview={handleOpenPreview}
                   bulkSelectedIds={selectedClipIds}

@@ -310,10 +310,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         compact_show_time: 'settings.compactShowTime',
         compact_show_type_icon: 'settings.compactShowTypeIcon',
         compact_show_number: 'settings.compactShowNumber',
+        compact_show_scrollbar: 'settings.compactShowScrollbar',
         full_show_hud: 'settings.fullShowHud',
         full_grid_scale: 'settings.fullGridScale',
         full_grid_columns: 'settings.fullGridColumns',
-        full_scroll_direction: 'settings.fullScrollDirection',
+        full_show_scrollbar: 'settings.fullShowScrollbar',
         full_show_source_icon: 'settings.fullShowSourceIcon',
         full_show_time: 'settings.fullShowTime',
         full_show_type_icon: 'settings.fullShowTypeIcon',
@@ -1531,24 +1532,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           ]}
                         />
                       </div>
-                      <div className="space-y-3">
-                        <label className="block">
-                          <span className="text-sm font-medium">
-                            {t('settings.fullScrollDirection')}
-                          </span>
-                          <p className="text-xs text-muted-foreground">
-                            {t('settings.fullScrollDirectionDesc')}
-                          </p>
-                        </label>
-                        <Select
-                          value={settings.full_scroll_direction || 'vertical'}
-                          onChange={(value) => updateSetting('full_scroll_direction', value)}
-                          options={[
-                            { value: 'vertical', label: t('settings.scrollVertical') },
-                            { value: 'horizontal', label: t('settings.scrollHorizontal') },
-                          ]}
-                        />
-                      </div>
                     </div>
                   </section>
 
@@ -1564,6 +1547,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           ['full_show_time', 'fullShowTime'],
                           ['full_show_type_icon', 'fullShowTypeIcon'],
                           ['full_show_number', 'fullShowNumber'],
+                          ['full_show_scrollbar', 'fullShowScrollbar'],
                         ] as const
                       ).map(([key, translationKey]) => (
                         <div
@@ -1812,6 +1796,32 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         >
                           <span
                             className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.compact_show_number ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Show Scrollbar */}
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div>
+                          <span className="text-sm font-medium">
+                            {t('settings.compactShowScrollbar')}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.compactShowScrollbarDesc')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() =>
+                            updateSetting(
+                              'compact_show_scrollbar',
+                              !(settings.compact_show_scrollbar ?? true)
+                            )
+                          }
+                          className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_show_scrollbar ?? true) ? 'bg-primary' : 'bg-white/10'}`}
+                          aria-label={t('settings.compactShowScrollbar')}
+                        >
+                          <span
+                            className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.compact_show_scrollbar ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
                           />
                         </button>
                       </div>

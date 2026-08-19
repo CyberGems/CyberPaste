@@ -335,6 +335,44 @@
     background: rgba(0, 0, 0, 0.32);
   }
 
+  /* Thin, unobtrusive scrollbar for the Full-mode clip grid. */
+  .full-mode-scrollbar,
+  .compact-mode-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+  }
+  .full-mode-scrollbar::-webkit-scrollbar,
+  .compact-mode-scrollbar::-webkit-scrollbar {
+    display: block;
+    width: 5px;
+    height: 5px;
+  }
+  .full-mode-scrollbar::-webkit-scrollbar-track,
+  .compact-mode-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .full-mode-scrollbar::-webkit-scrollbar-thumb,
+  .compact-mode-scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.16);
+  }
+  .full-mode-scrollbar::-webkit-scrollbar-thumb:hover,
+  .compact-mode-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.28);
+  }
+  .light .full-mode-scrollbar,
+  .light .compact-mode-scrollbar {
+    scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+  }
+  .light .full-mode-scrollbar::-webkit-scrollbar-thumb,
+  .light .compact-mode-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.18);
+  }
+  .light .full-mode-scrollbar::-webkit-scrollbar-thumb:hover,
+  .light .compact-mode-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+
   .pause-all-animations *,
   .pause-all-animations *::before,
   .pause-all-animations *::after {

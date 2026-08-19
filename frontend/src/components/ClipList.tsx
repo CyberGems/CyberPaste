@@ -30,6 +30,7 @@ interface ClipListProps {
   showTime?: boolean;
   showTypeIcon?: boolean;
   showNumber?: boolean;
+  showScrollbar?: boolean;
   actionTooltip?: string;
   onRequestPreview?: (id: string) => void;
   bulkSelectedIds?: Set<string>;
@@ -65,6 +66,7 @@ export const ClipList: React.FC<ClipListProps> = ({
   showTime = true,
   showTypeIcon = true,
   showNumber = true,
+  showScrollbar = true,
   actionTooltip,
   onRequestPreview,
   bulkSelectedIds,
@@ -272,7 +274,7 @@ export const ClipList: React.FC<ClipListProps> = ({
         data-el="clip-list"
         cellComponent={Cell}
         cellProps={{}}
-        className="no-scrollbar"
+        className={clsx('no-scrollbar', showScrollbar && 'full-mode-scrollbar')}
         style={{
           height: gridHeight,
           width: containerWidth,

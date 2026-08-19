@@ -81,6 +81,7 @@ export interface Settings {
   full_grid_scale?: number;
   full_grid_columns?: number; // 0 = automatic
   full_scroll_direction?: 'horizontal' | 'vertical';
+  full_show_scrollbar?: boolean;
   full_show_source_icon?: boolean;
   full_show_time?: boolean;
   full_show_type_icon?: boolean;
@@ -96,6 +97,7 @@ export interface Settings {
   compact_show_time?: boolean;
   compact_show_type_icon?: boolean;
   compact_show_number?: boolean;
+  compact_show_scrollbar?: boolean;
   settings_window_width?: number | null;
   settings_window_height?: number | null;
   settings_window_x?: number | null;

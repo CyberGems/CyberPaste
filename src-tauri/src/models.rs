@@ -76,6 +76,8 @@ pub struct AppSettings {
     pub full_grid_scale: f64,
     pub full_grid_columns: i64,
     pub full_scroll_direction: String,
+    #[serde(default = "default_true")]
+    pub full_show_scrollbar: bool,
     pub full_show_source_icon: bool,
     pub full_show_time: bool,
     pub full_show_type_icon: bool,
@@ -91,6 +93,8 @@ pub struct AppSettings {
     pub compact_show_time: bool,
     pub compact_show_type_icon: bool,
     pub compact_show_number: bool,
+    #[serde(default = "default_true")]
+    pub compact_show_scrollbar: bool,
     pub settings_window_width: Option<f64>,
     pub settings_window_height: Option<f64>,
     pub settings_window_x: Option<i32>,
@@ -166,6 +170,7 @@ impl Default for AppSettings {
             full_grid_scale: 1.0,
             full_grid_columns: 0,
             full_scroll_direction: "vertical".to_string(),
+            full_show_scrollbar: true,
             full_show_source_icon: true,
             full_show_time: true,
             full_show_type_icon: true,
@@ -181,6 +186,7 @@ impl Default for AppSettings {
             compact_show_time: true,
             compact_show_type_icon: true,
             compact_show_number: true,
+            compact_show_scrollbar: true,
             settings_window_width: None,
             settings_window_height: None,
             settings_window_x: None,

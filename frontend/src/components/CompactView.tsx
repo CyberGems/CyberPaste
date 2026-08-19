@@ -360,6 +360,7 @@ interface CompactViewProps {
   compactShowTime?: boolean;
   compactShowTypeIcon?: boolean;
   compactShowNumber?: boolean;
+  compactShowScrollbar?: boolean;
   wheelFolderNavigation?: boolean;
 }
 
@@ -420,6 +421,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   compactShowTime = true,
   compactShowTypeIcon = true,
   compactShowNumber = true,
+  compactShowScrollbar = true,
   wheelFolderNavigation = false,
 }) => {
   const { t } = useTranslation();
@@ -886,7 +888,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
             : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
     );
 
-  const SIDEBAR_EXPANDED_W = 140;
+  const SIDEBAR_EXPANDED_W = 160;
   const SIDEBAR_COLLAPSED_W = 16;
   const sidebarWidth = isVertical
     ? compactSidebarCollapsed
@@ -1070,7 +1072,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   className="no-scrollbar flex h-full flex-col gap-1 overflow-y-auto py-2"
                   style={{ width: SIDEBAR_EXPANDED_W }}
                 >
-                  <Tooltip label={t('folders.all') || '[Clipboard]'} placement="right">
+                  <Tooltip label={t('folders.clipboard')} placement="right">
                     <button
                       onClick={() => onSelectFolder(null)}
                       data-folder-id="clipboard"
@@ -1087,7 +1089,9 @@ export const CompactView: React.FC<CompactViewProps> = ({
                       onMouseLeave={onDragLeave}
                     >
                       <Clock size={11} className="flex-shrink-0" />
-                      <span className="min-w-0 flex-1 truncate text-left">[Clipboard]</span>
+                      <span className="min-w-0 flex-1 truncate text-left">
+                        {t('folders.clipboard')}
+                      </span>
                       <span
                         className={cn(
                           'flex-shrink-0 text-[10px] tabular-nums opacity-35',
@@ -1260,6 +1264,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 compactShowTime={compactShowTime}
                 compactShowTypeIcon={compactShowTypeIcon}
                 compactShowNumber={compactShowNumber}
+                showScrollbar={compactShowScrollbar}
                 emptyLabel={
                   isFiltering && clips.length > 0
                     ? t('compact.noMatchFilter') === 'compact.noMatchFilter'
@@ -1345,7 +1350,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
               onWheel={handleWheel}
               className="no-scrollbar flex gap-1 overflow-x-auto scroll-smooth pb-1"
             >
-              <Tooltip label={t('folders.all') || '[Clipboard]'} placement="bottom">
+              <Tooltip label={t('folders.clipboard')} placement="bottom">
                 <button
                   onClick={() => onSelectFolder(null)}
                   data-folder-id="clipboard"
@@ -1358,7 +1363,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   onMouseLeave={onDragLeave}
                 >
                   <Clock size={11} />
-                  {t('folders.all')}
+                  {t('folders.clipboard')}
                   <span
                     className={cn(
                       'flex-shrink-0 text-[10px] tabular-nums opacity-35',
@@ -1489,6 +1494,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
               compactShowTime={compactShowTime}
               compactShowTypeIcon={compactShowTypeIcon}
               compactShowNumber={compactShowNumber}
+              showScrollbar={compactShowScrollbar}
             />
           </div>
 
@@ -1976,7 +1982,7 @@ function CompactListRow({
     <div
       style={style}
       {...ariaAttributes}
-      className="box-border px-2"
+      className="box-border pl-2 pr-1"
       onMouseLeave={() => onRowMouseLeave?.()}
     >
       <ClipRow
@@ -2043,6 +2049,7 @@ function CompactClipList({
   compactShowTime = true,
   compactShowTypeIcon = true,
   compactShowNumber = true,
+  showScrollbar = true,
 }: {
   clips: AppClip[];
   listRef: React.Ref<import('react-window').ListImperativeAPI>;
@@ -2078,6 +2085,7 @@ function CompactClipList({
   compactShowTime?: boolean;
   compactShowTypeIcon?: boolean;
   compactShowNumber?: boolean;
+  showScrollbar?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   // Start with a sensible fallback so the list paints before the first ResizeObserver tick
@@ -2183,7 +2191,7 @@ function CompactClipList({
   return (
     <div ref={containerRef} className="relative h-full min-h-0 w-full">
       <List
-        className="no-scrollbar"
+        className={cn('no-scrollbar', showScrollbar && 'compact-mode-scrollbar')}
         rowComponent={CompactListRow}
         rowCount={clips.length}
         rowHeight={rowHeight ?? 44}
