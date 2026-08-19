@@ -22,6 +22,7 @@ import { UpdateModal } from './components/UpdateModal';
 import { useKeyboard } from './hooks/useKeyboard';
 import { useTheme } from './hooks/useTheme';
 import { useLanguage } from './hooks/useLanguage';
+import { triggerPinFlash } from './hooks/usePinFlash';
 import { useTranslation } from 'react-i18next';
 import { systemToast as toast } from './utils/toast';
 import { formatUpdaterError, isUpdaterNetworkError } from './utils/updater';
@@ -1147,6 +1148,7 @@ function App() {
         setClips((prevClips) =>
           prevClips.map((c) => (c.id === clipId ? { ...c, is_pinned: newPinnedState } : c))
         );
+        triggerPinFlash(clipId);
         toast.success(newPinnedState ? t('toasts.clipPinned') : t('toasts.clipUnpinned'));
       } catch (error) {
         console.error('Failed to toggle clip pin:', error);
@@ -2249,7 +2251,7 @@ function App() {
           ) : (
             <div
               data-el="app-frame"
-              className="flex h-full w-full flex-col pt-1.5 font-sans text-foreground"
+              className="flex h-full w-full flex-col font-sans text-foreground"
             >
               <ControlBar
                 isWindowActive={isWindowActive}

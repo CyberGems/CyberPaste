@@ -24,6 +24,18 @@
   animation: subtle-gradient 8s ease infinite;
 }
 
+@keyframes clip-pin-flash {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.clip-pin-flash {
+  animation: clip-pin-flash 0.55s ease-out forwards;
+}
+
 @keyframes toast-shrink {
   from {
     transform: scaleX(1);

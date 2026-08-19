@@ -2269,18 +2269,18 @@ pub async fn reset_window_size(app: AppHandle, window: tauri::WebviewWindow) -> 
         .await?;
 
     if is_full {
+        let _ = window.unmaximize();
         let new_height_px = (default_h * scale_factor) as u32;
-        let new_width_px = work_area.size.width - ((side_margin * scale_factor) as u32 * 2);
+        let new_width_px = work_area.size.width.saturating_sub((side_margin * scale_factor) as u32 * 2);
         let side_margin_px = (side_margin * scale_factor) as i32;
         let bottom_margin_px = (bottom_margin * scale_factor) as i32;
 
         let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
-            width: new_width_px,
-            height: new_height_px,
+            width: new_width_px.max(1),
+            height: new_height_px.max(1),
         }));
 
         let reference_bottom = monitor_pos.y + monitor_size.height as i32;
-
         let target_x = work_area.position.x + side_margin_px;
         let target_y = reference_bottom - new_height_px as i32 - bottom_margin_px;
 

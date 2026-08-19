@@ -79,6 +79,7 @@ import { CONTEXT_MENU_EVENT, type ContextMenuEventDetail } from '../utils/contex
 import { LAYOUT } from '../constants';
 import { CompactBulkBar } from './CompactBulkBar';
 import { CompactPeek } from './CompactPeek';
+import { usePinFlash } from '../hooks/usePinFlash';
 
 const localeMap: Record<string, any> = {
   de,
@@ -1659,20 +1660,31 @@ const ClipRow = memo(function ClipRow({
   const [menuHighlight, setMenuHighlight] = useState(false);
   const menuHighlightRef = useRef(false);
   const leftWhileMenuRef = useRef(false);
+  const foreignMenuOpenRef = useRef(false);
   menuHighlightRef.current = menuHighlight;
   const isNavigationSelected = selectedClipId === clip.id && !(isPeekVisible && index === 0);
-  const showHover = hovered || menuHighlight || isNavigationSelected;
+  const showHover =
+    menuHighlight ||
+    isNavigationSelected ||
+    (hovered && !foreignMenuOpenRef.current);
   const shouldBlurForPeek = isPeekVisible && peekClipId !== clip.id;
+  const pinFlash = usePinFlash(clip.id);
 
   useEffect(() => {
     const onMenu = (e: Event) => {
       const detail = (e as CustomEvent<ContextMenuEventDetail>).detail;
       if (!detail) return;
       if (detail.open && detail.highlightId === clip.id) {
+        foreignMenuOpenRef.current = false;
         leftWhileMenuRef.current = false;
         setMenuHighlight(true);
         setHovered(true);
+      } else if (detail.open) {
+        foreignMenuOpenRef.current = true;
+        setMenuHighlight(false);
+        setHovered(false);
       } else {
+        foreignMenuOpenRef.current = false;
         setMenuHighlight(false);
         if (leftWhileMenuRef.current) setHovered(false);
       }
@@ -1707,6 +1719,7 @@ const ClipRow = memo(function ClipRow({
           }
         }}
         onMouseEnter={() => {
+          if (foreignMenuOpenRef.current) return;
           leftWhileMenuRef.current = false;
           setHovered(true);
         }}
@@ -1729,6 +1742,9 @@ const ClipRow = memo(function ClipRow({
           isDragging && 'pointer-events-none scale-95 cursor-grabbing opacity-40'
         )}
       >
+        {pinFlash && (
+          <div className="clip-pin-flash pointer-events-none absolute inset-0 z-20 rounded-lg bg-primary/30 shadow-[inset_0_0_0_1px_rgba(var(--primary-rgb),0.75),0_0_16px_rgba(var(--primary-rgb),0.35)]" />
+        )}
         <div
           className="flex min-w-0 flex-1 items-center gap-3"
           onMouseEnter={(e) => {

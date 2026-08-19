@@ -2,6 +2,15 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.11.0] — 2026-08-18
+
+### 🎨 Full Mode Polish
+- **Refined Full-mode chrome**: Simplified the top bar, moved window controls into the header, and aligned its styling with Compact mode.
+- **Improved type filters**: Moved grid zoom beside the filters, improved spacing and count alignment, and fixed URL counts to use database totals.
+- **Pin feedback**: Added a brief visual flash when clips are pinned or unpinned in both views.
+- **Context-menu focus**: Preserved the active clip highlight and disabled unrelated card hover effects while a context menu is open.
+- **Window sizing**: Increased the default Full-mode height and improved reset positioning around the Windows work area.
+
 ## [1.10.5] — 2026-08-12
 
 ### ✨ Toast Polish

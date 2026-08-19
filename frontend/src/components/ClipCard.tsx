@@ -17,11 +17,11 @@ import {
   Pin,
   Zap,
 } from 'lucide-react';
-import { useMotionValue, useMotionTemplate, motion } from 'framer-motion';
 import Tooltip from './Tooltip';
 import { formatDistanceToNow } from 'date-fns';
 import { de, enUS, es, fr, ja, zhCN } from 'date-fns/locale';
 import { CONTEXT_MENU_EVENT, type ContextMenuEventDetail } from '../utils/contextMenuEvents';
+import { usePinFlash } from '../hooks/usePinFlash';
 
 const localeMap: Record<string, any> = {
   de,
@@ -110,9 +110,6 @@ export const ClipCard = memo(
     }, [clip.clip_type, t]);
     const [hovered, setHovered] = useState(false);
     const title = clip.source_app || clip.clip_type.toUpperCase();
-
-    const mouseX = useMotionValue(0);
-    const mouseY = useMotionValue(0);
 
     const filePaths = useMemo(() => {
       if (clip.clip_type !== 'file' || !clip.content) return [] as string[];
@@ -257,22 +254,29 @@ export const ClipCard = memo(
       return Math.round(index * hueStep);
     }, [title]);
 
-    const glowBackground = useMotionTemplate`radial-gradient(180px circle at ${mouseX}px ${mouseY}px, hsl(${appHue} 65% 55% / 0.7), transparent 65%)`;
-
     const [menuHighlight, setMenuHighlight] = useState(false);
     const menuHighlightRef = useRef(false);
     const leftWhileMenuRef = useRef(false);
     menuHighlightRef.current = menuHighlight;
+    const pinFlash = usePinFlash(clip.id);
+    const foreignMenuOpenRef = useRef(false);
+    const showHover = menuHighlight || (hovered && !foreignMenuOpenRef.current);
 
     useEffect(() => {
       const onMenu = (e: Event) => {
         const detail = (e as CustomEvent<ContextMenuEventDetail>).detail;
         if (!detail) return;
         if (detail.open && detail.highlightId === clip.id) {
+          foreignMenuOpenRef.current = false;
           leftWhileMenuRef.current = false;
           setMenuHighlight(true);
           setHovered(true);
+        } else if (detail.open) {
+          foreignMenuOpenRef.current = true;
+          setMenuHighlight(false);
+          setHovered(false);
         } else {
+          foreignMenuOpenRef.current = false;
           setMenuHighlight(false);
           if (leftWhileMenuRef.current) setHovered(false);
         }
@@ -286,12 +290,6 @@ export const ClipCard = memo(
       setMenuHighlight(true);
       setHovered(true);
       onContextMenu?.(e);
-    };
-
-    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-      const rect = e.currentTarget.getBoundingClientRect();
-      mouseX.set(e.clientX - rect.left);
-      mouseY.set(e.clientY - rect.top);
     };
 
     return (
@@ -326,8 +324,8 @@ export const ClipCard = memo(
               }
             }}
             draggable="false"
-            onMouseMove={handleMouseMove}
             onMouseEnter={() => {
+              if (foreignMenuOpenRef.current) return;
               leftWhileMenuRef.current = false;
               setHovered(true);
             }}
@@ -345,27 +343,27 @@ export const ClipCard = memo(
             onContextMenu={handleContextMenu}
             style={
               {
-                '--app-hue': `${appHue}`,
                 borderColor: isSelected ? `hsl(${appHue} 60% 55%)` : undefined,
-                borderWidth: isSelected ? '2px' : '1px',
-                boxShadow: isSelected
-                  ? `0 0 25px hsl(${appHue} 60% 45% / 0.35), inset 0 0 15px hsl(${appHue} 60% 45% / 0.15), 0 0 0 3px hsl(${appHue} 60% 55% / 0.25)`
-                  : 'none',
+                boxShadow: isSelected ? `0 0 18px hsl(${appHue} 60% 45% / 0.28)` : undefined,
               } as React.CSSProperties
             }
             className={clsx(
-              'relative flex h-full w-full cursor-pointer select-none flex-col overflow-hidden rounded-2xl border-border bg-card/85 shadow-lg transition-[border-color,box-shadow,opacity,transform] duration-150',
+              'relative isolate flex h-full w-full cursor-pointer select-none flex-col overflow-hidden rounded-2xl border bg-card/85 transition-[border-color,box-shadow,opacity,transform] duration-150',
               isSelected
                 ? 'z-10 border'
                 : isBulkSelected
-                  ? 'border-2 border-primary bg-primary/5'
-                  : 'border hover:border-primary/40',
+                  ? 'border-primary bg-primary/5'
+                  : showHover
+                    ? 'border-primary/50'
+                    : 'border-border',
               isDragging && 'pointer-events-none scale-95 cursor-grabbing opacity-40',
               'group'
             )}
           >
+            {pinFlash && (
+              <div className="clip-pin-flash pointer-events-none absolute inset-0 z-30 rounded-2xl bg-primary/30 shadow-[inset_0_0_0_2px_rgba(var(--primary-rgb),0.7),0_0_22px_rgba(var(--primary-rgb),0.4)]" />
+            )}
 
-            {/* Bulk selection checkbox (top-left, visible on hover or when selected) */}
             {onToggleBulkSelect && (
               <Tooltip
                 label={isBulkSelected ? t('common.deselect') : t('common.select')}
@@ -387,7 +385,7 @@ export const ClipCard = memo(
                       'flex h-4 w-4 items-center justify-center rounded border transition-all',
                       isBulkSelected
                         ? 'border-primary bg-primary text-primary-foreground opacity-100'
-                        : hovered
+                        : showHover
                           ? 'border-border bg-popover/85 text-muted-foreground opacity-75 hover:border-primary'
                           : 'opacity-0'
                     )}
@@ -396,22 +394,6 @@ export const ClipCard = memo(
                   </div>
                 </button>
               </Tooltip>
-            )}
-
-            {/* Framer-motion spotlight border glow */}
-            {!isSelected && (
-              <motion.div
-                data-el="clip-card-glow"
-                className="pointer-events-none absolute -inset-px z-20 rounded-[17px] p-[2px]"
-                style={{
-                  background: glowBackground,
-                  WebkitMask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
-                  WebkitMaskComposite: 'xor',
-                  maskComposite: 'exclude',
-                  opacity: hovered || menuHighlight ? 1 : 0,
-                  transition: 'opacity 200ms',
-                }}
-              />
             )}
 
             <div
@@ -542,7 +524,10 @@ export const ClipCard = memo(
                 )}
               </span>
               {showTypeIcon && (
-                <div className="absolute bottom-1.5 right-3 flex items-center text-primary opacity-65 transition-opacity group-hover:opacity-100">
+                <div className={clsx(
+                  'absolute bottom-1.5 right-3 flex items-center text-primary transition-opacity',
+                  showHover ? 'opacity-100' : 'opacity-65'
+                )}>
                   {(() => {
                     const TypeIcon =
                       clip.clip_type === 'image'
