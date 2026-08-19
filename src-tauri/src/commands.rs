@@ -2163,7 +2163,9 @@ pub async fn toggle_view_mode(
 
         // Restore compact view size
         settings.window_width = if settings.compact_window_width > 100.0 {
-            settings.compact_window_width
+            settings
+                .compact_window_width
+                .max(crate::constants::COMPACT_WIDTH)
         } else {
             crate::constants::COMPACT_WIDTH
         };
@@ -2176,7 +2178,7 @@ pub async fn toggle_view_mode(
     } else {
         // Save current size as compact view size
         settings.compact_window_width = if cur_w > 100.0 {
-            cur_w
+            cur_w.max(crate::constants::COMPACT_WIDTH)
         } else {
             crate::constants::COMPACT_WIDTH
         };
@@ -3594,6 +3596,55 @@ pub async fn open_settings(app: AppHandle, tab: Option<String>) -> Result<(), St
     Ok(())
 }
 
+#[tauri::command]
+pub async fn open_about(app: AppHandle) -> Result<(), String> {
+    open_about_window(&app);
+    Ok(())
+}
+
+fn open_about_window(app: &AppHandle) {
+    if let Some(about_win) = app.get_webview_window("about") {
+        let _ = about_win.unminimize();
+        let _ = about_win.show();
+        let _ = about_win.set_focus();
+        return;
+    }
+
+    let reference_window = app.get_webview_window("main");
+    let builder = tauri::WebviewWindowBuilder::new(
+        app,
+        "about",
+        tauri::WebviewUrl::App("index.html?window=about".into()),
+    )
+    .title("About CyberPaste")
+    .inner_size(680.0, 720.0)
+    .min_inner_size(560.0, 520.0)
+    .resizable(true)
+    .maximizable(true)
+    .decorations(false)
+    .transparent(false)
+    .visible(false);
+
+    let builder = if let Some(ref_win) = reference_window {
+        if let Some(monitor) = crate::get_monitor_at_cursor(&ref_win) {
+            let scale_factor = monitor.scale_factor();
+            let monitor_pos = monitor.position();
+            let monitor_size = monitor.size();
+            let window_w = (680.0 * scale_factor) as u32;
+            let window_h = (720.0 * scale_factor) as u32;
+            let x = monitor_pos.x + ((monitor_size.width as i32 - window_w as i32) / 2);
+            let y = monitor_pos.y + ((monitor_size.height as i32 - window_h as i32) / 2);
+            builder.position(x as f64, y as f64)
+        } else {
+            builder.center()
+        }
+    } else {
+        builder.center()
+    };
+
+    let _ = builder.build();
+}
+
 fn open_settings_window(app: &AppHandle, tab: Option<&str>) {
     if let Some(settings_win) = app.get_webview_window("settings") {
         let _ = settings_win.unminimize();
@@ -3692,7 +3743,7 @@ pub async fn tray_menu_action(app: AppHandle, action: String) -> Result<(), Stri
             let _ = app.emit("clipboard-monitoring-state-changed", new_val);
         }
         "settings" => open_settings_window(&app, None),
-        "about" => open_settings_window(&app, Some("about")),
+        "about" => open_about_window(&app),
         "quit" => {
             app.exit(0);
         }

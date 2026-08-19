@@ -404,6 +404,8 @@
     "interfaceTitle": "Interface",
     "languageTitle": "Interface language",
     "languageDesc": "Choose your preferred language for CyberPaste.",
+    "versionLabel": "Version {{version}}",
+    "aboutDescription": "A fast, local clipboard history manager built for focused workflows.",
     "themeTitle": "Application theme",
     "themeDesc": "Choose the signature appearance of CyberPaste, dark, light, or follow your Windows theme.",
     "clipboardCapture": "Clipboard & Capture",

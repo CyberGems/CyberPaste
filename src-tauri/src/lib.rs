@@ -603,6 +603,7 @@ pub fn run_app() {
             commands::center_window,
             commands::play_clipboard_sound,
             commands::open_settings,
+            commands::open_about,
             commands::simulate_ctrl_v,
             commands::show_toast,
             commands::hide_toast,
@@ -699,7 +700,7 @@ pub fn animate_view_mode_transition(window: &tauri::WebviewWindow) {
 
     let (target_w, target_h, target_x, target_y) = if view_mode == "compact" {
         let logical_w = if saved_width > 100.0 {
-            saved_width
+            saved_width.max(constants::COMPACT_WIDTH)
         } else {
             constants::COMPACT_WIDTH
         };
@@ -972,7 +973,7 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
 
             if view_mode == "compact" {
                 let logical_w = if saved_width > 100.0 {
-                    saved_width
+                    saved_width.max(constants::COMPACT_WIDTH)
                 } else {
                     constants::COMPACT_WIDTH
                 };

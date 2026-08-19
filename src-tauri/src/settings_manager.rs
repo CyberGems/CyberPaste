@@ -45,6 +45,18 @@ impl SettingsManager {
             needs_save = true;
         }
 
+        // Keep persisted compact widths aligned with the native window minimum.
+        if settings.compact_window_width < crate::constants::COMPACT_WIDTH {
+            settings.compact_window_width = crate::constants::COMPACT_WIDTH;
+            needs_save = true;
+        }
+        if settings.view_mode == "compact"
+            && settings.window_width < crate::constants::COMPACT_WIDTH
+        {
+            settings.window_width = crate::constants::COMPACT_WIDTH;
+            needs_save = true;
+        }
+
         // Ensure we save it once immediately if migrating or updated, so file exists
         let manager = Self {
             file_path: path,

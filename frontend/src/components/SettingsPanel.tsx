@@ -14,9 +14,7 @@ import {
   Minus,
   Square,
   Info,
-  ExternalLink,
   Terminal,
-  Heart,
   RotateCcw,
   Volume2,
   Clipboard,
@@ -41,11 +39,8 @@ import { Wrench } from 'lucide-react';
 import { getCurrentWindow, availableMonitors } from '@tauri-apps/api/window';
 import { getVersion } from '@tauri-apps/api/app';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { check } from '@tauri-apps/plugin-updater';
 import { systemToast as toast } from '../utils/toast';
-import { formatUpdaterError, isUpdaterNetworkError } from '../utils/updater';
 import { ConfirmDialog } from './ConfirmDialog';
-import { UpdateModal } from './UpdateModal';
 import { Select } from './ui/Select';
 import { ThemeCard, ThemeMode } from './ThemeCard';
 import { useShortcutRecorder } from 'use-shortcut-recorder';
@@ -58,7 +53,7 @@ interface SettingsPanelProps {
   onClose: () => void;
 }
 
-type Tab = 'general' | 'folders' | 'full' | 'compact' | 'ai' | 'notifications' | 'maintenance' | 'about';
+type Tab = 'general' | 'folders' | 'full' | 'compact' | 'ai' | 'notifications' | 'maintenance';
 
 function PromptEditor({
   label,
@@ -158,7 +153,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab') as Tab;
       if (
-        ['general', 'full', 'compact', 'ai', 'notifications', 'maintenance', 'about'].includes(
+        ['general', 'full', 'compact', 'ai', 'notifications', 'maintenance'].includes(
           tabParam
         )
       ) {
@@ -175,9 +170,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
   const [showApiKey, setShowApiKey] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [appVersion, setAppVersion] = useState('');
-  const [updateAvailable, setUpdateAvailable] = useState<any>(null);
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [updateCheckError, setUpdateCheckError] = useState<string | null>(null);
   const [monitorList, setMonitorList] = useState<{ name: string; index: number }[]>([]);
 
   useEffect(() => {
@@ -201,7 +193,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     const unlisten = listen<string>('open-tab', (event) => {
       const tab = event.payload as Tab;
       if (
-        ['general', 'folders', 'full', 'compact', 'ai', 'notifications', 'maintenance', 'about'].includes(tab)
+        ['general', 'folders', 'full', 'compact', 'ai', 'notifications', 'maintenance'].includes(tab)
       ) {
         setActiveTab(tab);
       }
@@ -725,20 +717,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 <Wrench size={14} />
                 {t('settings.maintenance')}
               </button>
-              <div className="mt-auto border-t border-border pt-4">
-                <button
-                  onClick={() => setActiveTab('about')}
-                  className={clsx(
-                    'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
-                    activeTab === 'about'
-                      ? 'border-l-[3px] border-primary bg-primary/10 text-primary shadow-none'
-                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                  )}
-                >
-                  <Info size={14} />
-                  {t('settings.about')}
-                </button>
-              </div>
             </div>
           </div>
 
@@ -2299,110 +2277,32 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               {/* --- MAINTENANCE TAB --- */}
               {activeTab === 'maintenance' && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 space-y-8 duration-500">
-                  {/* Check for Updates */}
+                  {/* System & Debug */}
                   <section className="space-y-4">
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
-                      <RotateCcw size={14} /> {t('settings.updates')}
+                      <Terminal size={14} /> {t('settings.systemDebug')}
                     </h3>
-                    <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                      <div>
-                        <span className="text-sm font-medium">
-                          {t('settings.autoCheckUpdates')}
-                        </span>
-                        <p className="text-xs text-muted-foreground">
-                          {t('settings.autoCheckUpdatesDesc')}
-                        </p>
+                    <div className="space-y-4 rounded-[4px] border border-border bg-secondary p-4">
+                      <p className="text-sm leading-relaxed text-muted-foreground/80">
+                        {t('settings.systemDebugDesc')}
+                      </p>
+                      <div className="flex flex-wrap gap-3">
+                        <button
+                          onClick={openDataDir}
+                          className="flex items-center gap-2 rounded-[4px] border border-border bg-input px-4 py-2 text-sm font-medium transition-all hover:bg-white/10"
+                        >
+                          <FolderOpen size={16} />
+                          {t('settings.dataDirectory')}
+                        </button>
+                        <button
+                          onClick={openConsole}
+                          className="flex items-center gap-2 rounded-[4px] border border-border bg-input px-4 py-2 text-sm font-medium transition-all hover:bg-white/10"
+                        >
+                          <Terminal size={16} />
+                          {t('settings.developerConsole')}
+                        </button>
                       </div>
-                      <button
-                        onClick={() =>
-                          updateSetting(
-                            'auto_check_updates',
-                            !(settings.auto_check_updates ?? false)
-                          )
-                        }
-                        className={`h-6 w-11 rounded-full transition-colors ${(settings.auto_check_updates ?? false) ? 'bg-primary' : 'bg-white/10'}`}
-                      >
-                        <span
-                          className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.auto_check_updates ?? false) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                        />
-                      </button>
                     </div>
-                    <button
-                      onClick={async () => {
-                        const loadingToast = toast.loading(t('settings.checkingUpdates'));
-                        setUpdateCheckError(null);
-                        try {
-                          const update = await check({ timeout: 15000 });
-                          toast.dismiss(loadingToast);
-                          if (update) {
-                            setUpdateAvailable(update);
-                            setShowUpdateModal(true);
-                            toast.update(t('settings.updateAvailable', { version: update.version }));
-                            invoke('set_update_available', { available: true }).catch(console.error);
-                          } else {
-                            invoke('set_update_available', { available: false }).catch(console.error);
-                            toast.info(t('settings.noUpdates'));
-                          }
-                        } catch (err: unknown) {
-                          toast.dismiss(loadingToast);
-                          const raw = formatUpdaterError(err);
-                          setUpdateCheckError(raw);
-                          console.error('Update check failed:', err);
-                          console.error('Update check failed (formatted):', raw);
-
-                          // Always surface the real backend message so we can diagnose failures.
-                          const prefix = isUpdaterNetworkError(raw)
-                            ? t('settings.updateNotReachable')
-                            : t('settings.updateError');
-                          toast.error(`${prefix}: ${raw}`);
-                        }
-                      }}
-                      className="btn w-full rounded-[4px] border border-primary/20 bg-primary/10 text-primary hover:bg-primary/20"
-                    >
-                      <RotateCcw size={16} className="mr-2" />
-                      {t('settings.checkForUpdates')}
-                    </button>
-                    {updateCheckError && (
-                      <div className="space-y-2 rounded-[4px] border border-destructive/25 bg-destructive/5 p-3">
-                        <p className="text-[12px] font-semibold text-destructive">
-                          {t('settings.updateErrorDetails')}
-                        </p>
-                        <pre className="max-h-36 overflow-y-auto whitespace-pre-wrap break-all rounded bg-black/20 p-2 font-mono text-[11px] leading-relaxed text-destructive/90">
-                          {updateCheckError}
-                        </pre>
-                        <p className="text-[11px] text-muted-foreground">
-                          {t('settings.updateErrorHint')}
-                        </p>
-                        <div className="flex flex-wrap gap-2 pt-1">
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              try {
-                                await navigator.clipboard.writeText(updateCheckError);
-                                toast.success(t('settings.updateErrorCopied'));
-                              } catch (copyErr) {
-                                console.error('Failed to copy update error:', copyErr);
-                              }
-                            }}
-                            className="btn rounded-[4px] border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] text-foreground hover:bg-white/10"
-                          >
-                            {t('settings.updateErrorCopy')}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              openUrl(
-                                'https://github.com/CyberGems/CyberPaste/releases/latest'
-                              ).catch(console.error);
-                            }}
-                            className="btn rounded-[4px] border border-primary/20 bg-primary/10 px-3 py-1.5 text-[11px] text-primary hover:bg-primary/20"
-                          >
-                            <ExternalLink size={12} className="mr-1.5" />
-                            {t('settings.updatesOpenReleasePage')}
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </section>
 
                   {/* Data Management */}
@@ -2484,88 +2384,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 </div>
               )}
 
-              {/* --- ABOUT TAB --- */}
-              {activeTab === 'about' && (
-                <div className="animate-in fade-in slide-in-from-bottom-4 space-y-8 duration-500">
-                  <div className="flex flex-col items-center space-y-4 py-6 text-center">
-                    <div className="flex h-32 w-32 items-center justify-center">
-                      <img
-                        src="/logo.png"
-                        alt="CyberPaste Logo"
-                        className="animate-in fade-in zoom-in h-28 w-28 object-contain drop-shadow-[0_0_16px_rgba(var(--primary-rgb),0.2)] duration-1000"
-                      />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold tracking-tight">CyberPaste</h3>
-                      <p className="text-muted-foreground">Version {appVersion || '1.0.1'}</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="space-y-4 rounded-[4px] border border-border bg-secondary p-6">
-                      <div className="flex items-center gap-3 text-primary">
-                        <Terminal size={20} />
-                        <h4 className="text-sm font-semibold uppercase tracking-wider">
-                          {t('settings.systemDebug')}
-                        </h4>
-                      </div>
-                      <p className="text-sm leading-relaxed text-muted-foreground/80">
-                        {t('settings.systemDebugDesc')}
-                      </p>
-                      <div className="flex flex-wrap gap-3 pt-2">
-                        <button
-                          onClick={openDataDir}
-                          className="flex items-center gap-2 rounded-[4px] border border-border bg-input px-4 py-2 text-sm font-medium transition-all hover:bg-white/10"
-                        >
-                          <FolderOpen size={16} />
-                          {t('settings.dataDirectory')}
-                        </button>
-                        <button
-                          onClick={openConsole}
-                          className="flex items-center gap-2 rounded-[4px] border border-border bg-input px-4 py-2 text-sm font-medium transition-all hover:bg-white/10"
-                        >
-                          <Terminal size={16} />
-                          {t('settings.developerConsole')}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4 rounded-[4px] border border-border bg-secondary p-6">
-                      <div className="flex items-center gap-3 text-primary">
-                        <Heart size={20} />
-                        <h4 className="text-sm font-semibold uppercase tracking-wider">
-                          {t('settings.openSource')}
-                        </h4>
-                      </div>
-                      <p className="text-sm leading-relaxed text-muted-foreground/80">
-                        {t('settings.openSourceDesc')}
-                      </p>
-                      <div className="flex flex-wrap gap-3 pt-2">
-                        <button
-                          onClick={() =>
-                            openUrl('https://github.com/CyberGems/CyberPaste').catch(console.error)
-                          }
-                          className="flex items-center gap-2 rounded-[4px] border border-border bg-input px-4 py-2 text-sm font-medium transition-all hover:bg-white/10"
-                        >
-                          <ExternalLink size={16} />
-                          {t('settings.gitHubRepository')}
-                        </button>
-                        <button
-                          onClick={() =>
-                            openUrl(
-                              'https://github.com/CyberGems/CyberPaste/blob/main/LICENSE'
-                            ).catch(console.error)
-                          }
-                          className="flex items-center gap-2 rounded-[4px] border border-border bg-input px-4 py-2 text-sm font-medium transition-all hover:bg-white/10"
-                        >
-                          <Info size={16} />
-                          {t('settings.licenseGpl')}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -2578,17 +2396,19 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
           >
             CyberPaste {appVersion || '...'}
           </button>
-          <div className="flex gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <button
+              onClick={() => invoke('open_about').catch(console.error)}
+              className="inline-flex items-center gap-1 transition-colors hover:text-foreground"
+            >
+              <Info size={12} />
+              {t('settings.about')}
+            </button>
+            <span>•</span>
             <span>© 2026 CyberGems</span>
           </div>
         </div>
       </div>
-
-      <UpdateModal
-        isOpen={showUpdateModal}
-        update={updateAvailable}
-        onClose={() => setShowUpdateModal(false)}
-      />
     </>
   );
 }

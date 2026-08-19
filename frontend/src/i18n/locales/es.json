@@ -404,6 +404,8 @@
     "interfaceTitle": "Interfaz",
     "languageTitle": "Idioma de la interfaz",
     "languageDesc": "Elige tu idioma preferido para CyberPaste.",
+    "versionLabel": "Versión {{version}}",
+    "aboutDescription": "Un gestor local y rápido del historial del portapapeles, diseñado para flujos de trabajo enfocados.",
     "themeTitle": "Tema de la aplicación",
     "themeDesc": "Elige el aspecto característico de CyberPaste, oscuro, claro, o seguir tu tema de Windows.",
     "clipboardCapture": "Portapapeles y Captura",
