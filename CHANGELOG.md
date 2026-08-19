@@ -2,6 +2,13 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.11.1] — 2026-08-19
+
+### 🎨 Settings & Full-mode Polish
+- **Cleaner Full-mode controls**: Removed the redundant title-bar button for toggling the information display; the setting remains available in Settings.
+- **Clearer HUD setting**: Updated the label and helper text to describe the keyboard shortcut hints and database size shown in the title bar.
+- **Less redundant settings copy**: Simplified Full and Compact mode labels and helper text where the selected settings tab already provides the context.
+
 ## [1.11.0] — 2026-08-18
 
 ### 🎨 Full Mode Polish
