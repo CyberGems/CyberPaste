@@ -3617,8 +3617,8 @@ fn open_about_window(app: &AppHandle) {
         tauri::WebviewUrl::App("index.html?window=about".into()),
     )
     .title("About CyberPaste")
-    .inner_size(680.0, 720.0)
-    .min_inner_size(560.0, 520.0)
+    .inner_size(740.0, 500.0)
+    .min_inner_size(600.0, 420.0)
     .resizable(true)
     .maximizable(true)
     .decorations(false)
@@ -3630,8 +3630,8 @@ fn open_about_window(app: &AppHandle) {
             let scale_factor = monitor.scale_factor();
             let monitor_pos = monitor.position();
             let monitor_size = monitor.size();
-            let window_w = (680.0 * scale_factor) as u32;
-            let window_h = (720.0 * scale_factor) as u32;
+            let window_w = (740.0 * scale_factor) as u32;
+            let window_h = (500.0 * scale_factor) as u32;
             let x = monitor_pos.x + ((monitor_size.width as i32 - window_w as i32) / 2);
             let y = monitor_pos.y + ((monitor_size.height as i32 - window_h as i32) / 2);
             builder.position(x as f64, y as f64)

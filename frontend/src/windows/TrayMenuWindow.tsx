@@ -198,7 +198,13 @@ export function TrayMenuWindow() {
         }}
         role="menu"
       >
-        <div className="flex select-none cursor-default items-center justify-center gap-1.5 px-3.5 pb-2.5 pt-3.5 text-center text-[12px] font-medium tracking-wide text-muted-foreground/70">
+        <button
+          type="button"
+          onClick={() => runAction('about')}
+          title={t('tray.about', { defaultValue: 'About...' })}
+          aria-label={t('tray.about', { defaultValue: 'About...' })}
+          className="flex w-full select-none items-center justify-center gap-1.5 rounded-t-2xl px-3.5 pb-2.5 pt-3.5 text-center text-[12px] font-medium tracking-wide text-muted-foreground/70 transition-colors hover:bg-accent/40 hover:text-foreground"
+        >
           <span>CyberPaste v{state?.version ?? '…'}</span>
           {state?.update_available ? (
             <span
@@ -207,7 +213,7 @@ export function TrayMenuWindow() {
               aria-label={t('tray.updateAvailable', { defaultValue: 'Update available' })}
             />
           ) : null}
-        </div>
+        </button>
 
         <div className="mx-2.5 h-px bg-accent" />
 

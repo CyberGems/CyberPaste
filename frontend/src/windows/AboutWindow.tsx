@@ -7,12 +7,14 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { check } from '@tauri-apps/plugin-updater';
 import {
   ExternalLink,
-  Heart,
+  Github,
+  HelpCircle,
   Info,
   Maximize2,
   Minus,
   RotateCcw,
   Square,
+  Tag,
   X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -25,6 +27,9 @@ import { UpdateModal } from '../components/UpdateModal';
 import Tooltip from '../components/Tooltip';
 
 type UpdateType = Awaited<ReturnType<typeof check>>;
+
+const REPO_URL = 'https://github.com/CyberGems/CyberPaste';
+const WEBSITE_URL = 'https://cybergems.org';
 
 export function AboutWindow() {
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -133,10 +138,7 @@ export function AboutWindow() {
         <header className="flex items-center justify-between border-b border-border bg-transparent px-4 py-3">
           <div data-tauri-drag-region className="flex min-w-0 flex-1 items-center gap-3">
             <img src="/logo.png" alt="CyberPaste" className="h-6 w-6 object-contain" />
-            <div data-tauri-drag-region>
-              <h1 className="text-[18px] font-bold tracking-tight">CyberPaste</h1>
-              <p className="text-[11px] text-muted-foreground">{t('settings.about')}</p>
-            </div>
+            <h1 className="text-[16px] font-semibold tracking-tight">{t('settings.about')}</h1>
           </div>
           <div className="flex items-center gap-1">
             <Tooltip label={t('common.minimize')} placement="bottom">
@@ -168,32 +170,39 @@ export function AboutWindow() {
           </div>
         </header>
 
-        <main className="custom-scrollbar flex-1 overflow-y-auto p-6">
-          <div className="mx-auto w-full max-w-3xl space-y-6">
-            <section className="flex flex-col items-center gap-4 py-4 text-center">
-              <div className="flex h-24 w-24 items-center justify-center rounded-2xl border border-primary/20 bg-card shadow-[0_0_24px_rgba(var(--primary-rgb),0.12)]">
-                <img src="/logo.png" alt="CyberPaste" className="h-16 w-16 object-contain" />
+        <main className="custom-scrollbar flex-1 overflow-y-auto px-[18px] py-3">
+          <div className="mx-auto w-full max-w-3xl">
+            <section className="grid grid-cols-[auto_minmax(200px,1fr)] items-center gap-9 py-1">
+              <div className="flex items-center gap-5">
+                <div className="flex h-20 w-20 items-center justify-center rounded-[18px] border border-primary/20 bg-card shadow-[0_0_20px_rgba(var(--primary-rgb),0.12)]">
+                  <img src="/logo.png" alt="CyberPaste" className="h-[52px] w-[52px] object-contain" />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-[32px] font-bold tracking-tight">CyberPaste</h2>
+                  <p className="mt-1 text-[14px] text-muted-foreground">
+                    {t('settings.versionLabel', { version: appVersion || '...' })}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-2xl font-bold tracking-tight">CyberPaste</h2>
-                <p className="mt-1 font-mono text-xs text-muted-foreground">
-                  {t('settings.versionLabel', { version: appVersion || '...' })}
+              <div className="rounded-xl border border-primary/20 bg-card px-5 py-4">
+                <p className="text-[13px] leading-6 text-foreground/80">
+                  {t('settings.aboutDescription')}
                 </p>
               </div>
-              <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-                {t('settings.aboutDescription')}
-              </p>
             </section>
 
-            <section className="space-y-4">
-              <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
-                <RotateCcw size={14} /> {t('settings.updates')}
+            <section className="mt-5 space-y-2">
+              <h3 className="px-0 text-[13px] font-semibold text-primary">
+                {t('settings.aboutUpdatesSection')}
               </h3>
-              <div className="space-y-4 rounded-[4px] border border-border bg-secondary p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <span className="text-sm font-medium">{t('settings.autoCheckUpdates')}</span>
-                    <p className="text-xs text-muted-foreground">
+              <div className="rounded-[4px] border border-border bg-secondary px-4">
+                <div className="grid min-h-[60px] grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3">
+                  <RotateCcw size={23} className="text-muted-foreground" />
+                  <div className="min-w-0">
+                    <span className="text-[13px] font-medium">
+                      {t('settings.autoCheckUpdates')}
+                    </span>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       {t('settings.autoCheckUpdatesDesc')}
                     </p>
                   </div>
@@ -214,20 +223,34 @@ export function AboutWindow() {
                     />
                   </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={checkForUpdates}
-                  className="btn w-full rounded-[4px] border border-primary/20 bg-primary/10 text-primary hover:bg-primary/20"
-                >
-                  <RotateCcw size={16} className="mr-2" />
-                  {t('settings.checkForUpdates')}
-                </button>
+
+                <div className="h-px bg-border" />
+
+                <div className="grid min-h-[60px] grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3">
+                  <ExternalLink size={23} className="text-muted-foreground" />
+                  <div className="min-w-0">
+                    <span className="text-[13px] font-medium">
+                      {t('settings.checkForUpdates')}
+                    </span>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {t('settings.checkForUpdatesDesc')}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={checkForUpdates}
+                    className="btn min-w-[108px] rounded-[4px] border border-primary/20 bg-input px-3 py-2 text-xs text-foreground hover:bg-accent"
+                  >
+                    {t('settings.checkNow')}
+                  </button>
+                </div>
+
                 {updateCheckError && (
-                  <div className="space-y-2 rounded-[4px] border border-destructive/25 bg-destructive/5 p-3">
+                  <div className="mb-3 space-y-2 rounded-[4px] border border-destructive/25 bg-destructive/5 p-3">
                     <p className="text-[12px] font-semibold text-destructive">
                       {t('settings.updateErrorDetails')}
                     </p>
-                    <pre className="max-h-36 overflow-y-auto whitespace-pre-wrap break-all rounded bg-black/20 p-2 font-mono text-[11px] leading-relaxed text-destructive/90">
+                    <pre className="max-h-28 overflow-y-auto whitespace-pre-wrap break-all rounded bg-black/20 p-2 font-mono text-[11px] leading-relaxed text-destructive/90">
                       {updateCheckError}
                     </pre>
                     <p className="text-[11px] text-muted-foreground">
@@ -249,9 +272,7 @@ export function AboutWindow() {
                       <button
                         type="button"
                         onClick={() =>
-                          openUrl('https://github.com/CyberGems/CyberPaste/releases/latest').catch(
-                            console.error
-                          )
+                          openUrl(`${REPO_URL}/releases/latest`).catch(console.error)
                         }
                         className="btn rounded-[4px] border border-primary/20 bg-primary/10 px-3 py-1.5 text-[11px] text-primary hover:bg-primary/20"
                       >
@@ -263,47 +284,66 @@ export function AboutWindow() {
                 )}
               </div>
             </section>
-
-            <section className="space-y-4">
-              <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
-                <Heart size={16} /> {t('settings.openSource')}
-              </h3>
-              <div className="rounded-[4px] border border-border bg-secondary p-4">
-                <p className="text-sm leading-relaxed text-muted-foreground/80">
-                  {t('settings.openSourceDesc')}
-                </p>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      openUrl('https://github.com/CyberGems/CyberPaste').catch(console.error)
-                    }
-                    className="flex items-center gap-2 rounded-[4px] border border-border bg-input px-4 py-2 text-sm font-medium transition-all hover:bg-white/10"
-                  >
-                    <ExternalLink size={16} />
-                    {t('settings.gitHubRepository')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      openUrl('https://github.com/CyberGems/CyberPaste/blob/main/LICENSE').catch(
-                        console.error
-                      )
-                    }
-                    className="flex items-center gap-2 rounded-[4px] border border-border bg-input px-4 py-2 text-sm font-medium transition-all hover:bg-white/10"
-                  >
-                    <Info size={16} />
-                    {t('settings.licenseGpl')}
-                  </button>
-                </div>
-              </div>
-            </section>
-
-            <footer className="border-t border-border pt-4 text-center text-xs text-muted-foreground">
-              © 2026 CyberGems
-            </footer>
           </div>
         </main>
+
+        <footer className="flex items-center justify-between border-t border-border bg-black/5 px-[18px] py-2.5">
+          <span className="text-[10px] font-semibold text-muted-foreground">
+            © 2026 CyberGems
+          </span>
+          <div className="flex items-center gap-1">
+            <Tooltip label={t('settings.aboutWebsiteTooltip')} placement="top">
+              <button
+                type="button"
+                aria-label={t('settings.aboutWebsiteTooltip')}
+                onClick={() => openUrl(WEBSITE_URL).catch(console.error)}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <ExternalLink size={15} />
+              </button>
+            </Tooltip>
+            <Tooltip label={t('settings.aboutGithubTooltip')} placement="top">
+              <button
+                type="button"
+                aria-label={t('settings.aboutGithubTooltip')}
+                onClick={() => openUrl(REPO_URL).catch(console.error)}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <Github size={15} />
+              </button>
+            </Tooltip>
+            <Tooltip label={t('settings.aboutIssuesTooltip')} placement="top">
+              <button
+                type="button"
+                aria-label={t('settings.aboutIssuesTooltip')}
+                onClick={() => openUrl(`${REPO_URL}/issues`).catch(console.error)}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <HelpCircle size={15} />
+              </button>
+            </Tooltip>
+            <Tooltip label={t('settings.aboutReleasesTooltip')} placement="top">
+              <button
+                type="button"
+                aria-label={t('settings.aboutReleasesTooltip')}
+                onClick={() => openUrl(`${REPO_URL}/releases`).catch(console.error)}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <Tag size={15} />
+              </button>
+            </Tooltip>
+            <Tooltip label={t('settings.aboutLicenseTooltip')} placement="top">
+              <button
+                type="button"
+                aria-label={t('settings.aboutLicenseTooltip')}
+                onClick={() => openUrl(`${REPO_URL}/blob/main/LICENSE`).catch(console.error)}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <Info size={15} />
+              </button>
+            </Tooltip>
+          </div>
+        </footer>
       </div>
 
       <UpdateModal
