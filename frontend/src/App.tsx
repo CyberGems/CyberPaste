@@ -1608,14 +1608,7 @@ function App() {
   }, []);
 
   // Toggle the HUD strip (persisted so it survives restarts)
-  const handleToggleHud = useCallback(() => {
-    setSettings((prev) => {
-      if (!prev) return prev;
-      const newSettings = { ...prev, full_show_hud: !(prev.full_show_hud ?? true) };
-      invoke('save_settings', { settings: newSettings }).catch(console.error);
-      return newSettings;
-    });
-  }, []);
+  // Removed: HUD toggle is now controlled only from the Settings panel.
 
   // Toggle the right-side detail panel (state only, not persisted)
   const handleToggleDetailPanel = useCallback(() => {
@@ -2298,7 +2291,6 @@ function App() {
                 dbSizeBytes={dbSizeBytes}
                 onReorderFolder={handleReorderFolder}
                 showHud={settings?.full_show_hud ?? true}
-                onToggleHud={handleToggleHud}
               />
 
               {/* Type filter chips (Full mode) */}

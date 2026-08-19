@@ -51,8 +51,6 @@ import {
   Sun,
   Pin,
   RotateCcw,
-  PanelTop,
-  PanelTopClose,
   Keyboard,
   HardDrive as StorageIcon,
 } from 'lucide-react';
@@ -133,7 +131,6 @@ interface ControlBarProps {
   style?: React.CSSProperties;
   hotkey?: string;
   showHud?: boolean;
-  onToggleHud?: () => void;
   dbSizeBytes?: number;
   onReorderFolder?: (folderId: string, targetId: string, position: 'before' | 'after') => void;
   isWindowActive?: boolean;
@@ -167,7 +164,6 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   style,
   hotkey,
   showHud = true,
-  onToggleHud,
   dbSizeBytes,
   onReorderFolder,
   isWindowActive = true,
@@ -500,20 +496,6 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             <Tooltip label={t('common.resetWindowSize')} placement="bottom">
               <button onClick={onResetSize} className={headerBtnClass}>
                 <RotateCcw size={15} />
-              </button>
-            </Tooltip>
-          )}
-
-          {onToggleHud && (
-            <Tooltip label={showHud ? t('common.hideHud') : t('common.showHud')} placement="bottom">
-              <button
-                onClick={onToggleHud}
-                className={clsx(
-                  headerBtnClass,
-                  !showHud && 'border-primary/30 bg-primary/15 text-primary hover:text-primary'
-                )}
-              >
-                {showHud ? <PanelTopClose size={15} /> : <PanelTop size={15} />}
               </button>
             </Tooltip>
           )}
