@@ -1672,6 +1672,7 @@ const ClipRow = memo(function ClipRow({
     menuHighlight ||
     isNavigationSelected ||
     (hovered && !foreignMenuOpenRef.current);
+  const showActions = menuHighlight || (hovered && !foreignMenuOpenRef.current);
   const shouldBlurForPeek = isPeekVisible && peekClipId !== clip.id;
   const pinFlash = usePinFlash(clip.id);
 
@@ -1891,15 +1892,17 @@ const ClipRow = memo(function ClipRow({
           </span>
 
           <div
-            className={clsx(
-              'flex gap-1 transition-opacity',
-              showHover ? 'opacity-100' : 'opacity-0'
-            )}
+            className={clsx(showActions ? 'flex gap-1' : 'hidden')}
           >
-            <Tooltip label={t('common.moreActions')} placement="left" disabled={isPeekVisible}>
+            <Tooltip
+              label={`${t('common.moreActions')} (Shift+F10)`}
+              placement="left"
+              disabled={isPeekVisible}
+            >
               <button
                 type="button"
-                aria-label={t('common.moreActions')}
+                aria-label={`${t('common.moreActions')} (Shift+F10)`}
+                aria-keyshortcuts="Shift+F10"
                 onMouseDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();

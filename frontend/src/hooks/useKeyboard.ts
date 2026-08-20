@@ -18,6 +18,8 @@ interface KeyboardOptions {
   onPreviewSelected?: () => void;
   /** "i" — toggles the clip detail sidebar */
   onToggleDetailPanel?: () => void;
+  /** Shift+F10 / Context Menu key — opens the selected clip's context menu */
+  onOpenContextMenu?: () => void;
   /** Ctrl/Cmd+A — select all clips (bulk selection) */
   onSelectAll?: () => void;
   /** Ctrl/Cmd+1..9 — paste clip #N directly (Compact) */
@@ -128,6 +130,18 @@ export function useKeyboard(options: KeyboardOptions) {
         }
         e.preventDefault();
         options.onDelete();
+      }
+
+      // Standard keyboard context-menu shortcut.
+      if (
+        options.onOpenContextMenu &&
+        !isTyping &&
+        (e.key === 'ContextMenu' || (e.key === 'F10' && e.shiftKey))
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        options.onOpenContextMenu();
+        return;
       }
 
       // 'i' toggles the detail panel (plain key, not while typing).

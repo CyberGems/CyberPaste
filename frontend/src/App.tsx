@@ -1,4 +1,11 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import {
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+  useMemo,
+  type MouseEvent as ReactMouseEvent,
+} from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { EditClipModal } from './components/EditClipModal';
@@ -2014,6 +2021,23 @@ function App() {
     [t, handleToggleClipPin]
   );
 
+  const handleOpenSelectedContextMenu = useCallback(() => {
+    if (!selectedClipId) return;
+
+    const selectedElement = document.querySelector<HTMLElement>(
+      `[data-clip-id="${selectedClipId}"]`
+    );
+    const rect = selectedElement?.getBoundingClientRect();
+    const syntheticEvent = {
+      clientX: rect ? rect.right - 8 : window.innerWidth - 16,
+      clientY: rect ? rect.top + rect.height / 2 : window.innerHeight / 2,
+      preventDefault: () => {},
+      stopPropagation: () => {},
+    } as ReactMouseEvent;
+
+    handleContextMenu(syntheticEvent, 'card', selectedClipId);
+  }, [handleContextMenu, selectedClipId]);
+
   // Updated Create Folder to handle Rename
   const handleCreateOrRenameFolder = async (name: string, icon?: string, color?: string) => {
     if (folderModalMode === 'create') {
@@ -2124,6 +2148,7 @@ function App() {
     onCopyPlainText: handleCopyPlainTextSelected,
     onPreviewSelected: handlePreviewSelected,
     onToggleDetailPanel: handleToggleDetailPanel,
+    onOpenContextMenu: handleOpenSelectedContextMenu,
     onSelectAll: handleSelectAllClips,
     onPasteByIndex: handlePasteByIndex,
     onClearSearch: () => handleSearch(''),
