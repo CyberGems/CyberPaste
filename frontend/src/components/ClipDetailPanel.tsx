@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { X, Copy, Code, Trash2, Pin, PinOff, ChevronRight, ChevronLeft } from 'lucide-react';
+import {
+  X,
+  Copy,
+  Image as ImageIcon,
+  Trash2,
+  Pin,
+  PinOff,
+  ChevronRight,
+  ChevronLeft,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
@@ -70,7 +79,7 @@ export const ClipDetailPanel: React.FC<ClipDetailPanelProps> = ({
     <AnimatePresence mode="wait">
       {expanded ? (
         <motion.div
-          key={`expanded-${clip.id}`}
+          key="expanded"
           data-el="clip-detail-panel"
           initial={{ x: 280, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
@@ -202,14 +211,16 @@ export const ClipDetailPanel: React.FC<ClipDetailPanelProps> = ({
                 <Copy size={14} />
               </button>
             </Tooltip>
-            <Tooltip label={t('contextMenu.view')} placement="top">
-              <button
-                onClick={() => onPreview(clip.id)}
-                className="flex h-8 w-8 items-center justify-center rounded-md text-white/50 transition-colors hover:bg-white/10 hover:text-white"
-              >
-                <Code size={14} />
-              </button>
-            </Tooltip>
+            {clip.clip_type === 'image' && (
+              <Tooltip label={t('contextMenu.view')} placement="top">
+                <button
+                  onClick={() => onPreview(clip.id)}
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+                >
+                  <ImageIcon size={14} />
+                </button>
+              </Tooltip>
+            )}
             <Tooltip
               label={
                 pinDisabled
@@ -250,7 +261,7 @@ export const ClipDetailPanel: React.FC<ClipDetailPanelProps> = ({
       ) : (
         /* Collapsed state: thin tab on the right edge */
         <motion.div
-          key={`collapsed-${clip.id}`}
+          key="collapsed"
           initial={{ x: 32, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: 32, opacity: 0 }}

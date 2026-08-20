@@ -2,6 +2,17 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.12.0] — 2026-08-20
+
+### ✨ Detail Panel & Interaction Improvements
+- **Restored Full-mode details**: Added a dedicated details-panel toggle beside grid zoom and an equivalent context-menu action.
+- **Faster clip switching**: Detail-panel content now updates instantly without replaying the slide animation for every selected clip.
+- **Image-aware actions**: The detail panel only shows the image preview action for image clips.
+- **Compact clip menus**: Replaced the compact delete shortcut with a contextual three-dot menu and added keyboard access through Shift+F10 and the Context Menu key.
+- **Independent scrollbars**: Added discreet, independently configurable Full and Compact mode scrollbars while removing unwanted horizontal scrolling in Full mode.
+- **About and maintenance polish**: Detached About into its own window, improved tray access, and reorganized maintenance tools under Backup & Data.
+- **HUD polish**: Added the details-panel shortcut to the rotating Full-mode hints and slowed the title-bar sweep to better match Compact mode.
+
 ## [1.11.1] — 2026-08-19
 
 ### 🎨 Settings & Full-mode Polish

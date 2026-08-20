@@ -9,6 +9,8 @@ import {
   X,
   ZoomIn,
   ZoomOut,
+  PanelRightClose,
+  PanelRightOpen,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -36,6 +38,8 @@ interface TypeFilterChipRowProps {
   counts: Partial<Record<FullTypeFilter, number>>;
   gridScale?: number;
   onGridScaleChange?: (next: number) => void;
+  detailPanelOpen?: boolean;
+  onToggleDetailPanel?: () => void;
 }
 
 export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
@@ -44,6 +48,8 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
   counts,
   gridScale,
   onGridScaleChange,
+  detailPanelOpen = false,
+  onToggleDetailPanel,
 }) => {
   const { t } = useTranslation();
   const isActive = value !== 'all';
@@ -136,6 +142,27 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
             </button>
           </Tooltip>
         </div>
+      )}
+
+      {onToggleDetailPanel && (
+        <Tooltip
+          label={detailPanelOpen ? t('detailPanel.collapse') : t('detailPanel.expand')}
+          placement="bottom"
+        >
+          <button
+            type="button"
+            onClick={onToggleDetailPanel}
+            aria-label={detailPanelOpen ? t('detailPanel.collapse') : t('detailPanel.expand')}
+            className={clsx(
+              'flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition-colors',
+              detailPanelOpen
+                ? 'border-primary/40 bg-primary/15 text-primary'
+                : 'border-border bg-secondary/40 text-muted-foreground hover:bg-secondary/70 hover:text-primary'
+            )}
+          >
+            {detailPanelOpen ? <PanelRightClose size={13} /> : <PanelRightOpen size={13} />}
+          </button>
+        </Tooltip>
       )}
     </div>
   );

@@ -57,6 +57,8 @@ import {
   Code2,
   CheckSquare,
   Trash2,
+  PanelRightClose,
+  PanelRightOpen,
 } from 'lucide-react';
 
 const base64ToBlob = (base64: string, mimeType: string = 'image/png'): Blob => {
@@ -1942,6 +1944,12 @@ function App() {
           onClick: () => setMoveToFolderClipId(itemId),
         });
 
+        opts.push({
+          label: detailPanelOpen ? t('detailPanel.collapse') : t('detailPanel.expand'),
+          icon: detailPanelOpen ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />,
+          onClick: () => setDetailPanelOpen((prev) => !prev),
+        });
+
         // AI actions — only meaningful for textual clips
         if (clip && clip.clip_type !== 'image' && clip.clip_type !== 'file') {
           opts.push({
@@ -2018,7 +2026,7 @@ function App() {
         highlightId: itemId,
       });
     },
-    [t, handleToggleClipPin]
+    [t, handleToggleClipPin, detailPanelOpen]
   );
 
   const handleOpenSelectedContextMenu = useCallback(() => {
@@ -2334,6 +2342,8 @@ function App() {
                 counts={typeFilterCounts}
                 gridScale={settings?.full_grid_scale ?? 1}
                 onGridScaleChange={handleGridScaleChange}
+                detailPanelOpen={detailPanelOpen}
+                onToggleDetailPanel={() => setDetailPanelOpen((prev) => !prev)}
               />
 
               <main

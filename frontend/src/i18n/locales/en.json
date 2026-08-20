@@ -157,7 +157,8 @@
     "new": "New",
     "rename": "Edit folder",
     "iconLabel": "Icon",
-    "iconHelper": "Select an icon for your folder"
+    "iconHelper": "Select an icon for your folder",
+    "defaultIcon": "Folder"
   },
   "contextMenu": {
     "view": "View Image",

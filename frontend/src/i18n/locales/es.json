@@ -157,7 +157,8 @@
     "new": "Nuevo",
     "rename": "Editar carpeta",
     "iconLabel": "Icono",
-    "iconHelper": "Selecciona un ícono para tu carpeta"
+    "iconHelper": "Selecciona un ícono para tu carpeta",
+    "defaultIcon": "Carpeta"
   },
   "contextMenu": {
     "view": "Ver imagen",

@@ -163,7 +163,7 @@ export const FolderModal: React.FC<FolderModalProps> = ({
               value={name}
               onChange={handleChange}
               onContextMenu={onContextMenu}
-              placeholder="e.g. Work Projects"
+              placeholder={t('folders.folderNamePlaceholder')}
               className="w-full rounded-xl border border-border bg-background/50 p-3 text-foreground transition-all focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
             />
           </div>
@@ -187,7 +187,8 @@ export const FolderModal: React.FC<FolderModalProps> = ({
                     style: { color: selectedColor || undefined },
                   })}
                 <span className="max-w-[120px] truncate font-mono text-[10px] text-white/60">
-                  {name.trim() || selectedIcon}
+                  {name.trim() ||
+                    (selectedIcon === 'Folder' ? t('folders.defaultIcon') : selectedIcon)}
                 </span>
               </div>
             </div>
