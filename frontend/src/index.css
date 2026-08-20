@@ -360,6 +360,14 @@
   .compact-mode-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.28);
   }
+  /* Full mode is vertical-only; never expose a second scrollbar at the bottom. */
+  .full-mode-scrollbar {
+    overflow-x: hidden;
+  }
+  .full-mode-scrollbar::-webkit-scrollbar:horizontal {
+    display: none;
+    height: 0;
+  }
   .light .full-mode-scrollbar,
   .light .compact-mode-scrollbar {
     scrollbar-color: rgba(0, 0, 0, 0.18) transparent;

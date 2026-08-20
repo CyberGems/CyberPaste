@@ -5,7 +5,7 @@ import {
   Maximize2,
   Minimize2,
   Clock,
-  Trash2,
+  MoreVertical,
   Folder as FolderIcon,
   X,
   Pin,
@@ -1574,7 +1574,6 @@ const ClipRow = memo(function ClipRow({
   selectedClipId,
   selectedFolder,
   onPaste,
-  onDelete,
   onContextMenu,
   onDragStart,
   reorderEnabled,
@@ -1897,15 +1896,23 @@ const ClipRow = memo(function ClipRow({
               showHover ? 'opacity-100' : 'opacity-0'
             )}
           >
-            <Tooltip label={t('common.delete') || 'Delete'} placement="left" disabled={isPeekVisible}>
+            <Tooltip label={t('common.moreActions')} placement="left" disabled={isPeekVisible}>
               <button
+                type="button"
+                aria-label={t('common.moreActions')}
+                onMouseDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onDelete(clip.id);
+                  onContextMenu?.(e, clip.id);
                 }}
-                className="rounded bg-destructive/15 p-1 text-destructive transition-colors hover:bg-destructive/25"
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onContextMenu?.(e, clip.id);
+                }}
+                className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
-                <Trash2 size={12} />
+                <MoreVertical size={14} />
               </button>
             </Tooltip>
           </div>

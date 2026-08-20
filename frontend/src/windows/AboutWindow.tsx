@@ -289,7 +289,16 @@ export function AboutWindow() {
 
         <footer className="flex items-center justify-between border-t border-border bg-black/5 px-[18px] py-2.5">
           <span className="text-[10px] font-semibold text-muted-foreground">
-            © 2026 CyberGems
+            © 2026{' '}
+            <button
+              type="button"
+              onClick={() => openUrl(WEBSITE_URL).catch(console.error)}
+              title={t('settings.aboutWebsiteTooltip')}
+              aria-label={t('settings.aboutWebsiteTooltip')}
+              className="transition-colors hover:text-foreground"
+            >
+              CyberGems
+            </button>
           </span>
           <div className="flex items-center gap-1">
             <Tooltip label={t('settings.aboutWebsiteTooltip')} placement="top">

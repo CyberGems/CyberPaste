@@ -280,6 +280,7 @@ export const ClipList: React.FC<ClipListProps> = ({
           width: containerWidth,
           scrollBehavior: 'smooth',
           position: 'relative',
+          overflowX: isVertical ? 'hidden' : 'auto',
         }}
         defaultHeight={gridHeight}
         defaultWidth={containerWidth}

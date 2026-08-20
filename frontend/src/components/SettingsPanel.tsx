@@ -35,7 +35,6 @@ import { useTheme } from '../hooks/useTheme';
 import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
 import { emit, listen } from '@tauri-apps/api/event';
-import { Wrench } from 'lucide-react';
 import { getCurrentWindow, availableMonitors } from '@tauri-apps/api/window';
 import { getVersion } from '@tauri-apps/api/app';
 import { openUrl } from '@tauri-apps/plugin-opener';
@@ -626,7 +625,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
         <div className="flex flex-1 overflow-hidden">
           {/* Sidebar */}
-          <div className="w-[150px] flex-shrink-0 border-r border-border bg-transparent px-2.5 py-3.5">
+          <div className="w-[170px] flex-shrink-0 border-r border-border bg-transparent px-2.5 py-3.5">
             <div className="mb-4 px-2.5">
               <h1 className="text-[14px] font-bold tracking-tight text-foreground">
                 {t('settings.title')}
@@ -708,13 +707,13 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               <button
                 onClick={() => setActiveTab('maintenance')}
                 className={clsx(
-                  'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
+                  'flex items-center gap-2 whitespace-nowrap rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'maintenance'
                     ? 'border-l-[3px] border-primary bg-primary/10 text-primary shadow-none'
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
               >
-                <Wrench size={14} />
+                <RotateCcw size={14} />
                 {t('settings.maintenance')}
               </button>
             </div>
@@ -2276,41 +2275,43 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
               {/* --- MAINTENANCE TAB --- */}
               {activeTab === 'maintenance' && (
-                <div className="animate-in fade-in slide-in-from-bottom-4 space-y-8 duration-500">
+                <div className="animate-in fade-in slide-in-from-bottom-4 space-y-6 duration-500">
                   {/* System & Debug */}
-                  <section className="space-y-4">
+                  <section className="space-y-3">
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
                       <Terminal size={14} /> {t('settings.systemDebug')}
                     </h3>
-                    <div className="space-y-4 rounded-[4px] border border-border bg-secondary p-4">
-                      <p className="text-sm leading-relaxed text-muted-foreground/80">
-                        {t('settings.systemDebugDesc')}
-                      </p>
-                      <div className="flex flex-wrap gap-3">
-                        <button
-                          onClick={openDataDir}
-                          className="flex items-center gap-2 rounded-[4px] border border-border bg-input px-4 py-2 text-sm font-medium transition-all hover:bg-white/10"
-                        >
-                          <FolderOpen size={16} />
-                          {t('settings.dataDirectory')}
-                        </button>
-                        <button
-                          onClick={openConsole}
-                          className="flex items-center gap-2 rounded-[4px] border border-border bg-input px-4 py-2 text-sm font-medium transition-all hover:bg-white/10"
-                        >
-                          <Terminal size={16} />
-                          {t('settings.developerConsole')}
-                        </button>
+                    <div className="rounded-xl border border-border bg-card p-4">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="max-w-[520px] text-sm leading-relaxed text-muted-foreground/80">
+                          {t('settings.systemDebugDesc')}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={openDataDir}
+                            className="flex items-center gap-2 rounded-[4px] border border-border bg-input px-3 py-2 text-xs font-medium transition-all hover:bg-white/10"
+                          >
+                            <FolderOpen size={16} />
+                            {t('settings.dataDirectory')}
+                          </button>
+                          <button
+                            onClick={openConsole}
+                            className="flex items-center gap-2 rounded-[4px] border border-border bg-input px-3 py-2 text-xs font-medium transition-all hover:bg-white/10"
+                          >
+                            <Terminal size={16} />
+                            {t('settings.developerConsole')}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </section>
 
                   {/* Data Management */}
-                  <section className="space-y-4">
+                  <section className="space-y-3">
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-rose-400/80">
                       <Database size={14} /> {t('settings.dataManagement')}
                     </h3>
-                    <div className="flex flex-col gap-3">
+                    <div className="rounded-xl border border-destructive/20 bg-card p-4">
                       <button
                         onClick={confirmClearHistory}
                         className="btn w-full rounded-[4px] border border-destructive/20 bg-destructive/10 text-destructive hover:bg-destructive/20"
@@ -2322,64 +2323,67 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   </section>
 
                   {/* Backup & Restore */}
-                  <section className="space-y-4">
-                    <h3 className="text-[13px] font-semibold text-primary/80">
+                  <section className="space-y-3">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
+                      <Database size={14} />
                       {t('settings.backupRestore')}
                     </h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        onClick={async () => {
-                          const id = toast.loading(t('settings.generatingBackup'));
-                          try {
-                            await invoke('export_backup_to_file');
-                            toast.success(t('settings.backupSaved'), { id });
-                          } catch (error) {
-                            if (error === 'Export cancelled') {
-                              toast.dismiss(id);
-                            } else {
-                              toast.error(t('settings.exportFailed', { error }), { id });
-                            }
-                          }
-                        }}
-                        className="btn rounded-[4px] border border-primary/20 bg-primary/10 text-primary hover:bg-primary/20"
-                      >
-                        <FolderOpen size={16} className="mr-2" />
-                        {t('settings.exportBackup')}
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setConfirmDialog({
-                            isOpen: true,
-                            title: t('settings.importBackupTitle'),
-                            message: t('settings.importBackupMessage'),
-                            action: async () => {
-                              const id = toast.loading(t('settings.generatingBackup'));
-                              try {
-                                await invoke('import_backup_from_file');
-                                toast.success(t('settings.restoreComplete'), {
-                                  id,
-                                });
-                                setTimeout(() => window.location.reload(), 1500);
-                              } catch (error) {
-                                if (error === 'Import cancelled') {
-                                  toast.dismiss(id);
-                                } else {
-                                  toast.error(t('settings.importFailed', { error }), { id });
-                                }
+                    <div className="rounded-xl border border-border bg-card p-4">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <button
+                          onClick={async () => {
+                            const id = toast.loading(t('settings.generatingBackup'));
+                            try {
+                              await invoke('export_backup_to_file');
+                              toast.success(t('settings.backupSaved'), { id });
+                            } catch (error) {
+                              if (error === 'Export cancelled') {
+                                toast.dismiss(id);
+                              } else {
+                                toast.error(t('settings.exportFailed', { error }), { id });
                               }
-                            },
-                          });
-                        }}
-                        className="btn rounded-[4px] border border-orange-500/20 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20"
-                      >
-                        <Plus size={16} className="mr-2" />
-                        {t('settings.importBackup')}
-                      </button>
+                            }
+                          }}
+                          className="btn rounded-[4px] border border-primary/20 bg-primary/10 text-primary hover:bg-primary/20"
+                        >
+                          <FolderOpen size={16} className="mr-2" />
+                          {t('settings.exportBackup')}
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setConfirmDialog({
+                              isOpen: true,
+                              title: t('settings.importBackupTitle'),
+                              message: t('settings.importBackupMessage'),
+                              action: async () => {
+                                const id = toast.loading(t('settings.generatingBackup'));
+                                try {
+                                  await invoke('import_backup_from_file');
+                                  toast.success(t('settings.restoreComplete'), {
+                                    id,
+                                  });
+                                  setTimeout(() => window.location.reload(), 1500);
+                                } catch (error) {
+                                  if (error === 'Import cancelled') {
+                                    toast.dismiss(id);
+                                  } else {
+                                    toast.error(t('settings.importFailed', { error }), { id });
+                                  }
+                                }
+                              },
+                            });
+                          }}
+                          className="btn rounded-[4px] border border-orange-500/20 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20"
+                        >
+                          <Plus size={16} className="mr-2" />
+                          {t('settings.importBackup')}
+                        </button>
+                      </div>
+                      <p className="mt-3 text-[10px] text-muted-foreground">
+                        {t('settings.backupDesc')}
+                      </p>
                     </div>
-                    <p className="mt-1 text-[10px] text-muted-foreground">
-                      {t('settings.backupDesc')}
-                    </p>
                   </section>
                 </div>
               )}
@@ -2405,7 +2409,16 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               {t('settings.about')}
             </button>
             <span>•</span>
-            <span>© 2026 CyberGems</span>
+            <span>© 2026 </span>
+            <button
+              type="button"
+              onClick={() => openUrl('https://cybergems.org').catch(console.error)}
+              title={t('settings.aboutWebsiteTooltip')}
+              aria-label={t('settings.aboutWebsiteTooltip')}
+              className="transition-colors hover:text-foreground"
+            >
+              CyberGems
+            </button>
           </div>
         </div>
       </div>
