@@ -15,19 +15,20 @@
 
 ## Features
 
-- 🔒 **Private** - All data stored locally
-- 🎨 **Beautiful UI** - Modern dark/light theme with native Windows Mica & Mica-Alt window effects
-- ⚡ **Fast & Lightweight** - Built with Rust for performance
-- 📋 **Clipboard History** - Automatically saves everything you copy
-- 🖥️ **Support multiple Displays** - Show on the active display
-- 🔍 **Search** - Quickly find previously copied content
-- 📁 **Folders** - Organize clips into custom folders
-- 🚫 **Application Exceptions** - Ignore content from specific sensitive apps (e.g., Password Managers)
-- ⌨️ **Customizable Hotkey** - Set your preferred shortcut to open the history
-- 🔄 **Infinite Scroll** - Seamlessly browse through unlimited history
-- 🛡️ **Smart Filtering** - Intelligent debounce logic to ignore "Ghost Copies" from other clipboard tools
-- 🤖 **AI Powered** - Built-in AI to summarize, translate, explain code, and fix grammar
-- ⚙️ **Customizable AI** - Fully customize AI action names and system prompts to suit your workflow
+- 🔒 **Private** - 100% local SQLite storage, no cloud and no telemetry
+- 🎨 **Polished UI** - Dark / Light / System themes with native Windows Mica & Mica-Alt, plus Full (grid) and Compact (list) modes with adjustable zoom, HUD and animations
+- ⚡ **Fast & Lightweight** - Rust + Tauri 2.x core with virtualized lists and LRU caches for instant search and scrolling
+- 📋 **Complete History** - Saves text, code, HTML, RTF, images, URLs and files with rich previews
+- 🖥️ **Multi-Display Aware** - Always opens on the active monitor (cursor position)
+- 🔍 **Instant Search & Filters** - Search by content and filter by type (text/code/image/url/file) and folder with live database counts
+- 📁 **Folders** - Custom folders with wheel navigation and bulk move support
+- 📌 **Pin & Bulk Actions** - Pin important clips, multi-select with `Ctrl/Shift+Click`, bulk move/delete and 2D keyboard navigation (`↑/↓/←/→`)
+- 🖼️ **Detail Panel & Preview** - Slide-in detail panel, full-screen code preview with syntax highlighting and hover image peek
+- 🔔 **Smart Notifications** - Configurable toasts (position, monitor, duration, click action) and sounds for copy, cut and duplicate events
+- 🚫 **Application Exceptions** - Exclude sensitive apps by executable name or full path (case-insensitive)
+- ⌨️ **Customizable Hotkey** - Reassignable global hotkey plus in-app shortcuts (`Ctrl+F`, `Enter`, `Delete`, `P`, etc.)
+- 🤖 **AI Powered** - Summarize, translate, explain code and fix grammar via any OpenAI-compatible provider
+- ⚙️ **Customizable AI** - Rename actions and override system prompts per workflow
 
 ## Installation Guide
 
