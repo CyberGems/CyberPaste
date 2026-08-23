@@ -2788,6 +2788,8 @@ fn simulate_ctrl_v_internal(target_hwnd: Option<isize>) {
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 
+// Toast backend originally derived from CyberSnap (originally OddSnap by jasperdevs),
+// heavily rewritten for CyberPaste by CyberGems. GPL-3.0.
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct ToastPayload {
     message: String,

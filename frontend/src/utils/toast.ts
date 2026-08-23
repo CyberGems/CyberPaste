@@ -1,3 +1,4 @@
+// Toast helper derived from CyberSnap (originally OddSnap by jasperdevs), heavily rewritten for CyberPaste. GPL-3.0.
 import { invoke } from '@tauri-apps/api/core';
 
 export const systemToast = {

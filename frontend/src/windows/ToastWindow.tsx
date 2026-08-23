@@ -1,3 +1,5 @@
+// Toast window originally derived from CyberSnap (itself based on OddSnap by jasperdevs),
+// heavily rewritten and expanded for CyberPaste by CyberGems. Licensed under GPL-3.0.
 import { useEffect, useState, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen, emit } from '@tauri-apps/api/event';
