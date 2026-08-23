@@ -1,17 +1,21 @@
 <h1 align="center">
-    
     CyberPaste - Clipboard History Manager
 </h1>
 
+<p align="center">
+  <img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License" />
+  <img src="https://img.shields.io/badge/platform-Windows%2010%2B-0078D4.svg" alt="Platform" />
+  <img src="https://img.shields.io/badge/Tauri-2.x-24C8DB.svg" alt="Tauri" />
+  <img src="https://img.shields.io/badge/version-1.12.0-green.svg" alt="Version" />
+</p>
 
+**CyberPaste** is a beautiful clipboard history manager for Windows, built by **CyberGems** with Rust + Tauri + React + TypeScript. It automatically saves everything you copy and lets you search, organize and paste it instantly.
 
-A beautiful clipboard history manager for Windows, built with Rust + Tauri + React + TypeScript.
-
-
+> Official site: [cybergems.org](https://cybergems.org/) · Source: [github.com/CyberGems/CyberPaste](https://github.com/CyberGems/CyberPaste)
 
 ## Features
 
-- 🔒 **Private** - IMPORTANT! All data stored locally
+- 🔒 **Private** - All data stored locally
 - 🎨 **Beautiful UI** - Modern dark/light theme with native Windows Mica & Mica-Alt window effects
 - ⚡ **Fast & Lightweight** - Built with Rust for performance
 - 📋 **Clipboard History** - Automatically saves everything you copy
@@ -24,9 +28,6 @@ A beautiful clipboard history manager for Windows, built with Rust + Tauri + Rea
 - 🛡️ **Smart Filtering** - Intelligent debounce logic to ignore "Ghost Copies" from other clipboard tools
 - 🤖 **AI Powered** - Built-in AI to summarize, translate, explain code, and fix grammar
 - ⚙️ **Customizable AI** - Fully customize AI action names and system prompts to suit your workflow
-
-
-
 
 ## Installation Guide
 
@@ -41,8 +42,7 @@ winget install CyberGems.CyberPaste
 Download the latest installer directly from:
 [https://github.com/CyberGems/CyberPaste/releases](https://github.com/CyberGems/CyberPaste/releases)
 
-
-
+> **Downloads:** [github.com/CyberGems/CyberPaste/releases](https://github.com/CyberGems/CyberPaste/releases)
 
 ## Keyboard Shortcuts
 
@@ -50,7 +50,6 @@ Download the latest installer directly from:
 - **Toggle Window**: `Ctrl+Shift+V` (Default, Customizable in Settings)
 
 ### In-App
-
 - `Ctrl + F` - Focus search
 - `Escape` - Close window / Clear search
 - `Enter` - Paste selected item
@@ -58,13 +57,9 @@ Download the latest installer directly from:
 - `P` - Pin/Unpin selected item
 - `Arrow Up/Down` - Navigate items
 
-
-
 ## Application Exceptions (Ignored Apps)
 
 CyberPaste allows you to exclude specific applications from being recorded in the clipboard history. This is useful for privacy-sensitive applications like password managers or banking apps.
-
-(You need to provide the API Key for the AI provider)
 
 **Logic & Behavior:**
 - **How to manage:** Go to Settings -> Ignored Applications. You can browse for an executable (`.exe`) or strictly type its name.
@@ -87,6 +82,8 @@ CyberPaste integrates powerful AI capabilities to help you process your clipboar
     - **Custom Names:** Rename AI actions in Settings (e.g., change "Translate" to "To Spanish").
     - **Custom Prompts:** Override default system prompts to tailor the AI's behavior and output style.
     - **Provider Support:** Support for OpenAI, DeepSeek, and other OpenAI-compatible APIs.
+
+You need to provide the API Key for the AI provider.
 
 ## Tech Stack
 
@@ -243,3 +240,22 @@ sequenceDiagram
 
     OS->>User: Pasted image appears
 ```
+
+## Privacy and Security
+
+- **Local storage only** - All clipboard history and settings are stored locally in SQLite. No data is sent externally except to the AI provider you configure.
+- **Ignored apps** - Content from sensitive applications is never recorded.
+
+## Contributing
+
+Contributions are welcome. Please open an issue describing the change before starting large work, and submit pull requests against the main branch.
+
+## Acknowledgments
+
+Originally forked from [PastePaw](https://github.com/XueshiQiao/PastePaw) by [XueshiQiao](https://github.com/XueshiQiao). CyberPaste has since been extensively rewritten and expanded by [CyberGems](https://cybergems.org/).
+
+This project also builds on open-source components including Tauri, React, SQLite and Rust — thanks to their authors and maintainers.
+
+## License
+
+CyberPaste is distributed under the terms of the **GNU General Public License v3.0**. See [`LICENSE`](LICENSE) for the full license text.
