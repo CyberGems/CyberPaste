@@ -139,10 +139,10 @@ impl Default for AppSettings {
             ai_prompt_explain_code: "Explain this code snippet.".to_string(),
             ai_prompt_fix_grammar: "Fix grammar and spelling.".to_string(),
 
-            ai_title_summarize: "Summarize".to_string(),
-            ai_title_translate: "Translate".to_string(),
-            ai_title_explain_code: "Explain Code".to_string(),
-            ai_title_fix_grammar: "Fix Grammar".to_string(),
+            ai_title_summarize: "".to_string(),
+            ai_title_translate: "".to_string(),
+            ai_title_explain_code: "".to_string(),
+            ai_title_fix_grammar: "".to_string(),
 
             window_width: 550.0,
             window_height: crate::constants::FULL_HEIGHT,
