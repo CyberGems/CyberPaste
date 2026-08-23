@@ -28,7 +28,7 @@
 - 🚫 **Application Exceptions** - Exclude sensitive apps by executable name or full path (case-insensitive)
 - ⌨️ **Customizable Hotkey** - Reassignable global hotkey plus in-app shortcuts (`Ctrl+F`, `Enter`, `Delete`, `P`, etc.)
 - 🤖 **AI Powered** - Summarize, translate, explain code and fix grammar via any OpenAI-compatible provider
-- ⚙️ **Customizable AI** - Rename actions and override system prompts per workflow
+- ⚙️ **Customizable AI** - Personalize each action's name and AI instructions (e.g., change *Translate* to *To Spanish*)
 
 ## Installation Guide
 

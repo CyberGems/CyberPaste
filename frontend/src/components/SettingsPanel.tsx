@@ -331,6 +331,18 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         toast_duration: 'settings.toastDuration',
         toast_click_action: 'settings.toastClickAction',
         wheel_folder_navigation: 'settings.wheelFolderNavigation',
+        ai_provider: 'settings.provider',
+        ai_api_key: 'settings.apiKey',
+        ai_model: 'settings.model',
+        ai_base_url: 'settings.baseUrl',
+        ai_prompt_summarize: 'settings.aiSummarize',
+        ai_prompt_translate: 'settings.aiTranslate',
+        ai_prompt_explain_code: 'settings.aiExplainCode',
+        ai_prompt_fix_grammar: 'settings.aiFixGrammar',
+        ai_title_summarize: 'settings.aiSummarize',
+        ai_title_translate: 'settings.aiTranslate',
+        ai_title_explain_code: 'settings.aiExplainCode',
+        ai_title_fix_grammar: 'settings.aiFixGrammar',
       };
 
       const keys = Object.keys(updates);
