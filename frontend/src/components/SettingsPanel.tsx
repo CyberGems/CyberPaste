@@ -70,16 +70,18 @@ function PromptEditor({
   onSaveTitle?: (val: string) => void;
 }) {
   const { t } = useTranslation();
+  const isDefaultTitle = (v?: string) =>
+    !v || ['Summarize', 'Translate', 'Explain Code', 'Fix Grammar'].includes(v);
+  const resolvedTitle = isDefaultTitle(titleValue) ? label : titleValue!;
   const [localValue, setLocalValue] = useState(value);
-  const [localTitle, setLocalTitle] = useState(titleValue || label);
+  const [localTitle, setLocalTitle] = useState(resolvedTitle);
 
-  // Sync with prop if it changes externally
   useEffect(() => {
     setLocalValue(value);
   }, [value]);
 
   useEffect(() => {
-    setLocalTitle(titleValue || label);
+    setLocalTitle(isDefaultTitle(titleValue) ? label : titleValue!);
   }, [titleValue, label]);
 
   return (
@@ -359,7 +361,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
           }
         }
       } else if (keys.length > 1) {
-        toast.success(t('settings.layoutRestored'));
+        if (keys.includes('ai_provider' as any)) {
+          toast.success(`${t('settings.provider')} ${t('common.updated')}`);
+        } else {
+          toast.success(t('settings.layoutRestored'));
+        }
       }
 
       return newSettings;
