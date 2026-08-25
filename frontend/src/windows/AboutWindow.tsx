@@ -6,6 +6,8 @@ import { invoke } from '@tauri-apps/api/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { check } from '@tauri-apps/plugin-updater';
 import {
+  AlertCircle,
+  ChevronDown,
   ExternalLink,
   Github,
   HelpCircle,
@@ -15,6 +17,7 @@ import {
   RotateCcw,
   Square,
   Tag,
+  WifiOff,
   X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -38,6 +41,7 @@ export function AboutWindow() {
   const [updateAvailable, setUpdateAvailable] = useState<UpdateType>(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [updateCheckError, setUpdateCheckError] = useState<string | null>(null);
+  const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
   const { t } = useTranslation();
 
   useLanguage(settings?.language);
@@ -100,6 +104,7 @@ export function AboutWindow() {
   const checkForUpdates = async () => {
     const loadingToast = toast.loading(t('settings.checkingUpdates'));
     setUpdateCheckError(null);
+    setShowTechnicalDetails(false);
     try {
       const update = await check({ timeout: 15000 });
       toast.dismiss(loadingToast);
@@ -117,10 +122,11 @@ export function AboutWindow() {
       const raw = formatUpdaterError(error);
       setUpdateCheckError(raw);
       console.error('Update check failed:', error);
-      const prefix = isUpdaterNetworkError(raw)
-        ? t('settings.updateNotReachable')
-        : t('settings.updateError');
-      toast.error(`${prefix}: ${raw}`);
+      if (isUpdaterNetworkError(raw)) {
+        toast.error(t('settings.checkInternetConnection'));
+      } else {
+        toast.error(t('settings.updateError'));
+      }
     }
   };
 
@@ -246,40 +252,81 @@ export function AboutWindow() {
                 </div>
 
                 {updateCheckError && (
-                  <div className="mb-3 space-y-2 rounded-[4px] border border-destructive/25 bg-destructive/5 p-3">
-                    <p className="text-[12px] font-semibold text-destructive">
-                      {t('settings.updateErrorDetails')}
-                    </p>
-                    <pre className="max-h-28 overflow-y-auto whitespace-pre-wrap break-all rounded bg-black/20 p-2 font-mono text-[11px] leading-relaxed text-destructive/90">
-                      {updateCheckError}
-                    </pre>
-                    <p className="text-[11px] text-muted-foreground">
-                      {t('settings.updateErrorHint')}
-                    </p>
-                    <div className="flex flex-wrap gap-2 pt-1">
+                  <div className="mb-3 space-y-2.5 rounded-[6px] border border-border/80 bg-card/60 p-3.5 shadow-sm">
+                    <div className="flex items-start gap-2.5">
+                      <div className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                        {isUpdaterNetworkError(updateCheckError) ? (
+                          <WifiOff size={12} />
+                        ) : (
+                          <AlertCircle size={12} />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-0.5">
+                        <p className="text-[13px] font-medium leading-snug text-foreground">
+                          {isUpdaterNetworkError(updateCheckError)
+                            ? t('settings.updateCheckFailed')
+                            : t('settings.updateError')}
+                        </p>
+                        <p className="text-[12px] text-muted-foreground">
+                          {isUpdaterNetworkError(updateCheckError)
+                            ? t('settings.checkInternetConnection')
+                            : t('settings.updateErrorHint')}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/40">
                       <button
                         type="button"
-                        onClick={() =>
-                          navigator.clipboard
-                            .writeText(updateCheckError)
-                            .then(() => toast.success(t('settings.updateErrorCopied')))
-                            .catch(console.error)
-                        }
-                        className="btn rounded-[4px] border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] text-foreground hover:bg-white/10"
+                        onClick={() => setShowTechnicalDetails(!showTechnicalDetails)}
+                        className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
                       >
-                        {t('settings.updateErrorCopy')}
+                        <ChevronDown
+                          size={13}
+                          className={`transition-transform duration-200 ${
+                            showTechnicalDetails ? 'rotate-180' : ''
+                          }`}
+                        />
+                        <span>
+                          {showTechnicalDetails
+                            ? t('settings.hideTechnicalDetails')
+                            : t('settings.showTechnicalDetails')}
+                        </span>
                       </button>
+
                       <button
                         type="button"
                         onClick={() =>
                           openUrl(`${REPO_URL}/releases/latest`).catch(console.error)
                         }
-                        className="btn rounded-[4px] border border-primary/20 bg-primary/10 px-3 py-1.5 text-[11px] text-primary hover:bg-primary/20"
+                        className="btn inline-flex items-center rounded-[4px] border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary hover:bg-primary/20 transition-colors"
                       >
                         <ExternalLink size={12} className="mr-1.5" />
                         {t('settings.updatesOpenReleasePage')}
                       </button>
                     </div>
+
+                    {showTechnicalDetails && (
+                      <div className="space-y-2 pt-1">
+                        <pre className="max-h-24 overflow-y-auto whitespace-pre-wrap break-all rounded bg-black/25 p-2 font-mono text-[10px] leading-relaxed text-muted-foreground/90 border border-border/40">
+                          {updateCheckError}
+                        </pre>
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigator.clipboard
+                                .writeText(updateCheckError)
+                                .then(() => toast.success(t('settings.updateErrorCopied')))
+                                .catch(console.error)
+                            }
+                            className="btn rounded-[4px] border border-border bg-secondary/80 px-2.5 py-1 text-[11px] text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                          >
+                            {t('settings.updateErrorCopy')}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

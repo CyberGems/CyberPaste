@@ -170,6 +170,10 @@
     "updateAvailable": "アップデートがあります! バージョン {{version}}",
     "noUpdates": "最新バージョンを使用しています",
     "updateError": "アップデートの確認に失敗しました",
+    "updateCheckFailed": "アップデートを確認できませんでした",
+    "checkInternetConnection": "インターネット接続を確認してください",
+    "showTechnicalDetails": "技術的な詳細を表示",
+    "hideTechnicalDetails": "技術的な詳細を非表示",
     "copyContent": "内容をコピー"
   },
   "ai": {

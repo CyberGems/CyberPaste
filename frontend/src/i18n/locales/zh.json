@@ -170,6 +170,10 @@
     "updateAvailable": "有可用更新！版本 {{version}}",
     "noUpdates": "您使用的是最新版本",
     "updateError": "检查更新失败",
+    "updateCheckFailed": "无法检查更新",
+    "checkInternetConnection": "请检查您的网络连接",
+    "showTechnicalDetails": "显示技术详情",
+    "hideTechnicalDetails": "隐藏技术详情",
     "copyContent": "复制内容"
   },
   "ai": {

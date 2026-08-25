@@ -170,6 +170,10 @@
     "updateAvailable": "Update verfügbar! Version {{version}}",
     "noUpdates": "Sie verwenden die neueste Version",
     "updateError": "Suche nach Updates fehlgeschlagen",
+    "updateCheckFailed": "Updates konnten nicht überprüft werden",
+    "checkInternetConnection": "Überprüfen Sie Ihre Internetverbindung",
+    "showTechnicalDetails": "Technische Details anzeigen",
+    "hideTechnicalDetails": "Technische Details ausblenden",
     "copyContent": "Inhalt kopieren"
   },
   "ai": {

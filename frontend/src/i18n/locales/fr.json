@@ -170,6 +170,10 @@
     "updateAvailable": "Mise à jour disponible ! Version {{version}}",
     "noUpdates": "Vous utilisez la dernière version",
     "updateError": "Échec de la vérification des mises à jour",
+    "updateCheckFailed": "Impossible de vérifier les mises à jour",
+    "checkInternetConnection": "Vérifiez votre connexion Internet",
+    "showTechnicalDetails": "Afficher les détails techniques",
+    "hideTechnicalDetails": "Masquer les détails techniques",
     "copyContent": "Copier le contenu"
   },
   "ai": {

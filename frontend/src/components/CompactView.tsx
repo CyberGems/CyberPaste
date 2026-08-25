@@ -441,6 +441,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   } | null>(null);
   const isPeekVisible = !!peekClipId;
   const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const peekOriginMousePosRef = useRef<{ x: number; y: number } | null>(null);
 
   // NUEVO: micro-animación de entrada
   const [mounted, setMounted] = useState(false);
@@ -794,28 +795,60 @@ export const CompactView: React.FC<CompactViewProps> = ({
     if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
     const rowEl = (e.currentTarget as HTMLElement).closest('[data-clip-id]') || (e.currentTarget as HTMLElement);
     const rect = rowEl.getBoundingClientRect();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    peekOriginMousePosRef.current = { x: startX, y: startY };
     peekTimerRef.current = setTimeout(() => {
       setPeekClipId(clip.id);
       setPeekAnchor({ x: rect.left, y: rect.top, width: rect.width, height: rect.height });
+      peekOriginMousePosRef.current = { x: startX, y: startY };
     }, 600); // delay de 600ms para menor invasión
   }, [compactPeekEnabled, isDragging]);
-
-  const handleRowMouseLeave = useCallback(() => {
-    if (peekTimerRef.current) {
-      clearTimeout(peekTimerRef.current);
-      peekTimerRef.current = null;
-    }
-    // No cerrar de inmediato — el popover tiene su propio onMouseLeave
-  }, []);
 
   const closePeek = useCallback(() => {
     setPeekClipId(null);
     setPeekAnchor(null);
+    peekOriginMousePosRef.current = null;
     if (peekTimerRef.current) {
       clearTimeout(peekTimerRef.current);
       peekTimerRef.current = null;
     }
   }, []);
+
+  const handleRowMouseLeave = useCallback(() => {
+    closePeek();
+  }, [closePeek]);
+
+  // Al aparecer el peek, desaparece simplemente al mover el cursor o hacer scroll
+  useEffect(() => {
+    if (!peekClipId) return;
+
+    const origin = peekOriginMousePosRef.current;
+
+    const onWindowMouseMove = (e: MouseEvent) => {
+      if (origin) {
+        const dist = Math.hypot(e.clientX - origin.x, e.clientY - origin.y);
+        // Umbral de 6px para evitar jitter del sensor
+        if (dist > 6) {
+          closePeek();
+        }
+      } else {
+        closePeek();
+      }
+    };
+
+    const onWindowWheel = () => {
+      closePeek();
+    };
+
+    window.addEventListener('mousemove', onWindowMouseMove, { passive: true });
+    window.addEventListener('wheel', onWindowWheel, { passive: true });
+
+    return () => {
+      window.removeEventListener('mousemove', onWindowMouseMove);
+      window.removeEventListener('wheel', onWindowWheel);
+    };
+  }, [peekClipId, closePeek]);
 
   const handleFolderHover = useCallback(
     (folderId: string | null) => {
@@ -1732,6 +1765,7 @@ const ClipRow = memo(function ClipRow({
         onMouseLeave={() => {
           if (menuHighlightRef.current) leftWhileMenuRef.current = true;
           else setHovered(false);
+          onRowMouseLeave?.();
         }}
         draggable="false"
         className={clsx(
@@ -1757,6 +1791,9 @@ const ClipRow = memo(function ClipRow({
             if (clip.clip_type !== 'image') {
               onRowMouseEnter?.(clip, e);
             }
+          }}
+          onMouseLeave={() => {
+            onRowMouseLeave?.();
           }}
         >
           {compactShowNumber && (
