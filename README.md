@@ -11,6 +11,8 @@
 
 **CyberPaste** is a beautiful clipboard history manager for Windows, built by **CyberGems** with Rust + Tauri + React + TypeScript. It automatically saves everything you copy and lets you search, organize and paste it instantly.
 
+*Free and open source (GPLv3) — no ads, no tracking, and no data collection. Just enjoy it.*
+
 > Official site: [cybergems.org](https://cybergems.org/) · Source: [github.com/CyberGems/CyberPaste](https://github.com/CyberGems/CyberPaste)
 
 ## Features
