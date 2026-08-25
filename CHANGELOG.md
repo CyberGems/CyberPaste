@@ -2,6 +2,15 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.12.1] — 2026-08-25
+
+### 🚀 Updater & Compact Mode Polish
+- **Silent startup update checks**: Silenced background update errors when launching offline, preventing intrusive error toasts from obstructing the welcome notification.
+- **Friendly updater notifications**: Simplified update error toasts to clear, non-technical advice ("Check your internet connection").
+- **Clean About maintenance UI**: Redesigned the update error panel with a calmer, non-alarmist appearance and collapsible technical details.
+- **Natural compact peek dismiss**: Moving the cursor or scrolling now immediately and smoothly dismisses the compact row hover peek.
+- **Bilingual and localization updates**: Added full translations across all supported languages (English, Spanish, German, French, Japanese, Simplified Chinese).
+
 ## [1.12.0] — 2026-08-20
 
 ### ✨ Detail Panel & Interaction Improvements

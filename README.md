@@ -6,7 +6,7 @@
   <img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License" />
   <img src="https://img.shields.io/badge/platform-Windows%2010%2B-0078D4.svg" alt="Platform" />
   <img src="https://img.shields.io/badge/Tauri-2.x-24C8DB.svg" alt="Tauri" />
-  <img src="https://img.shields.io/badge/version-1.12.0-green.svg" alt="Version" />
+  <img src="https://img.shields.io/badge/version-1.12.1-green.svg" alt="Version" />
 </p>
 
 **CyberPaste** is a beautiful clipboard history manager for Windows, built by **CyberGems** with Rust + Tauri + React + TypeScript. It automatically saves everything you copy and lets you search, organize and paste it instantly.
