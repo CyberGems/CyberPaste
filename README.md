@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/version-1.13.0-green.svg" alt="Version" />
 </p>
 
-**CyberPaste** is a beautiful clipboard history manager for Windows, built by **CyberGems** with Rust + Tauri + React + TypeScript. It automatically saves everything you copy and lets you search, organize and paste it instantly.
+CyberPaste stores everything you copy to your clipboard locally, so you can recall any specific clip at any time. It’s the easiest way to save, organize, search, pin, edit, and preview almost everything you copy on Windows and paste it instantly.
 
 *Free and open source (GPLv3) — no ads, no tracking, and no data collection. Just enjoy it.*
 
@@ -268,16 +268,16 @@ If you'd like to support this work, a donation would mean a lot. Thank you! 🙏
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-0070BA?style=for-the-badge&logo=paypal)](https://paypal.me/CyberGems) [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/cybergems)
 
 <details>
-<summary>🟠 🔷 🟢 🔵 Crypto donations — choose the correct network</summary>
+<summary><img src="docs/donate/btc.svg" width="16" height="16" valign="middle" /> <img src="docs/donate/eth.svg" width="16" height="16" valign="middle" /> <img src="docs/donate/usdt.svg" width="16" height="16" valign="middle" /> <img src="docs/donate/ltc.svg" width="16" height="16" valign="middle" /> <b>Crypto donations — choose the correct network</b></summary>
 
 | Asset | Network | Address | QR |
 |---|---|---|---|
-| 🟠 BTC | Bitcoin | `bc1q5mxzz05nmvsheqzx7970euswta3fksxzcfzag4` | ![BTC QR](docs/donate/qr-btc.png) |
-| 🔷 ETH | Ethereum (ERC20) | `0x79b703Ec0f77493679Fcd280aF3b983E20c580B8` | ![ETH QR](docs/donate/qr-eth.png) |
-| 🟢 USDT | Ethereum (ERC20) | `0x79b703Ec0f77493679Fcd280aF3b983E20c580B8` | ![USDT ERC20 QR](docs/donate/qr-eth.png) |
-| 🟢 USDT | BNB Smart Chain (BEP20) | `0x79b703Ec0f77493679Fcd280aF3b983E20c580B8` | ![USDT BEP20 QR](docs/donate/qr-eth.png) |
-| 🟢 USDT | Tron (TRC20) | `TSVbSk1HSyZ1NprCnAYiw56ECwXgH887mD` | ![USDT TRC20 QR](docs/donate/qr-usdt-tron.png) |
-| 🔵 LTC | Litecoin | `LWGnEHgcFCE2BRkzLnsdPDD8Y8ZeDK577X` | ![LTC QR](docs/donate/qr-ltc.png) |
+| <img src="docs/donate/btc.svg" width="18" height="18" valign="middle" alt="BTC" /> **BTC** | Bitcoin | `bc1q5mxzz05nmvsheqzx7970euswta3fksxzcfzag4` | ![BTC QR](docs/donate/qr-btc.png) |
+| <img src="docs/donate/eth.svg" width="18" height="18" valign="middle" alt="ETH" /> **ETH** | Ethereum (ERC20) | `0x79b703Ec0f77493679Fcd280aF3b983E20c580B8` | ![ETH QR](docs/donate/qr-eth.png) |
+| <img src="docs/donate/usdt.svg" width="18" height="18" valign="middle" alt="USDT" /> **USDT** | Ethereum (ERC20) | `0x79b703Ec0f77493679Fcd280aF3b983E20c580B8` | ![USDT ERC20 QR](docs/donate/qr-eth.png) |
+| <img src="docs/donate/usdt.svg" width="18" height="18" valign="middle" alt="USDT" /> **USDT** | BNB Smart Chain (BEP20) | `0x79b703Ec0f77493679Fcd280aF3b983E20c580B8` | ![USDT BEP20 QR](docs/donate/qr-eth.png) |
+| <img src="docs/donate/usdt.svg" width="18" height="18" valign="middle" alt="USDT" /> **USDT** | Tron (TRC20) | `TSVbSk1HSyZ1NprCnAYiw56ECwXgH887mD` | ![USDT TRC20 QR](docs/donate/qr-usdt-tron.png) |
+| <img src="docs/donate/ltc.svg" width="18" height="18" valign="middle" alt="LTC" /> **LTC** | Litecoin | `LWGnEHgcFCE2BRkzLnsdPDD8Y8ZeDK577X` | ![LTC QR](docs/donate/qr-ltc.png) |
 
 > ⚠️ Send only the selected asset on the indicated network. Using the wrong network will result in permanent loss of funds.
 
