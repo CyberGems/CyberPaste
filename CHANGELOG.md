@@ -2,6 +2,39 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.15.0] — 2026-08-26
+
+### 🎨 Brand New Official Application Icon & High-DPI Tray
+- **Refreshed Official Icon**: Beautiful, updated brand icon assets across Windows `.ico`, taskbar, app headers, and installers.
+- **Razor-Sharp System Tray Icons**: Upgraded tray icon assets to high-resolution 128×128px masters, eliminating bilinear blurriness on Windows displays with 125%, 150%, or 200% DPI scaling.
+
+### 📝 Text Editor Facelift (IDE-Like Experience)
+- **Synchronized Line Numbers Gutter**: Added an integrated line numbers sidebar with active line highlighting and synchronized scrolling.
+- **Live IDE Status Bar**: Real-time cursor position tracking (`Ln X, Col Y`), character count, line count, word count, and `UTF-8` encoding indicator.
+- **Productivity Toolbar**:
+  - Interactive **Word Wrap** toggle with responsive styling.
+  - One-click **Copy All** button with animated confirmation feedback.
+  - Dedicated **Clear Text** eraser action.
+- **Fast Keyboard Navigation**:
+  - `Tab` key indentation support (inserts 2 spaces without losing focus).
+  - Quick save with `Ctrl+S` or `Ctrl+Enter`.
+  - Cancel with `Esc`.
+- **Responsive Viewport Fitting**: Dynamic flexbox containment guarantees the status bar and action buttons remain visible and comfortably proportioned without vertical clipping across all window dimensions.
+
+### ⚡ Inline Deletion Visual Feedback
+- **Seamless inline deletion**: Replaced distant toast popups with modern inline fade-and-collapse animations directly on deleted cards in both Full and Compact modes.
+
+### 🗂️ Compact Mode & Navigation Upgrades
+- **Unified Peek Popover Borders**: Connected the compact popover container styling with the card neon hover border for visual consistency.
+- **Enlarged Action Button Hit Area**: Expanded the vertical "..." options button clickable area on compact cards to eliminate missclicks.
+- **Search Keyboard Hint**: Added localized `"TYPE TO SEARCH"` / `"ESCRIBE PARA BUSCAR"` reminder to the center of the compact footer bar when browsing the main clipboard list.
+- **Extended Keyboard Navigation**: Added full support for `PageUp`, `PageDown`, `Home` (Start/First), and `End` (Last) keys with smooth automatic scrolling across both view modes.
+
+### ⚙️ Settings & Starter Content Improvements
+- **Title Bar Animations Toggle**: Added an optional setting toggle to enable/disable HUD scan sweep animations on title bars (enabled by default).
+- **Settings Hierarchy Polish**: Reorganized general settings under priority sections and removed developer console buttons from the backup panel.
+- **Modern Starter & Demo Clips**: Added automated SQLite database seeding on fresh installations with modern, bilingual starter clips showcasing shortcuts, TypeScript snippets, CyberNeon color palettes, and markdown notes.
+
 ## [1.14.0] — 2026-08-26
 
 ### 🎯 Edge Auto-Scrolling & Drag Reordering

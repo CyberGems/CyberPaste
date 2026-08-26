@@ -119,8 +119,8 @@ export function generateDemoClips(): ClipboardItem[] {
     {
       id: 'demo-8',
       clip_type: 'code',
-      content: `{\n  "app": "CyberPaste",\n  "version": "1.14.0",\n  "theme": "cyberpaste",\n  "storage": "sqlite_local",\n  "offline_first": true\n}`,
-      preview: '{\n  "app": "CyberPaste",\n  "version": "1.14.0"...',
+      content: `{\n  "app": "CyberPaste",\n  "version": "1.15.0",\n  "theme": "cyberpaste",\n  "storage": "sqlite_local",\n  "offline_first": true\n}`,
+      preview: '{\n  "app": "CyberPaste",\n  "version": "1.15.0"...',
       folder_id: null,
       created_at: ago(25),
       source_app: 'Code.exe',

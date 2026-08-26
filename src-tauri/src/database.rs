@@ -579,8 +579,8 @@ impl Database {
             ),
             (
                 "code",
-                "{\n  \"app\": \"CyberPaste\",\n  \"version\": \"1.14.0\",\n  \"theme\": \"cyberpaste\",\n  \"storage\": \"sqlite_local\",\n  \"offline_first\": true\n}",
-                "{\n  \"app\": \"CyberPaste\",\n  \"version\": \"1.14.0\"...",
+                "{\n  \"app\": \"CyberPaste\",\n  \"version\": \"1.15.0\",\n  \"theme\": \"cyberpaste\",\n  \"storage\": \"sqlite_local\",\n  \"offline_first\": true\n}",
+                "{\n  \"app\": \"CyberPaste\",\n  \"version\": \"1.15.0\"...",
                 "Code.exe",
             ),
             (
