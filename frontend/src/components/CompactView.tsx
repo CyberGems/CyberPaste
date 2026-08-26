@@ -590,6 +590,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
     width: number;
     height: number;
   } | null>(null);
+  const isPeekVisible = !!peekClipId;
   const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const peekOriginMousePosRef = useRef<{ x: number; y: number } | null>(null);
 
@@ -956,7 +957,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
         setPeekClipId(clip.id);
         setPeekAnchor({ x: rect.left, y: rect.top, width: rect.width, height: rect.height });
         peekOriginMousePosRef.current = { x: startX, y: startY };
-      }, 600); // delay de 600ms para menor invasión
+      }, 750); // delay de 750ms para menor invasión
     },
     [compactPeekEnabled, isDragging]
   );
@@ -1252,7 +1253,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
           <div
             className={cn(
               'group/sidebar relative flex-shrink-0 overflow-hidden border-r border-border bg-transparent transition-all duration-200',
-              compactSidebarCollapsed && 'hover:bg-accent/60'
+              compactSidebarCollapsed && 'hover:bg-accent/60',
+              isPeekVisible && 'blur-[3px]'
             )}
             style={{ width: sidebarWidth }}
           >
@@ -1381,7 +1383,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
           {/* Content Area */}
           <div className="flex flex-1 flex-col overflow-hidden">
             {/* Search */}
-            <div className="flex-shrink-0 p-2">
+            <div className={cn('flex-shrink-0 p-2', isPeekVisible && 'blur-[3px]')}>
               <div className="flex items-center gap-1.5">
                 <div className="group relative min-w-0 flex-1">
                   <Search
@@ -1467,7 +1469,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
             <div
               className={cn(
                 'flex flex-shrink-0 items-center justify-between border-t border-white/5 bg-black/10 p-2 font-mono text-[9px] tracking-tighter transition-opacity',
-                entranceAnim && !mounted ? 'opacity-0' : 'opacity-40'
+                entranceAnim && !mounted ? 'opacity-0' : 'opacity-40',
+                isPeekVisible && 'blur-[3px]'
               )}
             >
               <span>
@@ -1488,7 +1491,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
       ) : (
         /* === HORIZONTAL LAYOUT (existing) === */
         <>
-          <div className="flex-shrink-0 space-y-2 p-2">
+          <div className={cn('flex-shrink-0 space-y-2 p-2', isPeekVisible && 'blur-[3px]')}>
             <div className="flex items-center gap-1.5">
               <div className="group relative min-w-0 flex-1">
                 <Search
@@ -1666,7 +1669,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
           <div
             className={cn(
               'flex flex-shrink-0 items-center justify-between border-t border-border bg-muted/40 p-2 font-mono text-[9px] tracking-tighter text-muted-foreground/90 transition-opacity',
-              entranceAnim && !mounted ? 'opacity-0' : 'opacity-80'
+              entranceAnim && !mounted ? 'opacity-0' : 'opacity-80',
+              isPeekVisible && 'blur-[3px]'
             )}
           >
             <span>

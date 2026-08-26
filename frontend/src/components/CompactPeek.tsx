@@ -62,14 +62,8 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
   const sourceRowPadding = 2;
   const sourceRowTop = Math.max(0, anchorRect.y - sourceRowPadding);
   const sourceRowBottom = Math.min(vh, anchorRect.y + anchorRect.height + sourceRowPadding);
-
-  // Exclude search bar and top controls from blur: compute clip list boundaries
-  const listEl = typeof document !== 'undefined' ? document.querySelector('[data-clip-list="true"]') : null;
-  const listRect = listEl?.getBoundingClientRect();
-  const listTop = listRect ? listRect.top : 96;
-  const listBottom = listRect ? listRect.bottom : vh;
-  const topBlurHeight = Math.max(0, sourceRowTop - listTop);
-  const bottomBlurHeight = Math.max(0, listBottom - sourceRowBottom);
+  const compactHeaderHeight = 48;
+  const topBlurHeight = Math.max(0, sourceRowTop - compactHeaderHeight);
 
   let calculatedMaxHeight = PEEK_MAX_HEIGHT;
   if (showAbove) {
@@ -127,8 +121,8 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.12, ease: 'easeOut' }}
-            className="pointer-events-none fixed inset-x-0 z-[90] bg-background/[0.24] backdrop-blur-[20px]"
-            style={{ top: listTop, height: topBlurHeight }}
+            className="pointer-events-none fixed inset-x-0 top-12 z-[90] bg-background/[0.24] backdrop-blur-[20px]"
+            style={{ height: topBlurHeight }}
           />
           <motion.div
             key="peek-backdrop-bottom"
@@ -136,8 +130,8 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.12, ease: 'easeOut' }}
-            className="pointer-events-none fixed inset-x-0 z-[90] bg-background/[0.24] backdrop-blur-[20px]"
-            style={{ top: sourceRowBottom, height: bottomBlurHeight }}
+            className="pointer-events-none fixed inset-x-0 bottom-0 z-[90] bg-background/[0.24] backdrop-blur-[20px]"
+            style={{ top: sourceRowBottom }}
           />
           <motion.div
             key={`peek-${clip.id}`}
