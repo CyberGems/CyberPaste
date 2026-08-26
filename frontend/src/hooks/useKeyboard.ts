@@ -7,6 +7,10 @@ interface KeyboardOptions {
   onPin?: () => void;
   onNavigatePrev?: () => void;
   onNavigateNext?: () => void;
+  onNavigateFirst?: () => void;
+  onNavigateLast?: () => void;
+  onNavigatePageUp?: () => void;
+  onNavigatePageDown?: () => void;
   onNavigateLeft?: () => void;
   onNavigateRight?: () => void;
   onFolderPrev?: () => void;
@@ -198,6 +202,42 @@ export function useKeyboard(options: KeyboardOptions) {
         e.preventDefault();
         e.stopPropagation();
         options.onNavigateNext();
+      }
+
+      if ((e.key === 'Home' || e.key === 'Start') && options.onNavigateFirst) {
+        if (isTyping) {
+          return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        options.onNavigateFirst();
+      }
+
+      if (e.key === 'End' && options.onNavigateLast) {
+        if (isTyping) {
+          return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        options.onNavigateLast();
+      }
+
+      if (e.key === 'PageUp' && options.onNavigatePageUp) {
+        if (isTyping && !isSearchInput) {
+          return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        options.onNavigatePageUp();
+      }
+
+      if (e.key === 'PageDown' && options.onNavigatePageDown) {
+        if (isTyping && !isSearchInput) {
+          return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        options.onNavigatePageDown();
       }
 
       // Left/Right: with Ctrl (or Cmd) → switch folders; plain → move between cards.

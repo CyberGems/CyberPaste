@@ -1524,6 +1524,51 @@ function App() {
     }
   }, [clips, selectedClipId, settings?.view_mode, gridColumns]);
 
+  const handleNavigateFirst = useCallback(() => {
+    if (clips.length === 0) return;
+    setSelectedClipId(clips[0].id);
+  }, [clips]);
+
+  const handleNavigateLast = useCallback(() => {
+    if (clips.length === 0) return;
+    setSelectedClipId(clips[clips.length - 1].id);
+  }, [clips]);
+
+  const handleNavigatePageUp = useCallback(() => {
+    if (clips.length === 0) return;
+    if (!selectedClipId) {
+      setSelectedClipId(clips[0].id);
+      return;
+    }
+    const currentIndex = clips.findIndex((c) => c.id === selectedClipId);
+    if (currentIndex <= 0) {
+      setSelectedClipId(clips[0].id);
+      return;
+    }
+    const cols = settings?.view_mode === 'full' ? gridColumns || 1 : 1;
+    const pageSize = settings?.view_mode === 'full' ? Math.max(cols * 2, 6) : 8;
+    const targetIndex = Math.max(0, currentIndex - pageSize);
+    setSelectedClipId(clips[targetIndex].id);
+  }, [clips, selectedClipId, settings?.view_mode, gridColumns]);
+
+  const handleNavigatePageDown = useCallback(() => {
+    if (clips.length === 0) return;
+    const cols = settings?.view_mode === 'full' ? gridColumns || 1 : 1;
+    const pageSize = settings?.view_mode === 'full' ? Math.max(cols * 2, 6) : 8;
+    if (!selectedClipId) {
+      const targetIndex = Math.min(clips.length - 1, pageSize);
+      setSelectedClipId(clips[targetIndex].id);
+      return;
+    }
+    const currentIndex = clips.findIndex((c) => c.id === selectedClipId);
+    if (currentIndex >= clips.length - 1) {
+      setSelectedClipId(clips[clips.length - 1].id);
+      return;
+    }
+    const targetIndex = Math.min(clips.length - 1, currentIndex + pageSize);
+    setSelectedClipId(clips[targetIndex].id);
+  }, [clips, selectedClipId, settings?.view_mode, gridColumns]);
+
   // Folder navigation handlers (Left/Right arrows in compact mode)
   const handleFolderPrev = useCallback(() => {
     // Build ordered list: [null (clipboard), ...folder ids]
@@ -2359,6 +2404,10 @@ function App() {
     onPin: () => handleToggleClipPin(selectedClipId),
     onNavigatePrev: handleNavigatePrev,
     onNavigateNext: handleNavigateNext,
+    onNavigateFirst: handleNavigateFirst,
+    onNavigateLast: handleNavigateLast,
+    onNavigatePageUp: handleNavigatePageUp,
+    onNavigatePageDown: handleNavigatePageDown,
     // Full mode: plain Left/Right moves between cards, Ctrl+Left/Right switches folders.
     // Compact mode: plain Left/Right switches folders (useKeyboard falls back when
     // onNavigateLeft/Right are undefined). Ctrl+Left/Right stays consistent in both modes.
