@@ -501,6 +501,7 @@
     "copyAll": "Copiar todo",
     "copied": "¡Copiado!",
     "clear": "Limpiar",
+    "clearText": "Limpiar texto",
     "saveShortcutHint": "Ctrl+Enter o Ctrl+S para guardar · Esc para cancelar"
   },
   "ai": {

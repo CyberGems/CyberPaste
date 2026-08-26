@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { X, Save, Copy, Check, Trash2, WrapText, FileCode, FileText } from 'lucide-react';
+import { X, Save, Copy, Check, Eraser, WrapText, FileCode, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ContextMenu } from './ContextMenu';
 import { useTextFieldContextMenu } from '../hooks/useTextFieldContextMenu';
@@ -148,9 +148,9 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
   const typeLabel = t(`clipType.${clipType}`, { defaultValue: t('clipType.text') });
 
   return (
-    <div className="animate-in fade-in fixed inset-0 z-[100] flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm duration-200">
+    <div className="animate-in fade-in fixed inset-0 z-[100] flex items-center justify-center bg-black/65 p-3 backdrop-blur-sm duration-200 sm:p-4">
       <div
-        className="animate-in zoom-in-95 flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-primary/30 bg-card shadow-[0_0_50px_rgba(var(--primary-rgb),0.18),0_20px_50px_rgba(0,0,0,0.6)] duration-300"
+        className="animate-in zoom-in-95 flex max-h-[calc(100vh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-primary/30 bg-card shadow-[0_0_50px_rgba(var(--primary-rgb),0.18),0_20px_50px_rgba(0,0,0,0.6)] duration-300 sm:max-h-[min(90vh,540px)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Editor Window Header */}
@@ -164,7 +164,7 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
                 {t('settings.editClip', { type: typeLabel })}
               </h3>
               <span className="rounded border border-primary/25 bg-primary/10 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-primary">
-                {clipType}
+                {typeLabel.toUpperCase()}
               </span>
             </div>
           </div>
@@ -204,12 +204,12 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
             </Tooltip>
 
             {editedContent.length > 0 && (
-              <Tooltip label={t('editor.clear')} placement="bottom">
+              <Tooltip label={t('editor.clearText')} placement="bottom">
                 <button
                   onClick={handleClear}
-                  className="flex h-7 w-7 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-all hover:border-destructive/30 hover:bg-destructive/15 hover:text-destructive active:scale-95"
+                  className="flex h-7 w-7 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-all hover:border-amber-500/30 hover:bg-amber-500/15 hover:text-amber-400 active:scale-95"
                 >
-                  <Trash2 size={13} />
+                  <Eraser size={14} />
                 </button>
               </Tooltip>
             )}
@@ -226,8 +226,8 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
         </div>
 
         {/* Editor Main Canvas & Gutter */}
-        <div className="relative flex flex-1 flex-col bg-[#0b0f19]/90 dark:bg-[#070a12]/95">
-          <div className="relative flex flex-1 overflow-hidden">
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[#0b0f19]/90 dark:bg-[#070a12]/95">
+          <div className="relative flex min-h-0 flex-1 overflow-hidden">
             {/* Line Numbers Gutter */}
             <div
               ref={gutterRef}
@@ -264,7 +264,7 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
               wrap={wordWrap ? 'soft' : 'off'}
               spellCheck={false}
               autoFocus
-              className="custom-scrollbar max-h-[55vh] min-h-[300px] flex-1 resize-none bg-transparent p-3 font-mono text-[13px] leading-[22px] text-foreground transition-all placeholder:text-muted-foreground/40 focus:outline-none"
+              className="custom-scrollbar min-h-0 flex-1 resize-none bg-transparent p-3 font-mono text-[13px] leading-[22px] text-foreground transition-all placeholder:text-muted-foreground/40 focus:outline-none"
               placeholder={t('common.typeHere', { defaultValue: '...' })}
             />
           </div>

@@ -501,6 +501,7 @@
     "copyAll": "Copy all",
     "copied": "Copied!",
     "clear": "Clear",
+    "clearText": "Clear text",
     "saveShortcutHint": "Ctrl+Enter or Ctrl+S to save · Esc to cancel"
   },
   "ai": {
