@@ -503,8 +503,8 @@ pub fn run_app() {
             let handle_for_toast = app_handle.clone();
             let saved_hotkey_clone = saved_hotkey.clone();
             tauri::async_runtime::spawn(async move {
-                // Wait 5 seconds for the app environment/windows to fully boot
-                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                // Wait 1.5 seconds for the app environment/windows to fully boot
+                tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
 
                 // Ensure default synthesized sound files are pre-generated on startup if they don't exist
                 let data_dir = get_data_dir();

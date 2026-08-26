@@ -251,7 +251,11 @@ function toastThemeVars(theme: 'cyberpaste' | 'dark' | 'light', gradient: string
 
 export function ToastWindow() {
   const [toast, setToast] = useState<ToastPayload | null>(null);
+  const toastRef = useRef<ToastPayload | null>(null);
+  toastRef.current = toast;
   const [isClosing, setIsClosing] = useState(false);
+  const isClosingRef = useRef(false);
+  const pendingNextToastRef = useRef<ToastPayload | null>(null);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [version, setVersion] = useState<string>('');
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
@@ -302,10 +306,21 @@ export function ToastWindow() {
 
   const closeToast = () => {
     setIsClosing(true);
+    isClosingRef.current = true;
     setIsPinned(false);
     getCurrentWindow().setFocusable(false).catch(console.error);
     setTimeout(() => {
-      invoke('hide_toast').catch(console.error);
+      if (pendingNextToastRef.current) {
+        const nextToast = pendingNextToastRef.current;
+        pendingNextToastRef.current = null;
+        handleToastUpdate(nextToast);
+      } else {
+        invoke('hide_toast').catch(console.error);
+        setToast(null);
+        toastRef.current = null;
+        setIsClosing(false);
+        isClosingRef.current = false;
+      }
     }, 300);
   };
 
@@ -337,6 +352,19 @@ export function ToastWindow() {
   };
 
   const handleToastUpdate = async (payload: ToastPayload) => {
+    // If a welcome toast is active and an update toast arrives, queue the update toast
+    // so the welcome banner finishes its natural timing first before showing the update banner.
+    const isCurrentWelcome = toastRef.current?.clip_type === 'welcome';
+    const isIncomingUpdate = payload.toast_type === 'update';
+    if (isCurrentWelcome && isIncomingUpdate && !isClosingRef.current) {
+      pendingNextToastRef.current = payload;
+      return;
+    }
+
+    if (!isIncomingUpdate) {
+      pendingNextToastRef.current = null;
+    }
+
     const freshSettings = await invoke<Settings>('get_settings').catch(() => null);
     if (freshSettings) setSettings(freshSettings);
 
@@ -355,7 +383,9 @@ export function ToastWindow() {
     }).catch(console.error);
 
     setToast(payload);
+    toastRef.current = payload;
     setIsClosing(false);
+    isClosingRef.current = false;
     isMouseInsideRef.current = false;
     setContextMenu(null);
     getCurrentWindow().setFocusable(false).catch(console.error);

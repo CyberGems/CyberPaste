@@ -285,8 +285,13 @@ function App() {
         clearTimeout(timer);
         setIsLoading(false);
 
-        // Check for updates after 3 seconds if auto_check_updates is enabled
+        // Check for updates after the welcome banner completes if auto_check_updates is enabled
         if (s.auto_check_updates) {
+          const welcomeWillShow = (s.toast_enabled ?? true) && (s.show_action_messages ?? true);
+          const welcomeDelay = welcomeWillShow
+            ? 1500 + (s.toast_duration || 3000) + 600
+            : 2000;
+
           setTimeout(() => {
             check({ timeout: 15000 })
               .then((update) => {
@@ -302,7 +307,7 @@ function App() {
               .catch((err) => {
                 console.warn('Auto-update check failed (silent):', err);
               });
-          }, 3000);
+          }, welcomeDelay);
         }
       })
       .catch((err) => {
