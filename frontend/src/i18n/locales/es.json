@@ -490,6 +490,19 @@
     "failedToOpenConsole": "Error al abrir la consola de desarrollador",
     "failedToRemoveDuplicates": "Error al eliminar duplicados: {{error}}"
   },
+  "editor": {
+    "title": "Editor de Texto",
+    "line": "Lín",
+    "col": "Col",
+    "lines": "líneas",
+    "words": "palabras",
+    "chars": "caracteres",
+    "wordWrap": "Ajuste de línea",
+    "copyAll": "Copiar todo",
+    "copied": "¡Copiado!",
+    "clear": "Limpiar",
+    "saveShortcutHint": "Ctrl+Enter o Ctrl+S para guardar · Esc para cancelar"
+  },
   "ai": {
     "processing": "Procesando con IA...",
     "summary": "Resumen de IA",

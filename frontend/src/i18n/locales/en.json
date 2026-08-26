@@ -490,6 +490,19 @@
     "failedToOpenConsole": "Failed to open developer console",
     "failedToRemoveDuplicates": "Failed to remove duplicates: {{error}}"
   },
+  "editor": {
+    "title": "Text Editor",
+    "line": "Ln",
+    "col": "Col",
+    "lines": "lines",
+    "words": "words",
+    "chars": "characters",
+    "wordWrap": "Word Wrap",
+    "copyAll": "Copy all",
+    "copied": "Copied!",
+    "clear": "Clear",
+    "saveShortcutHint": "Ctrl+Enter or Ctrl+S to save · Esc to cancel"
+  },
   "ai": {
     "processing": "Processing with AI...",
     "summary": "AI Summary",
