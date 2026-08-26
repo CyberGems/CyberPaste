@@ -2,6 +2,26 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.14.0] — 2026-08-26
+
+### 🎯 Edge Auto-Scrolling & Drag Reordering
+- **Smooth edge auto-scrolling**: Dragging a clip near the viewport boundaries (top/bottom in vertical mode, left/right in horizontal mode) now smoothly auto-scrolls the list with speed proportional to edge proximity.
+- **Dynamic drop targeting**: Target clip slots are evaluated live in real-time under the cursor during auto-scrolling, enabling seamless reordering to clips initially outside the viewport.
+- **Smart folder drop detection**: Dragging over folder buttons automatically pauses auto-scrolling, hides list insertion lines, and highlights the target folder for an intuitive drop.
+
+### 🔔 Toast Coordination & Queueing System
+- **Non-colliding startup banners**: Fixed race conditions between the Welcome Banner and the Update Available notification by sequencing them cleanly with a dedicated queue.
+- **Polished toast lifecycle**: Update toasts wait for any active welcome animation to complete before presenting themselves, preventing abrupt cutoffs.
+
+### 📁 Copy-to-Folder & Visual Feedback
+- **Copy with duplicate detection**: Dragging or moving clips into folders duplicates them safely, accompanied by duplicate-detection toasts and animated double-pulse illumination (`folder-double-flash`) on folder tabs.
+- **Enhanced compact peek previews**: Redesigned image peek with full-bleed popovers, checkerboard transparency grids, and calibrated hover timing.
+
+### 📖 Documentation & Direct Download Badges
+- **1-Click download buttons**: Added prominent hero download buttons in the README header pointing directly to the latest Windows installer.
+- **Vector crypto donation support**: Replaced placeholder icons with crisp official SVG cryptocurrency logos and interactive toggles across the CyberGems project suite.
+- **Cleaned architecture documentation**: Modernized project descriptions and removed legacy fork sections.
+
 ## [1.13.0] — 2026-08-26
 
 ### 📁 Copy to Folder & Double-Flash Feedback
