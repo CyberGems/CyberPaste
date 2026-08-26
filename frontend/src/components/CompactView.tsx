@@ -1485,10 +1485,11 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   : t('compact.enterToPaste')}
               </span>
               <span>
-                {(isFiltering || searchQuery || selectedFolder) &&
-                  (isFiltering
+                {isFiltering || searchQuery || selectedFolder
+                  ? isFiltering
                     ? `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: t(`compact.filter${typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}`) })}`
-                    : t('compact.footerTotalClips', { count: filteredClips.length }))}
+                    : t('compact.footerTotalClips', { count: filteredClips.length })
+                  : t('compact.typeToSearch')}
               </span>
               <span>{t('compact.escToHide')}</span>
             </div>
@@ -1685,10 +1686,11 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 : t('compact.enterToPaste')}
             </span>
             <span>
-              {(isFiltering || searchQuery || selectedFolder) &&
-                (isFiltering
+              {isFiltering || searchQuery || selectedFolder
+                ? isFiltering
                   ? `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: t(`compact.filter${typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}`) })}`
-                  : t('compact.footerTotalClips', { count: filteredClips.length }))}
+                  : t('compact.footerTotalClips', { count: filteredClips.length })
+                : t('compact.typeToSearch')}
             </span>
             <span>{t('compact.escToHide')}</span>
           </div>

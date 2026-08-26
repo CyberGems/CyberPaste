@@ -820,29 +820,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     </button>
                   </div>
 
-                  <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
-                    <div>
-                      <span className="text-sm font-medium">{t('settings.titleBarAnimation')}</span>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {t('settings.titleBarAnimationDesc')}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() =>
-                        updateSetting(
-                          'title_bar_animation_enabled',
-                          !(settings.title_bar_animation_enabled ?? true)
-                        )
-                      }
-                      className={`h-6 w-11 rounded-full transition-colors ${(settings.title_bar_animation_enabled ?? true) ? 'bg-primary' : 'bg-white/10'}`}
-                      aria-label={t('settings.titleBarAnimation')}
-                    >
-                      <div
-                        className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.title_bar_animation_enabled ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                      />
-                    </button>
-                  </div>
-
                   {/* Clipboard & Capture */}
                   <section className="space-y-4">
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
@@ -1018,6 +995,29 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
                     </div>
                   </section>
+
+                  <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
+                    <div>
+                      <span className="text-sm font-medium">{t('settings.titleBarAnimation')}</span>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {t('settings.titleBarAnimationDesc')}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() =>
+                        updateSetting(
+                          'title_bar_animation_enabled',
+                          !(settings.title_bar_animation_enabled ?? true)
+                        )
+                      }
+                      className={`h-6 w-11 rounded-full transition-colors ${(settings.title_bar_animation_enabled ?? true) ? 'bg-primary' : 'bg-white/10'}`}
+                      aria-label={t('settings.titleBarAnimation')}
+                    >
+                      <div
+                        className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.title_bar_animation_enabled ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                      />
+                    </button>
+                  </div>
 
                   {/* Sounds */}
                   <section className="space-y-4">

@@ -530,6 +530,96 @@ impl Database {
         .execute(&self.pool)
         .await?;
 
+        // Seed initial sample clips for brand new installations if database is empty
+        let clip_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM clips")
+            .fetch_one(&self.pool)
+            .await
+            .unwrap_or(0);
+
+        if clip_count == 0 {
+            let _ = self.seed_initial_clips().await;
+        }
+
+        Ok(())
+    }
+
+    pub async fn seed_initial_clips(&self) -> Result<(), sqlx::Error> {
+        use sha2::{Digest, Sha256};
+
+        let sample_clips = [
+            (
+                "text",
+                "✨ ¡Bienvenido a CyberPaste! / Welcome to CyberPaste!\n\nAtajos de teclado esenciales / Essential shortcuts:\n• Ctrl+Shift+V : Alternar ventana / Toggle window\n• Ctrl+M       : Vista Completa / Compacta (Full & Compact modes)\n• Escribe...   : Búsqueda instantánea / Type to search\n• Enter        : Pegar clip seleccionado / Paste selected\n• Ctrl+Enter   : Copiar como texto plano / Copy plain text\n• P            : Fijar o desfijar clip / Pin or unpin\n• Supr         : Eliminar clip / Delete clip",
+                "✨ ¡Bienvenido a CyberPaste! / Welcome to CyberPaste!",
+                "CyberPaste.exe",
+            ),
+            (
+                "text",
+                "🎨 Paleta CyberNeon (Detección de colores):\n#00f2fe  Cyan Glow\n#4facfe  Electric Blue\n#a855f7  Neon Purple\n#ec4899  Cyber Pink\n#10b981  Emerald Bright",
+                "🎨 Paleta CyberNeon: #00f2fe #4facfe #a855f7 #ec4899 #10b981",
+                "Figma.exe",
+            ),
+            (
+                "code",
+                "// 🚀 CyberPaste: Modern Clipboard Manager\nexport interface ClipboardClip {\n  id: string;\n  type: 'text' | 'image' | 'code' | 'url';\n  content: string;\n  isPinned: boolean;\n  createdAt: Date;\n}",
+                "// 🚀 CyberPaste: Modern Clipboard Manager",
+                "Code.exe",
+            ),
+            (
+                "url",
+                "https://github.com/CyberGems/CyberPaste",
+                "https://github.com/CyberGems/CyberPaste",
+                "chrome.exe",
+            ),
+            (
+                "text",
+                "# 💎 CyberPaste — Productividad sin límites\n\n- ⚡ **Ultra-rápido**: Motor nativo en Rust + SQLite local\n- 🔒 **100% Privado**: Tus datos nunca salen de tu equipo\n- 📁 **Carpetas**: Organiza clips arrastrando o con menús\n- 👁️ **Peek Popover**: Pasa el cursor en modo compacto para previsualizar\n- 🤖 **Acciones IA**: Resume, traduce o analiza código localmente",
+                "# 💎 CyberPaste — Productividad sin límites",
+                "Obsidian.exe",
+            ),
+            (
+                "code",
+                "{\n  \"app\": \"CyberPaste\",\n  \"version\": \"1.14.0\",\n  \"theme\": \"cyberpaste\",\n  \"storage\": \"sqlite_local\",\n  \"offline_first\": true\n}",
+                "{\n  \"app\": \"CyberPaste\",\n  \"version\": \"1.14.0\"...",
+                "Code.exe",
+            ),
+            (
+                "code",
+                "# CyberPaste: Modern & Lightweight Clipboard Tool\nnpm run dev",
+                "# CyberPaste: Modern & Lightweight Clipboard Tool",
+                "WindowsTerminal.exe",
+            ),
+        ];
+
+        for (idx, (clip_type, content, preview, source_app)) in sample_clips.iter().enumerate() {
+            let clip_uuid = uuid::Uuid::new_v4().to_string();
+            let content_bytes = content.as_bytes();
+            let mut hasher = Sha256::new();
+            hasher.update(content_bytes);
+            let hash = format!("{:x}", hasher.finalize());
+            let sort_order = (idx + 1) as i64;
+
+            let _ = sqlx::query(
+                r#"
+                INSERT INTO clips (
+                    uuid, clip_type, content, text_preview, content_hash,
+                    folder_id, is_deleted, is_thumbnail, source_app, source_icon,
+                    metadata, sort_order, is_pinned, created_at, last_accessed
+                )
+                VALUES (?, ?, ?, ?, ?, NULL, 0, 0, ?, NULL, NULL, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                "#,
+            )
+            .bind(&clip_uuid)
+            .bind(clip_type)
+            .bind(content_bytes)
+            .bind(preview)
+            .bind(&hash)
+            .bind(source_app)
+            .bind(sort_order)
+            .execute(&self.pool)
+            .await;
+        }
+
         Ok(())
     }
 }

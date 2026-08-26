@@ -97,6 +97,7 @@
   "compact": {
     "enterToPaste": "ENTER TO PASTE",
     "arrowsFolders": "←→ FOLDERS",
+    "typeToSearch": "TYPE TO SEARCH",
     "escToHide": "ESC TO HIDE",
     "switchHorizontal": "Switch to Horizontal Tabs",
     "switchVertical": "Switch to Vertical Tabs",
