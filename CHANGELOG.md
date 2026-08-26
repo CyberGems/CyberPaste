@@ -2,6 +2,26 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.13.0] — 2026-08-26
+
+### 📁 Copy to Folder & Double-Flash Feedback
+- **Copy instead of move**: Dragging or moving clips into folders now duplicates them into the destination folder while preserving the original clip in the main clipboard and latest position.
+- **Double-flash visual feedback**: Added an animated double-pulse illumination (`folder-double-flash`) on folder tabs and sidebar buttons when clips are copied.
+- **Dedicated duplicate toast**: Friendly amber "Duplicate" toast notification when copying a clip that already exists in the target folder.
+
+### 🖼️ Compact Image Peek Facelift
+- **Maximized image area**: Removed the inner card padding and border, allowing previews to utilize the full popover area.
+- **Checkerboard background**: Added a sleek transparency grid pattern for transparent PNG/WebP images in both Light and Dark themes.
+- **Dynamic aspect-ratio fitting**: Previews now hug the exact height of the image without empty vertical margins.
+- **Streamlined header**: Removed redundant action buttons to keep the hover peek focused and minimal.
+- **Calibrated hover delay**: Adjusted peek activation delay to 750ms for a smoother, non-intrusive experience.
+
+### 🐛 Bug Fixes & UX Polish
+- **Clip deletion view wipeout fix**: Fixed a state issue where deleting a clip from the context menu could blank the active folder view until refresh.
+- **Compact menu spacing**: Narrowed the three-dot button width and eliminated layout shifting on hover.
+- **Hidden detail panel in compact**: Context menus in Compact mode now hide the Full-mode-only "Expand Details Panel" action.
+- **Startup dev stability**: Added pre-dev cleanup lifecycle script to prevent orphaned background processes.
+
 ## [1.12.1] — 2026-08-25
 
 ### 🚀 Updater & Compact Mode Polish
