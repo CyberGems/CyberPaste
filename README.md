@@ -9,6 +9,15 @@
   <img src="https://img.shields.io/badge/version-1.13.0-green.svg" alt="Version" />
 </p>
 
+<p align="center">
+  <a href="https://github.com/CyberGems/CyberPaste/releases/latest">
+    <img src="https://img.shields.io/badge/⚡_Download_Latest_Release-(Windows_64--bit)-00F2FF?style=for-the-badge&logo=windows&logoColor=000000" alt="Download Latest Release" />
+  </a>
+  <a href="https://github.com/CyberGems/CyberPaste/releases">
+    <img src="https://img.shields.io/badge/All_Releases-Changelog-18181B?style=for-the-badge&logo=github&logoColor=white" alt="All Releases" />
+  </a>
+</p>
+
 CyberPaste stores everything you copy to your clipboard locally, so you can recall any specific clip at any time. It’s the easiest way to save, organize, search, pin, edit, and preview almost everything you copy on Windows and paste it instantly.
 
 *Free and open source (GPLv3) — no ads, no tracking, and no data collection. Just enjoy it.*
