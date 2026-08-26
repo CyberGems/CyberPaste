@@ -198,6 +198,11 @@
     "tooltipWithContextMenu": "{{action}} · Cliquez avec le bouton droit pour ouvrir le menu contextuel",
     "clipsDeleted": "{{count}} éléments supprimés",
     "clipsMovedToFolder": "{{count}} éléments déplacés",
-    "clipsMovedToMain": "{{count}} éléments déplacés vers le presse-papiers"
+    "clipsMovedToMain": "{{count}} éléments déplacés vers le presse-papiers",
+    "copiedToFolder": "Copié dans le dossier",
+    "copiedToMainClipboard": "Copié dans le presse-papiers",
+    "clipCopyFailed": "Échec de la copie du clip",
+    "clipsCopiedToFolder": "{{count}} éléments copiés dans le dossier",
+    "clipsCopiedToMain": "{{count}} éléments copiés dans le presse-papiers"
   }
 }

@@ -36,6 +36,41 @@
   animation: clip-pin-flash 0.55s ease-out forwards;
 }
 
+@keyframes folder-double-flash {
+  0% {
+    transform: scale(1);
+    box-shadow: none;
+  }
+  25% {
+    transform: scale(1.06);
+    box-shadow:
+      0 0 14px rgba(34, 211, 238, 0.7),
+      inset 0 0 8px rgba(34, 211, 238, 0.35);
+    border-color: rgba(34, 211, 238, 0.95);
+    background-color: rgba(34, 211, 238, 0.2);
+  }
+  50% {
+    transform: scale(1);
+    box-shadow: none;
+    background-color: transparent;
+  }
+  75% {
+    transform: scale(1.06);
+    box-shadow:
+      0 0 14px rgba(34, 211, 238, 0.7),
+      inset 0 0 8px rgba(34, 211, 238, 0.35);
+    border-color: rgba(34, 211, 238, 0.95);
+    background-color: rgba(34, 211, 238, 0.2);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: none;
+  }
+}
+.folder-double-flash {
+  animation: folder-double-flash 0.65s ease-in-out forwards !important;
+}
+
 @keyframes toast-shrink {
   from {
     transform: scaleX(1);
@@ -43,6 +78,38 @@
   to {
     transform: scaleX(0);
   }
+}
+
+/* ── Checkerboard transparency background ──────────────────────── */
+.checkerboard-bg {
+  background-color: var(--checker-bg-1, #0f131c);
+  background-image:
+    linear-gradient(45deg, var(--checker-bg-2, #181d2a) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--checker-bg-2, #181d2a) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--checker-bg-2, #181d2a) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--checker-bg-2, #181d2a) 75%);
+  background-size: 16px 16px;
+  background-position:
+    0 0,
+    0 8px,
+    8px -8px,
+    -8px 0px;
+}
+
+.light .checkerboard-bg,
+:root:not(.dark):not(.cyberpaste) .checkerboard-bg {
+  --checker-bg-1: #f3f4f8;
+  --checker-bg-2: #e3e6ef;
+}
+
+.dark .checkerboard-bg {
+  --checker-bg-1: #15171e;
+  --checker-bg-2: #21242e;
+}
+
+.cyberpaste .checkerboard-bg {
+  --checker-bg-1: #0e121a;
+  --checker-bg-2: #161c28;
 }
 
 @layer base {
@@ -453,9 +520,9 @@
   }
 
   /* TextInput & Inputs for Dark Theme */
-  .dark input[type="text"],
-  .dark input[type="password"],
-  .dark input[type="number"],
+  .dark input[type='text'],
+  .dark input[type='password'],
+  .dark input[type='number'],
   .dark textarea,
   .dark button.flex.w-full.items-center.justify-between.bg-input {
     background: rgba(0, 0, 0, 0.35) !important;
@@ -487,7 +554,7 @@
 
   .dark button.rounded-full.bg-primary > div,
   .dark button.rounded-full.bg-primary > span {
-    background: #16181B !important; /* switch active indicator matches background */
+    background: #16181b !important; /* switch active indicator matches background */
   }
 
   .dark button.rounded-full:not(.bg-primary) > div,
@@ -497,10 +564,10 @@
 
   /* Combobox dropdown menu elevation & contrast (CyberSnap Match) */
   .dark button.flex.w-full.items-center.justify-between.bg-input + div {
-    background: #14161A !important;
+    background: #14161a !important;
     border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    box-shadow: 
-      0 12px 36px -6px rgba(0, 0, 0, 0.75), 
+    box-shadow:
+      0 12px 36px -6px rgba(0, 0, 0, 0.75),
       0 4px 12px -4px rgba(0, 0, 0, 0.5),
       0 0 0 1px rgba(0, 0, 0, 0.3) !important;
   }

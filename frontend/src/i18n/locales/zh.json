@@ -200,6 +200,11 @@
     "tooltipWithContextMenu": "{{action}} · 右键单击以打开上下文菜单",
     "clipsDeleted": "已删除 {{count}} 个剪辑",
     "clipsMovedToFolder": "已移动 {{count}} 个剪辑",
-    "clipsMovedToMain": "已将 {{count}} 个剪辑移动到剪贴板"
+    "clipsMovedToMain": "已将 {{count}} 个剪辑移动到剪贴板",
+    "copiedToFolder": "已复制到文件夹",
+    "copiedToMainClipboard": "已复制到剪贴板",
+    "clipCopyFailed": "复制剪辑失败",
+    "clipsCopiedToFolder": "已将 {{count}} 个剪辑复制到文件夹",
+    "clipsCopiedToMain": "已将 {{count}} 个剪辑复制到剪贴板"
   }
 }

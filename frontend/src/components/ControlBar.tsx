@@ -59,6 +59,7 @@ import { CONTEXT_MENU_EVENT, type ContextMenuEventDetail } from '../utils/contex
 import { clsx } from 'clsx';
 import { useTranslation } from 'react-i18next';
 import Tooltip from './Tooltip';
+import { useFolderFlash } from '../hooks/useFolderFlash';
 
 const IconMap: Record<string, any> = {
   Zap,
@@ -136,6 +137,76 @@ interface ControlBarProps {
   isWindowActive?: boolean;
   wheelFolderNavigation?: boolean;
 }
+
+interface FolderTabButtonProps {
+  folder: FolderItem;
+  isSelected: boolean;
+  isDragTarget: boolean;
+  isMenuHighlighted: boolean;
+  isDragging: boolean;
+  draggingFolderId: string | null;
+  dragTargetFolderId: string | null | undefined;
+  onMouseDown: (e: React.MouseEvent, id: string) => void;
+  onMouseMove: (e: React.MouseEvent, id: string) => void;
+  onMouseLeave: () => void;
+  onClick: (id: string) => void;
+  onContextMenu: (e: React.MouseEvent, id: string) => void;
+  onMouseEnter: (id: string) => void;
+}
+
+const FolderTabButton: React.FC<FolderTabButtonProps> = ({
+  folder,
+  isSelected,
+  isDragTarget,
+  isMenuHighlighted,
+  draggingFolderId,
+  dragTargetFolderId,
+  onMouseDown,
+  onMouseMove,
+  onMouseLeave,
+  onClick,
+  onContextMenu,
+  onMouseEnter,
+}) => {
+  const isFlashing = useFolderFlash(folder.id);
+  const Icon = IconMap[folder.icon || 'FolderIcon'] || FolderIcon;
+  const folderColor = folder.color || undefined;
+
+  return (
+    <button
+      data-folder-id={folder.id}
+      onMouseDown={(e) => onMouseDown(e, folder.id)}
+      onMouseMove={(e) => onMouseMove(e, folder.id)}
+      onMouseLeave={onMouseLeave}
+      onClick={() => onClick(folder.id)}
+      onContextMenu={(e) => onContextMenu(e, folder.id)}
+      onMouseEnter={() => onMouseEnter(folder.id)}
+      data-selected={isSelected}
+      className={clsx(
+        'flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 text-[12px] font-medium transition-all',
+        isFlashing && 'folder-double-flash',
+        isSelected && dragTargetFolderId === undefined
+          ? 'border-primary/30 bg-primary/15 font-semibold text-foreground shadow-[0_0_8px_rgba(var(--primary-rgb),0.12)]'
+          : isDragTarget
+            ? 'border-primary bg-primary/30 text-foreground'
+            : isMenuHighlighted
+              ? 'border-transparent bg-accent text-foreground'
+              : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground',
+        draggingFolderId === folder.id && 'pointer-events-none scale-95 opacity-40'
+      )}
+    >
+      <Icon
+        size={12}
+        style={{ color: folderColor }}
+        className={isSelected ? 'text-primary' : 'flex-shrink-0 text-muted-foreground/60'}
+      />
+      <span>{folder.name}</span>
+      <span className={clsx('text-[10px] tabular-nums opacity-35', isSelected && 'opacity-70')}>
+        ({folder.item_count || 0})
+      </span>
+    </button>
+  );
+};
 
 export const ControlBar: React.FC<ControlBarProps> = ({
   folders,
@@ -462,7 +533,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
 
             {hotkey && (
               <>
-                <div className="bg-border h-3 w-px" />
+                <div className="h-3 w-px bg-border" />
                 <Tooltip label={t('common.globalHotkey')} placement="bottom">
                   <span className="rounded border border-primary/20 bg-primary/10 px-1.5 py-px font-mono text-[10px] font-bold text-primary">
                     {hotkey}
@@ -473,7 +544,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
 
             {dbSizeBytes != null && dbSizeBytes > 0 && (
               <>
-                <div className="bg-border h-3 w-px" />
+                <div className="h-3 w-px bg-border" />
                 <Tooltip
                   label={`${t('common.databaseSize')}: ${formatBytes(dbSizeBytes)}`}
                   placement="bottom"
@@ -532,7 +603,10 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             </button>
           </Tooltip>
 
-          <Tooltip label={isMaximized ? t('common.restore') : t('common.maximize')} placement="bottom">
+          <Tooltip
+            label={isMaximized ? t('common.restore') : t('common.maximize')}
+            placement="bottom"
+          >
             <button
               onClick={onToggleMaximize}
               aria-label={isMaximized ? t('common.restore') : t('common.maximize')}
@@ -600,39 +674,43 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             )}
             onWheel={handleWheel}
           >
-            <button
-              onClick={() => onSelectFolder(null)}
-              onMouseEnter={() => isDragging && onDragHover(null)}
-              onMouseLeave={onDragLeave}
-              data-folder-id="clipboard"
-              data-selected={highlightedFolderId === null}
-              className={clsx(
-                'flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 text-[12px] font-medium transition-all',
-                highlightedFolderId === null && dragTargetFolderId === undefined
-                  ? 'border-primary/30 bg-primary/15 font-semibold text-foreground shadow-[0_0_8px_rgba(var(--primary-rgb),0.12)]'
-                  : dragTargetFolderId === null && isDragging
-                    ? 'border-primary bg-primary/30 text-foreground'
-                    : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
-              )}
-            >
-              <Clock size={12} className="flex-shrink-0" />
-              <span>{t('folders.clipboard')}</span>
-              <span
-                className={clsx(
-                  'text-[10px] tabular-nums opacity-35',
-                  highlightedFolderId === null && 'opacity-70'
-                )}
-              >
-                ({totalClipCount})
-              </span>
-            </button>
+            {(() => {
+              const isClipboardFlashing = useFolderFlash(null);
+              return (
+                <button
+                  onClick={() => onSelectFolder(null)}
+                  onMouseEnter={() => isDragging && onDragHover(null)}
+                  onMouseLeave={onDragLeave}
+                  data-folder-id="clipboard"
+                  data-selected={highlightedFolderId === null}
+                  className={clsx(
+                    'flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 text-[12px] font-medium transition-all',
+                    isClipboardFlashing && 'folder-double-flash',
+                    highlightedFolderId === null && dragTargetFolderId === undefined
+                      ? 'border-primary/30 bg-primary/15 font-semibold text-foreground shadow-[0_0_8px_rgba(var(--primary-rgb),0.12)]'
+                      : dragTargetFolderId === null && isDragging
+                        ? 'border-primary bg-primary/30 text-foreground'
+                        : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
+                  )}
+                >
+                  <Clock size={12} className="flex-shrink-0" />
+                  <span>{t('folders.clipboard')}</span>
+                  <span
+                    className={clsx(
+                      'text-[10px] tabular-nums opacity-35',
+                      highlightedFolderId === null && 'opacity-70'
+                    )}
+                  >
+                    ({totalClipCount})
+                  </span>
+                </button>
+              );
+            })()}
 
             {folders.map((folder) => {
               const isSelected = highlightedFolderId === folder.id;
               const isDragTarget = dragTargetFolderId === folder.id;
               const isMenuHighlighted = contextMenuFolderId === folder.id;
-              const Icon = IconMap[folder.icon || 'FolderIcon'] || FolderIcon;
-              const folderColor = folder.color || undefined;
 
               return (
                 <React.Fragment key={folder.id}>
@@ -643,50 +721,27 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                         style={{ alignSelf: 'center' }}
                       />
                     )}
-                  <button
-                    data-folder-id={folder.id}
-                    onMouseDown={(e) => handleFolderMouseDown(e, folder.id)}
-                    onMouseMove={(e) => handleFolderMouseMove(e, folder.id)}
+                  <FolderTabButton
+                    folder={folder}
+                    isSelected={isSelected}
+                    isDragTarget={isDragTarget}
+                    isMenuHighlighted={isMenuHighlighted}
+                    isDragging={isDragging}
+                    draggingFolderId={draggingFolderId}
+                    dragTargetFolderId={dragTargetFolderId}
+                    onMouseDown={handleFolderMouseDown}
+                    onMouseMove={handleFolderMouseMove}
                     onMouseLeave={() => {
                       handleFolderMouseLeave();
                       onDragLeave();
                     }}
-                    onClick={() => {
+                    onClick={(id) => {
                       if (wasFolderDraggingRef.current) return;
-                      onSelectFolder(folder.id);
+                      onSelectFolder(id);
                     }}
-                    onContextMenu={(e) => onFolderContextMenu(e, folder.id)}
-                    onMouseEnter={() => isDragging && onDragHover(folder.id)}
-                    data-selected={isSelected}
-                    className={clsx(
-                      'flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 text-[12px] font-medium transition-all',
-                      isSelected && dragTargetFolderId === undefined
-                        ? 'border-primary/30 bg-primary/15 font-semibold text-foreground shadow-[0_0_8px_rgba(var(--primary-rgb),0.12)]'
-                        : isDragTarget
-                          ? 'border-primary bg-primary/30 text-foreground'
-                          : isMenuHighlighted
-                            ? 'border-transparent bg-accent text-foreground'
-                            : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground',
-                      draggingFolderId === folder.id && 'pointer-events-none scale-95 opacity-40'
-                    )}
-                  >
-                    <Icon
-                      size={12}
-                      style={{ color: folderColor }}
-                      className={
-                        isSelected ? 'text-primary' : 'flex-shrink-0 text-muted-foreground/60'
-                      }
-                    />
-                    <span>{folder.name}</span>
-                    <span
-                      className={clsx(
-                        'text-[10px] tabular-nums opacity-35',
-                        isSelected && 'opacity-70'
-                      )}
-                    >
-                      ({folder.item_count || 0})
-                    </span>
-                  </button>
+                    onContextMenu={onFolderContextMenu}
+                    onMouseEnter={(id) => isDragging && onDragHover(id)}
+                  />
                   {folderReorderTargetId === folder.id &&
                     folderReorderTargetPosition === 'after' && (
                       <div

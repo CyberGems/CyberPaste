@@ -30,6 +30,7 @@ import { useKeyboard } from './hooks/useKeyboard';
 import { useTheme } from './hooks/useTheme';
 import { useLanguage } from './hooks/useLanguage';
 import { triggerPinFlash } from './hooks/usePinFlash';
+import { triggerFolderFlash } from './hooks/useFolderFlash';
 import { useTranslation } from 'react-i18next';
 import { systemToast as toast } from './utils/toast';
 import { LAYOUT } from './constants';
@@ -900,9 +901,10 @@ function App() {
         const isCrossFolderDrag = sourceFolderId !== selectedFolderRef.current;
 
         if (isCrossFolderDrag) {
-          // Move clip to the destination folder first, then reorder
+          // Copy clip to the destination folder first, then reorder
           try {
-            await invoke('move_to_folder', { clipId, folderId: selectedFolderRef.current });
+            await invoke('copy_to_folder', { clipId, folderId: selectedFolderRef.current });
+            triggerFolderFlash(selectedFolderRef.current);
             await loadClips(selectedFolderRef.current);
             await loadFolders();
             // Now reorder within the new folder
@@ -913,11 +915,18 @@ function App() {
             });
             await loadClips(selectedFolderRef.current);
             refreshTotalCount();
-            toast.success(t('notifications.clipMoved'));
+            toast.success(t('toasts.copiedToFolder'));
           } catch (e) {
-            const errMsg = typeof e === 'string' ? e : t('notifications.clipMoveFailed');
+            const errMsg = typeof e === 'string' ? e : t('toasts.clipCopyFailed');
             console.error('[finishDrag] Cross-folder drag failed:', e);
-            toast.error(errMsg);
+            if (
+              typeof e === 'string' &&
+              (e.toLowerCase().includes('existe') || e.toLowerCase().includes('exist'))
+            ) {
+              toast.duplicate(errMsg);
+            } else {
+              toast.error(errMsg);
+            }
           }
         } else {
           // Same-folder reorder
@@ -1442,20 +1451,28 @@ function App() {
       const ids = Array.from(selectedClipIds);
       if (ids.length === 0) return;
       try {
-        const moved = await invoke<number>('move_clips_to_folder', { ids, folderId });
-        // Re-fetch the visible list so the moved items disappear from the current folder
+        const copied = await invoke<number>('copy_clips_to_folder', { ids, folderId });
+        triggerFolderFlash(folderId);
         refreshCurrentFolder();
         loadFolders();
         refreshTotalCount();
         setSelectedClipIds(new Set());
         toast.success(
           folderId
-            ? t('toasts.clipsMovedToFolder', { count: moved })
-            : t('toasts.clipsMovedToMain', { count: moved })
+            ? t('toasts.clipsCopiedToFolder', { count: copied })
+            : t('toasts.clipsCopiedToMain', { count: copied })
         );
       } catch (e) {
-        console.error('Bulk move failed:', e);
-        toast.error(typeof e === 'string' ? e : t('toasts.clipMoveFailed'));
+        console.error('Bulk copy failed:', e);
+        const errMsg = typeof e === 'string' ? e : t('toasts.clipCopyFailed');
+        if (
+          typeof e === 'string' &&
+          (e.toLowerCase().includes('existe') || e.toLowerCase().includes('exist'))
+        ) {
+          toast.duplicate(errMsg);
+        } else {
+          toast.error(errMsg);
+        }
       }
     },
     [selectedClipIds, refreshCurrentFolder, loadFolders, refreshTotalCount, t]
@@ -1633,17 +1650,26 @@ function App() {
 
   const handleMoveClip = async (clipId: string, folderId: string | null) => {
     try {
-      await invoke('move_to_folder', { clipId, folderId });
+      await invoke('copy_to_folder', { clipId, folderId });
+      triggerFolderFlash(folderId);
 
       // Refresh current view from DB to ensure consistency
       refreshCurrentFolder();
       loadFolders();
       refreshTotalCount();
 
-      toast.success(t('notifications.clipMoved'));
+      toast.success(t('toasts.copiedToFolder'));
     } catch (error) {
-      console.error('Failed to move clip:', error);
-      toast.error(typeof error === 'string' ? error : t('notifications.clipMoveFailed'));
+      console.error('Failed to copy clip:', error);
+      const errMsg = typeof error === 'string' ? error : t('toasts.clipCopyFailed');
+      if (
+        typeof error === 'string' &&
+        (error.toLowerCase().includes('existe') || error.toLowerCase().includes('exist'))
+      ) {
+        toast.duplicate(errMsg);
+      } else {
+        toast.error(errMsg);
+      }
     }
   };
 
@@ -1966,7 +1992,7 @@ function App() {
         });
 
         opts.push({
-          label: t('contextMenu.moveToFolder'),
+          label: t('contextMenu.copyToFolder') || t('contextMenu.moveToFolder'),
           icon: <FolderInput size={14} />,
           onClick: () => setMoveToFolderClipId(itemId),
         });
@@ -2126,14 +2152,23 @@ function App() {
   const handleMoveToFolder = useCallback(
     async (clipId: string, folderId: string | null) => {
       try {
-        await invoke('move_to_folder', { clipId, folderId });
+        await invoke('copy_to_folder', { clipId, folderId });
+        triggerFolderFlash(folderId);
         await loadClips(selectedFolderRef.current);
         await loadFolders();
         refreshTotalCount();
-        toast.success(folderId ? t('toasts.movedToFolder') : t('toasts.movedToMainClipboard'));
+        toast.success(folderId ? t('toasts.copiedToFolder') : t('toasts.copiedToMainClipboard'));
       } catch (e) {
-        console.error('Failed to move clip:', e);
-        toast.error(typeof e === 'string' ? e : t('toasts.clipMoveFailed'));
+        console.error('Failed to copy clip to folder:', e);
+        const errMsg = typeof e === 'string' ? e : t('toasts.clipCopyFailed');
+        if (
+          typeof e === 'string' &&
+          (e.toLowerCase().includes('existe') || e.toLowerCase().includes('exist'))
+        ) {
+          toast.duplicate(errMsg);
+        } else {
+          toast.error(errMsg);
+        }
       }
     },
     [loadClips, loadFolders, refreshTotalCount, t]

@@ -15,15 +15,34 @@ export const systemToast = {
       console.error
     );
   },
+  duplicate: (message: string, _options?: any) => {
+    invoke('show_toast', {
+      message,
+      toastType: 'duplicate',
+      clipType: null,
+      imagePreview: null,
+    }).catch(console.error);
+  },
+  warning: (message: string, _options?: any) => {
+    invoke('show_toast', {
+      message,
+      toastType: 'duplicate',
+      clipType: null,
+      imagePreview: null,
+    }).catch(console.error);
+  },
   info: (message: string, _options?: any) => {
     invoke('show_toast', { message, toastType: 'info', clipType: null, imagePreview: null }).catch(
       console.error
     );
   },
   update: (message: string, _options?: any) => {
-    invoke('show_toast', { message, toastType: 'update', clipType: null, imagePreview: null }).catch(
-      console.error
-    );
+    invoke('show_toast', {
+      message,
+      toastType: 'update',
+      clipType: null,
+      imagePreview: null,
+    }).catch(console.error);
   },
   loading: (message: string, _options?: any) => {
     invoke('show_toast', { message, toastType: 'info', clipType: null, imagePreview: null }).catch(

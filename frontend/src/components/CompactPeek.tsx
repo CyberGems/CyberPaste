@@ -1,18 +1,16 @@
 import React, { useEffect } from 'react';
-import { Copy, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ClipboardItem } from '../types';
-import Tooltip from './Tooltip';
 
 interface CompactPeekProps {
   clip: ClipboardItem | null;
   anchorRect: { x: number; y: number; width: number; height: number } | null;
   sidebarWidth: number;
   resolveImageSrc: (content: string) => string;
-  onCopy: (id: string) => void;
-  onPin: (id: string) => void;
-  onDelete: (id: string) => void;
+  onCopy?: (id: string) => void;
+  onPin?: (id: string) => void;
+  onDelete?: (id: string) => void;
   onClose: () => void;
 }
 
@@ -24,8 +22,6 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
   anchorRect,
   sidebarWidth,
   resolveImageSrc,
-  onCopy,
-  onDelete,
   onClose,
 }) => {
   const { t } = useTranslation();
@@ -65,12 +61,15 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
 
   const sourceRowPadding = 2;
   const sourceRowTop = Math.max(0, anchorRect.y - sourceRowPadding);
-  const sourceRowBottom = Math.min(
-    vh,
-    anchorRect.y + anchorRect.height + sourceRowPadding
-  );
-  const compactHeaderHeight = 48;
-  const topBlurHeight = Math.max(0, sourceRowTop - compactHeaderHeight);
+  const sourceRowBottom = Math.min(vh, anchorRect.y + anchorRect.height + sourceRowPadding);
+
+  // Exclude search bar and top controls from blur: compute clip list boundaries
+  const listEl = typeof document !== 'undefined' ? document.querySelector('[data-clip-list="true"]') : null;
+  const listRect = listEl?.getBoundingClientRect();
+  const listTop = listRect ? listRect.top : 96;
+  const listBottom = listRect ? listRect.bottom : vh;
+  const topBlurHeight = Math.max(0, sourceRowTop - listTop);
+  const bottomBlurHeight = Math.max(0, listBottom - sourceRowBottom);
 
   let calculatedMaxHeight = PEEK_MAX_HEIGHT;
   if (showAbove) {
@@ -78,7 +77,10 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
     calculatedMaxHeight = Math.min(PEEK_MAX_HEIGHT, anchorRect.y - VIEWPORT_MARGIN - 4);
   } else {
     style.top = anchorRect.y + anchorRect.height + 4;
-    calculatedMaxHeight = Math.min(PEEK_MAX_HEIGHT, vh - (anchorRect.y + anchorRect.height) - VIEWPORT_MARGIN - 4);
+    calculatedMaxHeight = Math.min(
+      PEEK_MAX_HEIGHT,
+      vh - (anchorRect.y + anchorRect.height) - VIEWPORT_MARGIN - 4
+    );
   }
 
   const isImage = clip.clip_type === 'image';
@@ -125,8 +127,8 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.12, ease: 'easeOut' }}
-            className="pointer-events-none fixed inset-x-0 top-12 z-[90] bg-background/[0.24] backdrop-blur-[20px]"
-            style={{ height: topBlurHeight }}
+            className="pointer-events-none fixed inset-x-0 z-[90] bg-background/[0.24] backdrop-blur-[20px]"
+            style={{ top: listTop, height: topBlurHeight }}
           />
           <motion.div
             key="peek-backdrop-bottom"
@@ -134,83 +136,69 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.12, ease: 'easeOut' }}
-            className="pointer-events-none fixed inset-x-0 bottom-0 z-[90] bg-background/[0.24] backdrop-blur-[20px]"
-            style={{ top: sourceRowBottom }}
+            className="pointer-events-none fixed inset-x-0 z-[90] bg-background/[0.24] backdrop-blur-[20px]"
+            style={{ top: sourceRowBottom, height: bottomBlurHeight }}
           />
-        <motion.div
-          key={`peek-${clip.id}`}
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.96 }}
-          transition={{ duration: 0.08, ease: 'easeOut' }}
-          className="fixed z-[100]"
-          style={style}
-          onMouseLeave={onClose}
-        >
-          <div
-            className="flex w-full flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-2xl"
-            style={{ maxHeight: calculatedMaxHeight }}
+          <motion.div
+            key={`peek-${clip.id}`}
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.96 }}
+            transition={{ duration: 0.08, ease: 'easeOut' }}
+            className="fixed z-[100]"
+            style={style}
+            onMouseLeave={onClose}
           >
-            {/* Header info bar / merged with action bar */}
-            <div className="flex h-9 flex-shrink-0 items-center justify-between border-b border-border bg-muted/60 px-3 text-[10px] font-medium tracking-wider uppercase text-muted-foreground/80">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="rounded-md border border-border/80 bg-background/40 px-1.5 py-0.5 text-[9px] font-semibold tracking-widest text-muted-foreground">{t(`clipType.${clip.clip_type}`)}</span>
-                <span className="font-mono text-[9px] text-muted-foreground/90 truncate">{infoLabel}</span>
+            <div
+              className="flex w-full flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-2xl"
+              style={{ maxHeight: calculatedMaxHeight }}
+            >
+              {/* Header info bar */}
+              <div className="flex h-8 flex-shrink-0 items-center justify-between border-b border-border bg-muted/60 px-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/80">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="rounded-md border border-border/80 bg-background/40 px-1.5 py-0.5 text-[9px] font-semibold tracking-widest text-muted-foreground">
+                    {t(`clipType.${clip.clip_type}`)}
+                  </span>
+                  <span className="truncate font-mono text-[9px] text-muted-foreground/90">
+                    {infoLabel}
+                  </span>
+                </div>
               </div>
-              
-              {/* Action buttons merged in header */}
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <Tooltip label={t('compact.peekCopy')} placement="top">
-                  <button
-                    onClick={() => {
-                      onCopy(clip.id);
-                      onClose();
-                    }}
-                    className="flex h-6.5 w-6.5 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-all duration-150 active:scale-95"
-                    style={{ width: '26px', height: '26px' }}
-                  >
-                    <Copy size={13} />
-                  </button>
-                </Tooltip>
-                <Tooltip label={t('compact.peekDelete')} placement="top">
-                  <button
-                    onClick={() => {
-                      onDelete(clip.id);
-                      onClose();
-                    }}
-                    className="flex h-6.5 w-6.5 items-center justify-center rounded-md text-destructive/70 hover:bg-destructive/15 hover:text-destructive transition-all duration-150 active:scale-95"
-                    style={{ width: '26px', height: '26px' }}
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </Tooltip>
-              </div>
-            </div>
 
-            {/* Content */}
-            <div className="min-h-0 flex-1 overflow-y-auto p-3">
+              {/* Content */}
               {isImage ? (
                 imageSrc ? (
-                  <div className="flex h-44 items-center justify-center overflow-hidden rounded-lg bg-secondary/35 border border-border p-1">
+                  <div
+                    className="checkerboard-bg relative flex w-full items-center justify-center overflow-hidden"
+                    style={{ maxHeight: calculatedMaxHeight - 32 }}
+                  >
                     <img
                       src={imageSrc}
                       alt="preview"
-                      className="max-h-full max-w-full object-contain"
+                      className="block max-h-full max-w-full object-contain"
+                      style={{ maxHeight: calculatedMaxHeight - 32 }}
                     />
                   </div>
                 ) : (
-                  <p className="text-[11px] italic text-muted-foreground">{t('common.image')}</p>
+                  <div className="p-3">
+                    <p className="text-[11px] italic text-muted-foreground">{t('common.image')}</p>
+                  </div>
                 )
-              ) : textToShow ? (
-                <pre className="whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-foreground/90">
-                  {textToShow}
-                </pre>
               ) : (
-                <p className="text-[11px] italic text-muted-foreground">{t('common.loading')}</p>
+                <div className="min-h-0 flex-1 overflow-y-auto p-3">
+                  {textToShow ? (
+                    <pre className="whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-foreground/90">
+                      {textToShow}
+                    </pre>
+                  ) : (
+                    <p className="text-[11px] italic text-muted-foreground">
+                      {t('common.loading')}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
         </>
       )}
     </AnimatePresence>

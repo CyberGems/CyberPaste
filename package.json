@@ -5,7 +5,8 @@
   "license": "GPL-3.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "predev": "node -e \"try { require('child_process').execSync('taskkill /f /im CyberPaste.exe', { stdio: 'ignore' }); } catch {}\"",
+    "dev": "vite --force",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",

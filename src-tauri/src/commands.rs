@@ -1140,6 +1140,273 @@ pub async fn delete_clips(
     Ok(count)
 }
 
+#[tauri::command]
+pub async fn copy_to_folder(
+    clip_id: String,
+    folder_id: Option<String>,
+    app: tauri::AppHandle,
+    db: tauri::State<'_, Arc<Database>>,
+) -> Result<(), String> {
+    let pool = &db.pool;
+
+    let clip_info: Option<(
+        String,
+        Vec<u8>,
+        Option<String>,
+        String,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        i64,
+    )> = sqlx::query_as(
+        r#"
+        SELECT clip_type, content, text_preview, content_hash, source_app, source_icon, metadata, is_thumbnail
+        FROM clips
+        WHERE uuid = ? AND is_deleted = 0
+        "#,
+    )
+    .bind(&clip_id)
+    .fetch_optional(pool)
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let (clip_type, content, text_preview, content_hash, source_app, source_icon, metadata, is_thumbnail) =
+        match clip_info {
+            Some(info) => info,
+            None => {
+                log::warn!("copy_to_folder: No clip found with uuid={}", clip_id);
+                return Err("Clip not found".to_string());
+            }
+        };
+
+    let folder_id_parsed = match folder_id {
+        Some(id) if id == "null" => None,
+        Some(id) => Some(
+            id.parse::<i64>()
+                .map_err(|e| format!("Invalid folder ID '{}': {}", id, e))?,
+        ),
+        None => None,
+    };
+
+    // Check if target folder already contains this content
+    let existing_in_folder: Option<String> = if let Some(target_folder) = folder_id_parsed {
+        sqlx::query_scalar(
+            "SELECT uuid FROM clips WHERE content_hash = ? AND folder_id = ? AND is_deleted = 0",
+        )
+        .bind(&content_hash)
+        .bind(target_folder)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| e.to_string())?
+    } else {
+        sqlx::query_scalar(
+            "SELECT uuid FROM clips WHERE content_hash = ? AND folder_id IS NULL AND is_deleted = 0",
+        )
+        .bind(&content_hash)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| e.to_string())?
+    };
+
+    if existing_in_folder.is_some() {
+        use crate::settings_manager::SettingsManager;
+        use tauri::Manager;
+        let settings_manager = app.state::<Arc<SettingsManager>>();
+        let settings = settings_manager.get();
+        let lang = settings.language.as_str();
+
+        if lang == "es" {
+            return Err("El clip ya existe en esta carpeta".to_string());
+        } else {
+            return Err("Clip already exists in this folder".to_string());
+        }
+    }
+
+    let new_uuid = uuid::Uuid::new_v4().to_string();
+    let new_sort_order = db
+        .get_and_prepare_first_unpinned_slot(folder_id_parsed, None)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    sqlx::query(
+        r#"
+        INSERT INTO clips (
+            uuid, clip_type, content, text_preview, content_hash, folder_id,
+            is_deleted, is_thumbnail, source_app, source_icon, metadata,
+            sort_order, created_at, last_accessed
+        )
+        VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        "#,
+    )
+    .bind(&new_uuid)
+    .bind(&clip_type)
+    .bind(&content)
+    .bind(&text_preview)
+    .bind(&content_hash)
+    .bind(folder_id_parsed)
+    .bind(is_thumbnail)
+    .bind(&source_app)
+    .bind(&source_icon)
+    .bind(&metadata)
+    .bind(new_sort_order)
+    .execute(pool)
+    .await
+    .map_err(|e| e.to_string())?;
+
+    if clip_type == "image" {
+        let _ = sqlx::query(
+            r#"
+            INSERT OR REPLACE INTO clip_images (
+                clip_uuid, full_content, file_path, file_size, storage_kind, mime_type, created_at
+            )
+            SELECT ?, full_content, file_path, file_size, storage_kind, mime_type, CURRENT_TIMESTAMP
+            FROM clip_images WHERE clip_uuid = ?
+            "#,
+        )
+        .bind(&new_uuid)
+        .bind(&clip_id)
+        .execute(pool)
+        .await;
+    }
+
+    Ok(())
+}
+
+/// Batch-copy — copies every listed clip into the target folder in a single transaction.
+/// Skips clips whose content already exists in the target folder.
+#[tauri::command]
+pub async fn copy_clips_to_folder(
+    ids: Vec<String>,
+    folder_id: Option<String>,
+    db: tauri::State<'_, Arc<Database>>,
+) -> Result<u64, String> {
+    let pool = &db.pool;
+    if ids.is_empty() {
+        return Ok(0);
+    }
+
+    let folder_id_parsed = match folder_id.as_deref() {
+        Some("null") | None => None,
+        Some(id) => Some(
+            id.parse::<i64>()
+                .map_err(|e| format!("Invalid folder ID '{}': {}", id, e))?,
+        ),
+    };
+
+    let mut tx = pool.begin().await.map_err(|e| e.to_string())?;
+    let mut copied = 0u64;
+
+    for clip_id in &ids {
+        let clip: Option<(
+            String,
+            Vec<u8>,
+            Option<String>,
+            String,
+            Option<String>,
+            Option<String>,
+            Option<String>,
+            i64,
+        )> = sqlx::query_as(
+            r#"
+            SELECT clip_type, content, text_preview, content_hash, source_app, source_icon, metadata, is_thumbnail
+            FROM clips
+            WHERE uuid = ? AND is_deleted = 0
+            "#,
+        )
+        .bind(clip_id)
+        .fetch_optional(&mut *tx)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        let Some((clip_type, content, text_preview, content_hash, source_app, source_icon, metadata, is_thumbnail)) = clip else {
+            continue;
+        };
+
+        if let Some(target_folder) = folder_id_parsed {
+            let existing: Option<String> = sqlx::query_scalar(
+                "SELECT uuid FROM clips WHERE content_hash = ? AND folder_id = ? AND is_deleted = 0",
+            )
+            .bind(&content_hash)
+            .bind(target_folder)
+            .fetch_optional(&mut *tx)
+            .await
+            .map_err(|e| e.to_string())?;
+
+            if existing.is_some() {
+                log::warn!("copy_clips_to_folder: {} already exists in folder, skipping", clip_id);
+                continue;
+            }
+        } else {
+            let existing: Option<String> = sqlx::query_scalar(
+                "SELECT uuid FROM clips WHERE content_hash = ? AND folder_id IS NULL AND is_deleted = 0",
+            )
+            .bind(&content_hash)
+            .fetch_optional(&mut *tx)
+            .await
+            .map_err(|e| e.to_string())?;
+
+            if existing.is_some() {
+                log::warn!("copy_clips_to_folder: {} already exists in main list, skipping", clip_id);
+                continue;
+            }
+        }
+
+        let new_uuid = uuid::Uuid::new_v4().to_string();
+        let new_sort_order: i64 = sqlx::query_scalar(
+            "SELECT COALESCE(MIN(sort_order), 0) - 1 FROM clips WHERE is_deleted = 0 AND uuid IS NOT NULL",
+        )
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        let result = sqlx::query(
+            r#"
+            INSERT INTO clips (
+                uuid, clip_type, content, text_preview, content_hash, folder_id,
+                is_deleted, is_thumbnail, source_app, source_icon, metadata,
+                sort_order, created_at, last_accessed
+            )
+            VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            "#,
+        )
+        .bind(&new_uuid)
+        .bind(&clip_type)
+        .bind(&content)
+        .bind(&text_preview)
+        .bind(&content_hash)
+        .bind(folder_id_parsed)
+        .bind(is_thumbnail)
+        .bind(&source_app)
+        .bind(&source_icon)
+        .bind(&metadata)
+        .bind(new_sort_order)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        if clip_type == "image" {
+            let _ = sqlx::query(
+                r#"
+                INSERT OR REPLACE INTO clip_images (
+                    clip_uuid, full_content, file_path, file_size, storage_kind, mime_type, created_at
+                )
+                SELECT ?, full_content, file_path, file_size, storage_kind, mime_type, CURRENT_TIMESTAMP
+                FROM clip_images WHERE clip_uuid = ?
+                "#,
+            )
+            .bind(&new_uuid)
+            .bind(clip_id)
+            .execute(&mut *tx)
+            .await;
+        }
+
+        copied += result.rows_affected();
+    }
+
+    tx.commit().await.map_err(|e| e.to_string())?;
+    Ok(copied)
+}
+
 /// Batch-move — moves every listed clip into the target folder in a single transaction.
 /// Skips clips whose content already exists in the folder (same rule as move_to_folder).
 #[tauri::command]
@@ -2879,7 +3146,7 @@ pub async fn show_toast(
         *lock = Some(payload.clone());
     }
 
-    let win = if let Some(win) = app.get_webview_window(window_label) {
+    if let Some(win) = app.get_webview_window(window_label) {
         let _ = win.set_focusable(false);
         win.emit("update-toast", payload).map_err(|e| e.to_string())?;
 
@@ -2895,9 +3162,8 @@ pub async fn show_toast(
                 let _ = play_clipboard_sound(path_to_play);
             }
         }
-        win
     } else {
-        tauri::WebviewWindowBuilder::new(
+        let _ = tauri::WebviewWindowBuilder::new(
             &app,
             window_label,
             tauri::WebviewUrl::App("index.html?window=toast".into()),
@@ -2914,8 +3180,8 @@ pub async fn show_toast(
         .focusable(false)
         .visible(false) // hidden until positioned
         .build()
-        .map_err(|e| format!("Failed to create toast window: {}", e))?
-    };
+        .map_err(|e| format!("Failed to create toast window: {}", e))?;
+    }
 
     Ok(())
 }

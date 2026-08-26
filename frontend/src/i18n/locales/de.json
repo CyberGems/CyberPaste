@@ -200,6 +200,11 @@
     "tooltipWithContextMenu": "{{action}} · Rechtsklick, um das Kontextmenü zu öffnen",
     "clipsDeleted": "{{count}} Elemente gelöscht",
     "clipsMovedToFolder": "{{count}} Elemente verschoben",
-    "clipsMovedToMain": "{{count}} Elemente in Zwischenablage verschoben"
+    "clipsMovedToMain": "{{count}} Elemente in Zwischenablage verschoben",
+    "copiedToFolder": "In Ordner kopiert",
+    "copiedToMainClipboard": "In Zwischenablage kopiert",
+    "clipCopyFailed": "Fehler beim Kopieren des Clips",
+    "clipsCopiedToFolder": "{{count}} Elemente in Ordner kopiert",
+    "clipsCopiedToMain": "{{count}} Elemente in Zwischenablage kopiert"
   }
 }
