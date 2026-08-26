@@ -150,7 +150,7 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
   return (
     <div className="animate-in fade-in fixed inset-0 z-[100] flex items-center justify-center bg-black/65 p-3 backdrop-blur-sm duration-200 sm:p-4">
       <div
-        className="animate-in zoom-in-95 flex max-h-[calc(100vh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-primary/30 bg-card shadow-[0_0_50px_rgba(var(--primary-rgb),0.18),0_20px_50px_rgba(0,0,0,0.6)] duration-300 sm:max-h-[min(90vh,540px)]"
+        className="animate-in zoom-in-95 flex h-[75vh] max-h-[calc(100vh-2rem)] min-h-[360px] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-primary/30 bg-card shadow-[0_0_50px_rgba(var(--primary-rgb),0.18),0_20px_50px_rgba(0,0,0,0.6)] duration-300 sm:max-h-[min(88vh,560px)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Editor Window Header */}
