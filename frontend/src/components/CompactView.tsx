@@ -230,7 +230,10 @@ const TypeFilterDropdown: React.FC<{
                     : 'text-foreground/75 hover:bg-accent hover:text-foreground'
                 )}
               >
-                <OptIcon size={12} className={cn(isSel ? 'text-primary' : 'text-muted-foreground/80')} />
+                <OptIcon
+                  size={12}
+                  className={cn(isSel ? 'text-primary' : 'text-muted-foreground/80')}
+                />
                 <span className="flex-1 text-left">{optLabel}</span>
                 <span
                   className={cn(
@@ -763,47 +766,53 @@ export const CompactView: React.FC<CompactViewProps> = ({
   );
 
   // NUEVO: handlers para peek popover
-  const handleRowMouseEnter = useCallback((clip: AppClip, e: React.MouseEvent) => {
-    if (!compactPeekEnabled || isDragging) return;
+  const handleRowMouseEnter = useCallback(
+    (clip: AppClip, e: React.MouseEvent) => {
+      if (!compactPeekEnabled || isDragging) return;
 
-    // Si pasamos a un clip diferente, cerramos el peek activo inmediatamente
-    setPeekClipId((prevId) => {
-      if (prevId && prevId !== clip.id) {
-        setPeekAnchor(null);
-        return null;
+      // Si pasamos a un clip diferente, cerramos el peek activo inmediatamente
+      setPeekClipId((prevId) => {
+        if (prevId && prevId !== clip.id) {
+          setPeekAnchor(null);
+          return null;
+        }
+        return prevId;
+      });
+
+      // Evitar iniciar el peek si el cursor está sobre la zona de botones/iconos de la derecha
+      const target = e.target as HTMLElement;
+      if (target.closest('.pr-2') || target.closest('button')) {
+        if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
+        return;
       }
-      return prevId;
-    });
 
-    // Evitar iniciar el peek si el cursor está sobre la zona de botones/iconos de la derecha
-    const target = e.target as HTMLElement;
-    if (target.closest('.pr-2') || target.closest('button')) {
+      // Evitar peek en textos/URLs cortos que caben enteros en la fila (sin saltos de línea y longitud <= 45)
+      const isShortText =
+        (clip.clip_type === 'text' || clip.clip_type === 'code' || clip.clip_type === 'url') &&
+        !clip.preview.includes('\n') &&
+        !clip.preview.includes('\r') &&
+        clip.content_length <= 45;
+      if (isShortText) {
+        if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
+        return;
+      }
+
       if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
-      return;
-    }
-
-    // Evitar peek en textos/URLs cortos que caben enteros en la fila (sin saltos de línea y longitud <= 45)
-    const isShortText = (clip.clip_type === 'text' || clip.clip_type === 'code' || clip.clip_type === 'url') &&
-      !clip.preview.includes('\n') &&
-      !clip.preview.includes('\r') &&
-      clip.content_length <= 45;
-    if (isShortText) {
-      if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
-      return;
-    }
-
-    if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
-    const rowEl = (e.currentTarget as HTMLElement).closest('[data-clip-id]') || (e.currentTarget as HTMLElement);
-    const rect = rowEl.getBoundingClientRect();
-    const startX = e.clientX;
-    const startY = e.clientY;
-    peekOriginMousePosRef.current = { x: startX, y: startY };
-    peekTimerRef.current = setTimeout(() => {
-      setPeekClipId(clip.id);
-      setPeekAnchor({ x: rect.left, y: rect.top, width: rect.width, height: rect.height });
+      const rowEl =
+        (e.currentTarget as HTMLElement).closest('[data-clip-id]') ||
+        (e.currentTarget as HTMLElement);
+      const rect = rowEl.getBoundingClientRect();
+      const startX = e.clientX;
+      const startY = e.clientY;
       peekOriginMousePosRef.current = { x: startX, y: startY };
-    }, 600); // delay de 600ms para menor invasión
-  }, [compactPeekEnabled, isDragging]);
+      peekTimerRef.current = setTimeout(() => {
+        setPeekClipId(clip.id);
+        setPeekAnchor({ x: rect.left, y: rect.top, width: rect.width, height: rect.height });
+        peekOriginMousePosRef.current = { x: startX, y: startY };
+      }, 600); // delay de 600ms para menor invasión
+    },
+    [compactPeekEnabled, isDragging]
+  );
 
   const closePeek = useCallback(() => {
     setPeekClipId(null);
@@ -944,30 +953,40 @@ export const CompactView: React.FC<CompactViewProps> = ({
         }
       `}</style>
       {/* Header */}
-      <div
-        className="relative flex h-12 flex-shrink-0 items-stretch justify-between overflow-hidden border-b border-border bg-card/65 px-3 backdrop-blur-sm"
-      >
+      <div className="relative flex h-12 flex-shrink-0 items-stretch justify-between overflow-hidden border-b border-border bg-card/65 px-3 backdrop-blur-sm">
         {/* Scan-line sweep (CSS-only, GPU-composited) - 50% opacity of full view */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div
             className="absolute inset-y-0 w-[25%]"
             style={{
-              background: 'linear-gradient(90deg, transparent, rgba(var(--primary-rgb),0.025), transparent)',
+              background:
+                'linear-gradient(90deg, transparent, rgba(var(--primary-rgb),0.025), transparent)',
               animation: isWindowActive
                 ? 'compact-scan 6.5s ease-in-out infinite alternate'
                 : 'none',
             }}
           />
         </div>
-        <div data-tauri-drag-region className="flex cursor-move items-center gap-2 flex-1 min-w-0 self-stretch">
+        <div
+          data-tauri-drag-region
+          className="flex min-w-0 flex-1 cursor-move items-center gap-2 self-stretch"
+        >
           <div
             data-tauri-drag-region
             className="flex h-6 w-6 items-center justify-center overflow-hidden"
           >
-            <img src="/logo.png" alt="Logo" className="h-5 w-5 object-contain" data-tauri-drag-region />
+            <img
+              src="/logo.png"
+              alt="Logo"
+              className="h-5 w-5 object-contain"
+              data-tauri-drag-region
+            />
           </div>
-          <div data-tauri-drag-region className="flex items-baseline gap-1.5 min-w-0 flex-1">
-            <span data-tauri-drag-region className="text-sm font-bold tracking-tight truncate text-foreground">
+          <div data-tauri-drag-region className="flex min-w-0 flex-1 items-baseline gap-1.5">
+            <span
+              data-tauri-drag-region
+              className="truncate text-sm font-bold tracking-tight text-foreground"
+            >
               CyberPaste
             </span>
             <span
@@ -1113,7 +1132,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                       className={cn(
                         'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-md border px-2 py-1.5 text-[11px] font-medium transition-all',
                         highlightedFolderId === null && dragTargetFolderId === undefined
-                          ? 'bg-primary/15 border-primary/30 text-foreground font-semibold shadow-[0_0_8px_rgba(var(--primary-rgb),0.12)]'
+                          ? 'border-primary/30 bg-primary/15 font-semibold text-foreground shadow-[0_0_8px_rgba(var(--primary-rgb),0.12)]'
                           : dragTargetFolderId === null && isDragging
                             ? 'border-primary bg-primary/30 text-foreground'
                             : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
@@ -1162,7 +1181,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                             className={cn(
                               'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-md border px-2 py-1.5 text-[11px] font-medium transition-all',
                               isSelected && dragTargetFolderId === undefined
-                                ? 'bg-primary/15 border-primary/30 text-foreground font-semibold shadow-[0_0_8px_rgba(var(--primary-rgb),0.12)]'
+                                ? 'border-primary/30 bg-primary/15 font-semibold text-foreground shadow-[0_0_8px_rgba(var(--primary-rgb),0.12)]'
                                 : dragTargetFolderId === folder.id && isDragging
                                   ? 'border-primary bg-primary/30 text-foreground'
                                   : contextMenuFolderId === folder.id
@@ -1177,7 +1196,9 @@ export const CompactView: React.FC<CompactViewProps> = ({
                               size={11}
                               style={{ color: folder.color || undefined }}
                               className={
-                                isSelected ? 'text-primary' : 'flex-shrink-0 text-muted-foreground/60'
+                                isSelected
+                                  ? 'text-primary'
+                                  : 'flex-shrink-0 text-muted-foreground/60'
                               }
                             />
                             <span className="min-w-0 flex-1 truncate text-left">{folder.name}</span>
@@ -1246,7 +1267,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     placeholder={t('common.search')}
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
-                    className="w-full rounded-lg border border-border bg-input py-1.5 pl-8 pr-8 text-sm text-foreground transition-all focus:border-primary/50 focus:bg-background focus:outline-none placeholder:text-muted-foreground/70"
+                    className="w-full rounded-lg border border-border bg-input py-1.5 pl-8 pr-8 text-sm text-foreground transition-all placeholder:text-muted-foreground/70 focus:border-primary/50 focus:bg-background focus:outline-none"
                   />
                   {searchQuery && (
                     <Tooltip label={t('common.clearSearch') || 'Clear search'} placement="bottom">
@@ -1328,11 +1349,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   : t('compact.enterToPaste')}
               </span>
               <span>
-                {(isFiltering || searchQuery || selectedFolder) && (
-                  isFiltering
+                {(isFiltering || searchQuery || selectedFolder) &&
+                  (isFiltering
                     ? `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: t(`compact.filter${typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}`) })}`
-                    : t('compact.footerTotalClips', { count: filteredClips.length })
-                )}
+                    : t('compact.footerTotalClips', { count: filteredClips.length }))}
               </span>
               <span>{t('compact.escToHide')}</span>
             </div>
@@ -1355,7 +1375,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   placeholder={t('common.search')}
                   value={searchQuery}
                   onChange={(e) => onSearchChange(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-input py-1.5 pl-8 pr-8 text-sm text-foreground transition-all focus:border-primary/50 focus:bg-background focus:outline-none placeholder:text-muted-foreground/70"
+                  className="w-full rounded-lg border border-border bg-input py-1.5 pl-8 pr-8 text-sm text-foreground transition-all placeholder:text-muted-foreground/70 focus:border-primary/50 focus:bg-background focus:outline-none"
                 />
                 {searchQuery && (
                   <Tooltip label={t('common.clearSearch') || 'Clear search'} placement="bottom">
@@ -1534,7 +1554,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
           {/* Footer */}
           <div
             className={cn(
-              'flex flex-shrink-0 items-center justify-between border-t border-border bg-muted/40 p-2 font-mono text-[9px] tracking-tighter transition-opacity text-muted-foreground/90',
+              'flex flex-shrink-0 items-center justify-between border-t border-border bg-muted/40 p-2 font-mono text-[9px] tracking-tighter text-muted-foreground/90 transition-opacity',
               entranceAnim && !mounted ? 'opacity-0' : 'opacity-80',
               isPeekVisible && 'blur-[3px]'
             )}
@@ -1545,11 +1565,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 : t('compact.enterToPaste')}
             </span>
             <span>
-              {(isFiltering || searchQuery || selectedFolder) && (
-                isFiltering
+              {(isFiltering || searchQuery || selectedFolder) &&
+                (isFiltering
                   ? `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: t(`compact.filter${typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}`) })}`
-                  : t('compact.footerTotalClips', { count: filteredClips.length })
-              )}
+                  : t('compact.footerTotalClips', { count: filteredClips.length }))}
             </span>
             <span>{t('compact.escToHide')}</span>
           </div>
@@ -1702,9 +1721,7 @@ const ClipRow = memo(function ClipRow({
   menuHighlightRef.current = menuHighlight;
   const isNavigationSelected = selectedClipId === clip.id && !(isPeekVisible && index === 0);
   const showHover =
-    menuHighlight ||
-    isNavigationSelected ||
-    (hovered && !foreignMenuOpenRef.current);
+    menuHighlight || isNavigationSelected || (hovered && !foreignMenuOpenRef.current);
   const showActions = menuHighlight || (hovered && !foreignMenuOpenRef.current);
   const shouldBlurForPeek = isPeekVisible && peekClipId !== clip.id;
   const pinFlash = usePinFlash(clip.id);
@@ -1771,9 +1788,9 @@ const ClipRow = memo(function ClipRow({
         className={clsx(
           'group relative flex h-10 w-full cursor-pointer items-center gap-3 overflow-hidden rounded-lg border px-2 py-1.5 transition-colors',
           isSelected
-            ? 'border-primary bg-primary/20 shadow-[0_0_12px_rgba(var(--primary-rgb),0.25)] text-foreground'
+            ? 'border-primary bg-primary/20 text-foreground shadow-[0_0_12px_rgba(var(--primary-rgb),0.25)]'
             : isNavigationSelected
-              ? 'border-primary/40 bg-primary/10 shadow-[0_0_12px_rgba(var(--primary-rgb),0.12)] text-foreground'
+              ? 'border-primary/40 bg-primary/10 text-foreground shadow-[0_0_12px_rgba(var(--primary-rgb),0.12)]'
               : showHover
                 ? 'border-primary/30 bg-accent/60 text-foreground'
                 : 'border-border bg-card/45 text-foreground/90',
@@ -1868,7 +1885,13 @@ const ClipRow = memo(function ClipRow({
           </div>
         </div>
 
-        <div className="flex flex-shrink-0 items-center gap-3 pr-2 self-stretch -my-1.5 py-1.5" onMouseOver={(e) => { e.stopPropagation(); onClosePeek?.(); }}>
+        <div
+          className="-my-1.5 flex flex-shrink-0 items-center gap-1.5 self-stretch py-1.5 pr-1"
+          onMouseOver={(e) => {
+            e.stopPropagation();
+            onClosePeek?.();
+          }}
+        >
           <span className="flex items-center gap-2 whitespace-nowrap text-[10px] text-muted-foreground/80">
             {index === 0 && !selectedFolder && (
               <Tooltip label={t('common.latest')} placement="top">
@@ -1884,30 +1907,31 @@ const ClipRow = memo(function ClipRow({
                 </span>
               </Tooltip>
             )}
-            {compactShowTypeIcon && (() => {
-              const TypeIcon =
-                clip.clip_type === 'image'
-                  ? ImageIcon
-                  : clip.clip_type === 'html' ||
-                      clip.clip_type === 'rtf' ||
-                      clip.clip_type === 'code'
-                    ? Code
-                    : clip.clip_type === 'url'
-                      ? Link
-                      : clip.clip_type === 'file'
-                        ? LucideFile
-                        : FileText;
-              return (
-                <Tooltip label={typeLabel} placement="top" disabled={isPeekVisible}>
-                  <span className="flex items-center justify-center">
-                    <TypeIcon
-                      size={11}
-                      className="text-primary opacity-75 transition-opacity group-hover:opacity-100"
-                    />
-                  </span>
-                </Tooltip>
-              );
-            })()}
+            {compactShowTypeIcon &&
+              (() => {
+                const TypeIcon =
+                  clip.clip_type === 'image'
+                    ? ImageIcon
+                    : clip.clip_type === 'html' ||
+                        clip.clip_type === 'rtf' ||
+                        clip.clip_type === 'code'
+                      ? Code
+                      : clip.clip_type === 'url'
+                        ? Link
+                        : clip.clip_type === 'file'
+                          ? LucideFile
+                          : FileText;
+                return (
+                  <Tooltip label={typeLabel} placement="top" disabled={isPeekVisible}>
+                    <span className="flex items-center justify-center">
+                      <TypeIcon
+                        size={11}
+                        className="text-primary opacity-75 transition-opacity group-hover:opacity-100"
+                      />
+                    </span>
+                  </Tooltip>
+                );
+              })()}
             {compactShowSourceIcon && clip.source_icon && (
               <Tooltip label={clip.source_app || 'App'} placement="top" disabled={isPeekVisible}>
                 <img
@@ -1929,7 +1953,10 @@ const ClipRow = memo(function ClipRow({
           </span>
 
           <div
-            className={clsx(showActions ? 'flex gap-1' : 'hidden')}
+            className={clsx(
+              'flex w-4 flex-shrink-0 items-center justify-center transition-opacity duration-150',
+              showActions ? 'opacity-100' : 'pointer-events-none opacity-0'
+            )}
           >
             <Tooltip
               label={`${t('common.moreActions')} (Shift+F10)`}
@@ -1950,9 +1977,9 @@ const ClipRow = memo(function ClipRow({
                   e.stopPropagation();
                   onContextMenu?.(e, clip.id);
                 }}
-                className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                className="flex h-5 w-4 items-center justify-center rounded text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground"
               >
-                <MoreVertical size={14} />
+                <MoreVertical size={13} />
               </button>
             </Tooltip>
           </div>

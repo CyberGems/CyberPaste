@@ -1118,21 +1118,30 @@ function App() {
     };
   }, [refreshCurrentFolder, loadFolders, refreshTotalCount]);
 
-  const handleDelete = async (clipId: string | null) => {
-    if (!clipId) return;
-    try {
-      await invoke('delete_clip', { id: clipId, hardDelete: false });
-      setClips(clips.filter((c) => c.id !== clipId));
-      setSelectedClipId(null);
-      // Refresh counts
-      loadFolders();
-      refreshTotalCount();
-      toast.success(t('notifications.clipDeleted'));
-    } catch (error) {
-      console.error('Failed to delete clip:', error);
-      toast.error(t('notifications.clipDeleteFailed'));
-    }
-  };
+  const handleDelete = useCallback(
+    async (clipId: string | null) => {
+      if (!clipId) return;
+      try {
+        await invoke('delete_clip', { id: clipId, hardDelete: false });
+        setClips((prevClips) => prevClips.filter((c) => c.id !== clipId));
+        setSelectedClipId((prevSelected) => (prevSelected === clipId ? null : prevSelected));
+        setSelectedClipIds((prevSelected) => {
+          if (!prevSelected.has(clipId)) return prevSelected;
+          const next = new Set(prevSelected);
+          next.delete(clipId);
+          return next;
+        });
+        // Refresh counts
+        loadFolders();
+        refreshTotalCount();
+        toast.success(t('notifications.clipDeleted'));
+      } catch (error) {
+        console.error('Failed to delete clip:', error);
+        toast.error(t('notifications.clipDeleteFailed'));
+      }
+    },
+    [t, loadFolders, refreshTotalCount]
+  );
 
   const handleToggleClipPin = useCallback(
     async (clipId: string | null) => {
@@ -1169,44 +1178,47 @@ function App() {
     []
   );
 
-  const handlePaste = async (clipId: string) => {
-    if (wasDraggingRef.current) {
-      return;
-    }
-    try {
-      const clip = clips.find((c) => c.id === clipId);
-      if (clip && clip.clip_type === 'image') {
-        try {
-          const blob = await getFullImageBlob(clipId, clip);
-          await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-        } catch (e) {
-          console.error('Frontend clipboard write failed', e);
+  const handlePaste = useCallback(
+    async (clipId: string) => {
+      if (wasDraggingRef.current) {
+        return;
+      }
+      try {
+        const clip = clipsRef.current.find((c) => c.id === clipId);
+        if (clip && clip.clip_type === 'image') {
+          try {
+            const blob = await getFullImageBlob(clipId, clip);
+            await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+          } catch (e) {
+            console.error('Frontend clipboard write failed', e);
+          }
         }
-      }
 
-      await invoke('paste_clip', { id: clipId });
-      // Force immediate refresh
-      if (settings?.reset_view_on_paste) {
-        setSearchQuery('');
-        setShowSearch(false);
-        setCompactTypeFilter('all');
-        setFullTypeFilter('all');
-        handleSelectFolder(null);
-      } else {
-        refreshCurrentFolder();
-      }
-      refreshTotalCount();
+        await invoke('paste_clip', { id: clipId });
+        // Force immediate refresh
+        if (settingsRef.current?.reset_view_on_paste) {
+          setSearchQuery('');
+          setShowSearch(false);
+          setCompactTypeFilter('all');
+          setFullTypeFilter('all');
+          handleSelectFolder(null);
+        } else {
+          refreshCurrentFolder();
+        }
+        refreshTotalCount();
 
-      // Close window after paste unless pinned
-      if (!settings?.pinned) {
-        setTimeout(() => {
-          appWindow.hide().catch((err) => console.error('Failed to hide window:', err));
-        }, 150);
+        // Close window after paste unless pinned
+        if (!settingsRef.current?.pinned) {
+          setTimeout(() => {
+            appWindow.hide().catch((err) => console.error('Failed to hide window:', err));
+          }, 150);
+        }
+      } catch (error) {
+        console.error('Failed to paste clip:', error);
       }
-    } catch (error) {
-      console.error('Failed to paste clip:', error);
-    }
-  };
+    },
+    [getFullImageBlob, handleSelectFolder, refreshCurrentFolder, refreshTotalCount]
+  );
 
   const handleCopy = async (clipId: string) => {
     try {
@@ -1413,15 +1425,17 @@ function App() {
     if (ids.length === 0) return;
     try {
       await invoke('delete_clips', { ids });
-      setClips((prev) => prev.filter((c) => !selectedClipIds.has(c.id)));
+      const idsSet = new Set(ids);
+      setClips((prev) => prev.filter((c) => !idsSet.has(c.id)));
       setSelectedClipIds(new Set());
+      loadFolders();
       refreshTotalCount();
       toast.success(t('toasts.clipsDeleted', { count: ids.length }));
     } catch (e) {
       console.error('Bulk delete failed:', e);
       toast.error(t('notifications.deleteFailed'));
     }
-  }, [selectedClipIds, refreshTotalCount, t]);
+  }, [selectedClipIds, loadFolders, refreshTotalCount, t]);
 
   const handleBulkMove = useCallback(
     async (folderId: string | null) => {
@@ -1745,26 +1759,29 @@ function App() {
     if (selectedClipId) handleOpenPreview(selectedClipId);
   }, [selectedClipId, handleOpenPreview]);
 
-  const handleAiAction = async (clipId: string, action: string, title: string) => {
-    try {
-      const toastId = toast.loading(t('ai.processing'));
-      const result = await invoke<string>('ai_process_clip', { clipId, action });
-      toast.dismiss(toastId);
-      setAiResult({
-        isOpen: true,
-        title,
-        content: result,
-      });
-    } catch (error) {
-      toast.dismiss();
-      console.error('AI Processing Failed:', error);
-      const errorMessage = String(error);
-      const detail = /AI API Key is missing in settings/i.test(errorMessage)
-        ? t('ai.apiKeyMissing')
-        : errorMessage;
-      toast.error(t('ai.error', { error: detail }));
-    }
-  };
+  const handleAiAction = useCallback(
+    async (clipId: string, action: string, title: string) => {
+      try {
+        const toastId = toast.loading(t('ai.processing'));
+        const result = await invoke<string>('ai_process_clip', { clipId, action });
+        toast.dismiss(toastId);
+        setAiResult({
+          isOpen: true,
+          title,
+          content: result,
+        });
+      } catch (error) {
+        toast.dismiss();
+        console.error('AI Processing Failed:', error);
+        const errorMessage = String(error);
+        const detail = /AI API Key is missing in settings/i.test(errorMessage)
+          ? t('ai.apiKeyMissing')
+          : errorMessage;
+        toast.error(t('ai.error', { error: detail }));
+      }
+    },
+    [t]
+  );
 
   useEffect(() => {
     const unlisten = listen<{
@@ -1780,6 +1797,23 @@ function App() {
       unlisten.then((cleanup) => cleanup());
     };
   }, []);
+
+  const handleDeleteFolder = useCallback(
+    async (folderId: string) => {
+      if (!folderId) return;
+      try {
+        await invoke('delete_folder', { id: folderId });
+        setSelectedFolder((prev) => (prev === folderId ? null : prev));
+        await loadFolders();
+        refreshTotalCount();
+        toast.success(t('folders.folderDeleted'));
+      } catch (error) {
+        console.error('Failed to delete folder:', error);
+        toast.error(t('notifications.folderDeleteFailed'));
+      }
+    },
+    [t, loadFolders, refreshTotalCount]
+  );
 
   const handleContextMenu = useCallback(
     (e: React.MouseEvent, type: 'card' | 'folder', itemId: string) => {
@@ -1937,11 +1971,13 @@ function App() {
           onClick: () => setMoveToFolderClipId(itemId),
         });
 
-        opts.push({
-          label: detailPanelOpen ? t('detailPanel.collapse') : t('detailPanel.expand'),
-          icon: detailPanelOpen ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />,
-          onClick: () => setDetailPanelOpen((prev) => !prev),
-        });
+        if (settings?.view_mode !== 'compact') {
+          opts.push({
+            label: detailPanelOpen ? t('detailPanel.collapse') : t('detailPanel.expand'),
+            icon: detailPanelOpen ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />,
+            onClick: () => setDetailPanelOpen((prev) => !prev),
+          });
+        }
 
         // AI actions — only meaningful for textual clips
         if (clip && clip.clip_type !== 'image' && clip.clip_type !== 'file') {
@@ -2019,7 +2055,16 @@ function App() {
         highlightId: itemId,
       });
     },
-    [t, handleToggleClipPin, detailPanelOpen]
+    [
+      t,
+      handleOpenPreview,
+      handleAiAction,
+      handlePaste,
+      handleToggleClipPin,
+      handleDelete,
+      handleDeleteFolder,
+      detailPanelOpen,
+    ]
   );
 
   const handleOpenSelectedContextMenu = useCallback(() => {
@@ -2078,34 +2123,21 @@ function App() {
     }
   };
 
-  const handleMoveToFolder = async (clipId: string, folderId: string | null) => {
-    try {
-      await invoke('move_to_folder', { clipId, folderId });
-      await loadClips(selectedFolderRef.current);
-      await loadFolders();
-      refreshTotalCount();
-      toast.success(folderId ? t('toasts.movedToFolder') : t('toasts.movedToMainClipboard'));
-    } catch (e) {
-      console.error('Failed to move clip:', e);
-      toast.error(typeof e === 'string' ? e : t('toasts.clipMoveFailed'));
-    }
-  };
-
-  const handleDeleteFolder = async (folderId: string) => {
-    if (!folderId) return;
-    try {
-      await invoke('delete_folder', { id: folderId });
-      if (selectedFolder === folderId) {
-        setSelectedFolder(null);
+  const handleMoveToFolder = useCallback(
+    async (clipId: string, folderId: string | null) => {
+      try {
+        await invoke('move_to_folder', { clipId, folderId });
+        await loadClips(selectedFolderRef.current);
+        await loadFolders();
+        refreshTotalCount();
+        toast.success(folderId ? t('toasts.movedToFolder') : t('toasts.movedToMainClipboard'));
+      } catch (e) {
+        console.error('Failed to move clip:', e);
+        toast.error(typeof e === 'string' ? e : t('toasts.clipMoveFailed'));
       }
-      await loadFolders();
-      refreshTotalCount();
-      toast.success(t('folders.folderDeleted'));
-    } catch (error) {
-      console.error('Failed to delete folder:', error);
-      toast.error(t('notifications.folderDeleteFailed'));
-    }
-  };
+    },
+    [loadClips, loadFolders, refreshTotalCount, t]
+  );
 
   const handleTogglePin = async () => {
     if (!settings) return;
