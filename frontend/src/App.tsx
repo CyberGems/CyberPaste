@@ -232,6 +232,19 @@ function App() {
   const dragIndicatorRef = useRef<HTMLDivElement>(null);
   const wasDraggingRef = useRef<boolean>(false);
   const dragHoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoScrollRef = useRef<{
+    rafId: number | null;
+    vx: number;
+    vy: number;
+    lastClientX: number;
+    lastClientY: number;
+  }>({
+    rafId: null,
+    vx: 0,
+    vy: 0,
+    lastClientX: 0,
+    lastClientY: 0,
+  });
 
   const effectiveTheme = useTheme(theme);
   useLanguage(settings?.language);
@@ -623,6 +636,151 @@ function App() {
       }
     };
 
+    const findScrollContainer = (clipList: HTMLElement): HTMLElement | null => {
+      const candidates = clipList.querySelectorAll<HTMLElement>(
+        '.no-scrollbar, [data-el="clip-list"], [style*="overflow"]'
+      );
+      for (let i = 0; i < candidates.length; i++) {
+        const el = candidates[i];
+        if (el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth) {
+          return el;
+        }
+      }
+      if (clipList.firstElementChild instanceof HTMLElement) {
+        return clipList.firstElementChild;
+      }
+      return clipList;
+    };
+
+    const updateReorderTarget = (clientX: number, clientY: number) => {
+      const elem = document.elementFromPoint(clientX, clientY);
+      const folderBtn = elem?.closest('[data-folder-id]');
+      if (folderBtn) {
+        if (dragStateRef.current.reorderTargetClipId !== null) {
+          setReorderTargetClipId(null);
+          setReorderTargetPosition(null);
+          dragStateRef.current.reorderTargetClipId = null;
+          dragStateRef.current.reorderTargetPosition = null;
+        }
+        return;
+      }
+
+      const isOverClipList = elem?.closest('[data-clip-list="true"]');
+      if (!isOverClipList || clipsRef.current.length === 0) {
+        if (dragStateRef.current.reorderTargetClipId !== null) {
+          setReorderTargetClipId(null);
+          setReorderTargetPosition(null);
+          dragStateRef.current.reorderTargetClipId = null;
+          dragStateRef.current.reorderTargetPosition = null;
+        }
+        return;
+      }
+
+      const cards = document.querySelectorAll('[data-clip-id]');
+      let closestId: string | null = null;
+      let closestDist = Infinity;
+      let closestCenterY = 0;
+
+      const currentClipId = dragStateRef.current.clipId;
+      for (let i = 0; i < cards.length; i++) {
+        const card = cards[i] as HTMLElement;
+        const cardId = card.getAttribute('data-clip-id');
+        if (cardId && cardId !== currentClipId) {
+          const rect = card.getBoundingClientRect();
+          const centerY = rect.top + rect.height / 2;
+          const centerX = rect.left + rect.width / 2;
+          const dist = Math.hypot(clientX - centerX, clientY - centerY);
+          if (dist < closestDist) {
+            closestDist = dist;
+            closestId = cardId;
+            closestCenterY = centerY;
+          }
+        }
+      }
+
+      if (closestId && closestDist < 350) {
+        const position: 'before' | 'after' = clientY < closestCenterY ? 'before' : 'after';
+
+        let finalTargetId = closestId;
+        let finalPosition: 'before' | 'after' | null = position;
+
+        const draggedClip = clipsRef.current.find((c) => c.id === dragStateRef.current.clipId);
+        const targetClip = clipsRef.current.find((c) => c.id === closestId);
+
+        const isFirstPosMain =
+          selectedFolderRef.current === null &&
+          clipsRef.current.length > 0 &&
+          closestId === clipsRef.current[0].id &&
+          position === 'before';
+
+        if (
+          !isFirstPosMain &&
+          draggedClip &&
+          !draggedClip.is_pinned &&
+          targetClip &&
+          targetClip.is_pinned
+        ) {
+          const isMainList = selectedFolderRef.current === null;
+          const firstUnpinned = firstUnpinnedDropTarget(clipsRef.current, isMainList);
+          if (firstUnpinned) {
+            finalTargetId = firstUnpinned.id;
+            finalPosition = 'before';
+          } else {
+            const lastClip = clipsRef.current[clipsRef.current.length - 1];
+            finalTargetId = lastClip.id;
+            finalPosition = 'after';
+          }
+        }
+
+        if (
+          dragStateRef.current.reorderTargetClipId !== finalTargetId ||
+          dragStateRef.current.reorderTargetPosition !== finalPosition
+        ) {
+          setReorderTargetClipId(finalTargetId);
+          setReorderTargetPosition(finalPosition);
+          dragStateRef.current.reorderTargetClipId = finalTargetId;
+          dragStateRef.current.reorderTargetPosition = finalPosition;
+        }
+      }
+    };
+
+    const stopAutoScroll = () => {
+      if (autoScrollRef.current.rafId !== null) {
+        cancelAnimationFrame(autoScrollRef.current.rafId);
+        autoScrollRef.current.rafId = null;
+      }
+      autoScrollRef.current.vx = 0;
+      autoScrollRef.current.vy = 0;
+    };
+
+    const startAutoScrollLoop = () => {
+      if (autoScrollRef.current.rafId !== null) return;
+
+      const step = () => {
+        if (!dragStateRef.current.isDragging) {
+          stopAutoScroll();
+          return;
+        }
+
+        const { vx, vy, lastClientX, lastClientY } = autoScrollRef.current;
+        if (vx !== 0 || vy !== 0) {
+          const clipList = document.querySelector('[data-clip-list="true"]') as HTMLElement | null;
+          if (clipList) {
+            const scrollContainer = findScrollContainer(clipList);
+            if (scrollContainer) {
+              if (vy !== 0) scrollContainer.scrollTop += vy;
+              if (vx !== 0) scrollContainer.scrollLeft += vx;
+              updateReorderTarget(lastClientX, lastClientY);
+            }
+          }
+        }
+
+        autoScrollRef.current.rafId = requestAnimationFrame(step);
+      };
+
+      autoScrollRef.current.rafId = requestAnimationFrame(step);
+    };
+
     const handleGlobalMouseMove = (e: MouseEvent) => {
       const state = dragStateRef.current;
 
@@ -635,11 +793,17 @@ function App() {
       // If we are already dragging, update position and detect reorder target / folder hover
       if (state.isDragging) {
         updateDragIndicatorPosition(e.clientX, e.clientY);
+        autoScrollRef.current.lastClientX = e.clientX;
+        autoScrollRef.current.lastClientY = e.clientY;
 
         // Detect folder hover (for moving clips from main clipboard to regular folders)
         const elem = document.elementFromPoint(e.clientX, e.clientY);
         const folderBtn = elem?.closest('[data-folder-id]');
         if (folderBtn) {
+          // Stop auto-scroll when hovering over folders
+          autoScrollRef.current.vx = 0;
+          autoScrollRef.current.vy = 0;
+
           const folderId = folderBtn.getAttribute('data-folder-id');
           const targetId = folderId === 'clipboard' ? null : folderId;
 
@@ -660,77 +824,64 @@ function App() {
               handleDragLeave();
             }
           }
+          return;
         } else {
           if (dragStateRef.current.targetFolderId !== undefined) {
             handleDragLeave();
           }
         }
 
-        // Detect reorder target using clips state for reliable lookup
-        const isOverClipList = elem?.closest('[data-clip-list="true"]');
-        if (isOverClipList && !folderBtn && clipsRef.current.length > 0) {
-          let closestId: string | null = null;
-          let closestDist = Infinity;
-          let closestCenterY = 0;
+        // Calculate auto-scroll velocity and update reorder target
+        const clipList = document.querySelector('[data-clip-list="true"]') as HTMLElement | null;
+        if (clipList && clipsRef.current.length > 0) {
+          const rect = clipList.getBoundingClientRect();
+          const EDGE_THRESHOLD = 60;
+          const MAX_SPEED = 16;
 
-          const cached = dragStateRef.current.cachedRects || [];
-          for (let i = 0; i < cached.length; i++) {
-            const entry = cached[i];
-            const dist = Math.abs(e.clientY - entry.centerY);
-            if (dist < closestDist) {
-              closestDist = dist;
-              closestId = entry.id;
-              closestCenterY = entry.centerY;
+          let vy = 0;
+          let vx = 0;
+
+          const isInsideHorizontal = e.clientX >= rect.left - 20 && e.clientX <= rect.right + 20;
+          const isInsideVertical = e.clientY >= rect.top - 20 && e.clientY <= rect.bottom + 20;
+
+          if (isInsideHorizontal && isInsideVertical) {
+            // Top edge scroll zone
+            if (e.clientY <= rect.top + EDGE_THRESHOLD && e.clientY >= rect.top - 15) {
+              const dist = Math.max(0, e.clientY - rect.top);
+              const factor = (EDGE_THRESHOLD - dist) / EDGE_THRESHOLD;
+              vy = -Math.max(3, Math.round(MAX_SPEED * factor));
+            }
+            // Bottom edge scroll zone
+            else if (e.clientY >= rect.bottom - EDGE_THRESHOLD && e.clientY <= rect.bottom + 15) {
+              const dist = Math.max(0, rect.bottom - e.clientY);
+              const factor = (EDGE_THRESHOLD - dist) / EDGE_THRESHOLD;
+              vy = Math.max(3, Math.round(MAX_SPEED * factor));
+            }
+
+            // Left edge horizontal scroll zone
+            if (e.clientX <= rect.left + EDGE_THRESHOLD && e.clientX >= rect.left - 15) {
+              const dist = Math.max(0, e.clientX - rect.left);
+              const factor = (EDGE_THRESHOLD - dist) / EDGE_THRESHOLD;
+              vx = -Math.max(3, Math.round(MAX_SPEED * factor));
+            }
+            // Right edge horizontal scroll zone
+            else if (e.clientX >= rect.right - EDGE_THRESHOLD && e.clientX <= rect.right + 15) {
+              const dist = Math.max(0, rect.right - e.clientX);
+              const factor = (EDGE_THRESHOLD - dist) / EDGE_THRESHOLD;
+              vx = Math.max(3, Math.round(MAX_SPEED * factor));
             }
           }
 
-          if (closestId && closestDist < 300) {
-            const position: 'before' | 'after' = e.clientY < closestCenterY ? 'before' : 'after';
-
-            let finalTargetId = closestId;
-            let finalPosition: 'before' | 'after' | null = position;
-
-            const draggedClip = clipsRef.current.find((c) => c.id === dragStateRef.current.clipId);
-            const targetClip = clipsRef.current.find((c) => c.id === closestId);
-
-            // Skip pinned redirect if hovering at the absolute first position in main clipboard
-            // (that position triggers copy-to-clipboard on drop)
-            const isFirstPosMain =
-              selectedFolderRef.current === null &&
-              clipsRef.current.length > 0 &&
-              closestId === clipsRef.current[0].id &&
-              position === 'before';
-
-            if (
-              !isFirstPosMain &&
-              draggedClip &&
-              !draggedClip.is_pinned &&
-              targetClip &&
-              targetClip.is_pinned
-            ) {
-              const isMainList = selectedFolderRef.current === null;
-              const firstUnpinned = firstUnpinnedDropTarget(clipsRef.current, isMainList);
-              if (firstUnpinned) {
-                finalTargetId = firstUnpinned.id;
-                finalPosition = 'before';
-              } else {
-                const lastClip = clipsRef.current[clipsRef.current.length - 1];
-                finalTargetId = lastClip.id;
-                finalPosition = 'after';
-              }
-            }
-
-            if (
-              dragStateRef.current.reorderTargetClipId !== finalTargetId ||
-              dragStateRef.current.reorderTargetPosition !== finalPosition
-            ) {
-              setReorderTargetClipId(finalTargetId);
-              setReorderTargetPosition(finalPosition);
-              dragStateRef.current.reorderTargetClipId = finalTargetId;
-              dragStateRef.current.reorderTargetPosition = finalPosition;
-            }
+          autoScrollRef.current.vx = vx;
+          autoScrollRef.current.vy = vy;
+          if (vx !== 0 || vy !== 0) {
+            startAutoScrollLoop();
           }
+
+          updateReorderTarget(e.clientX, e.clientY);
         } else {
+          autoScrollRef.current.vx = 0;
+          autoScrollRef.current.vy = 0;
           if (dragStateRef.current.reorderTargetClipId !== null) {
             setReorderTargetClipId(null);
             setReorderTargetPosition(null);
@@ -777,23 +928,6 @@ function App() {
             dragIndicatorRef.current.classList.add('flex');
           }
 
-          // Cache card rects to avoid layout thrashing during mousemove
-          const cards = document.querySelectorAll('[data-clip-id]');
-          const rects: { id: string; rect: DOMRect; centerY: number }[] = [];
-          for (let i = 0; i < cards.length; i++) {
-            const card = cards[i] as HTMLElement;
-            const cardId = card.getAttribute('data-clip-id');
-            if (cardId && cardId !== clipId) {
-              const rect = card.getBoundingClientRect();
-              rects.push({
-                id: cardId,
-                rect,
-                centerY: rect.top + rect.height / 2,
-              });
-            }
-          }
-          dragStateRef.current.cachedRects = rects;
-
           updateDragIndicatorPosition(e.clientX, e.clientY);
           dragStateRef.current.isDragging = true;
           dragStateRef.current.clipId = state.pendingDrag.clipId;
@@ -836,6 +970,7 @@ function App() {
     window.addEventListener('keydown', handleGlobalKeyDown, { capture: true });
 
     return () => {
+      stopAutoScroll();
       window.removeEventListener('mousemove', handleGlobalMouseMove);
       window.removeEventListener('mouseup', handleGlobalMouseUp);
       window.removeEventListener('keydown', handleGlobalKeyDown, { capture: true });
@@ -852,6 +987,13 @@ function App() {
   };
 
   const finishDrag = async (isCancelled = false) => {
+    if (autoScrollRef.current.rafId !== null) {
+      cancelAnimationFrame(autoScrollRef.current.rafId);
+      autoScrollRef.current.rafId = null;
+    }
+    autoScrollRef.current.vx = 0;
+    autoScrollRef.current.vy = 0;
+
     const { clipId, targetFolderId, reorderTargetClipId, reorderTargetPosition } =
       dragStateRef.current;
 
