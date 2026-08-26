@@ -2480,6 +2480,7 @@ function App() {
               compactShowTypeIcon={settings?.compact_show_type_icon ?? true}
               compactShowNumber={settings?.compact_show_number ?? true}
               compactShowScrollbar={settings?.compact_show_scrollbar ?? true}
+              titleBarAnimationEnabled={settings?.title_bar_animation_enabled ?? true}
               totalClipCount={totalClipCount}
               onFolderContextMenu={(e, folderId) => {
                 if (folderId) handleContextMenu(e, 'folder', folderId);
@@ -2588,6 +2589,7 @@ function App() {
                 dbSizeBytes={dbSizeBytes}
                 onReorderFolder={handleReorderFolder}
                 showHud={settings?.full_show_hud ?? true}
+                titleBarAnimationEnabled={settings?.title_bar_animation_enabled ?? true}
               />
 
               {/* Type filter chips (Full mode) */}

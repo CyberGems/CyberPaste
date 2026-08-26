@@ -100,6 +100,8 @@ pub struct AppSettings {
     pub settings_window_x: Option<i32>,
     pub settings_window_y: Option<i32>,
     pub wheel_folder_navigation: bool,
+    #[serde(default = "default_true")]
+    pub title_bar_animation_enabled: bool,
 }
 
 impl Default for AppSettings {
@@ -192,6 +194,7 @@ impl Default for AppSettings {
             settings_window_x: None,
             settings_window_y: None,
             wheel_folder_navigation: false,
+            title_bar_animation_enabled: true,
         }
     }
 }

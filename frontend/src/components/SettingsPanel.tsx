@@ -14,7 +14,6 @@ import {
   Minus,
   Square,
   Info,
-  Terminal,
   RotateCcw,
   Volume2,
   Clipboard,
@@ -45,7 +44,6 @@ import { ThemeCard, ThemeMode } from './ThemeCard';
 import { useShortcutRecorder } from 'use-shortcut-recorder';
 import { clsx } from 'clsx';
 import Tooltip from './Tooltip';
-
 
 interface SettingsPanelProps {
   settings: Settings;
@@ -153,11 +151,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab') as Tab;
-      if (
-        ['general', 'full', 'compact', 'ai', 'notifications', 'maintenance'].includes(
-          tabParam
-        )
-      ) {
+      if (['general', 'full', 'compact', 'ai', 'notifications', 'maintenance'].includes(tabParam)) {
         return tabParam;
       }
     }
@@ -194,7 +188,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     const unlisten = listen<string>('open-tab', (event) => {
       const tab = event.payload as Tab;
       if (
-        ['general', 'folders', 'full', 'compact', 'ai', 'notifications', 'maintenance'].includes(tab)
+        ['general', 'folders', 'full', 'compact', 'ai', 'notifications', 'maintenance'].includes(
+          tab
+        )
       ) {
         setActiveTab(tab);
       }
@@ -215,15 +211,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     } catch (e) {
       console.error('Failed to open data dir:', e);
       toast.error(t('settings.failedToOpenDataDir'));
-    }
-  };
-
-  const openConsole = async () => {
-    try {
-      await invoke('open_devtools');
-    } catch (e) {
-      console.error('Failed to open console:', e);
-      toast.error(t('settings.failedToOpenConsole'));
     }
   };
   const [localApiKey, setLocalApiKey] = useState(initialSettings.ai_api_key || '');
@@ -592,13 +579,8 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
       />
       <div className="flex h-full select-none flex-col bg-background text-foreground">
         {/* Header */}
-        <div
-          className="flex cursor-default items-center justify-between border-b border-border bg-transparent px-4 py-3"
-        >
-          <div
-            data-tauri-drag-region
-            className="flex min-w-0 flex-1 items-center gap-3"
-          >
+        <div className="flex cursor-default items-center justify-between border-b border-border bg-transparent px-4 py-3">
+          <div data-tauri-drag-region className="flex min-w-0 flex-1 items-center gap-3">
             <img src="/logo.png" alt="CyberPaste" className="h-5 w-5 object-contain" />
             <h2 className="text-[18px] font-bold tracking-tight text-foreground">CyberPaste</h2>
           </div>
@@ -616,7 +598,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 <Minus size={14} className="opacity-70" />
               </button>
             </Tooltip>
-            <Tooltip label={isMaximized ? t('common.restore') : t('common.maximize')} placement="bottom">
+            <Tooltip
+              label={isMaximized ? t('common.restore') : t('common.maximize')}
+              placement="bottom"
+            >
               <button
                 type="button"
                 onClick={toggleMaximize}
@@ -748,17 +733,21 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
                       <SettingsIcon size={14} /> {t('settings.appearanceSection')}
                     </h3>
-                    <div className="rounded-xl border border-border bg-card divide-y divide-border">
+                    <div className="divide-y divide-border rounded-xl border border-border bg-card">
                       {/* Row 1: Language */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+                      <div className="flex flex-col justify-between gap-4 p-4 sm:flex-row sm:items-center">
                         <div className="flex gap-3">
-                          <Languages className="h-5 w-5 text-muted-foreground/80 flex-shrink-0" />
+                          <Languages className="h-5 w-5 flex-shrink-0 text-muted-foreground/80" />
                           <div>
-                            <span className="text-sm font-medium block text-foreground">{t('settings.languageTitle')}</span>
-                            <span className="text-xs text-muted-foreground block mt-0.5">{t('settings.languageDesc')}</span>
+                            <span className="block text-sm font-medium text-foreground">
+                              {t('settings.languageTitle')}
+                            </span>
+                            <span className="mt-0.5 block text-xs text-muted-foreground">
+                              {t('settings.languageDesc')}
+                            </span>
                           </div>
                         </div>
-                        <div className="flex-shrink-0 w-full sm:w-[200px]">
+                        <div className="w-full flex-shrink-0 sm:w-[200px]">
                           <Select
                             value={settings.language || 'en'}
                             onChange={handleLanguageChange}
@@ -775,15 +764,19 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
 
                       {/* Row 2: Theme */}
-                      <div className="flex flex-col lg:flex-row lg:items-center justify-between p-4 gap-4">
+                      <div className="flex flex-col justify-between gap-4 p-4 lg:flex-row lg:items-center">
                         <div className="flex gap-3">
-                          <Palette className="h-5 w-5 text-muted-foreground/80 flex-shrink-0" />
+                          <Palette className="h-5 w-5 flex-shrink-0 text-muted-foreground/80" />
                           <div>
-                            <span className="text-sm font-medium block text-foreground">{t('settings.themeTitle')}</span>
-                            <span className="text-xs text-muted-foreground block mt-0.5">{t('settings.themeDesc')}</span>
+                            <span className="block text-sm font-medium text-foreground">
+                              {t('settings.themeTitle')}
+                            </span>
+                            <span className="mt-0.5 block text-xs text-muted-foreground">
+                              {t('settings.themeDesc')}
+                            </span>
                           </div>
                         </div>
-                        <div role="radiogroup" className="flex flex-wrap gap-4 pt-1 flex-shrink-0">
+                        <div role="radiogroup" className="flex flex-shrink-0 flex-wrap gap-4 pt-1">
                           {(['cyberpaste', 'dark', 'light', 'system'] as ThemeMode[]).map(
                             (mode) => (
                               <ThemeCard
@@ -811,7 +804,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <span className="text-sm font-medium">
                         {t('settings.startupWithWindows')}
                       </span>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         {t('settings.startupWithWindowsDesc')}
                       </p>
                     </div>
@@ -823,6 +816,29 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     >
                       <div
                         className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.startup_with_windows ? 'translate-x-5' : 'translate-x-0.5'}`}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
+                    <div>
+                      <span className="text-sm font-medium">{t('settings.titleBarAnimation')}</span>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {t('settings.titleBarAnimationDesc')}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() =>
+                        updateSetting(
+                          'title_bar_animation_enabled',
+                          !(settings.title_bar_animation_enabled ?? true)
+                        )
+                      }
+                      className={`h-6 w-11 rounded-full transition-colors ${(settings.title_bar_animation_enabled ?? true) ? 'bg-primary' : 'bg-white/10'}`}
+                      aria-label={t('settings.titleBarAnimation')}
+                    >
+                      <div
+                        className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.title_bar_animation_enabled ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
                       />
                     </button>
                   </div>
@@ -878,7 +894,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                         <div>
                           <span className="text-sm font-medium">{t('settings.autoPaste')}</span>
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="mt-1 text-xs text-muted-foreground">
                             {t('settings.autoPasteDesc')}
                           </p>
                         </div>
@@ -902,7 +918,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           <span className="text-sm font-medium">
                             {t('settings.autoInjectPaste')}
                           </span>
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="mt-1 text-xs text-muted-foreground">
                             {t('settings.autoInjectPasteDesc')}
                           </p>
                         </div>
@@ -952,7 +968,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           <span className="text-sm font-medium">
                             {t('settings.resetViewOnPaste')}
                           </span>
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="mt-1 text-xs text-muted-foreground">
                             {t('settings.resetViewOnPasteDesc')}
                           </p>
                         </div>
@@ -1062,7 +1078,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               {t('common.browse')}
                             </button>
                             {settings.clipboard_sound_path && (
-                              <Tooltip label={t('common.reset', { defaultValue: 'Reset to default' })} placement="top">
+                              <Tooltip
+                                label={t('common.reset', { defaultValue: 'Reset to default' })}
+                                placement="top"
+                              >
                                 <button
                                   onClick={() => updateSetting('clipboard_sound_path', '')}
                                   className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80"
@@ -1142,7 +1161,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               {t('common.browse')}
                             </button>
                             {settings.startup_sound_path && (
-                              <Tooltip label={t('common.reset', { defaultValue: 'Reset to default' })} placement="top">
+                              <Tooltip
+                                label={t('common.reset', { defaultValue: 'Reset to default' })}
+                                placement="top"
+                              >
                                 <button
                                   onClick={() => updateSetting('startup_sound_path', '')}
                                   className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80"
@@ -1288,7 +1310,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <div className="space-y-4 rounded-xl border border-border bg-card p-4">
                       <label className="block">
                         <span className="text-sm font-medium">{t('settings.ignoredApps')}</span>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="mt-1 text-xs text-muted-foreground">
                           {t('settings.ignoredAppsDesc')}
                         </p>
                       </label>
@@ -1315,7 +1337,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <div className="custom-scrollbar max-h-40 space-y-1 overflow-y-auto pr-1">
                         {ignoredApps.length === 0 ? (
                           <div className="rounded-lg border border-dashed border-border p-4 text-center">
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="mt-1 text-xs text-muted-foreground">
                               {t('settings.noIgnoredApps')}
                             </p>
                           </div>
@@ -1457,13 +1479,16 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         <span className="text-sm font-medium">
                           {t('settings.wheelFolderNavigation')}
                         </span>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="mt-1 text-xs text-muted-foreground">
                           {t('settings.wheelFolderNavigationDesc')}
                         </p>
                       </div>
                       <button
                         onClick={() =>
-                          updateSetting('wheel_folder_navigation', !(settings.wheel_folder_navigation ?? false))
+                          updateSetting(
+                            'wheel_folder_navigation',
+                            !(settings.wheel_folder_navigation ?? false)
+                          )
                         }
                         className={`h-6 w-11 flex-shrink-0 rounded-full transition-colors ${(settings.wheel_folder_navigation ?? false) ? 'bg-primary' : 'bg-white/10'}`}
                       >
@@ -1486,9 +1511,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <div className="space-y-4 rounded-xl border border-border bg-card p-4">
                       <div className="space-y-3">
                         <label className="block">
-                          <span className="text-sm font-medium">
-                            {t('settings.fullGridScale')}
-                          </span>
+                          <span className="text-sm font-medium">{t('settings.fullGridScale')}</span>
                           <p className="text-xs text-muted-foreground">
                             {t('settings.fullGridScaleDesc')}
                           </p>
@@ -1670,9 +1693,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
                       <div className="space-y-3">
                         <label className="block">
-                          <span className="text-sm font-medium">
-                            {t('settings.clipNumbering')}
-                          </span>
+                          <span className="text-sm font-medium">{t('settings.clipNumbering')}</span>
                           <p className="text-xs text-muted-foreground">
                             {t('settings.clipNumberingDesc')}
                           </p>
@@ -2027,7 +2048,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                     <div>
                       <span className="text-sm font-medium">{t('settings.enableToasts')}</span>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         {t('settings.enableToastsDesc')}
                       </p>
                     </div>
@@ -2045,10 +2066,8 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
                   <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                     <div>
-                      <span className="text-sm font-medium">
-                        {t('settings.duplicateToasts')}
-                      </span>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <span className="text-sm font-medium">{t('settings.duplicateToasts')}</span>
+                      <p className="mt-1 text-xs text-muted-foreground">
                         {t('settings.duplicateToastsDesc')}
                       </p>
                     </div>
@@ -2073,7 +2092,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <span className="text-sm font-medium">
                         {t('settings.showActionMessages')}
                       </span>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         {t('settings.showActionMessagesDesc')}
                       </p>
                     </div>
@@ -2091,10 +2110,8 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
                   <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                     <div>
-                      <span className="text-sm font-medium">
-                        {t('settings.toastClickAction')}
-                      </span>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <span className="text-sm font-medium">{t('settings.toastClickAction')}</span>
+                      <p className="mt-1 text-xs text-muted-foreground">
                         {t('settings.toastClickActionDesc')}
                       </p>
                     </div>
@@ -2106,7 +2123,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           { value: 'none', label: t('settings.toastClickActionNone') },
                           { value: 'close', label: t('settings.toastClickActionClose') },
                           { value: 'open', label: t('settings.toastClickActionOpen') },
-                          { value: 'system_viewer', label: t('settings.toastClickActionSystemViewer') },
+                          {
+                            value: 'system_viewer',
+                            label: t('settings.toastClickActionSystemViewer'),
+                          },
                           { value: 'toggle_pin', label: t('settings.toastClickActionTogglePin') },
                         ]}
                       />
@@ -2117,22 +2137,22 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <Layout size={14} /> {t('settings.locationSection')}
                   </h3>
 
-                  <div className="rounded-xl border border-border bg-card p-4 divide-y divide-border/60">
+                  <div className="divide-y divide-border/60 rounded-xl border border-border bg-card p-4">
                     {/* Row 1: Posición de notificación */}
-                    <div className="flex items-start justify-between py-4 first:pt-0 last:pb-0 gap-4">
+                    <div className="flex items-start justify-between gap-4 py-4 first:pt-0 last:pb-0">
                       <div className="flex gap-3">
-                        <Layout className="h-5 w-5 text-muted-foreground/80 mt-0.5 flex-shrink-0" />
+                        <Layout className="mt-0.5 h-5 w-5 flex-shrink-0 text-muted-foreground/80" />
                         <div>
-                          <span className="text-sm font-medium block text-foreground">
+                          <span className="block text-sm font-medium text-foreground">
                             {t('settings.toastPositionTitle')}
                           </span>
-                          <p className="text-xs text-muted-foreground mt-1 max-w-[420px]">
+                          <p className="mt-1 max-w-[420px] text-xs text-muted-foreground">
                             {t('settings.toastPositionDesc')}
                           </p>
                         </div>
                       </div>
                       <div className="flex-shrink-0">
-                        <div className="flex h-[80px] w-[130px] flex-col justify-between rounded-lg border border-border dark:bg-secondary/40 bg-secondary/80 p-1.5">
+                        <div className="flex h-[80px] w-[130px] flex-col justify-between rounded-lg border border-border bg-secondary/80 p-1.5 dark:bg-secondary/40">
                           <div className="grid h-full w-full grid-cols-3 grid-rows-3 gap-1">
                             {[
                               {
@@ -2197,7 +2217,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                     className={`relative rounded-[4px] transition-colors hover:bg-accent focus:outline-none ${isActive ? 'border border-primary bg-primary/10' : 'border border-transparent'}`}
                                   >
                                     <span
-                                      className={`absolute h-2 w-2 rounded-[2px] transition-colors ${pos.dotClass} ${isActive ? 'bg-primary shadow-[0_0_8px_var(--primary)]' : 'dark:bg-white/20 bg-neutral-400'}`}
+                                      className={`absolute h-2 w-2 rounded-[2px] transition-colors ${pos.dotClass} ${isActive ? 'bg-primary shadow-[0_0_8px_var(--primary)]' : 'bg-neutral-400 dark:bg-white/20'}`}
                                     />
                                   </button>
                                 </Tooltip>
@@ -2209,14 +2229,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     </div>
 
                     {/* Row 2: Monitor de notificación */}
-                    <div className="flex items-center justify-between py-4 gap-4">
+                    <div className="flex items-center justify-between gap-4 py-4">
                       <div className="flex gap-3">
-                        <Monitor className="h-5 w-5 text-muted-foreground/80 flex-shrink-0" />
+                        <Monitor className="h-5 w-5 flex-shrink-0 text-muted-foreground/80" />
                         <div>
-                          <span className="text-sm font-medium block text-foreground">
+                          <span className="block text-sm font-medium text-foreground">
                             {t('settings.toastMonitorTitle')}
                           </span>
-                          <p className="text-xs text-muted-foreground mt-1 max-w-[420px]">
+                          <p className="mt-1 max-w-[420px] text-xs text-muted-foreground">
                             {t('settings.toastMonitorDesc')}
                           </p>
                         </div>
@@ -2237,14 +2257,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     </div>
 
                     {/* Row 3: Duración de notificación */}
-                    <div className="flex items-center justify-between py-4 gap-4">
+                    <div className="flex items-center justify-between gap-4 py-4">
                       <div className="flex gap-3">
-                        <Clock className="h-5 w-5 text-muted-foreground/80 flex-shrink-0" />
+                        <Clock className="h-5 w-5 flex-shrink-0 text-muted-foreground/80" />
                         <div>
-                          <span className="text-sm font-medium block text-foreground">
+                          <span className="block text-sm font-medium text-foreground">
                             {t('settings.toastDurationTitle')}
                           </span>
-                          <p className="text-xs text-muted-foreground mt-1 max-w-[420px]">
+                          <p className="mt-1 max-w-[420px] text-xs text-muted-foreground">
                             {t('settings.toastDurationDesc')}
                           </p>
                         </div>
@@ -2264,14 +2284,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     </div>
 
                     {/* Row 4: Probar notificación */}
-                    <div className="flex items-center justify-between py-4 last:pb-0 gap-4">
+                    <div className="flex items-center justify-between gap-4 py-4 last:pb-0">
                       <div className="flex gap-3">
-                        <Send className="h-5 w-5 text-muted-foreground/80 flex-shrink-0" />
+                        <Send className="h-5 w-5 flex-shrink-0 text-muted-foreground/80" />
                         <div>
-                          <span className="text-sm font-medium block text-foreground">
+                          <span className="block text-sm font-medium text-foreground">
                             {t('settings.testNotificationTitle')}
                           </span>
-                          <p className="text-xs text-muted-foreground mt-1 max-w-[420px]">
+                          <p className="mt-1 max-w-[420px] text-xs text-muted-foreground">
                             {t('settings.testNotificationDesc')}
                           </p>
                         </div>
@@ -2282,7 +2302,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             m.systemToast.success(t('settings.testToastMsg'))
                           );
                         }}
-                        className="btn btn-primary px-5 py-1.5 text-xs font-semibold rounded-[4px] border border-border flex-shrink-0"
+                        className="btn btn-primary flex-shrink-0 rounded-[4px] border border-border px-5 py-1.5 text-xs font-semibold"
                       >
                         {t('settings.testToast')}
                       </button>
@@ -2294,10 +2314,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               {/* --- MAINTENANCE TAB --- */}
               {activeTab === 'maintenance' && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 space-y-6 duration-500">
-                  {/* System & Debug */}
+                  {/* System & Storage */}
                   <section className="space-y-3">
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
-                      <Terminal size={14} /> {t('settings.systemDebug')}
+                      <FolderOpen size={14} /> {t('settings.systemDebug')}
                     </h3>
                     <div className="rounded-xl border border-border bg-card p-4">
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -2311,13 +2331,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           >
                             <FolderOpen size={16} />
                             {t('settings.dataDirectory')}
-                          </button>
-                          <button
-                            onClick={openConsole}
-                            className="flex items-center gap-2 rounded-[4px] border border-border bg-input px-3 py-2 text-xs font-medium transition-all hover:bg-white/10"
-                          >
-                            <Terminal size={16} />
-                            {t('settings.developerConsole')}
                           </button>
                         </div>
                       </div>
@@ -2405,7 +2418,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   </section>
                 </div>
               )}
-
             </div>
           </div>
         </div>

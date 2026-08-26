@@ -103,6 +103,7 @@ export interface Settings {
   settings_window_x?: number | null;
   settings_window_y?: number | null;
   wheel_folder_navigation?: boolean;
+  title_bar_animation_enabled?: boolean;
 }
 
 export type ClipType = 'text' | 'image' | 'html' | 'rtf' | 'file' | 'url' | 'code';

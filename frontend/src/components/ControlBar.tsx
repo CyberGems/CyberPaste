@@ -136,6 +136,7 @@ interface ControlBarProps {
   onReorderFolder?: (folderId: string, targetId: string, position: 'before' | 'after') => void;
   isWindowActive?: boolean;
   wheelFolderNavigation?: boolean;
+  titleBarAnimationEnabled?: boolean;
 }
 
 interface FolderTabButtonProps {
@@ -239,6 +240,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   onReorderFolder,
   isWindowActive = true,
   wheelFolderNavigation = false,
+  titleBarAnimationEnabled = true,
 }) => {
   const foldersRef = React.useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
@@ -493,16 +495,18 @@ export const ControlBar: React.FC<ControlBarProps> = ({
       {/* ═══ Header — logo, optional info, window actions ═══ */}
       <div className="relative flex h-11 shrink-0 select-none items-center justify-between overflow-hidden border-b border-border bg-card/65 px-3 backdrop-blur-sm">
         <HudKeyframes />
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div
-            className="absolute inset-y-0 w-[25%]"
-            style={{
-              background:
-                'linear-gradient(90deg, transparent, rgba(var(--primary-rgb),0.025), transparent)',
-              animation: isWindowActive ? 'hud-scan 10s ease-in-out infinite alternate' : 'none',
-            }}
-          />
-        </div>
+        {titleBarAnimationEnabled && (
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div
+              className="absolute inset-y-0 w-[25%]"
+              style={{
+                background:
+                  'linear-gradient(90deg, transparent, rgba(var(--primary-rgb),0.025), transparent)',
+                animation: isWindowActive ? 'hud-scan 10s ease-in-out infinite alternate' : 'none',
+              }}
+            />
+          </div>
+        )}
 
         <div className="z-10 flex shrink-0 items-center gap-2">
           <div className="flex h-6 w-6 items-center justify-center overflow-hidden">

@@ -368,6 +368,7 @@ interface CompactViewProps {
   compactShowNumber?: boolean;
   compactShowScrollbar?: boolean;
   wheelFolderNavigation?: boolean;
+  titleBarAnimationEnabled?: boolean;
 }
 
 interface CompactSidebarFolderItemProps {
@@ -576,6 +577,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   compactShowNumber = true,
   compactShowScrollbar = true,
   wheelFolderNavigation = false,
+  titleBarAnimationEnabled = true,
 }) => {
   const { t } = useTranslation();
   const folderScrollRef = useRef<HTMLDivElement>(null);
@@ -1111,18 +1113,20 @@ export const CompactView: React.FC<CompactViewProps> = ({
       {/* Header */}
       <div className="relative flex h-12 flex-shrink-0 items-stretch justify-between overflow-hidden border-b border-border bg-card/65 px-3 backdrop-blur-sm">
         {/* Scan-line sweep (CSS-only, GPU-composited) - 50% opacity of full view */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div
-            className="absolute inset-y-0 w-[25%]"
-            style={{
-              background:
-                'linear-gradient(90deg, transparent, rgba(var(--primary-rgb),0.025), transparent)',
-              animation: isWindowActive
-                ? 'compact-scan 6.5s ease-in-out infinite alternate'
-                : 'none',
-            }}
-          />
-        </div>
+        {titleBarAnimationEnabled && (
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div
+              className="absolute inset-y-0 w-[25%]"
+              style={{
+                background:
+                  'linear-gradient(90deg, transparent, rgba(var(--primary-rgb),0.025), transparent)',
+                animation: isWindowActive
+                  ? 'compact-scan 6.5s ease-in-out infinite alternate'
+                  : 'none',
+              }}
+            />
+          </div>
+        )}
         <div
           data-tauri-drag-region
           className="flex min-w-0 flex-1 cursor-move items-center gap-2 self-stretch"
@@ -1147,7 +1151,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
             </span>
             <span
               data-tauri-drag-region
-              className="rounded-sm border border-primary/20 bg-primary/10 px-1.5 text-[10px] font-medium uppercase tracking-widest text-primary"
+              className="rounded border border-primary/20 bg-primary/10 px-1 py-px text-[8.5px] font-medium uppercase tracking-wider text-primary"
             >
               Compact
             </span>
