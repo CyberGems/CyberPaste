@@ -16,12 +16,14 @@ import {
   ScanText,
   Pin,
   Zap,
+  Trash2,
 } from 'lucide-react';
 import Tooltip from './Tooltip';
 import { formatDistanceToNow } from 'date-fns';
 import { de, enUS, es, fr, ja, zhCN } from 'date-fns/locale';
 import { CONTEXT_MENU_EVENT, type ContextMenuEventDetail } from '../utils/contextMenuEvents';
 import { usePinFlash } from '../hooks/usePinFlash';
+import { useDeleteFlash } from '../hooks/useDeleteFlash';
 
 const localeMap: Record<string, any> = {
   de,
@@ -259,6 +261,7 @@ export const ClipCard = memo(
     const leftWhileMenuRef = useRef(false);
     menuHighlightRef.current = menuHighlight;
     const pinFlash = usePinFlash(clip.id);
+    const isDeleting = useDeleteFlash(clip.id);
     const foreignMenuOpenRef = useRef(false);
     const showHover = menuHighlight || (hovered && !foreignMenuOpenRef.current);
 
@@ -349,6 +352,8 @@ export const ClipCard = memo(
             }
             className={clsx(
               'relative isolate flex h-full w-full cursor-pointer select-none flex-col overflow-hidden rounded-2xl border bg-card/85 transition-[border-color,box-shadow,opacity,transform] duration-150',
+              isDeleting &&
+                'clip-deleting-card pointer-events-none border-rose-500/80 shadow-[0_0_24px_rgba(244,63,94,0.45),inset_0_0_12px_rgba(244,63,94,0.2)]',
               isSelected
                 ? 'z-10 border'
                 : isBulkSelected
@@ -362,6 +367,17 @@ export const ClipCard = memo(
           >
             {pinFlash && (
               <div className="clip-pin-flash pointer-events-none absolute inset-0 z-30 rounded-2xl bg-primary/30 shadow-[inset_0_0_0_2px_rgba(var(--primary-rgb),0.7),0_0_22px_rgba(var(--primary-rgb),0.4)]" />
+            )}
+
+            {isDeleting && (
+              <div className="animate-clip-delete-overlay pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center gap-2 rounded-2xl border border-rose-500/70 bg-background/90 shadow-[0_0_24px_rgba(244,63,94,0.45),inset_0_0_12px_rgba(244,63,94,0.2)] backdrop-blur-md">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full border border-rose-500/50 bg-rose-500/20 text-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.55)]">
+                  <Trash2 size={20} className="animate-pulse text-rose-400" />
+                </div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-rose-300 drop-shadow-[0_0_8px_rgba(244,63,94,0.6)]">
+                  {t('notifications.clipDeleted')}
+                </span>
+              </div>
             )}
 
             {onToggleBulkSelect && (
@@ -524,10 +540,12 @@ export const ClipCard = memo(
                 )}
               </span>
               {showTypeIcon && (
-                <div className={clsx(
-                  'absolute bottom-1.5 right-3 flex items-center text-primary transition-opacity',
-                  showHover ? 'opacity-100' : 'opacity-65'
-                )}>
+                <div
+                  className={clsx(
+                    'absolute bottom-1.5 right-3 flex items-center text-primary transition-opacity',
+                    showHover ? 'opacity-100' : 'opacity-65'
+                  )}
+                >
                   {(() => {
                     const TypeIcon =
                       clip.clip_type === 'image'

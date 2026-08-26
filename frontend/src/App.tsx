@@ -31,6 +31,7 @@ import { useTheme } from './hooks/useTheme';
 import { useLanguage } from './hooks/useLanguage';
 import { triggerPinFlash } from './hooks/usePinFlash';
 import { triggerFolderFlash } from './hooks/useFolderFlash';
+import { triggerDeleteFlash, cancelDeleteFlash } from './hooks/useDeleteFlash';
 import { useTranslation } from 'react-i18next';
 import { systemToast as toast } from './utils/toast';
 import { LAYOUT } from './constants';
@@ -301,9 +302,7 @@ function App() {
         // Check for updates after the welcome banner completes if auto_check_updates is enabled
         if (s.auto_check_updates) {
           const welcomeWillShow = (s.toast_enabled ?? true) && (s.show_action_messages ?? true);
-          const welcomeDelay = welcomeWillShow
-            ? 1500 + (s.toast_duration || 3000) + 600
-            : 2000;
+          const welcomeDelay = welcomeWillShow ? 1500 + (s.toast_duration || 3000) + 600 : 2000;
 
           setTimeout(() => {
             check({ timeout: 15000 })
@@ -1277,8 +1276,12 @@ function App() {
   const handleDelete = useCallback(
     async (clipId: string | null) => {
       if (!clipId) return;
+      triggerDeleteFlash(clipId, 320);
       try {
-        await invoke('delete_clip', { id: clipId, hardDelete: false });
+        const deletePromise = invoke('delete_clip', { id: clipId, hardDelete: false });
+        const animPromise = new Promise((resolve) => setTimeout(resolve, 320));
+        await Promise.all([deletePromise, animPromise]);
+
         setClips((prevClips) => prevClips.filter((c) => c.id !== clipId));
         setSelectedClipId((prevSelected) => (prevSelected === clipId ? null : prevSelected));
         setSelectedClipIds((prevSelected) => {
@@ -1290,13 +1293,13 @@ function App() {
         // Refresh counts
         loadFolders();
         refreshTotalCount();
-        toast.success(t('notifications.clipDeleted'));
       } catch (error) {
+        cancelDeleteFlash(clipId);
         console.error('Failed to delete clip:', error);
         toast.error(t('notifications.clipDeleteFailed'));
       }
     },
-    [t, loadFolders, refreshTotalCount]
+    [loadFolders, refreshTotalCount, t]
   );
 
   const handleToggleClipPin = useCallback(
@@ -1579,15 +1582,19 @@ function App() {
   const handleBulkDelete = useCallback(async () => {
     const ids = Array.from(selectedClipIds);
     if (ids.length === 0) return;
+    triggerDeleteFlash(ids, 320);
     try {
-      await invoke('delete_clips', { ids });
+      const deletePromise = invoke('delete_clips', { ids });
+      const animPromise = new Promise((resolve) => setTimeout(resolve, 320));
+      await Promise.all([deletePromise, animPromise]);
+
       const idsSet = new Set(ids);
       setClips((prev) => prev.filter((c) => !idsSet.has(c.id)));
       setSelectedClipIds(new Set());
       loadFolders();
       refreshTotalCount();
-      toast.success(t('toasts.clipsDeleted', { count: ids.length }));
     } catch (e) {
+      cancelDeleteFlash(ids);
       console.error('Bulk delete failed:', e);
       toast.error(t('notifications.deleteFailed'));
     }

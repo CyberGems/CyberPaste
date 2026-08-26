@@ -63,6 +63,7 @@ import {
   Link,
   File as LucideFile,
   Image as ImageIcon,
+  Trash2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
@@ -81,6 +82,7 @@ import { CompactBulkBar } from './CompactBulkBar';
 import { CompactPeek } from './CompactPeek';
 import { usePinFlash } from '../hooks/usePinFlash';
 import { useFolderFlash } from '../hooks/useFolderFlash';
+import { useDeleteFlash } from '../hooks/useDeleteFlash';
 
 const localeMap: Record<string, any> = {
   de,
@@ -1827,6 +1829,7 @@ const ClipRow = memo(function ClipRow({
   const showActions = menuHighlight || (hovered && !foreignMenuOpenRef.current);
   const shouldBlurForPeek = isPeekVisible && peekClipId !== clip.id;
   const pinFlash = usePinFlash(clip.id);
+  const isDeleting = useDeleteFlash(clip.id);
 
   useEffect(() => {
     const onMenu = (e: Event) => {
@@ -1889,6 +1892,8 @@ const ClipRow = memo(function ClipRow({
         draggable="false"
         className={clsx(
           'group relative flex h-10 w-full cursor-pointer items-center gap-3 overflow-hidden rounded-lg border px-2 py-1.5 transition-colors',
+          isDeleting &&
+            'clip-deleting-row pointer-events-none border-rose-500/70 bg-rose-950/40 shadow-[0_0_16px_rgba(244,63,94,0.35)]',
           isSelected
             ? 'border-primary bg-primary/20 text-foreground shadow-[0_0_12px_rgba(var(--primary-rgb),0.25)]'
             : isNavigationSelected
@@ -1903,6 +1908,18 @@ const ClipRow = memo(function ClipRow({
       >
         {pinFlash && (
           <div className="clip-pin-flash pointer-events-none absolute inset-0 z-20 rounded-lg bg-primary/30 shadow-[inset_0_0_0_1px_rgba(var(--primary-rgb),0.75),0_0_16px_rgba(var(--primary-rgb),0.35)]" />
+        )}
+
+        {isDeleting && (
+          <div className="animate-clip-delete-overlay pointer-events-none absolute inset-0 z-30 flex items-center justify-between rounded-lg border border-rose-500/70 bg-background/90 px-3 shadow-[0_0_16px_rgba(244,63,94,0.4),inset_0_0_8px_rgba(244,63,94,0.2)] backdrop-blur-md">
+            <div className="flex items-center gap-2 text-xs font-semibold text-rose-300">
+              <Trash2 size={13} className="animate-pulse text-rose-400" />
+              <span>{t('notifications.clipDeleted')}</span>
+            </div>
+            <div className="h-1.5 w-12 overflow-hidden rounded-full bg-rose-500/20">
+              <div className="h-full w-full animate-pulse bg-rose-500" />
+            </div>
+          </div>
         )}
         <div
           className="flex min-w-0 flex-1 items-center gap-3"
@@ -2056,7 +2073,7 @@ const ClipRow = memo(function ClipRow({
 
           <div
             className={clsx(
-              'flex w-4 flex-shrink-0 items-center justify-center transition-opacity duration-150',
+              'flex w-6 flex-shrink-0 items-center justify-center transition-opacity duration-150',
               showActions ? 'opacity-100' : 'pointer-events-none opacity-0'
             )}
           >
@@ -2079,9 +2096,9 @@ const ClipRow = memo(function ClipRow({
                   e.stopPropagation();
                   onContextMenu?.(e, clip.id);
                 }}
-                className="flex h-5 w-4 items-center justify-center rounded text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground"
+                className="flex h-7 w-6 items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground active:scale-95"
               >
-                <MoreVertical size={13} />
+                <MoreVertical size={14} />
               </button>
             </Tooltip>
           </div>
