@@ -2,15 +2,10 @@
   <img src="frontend/public/logo.png" alt="CyberPaste" width="128" height="128" />
 </p>
 
-<h1 align="center">
-    CyberPaste - The Ultimate Clipboard Manager
-</h1>
+<h1 align="center">CyberPaste - The Ultimate Clipboard Manager</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License" />
-  <img src="https://img.shields.io/badge/platform-Windows%2010%2B-0078D4.svg" alt="Platform" />
-  <img src="https://img.shields.io/badge/Tauri-2.x-24C8DB.svg" alt="Tauri" />
-  <img src="https://img.shields.io/badge/version-1.17.1-green.svg" alt="Version" />
+  <strong>A beautiful, privacy-focused clipboard history manager</strong> — stores everything you copy locally, so you can recall any clip at any time.
 </p>
 
 <p align="center">
@@ -22,164 +17,222 @@
   </a>
 </p>
 
-CyberPaste stores everything you copy to your clipboard locally, so you can recall any specific clip at any time. It’s the easiest way to save, organize, search, pin, edit, and preview almost everything you copy on Windows and paste it instantly.
+<p align="center">
+  <img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License" />
+  <img src="https://img.shields.io/badge/platform-Windows%2010%2B-0078D4.svg?logo=windows&logoColor=white" alt="Platform" />
+  <img src="https://img.shields.io/badge/version-1.17.1-00F0FF.svg" alt="Version" />
+  <img src="https://img.shields.io/badge/Tauri-2.x-512BD4.svg?logo=tauri&logoColor=white" alt="Tauri" />
+</p>
+
+A beautiful, privacy-focused **clipboard history manager** for Windows. CyberPaste stores everything you copy — text, code, images, files, URLs — in a local SQLite database, so you can recall any specific clip at any time. Search, organize, pin, edit, and paste instantly.
 
 *Free and open source (GPLv3) — no ads, no tracking, and no data collection. Just enjoy it.*
 
-> Official site: [cybergems.org](https://cybergems.org/) · Source: [github.com/CyberGems/CyberPaste](https://github.com/CyberGems/CyberPaste)
+---
 
-## Features
+## 📋 Why CyberPaste?
 
-- 🔒 **100% Private & Local-First** - SQLite storage running locally in WAL mode with fast indexes. Zero analytics, zero telemetry, no cloud required.
-- 🎨 **Polished CyberGems UI** - Dark, Light, CyberPaste (with signature glow and neon accents), and System themes with native Windows Mica & Mica-Alt vibrancies, custom corner radiuses, and smooth animations.
-- 🗂️ **Dual View Modes**:
-  - **Full Mode**: Responsive multi-column grid with live zoom scaling, 2D keyboard navigation, and vertical or horizontal layout options.
-  - **Compact Mode**: High-density list with quick-access tabs, sidebar or horizontal folder bar, and hover peek preview.
-- 📋 **Rich Content Support** - Automatically captures formatted Text, Code (with syntax highlighting and language badges), HTML, RTF, Images (with high-res viewer & OCR text extraction), URLs, and Files.
-- 🔍 **Instant Search & Type Filtering** - Real-time full-text search with quick filter chips (Text, Code, Images, Links, Files) and live database counters.
-- 📁 **Folders & Organization** - Organize clips into custom folders, drag & drop clips with edge auto-scrolling, pin favorites, and bulk manage clips with `Ctrl+Click` / `Shift+Click`.
-- 🔔 **Smart HUD Notifications & Sounds** - Corner toasts with countdown timer bars, duplicate detection, cut detection, and synthesized or custom sound effects.
-- 🤖 **Integrated AI Assistant** - Summarize, translate, explain code, or fix grammar via OpenAI, DeepSeek, Ollama, Groq, OpenRouter, or any OpenAI-compatible provider with fully customizable prompts and action names.
-- 🔤 **Bilingual Localization** - Complete native English and Spanish interface across all windows, settings, and dialogs.
-- 🚫 **Privacy Exceptions** - Ignore sensitive apps (e.g., password managers, banking tools) by process name or full executable path.
-- 🖥️ **Multi-Display Aware** - Automatically detects cursor position and presents the clipboard window on the active monitor.
-- ⚙️ **Modular Window Ecosystem** - Separate optimized windows for Main Clipboard, System Tray Menu, Multi-tab Settings, Image Viewer & OCR, and Toast Notifications.
+Most clipboard managers either send your data to the cloud or are too basic to be useful. CyberPaste gives you **the best of both worlds**: rich content support, AI-powered assistance, and rock-solid privacy — all in a lightweight Tauri app with a stunning cyberpunk aesthetic.
 
-## Installation Guide
+| Need | Solution |
+|---|---|
+| Recall anything you've copied | Full clipboard history with instant search and type filtering |
+| Keep sensitive data private | Local-only SQLite — zero analytics, zero telemetry, no cloud |
+| Work with rich content | Text, code (syntax highlighting), images (with OCR), HTML, RTF, files, URLs |
+| Process clips with AI | Summarize, translate, explain code, fix grammar — works with any OpenAI-compatible provider |
+| Stay organized | Folders, favorites, bulk management, dual view modes |
+| Access anywhere | Global hotkey, multi-monitor aware, auto-paste injection |
 
-### 1. Install via Winget
+---
+
+## ✨ Key Features
+
+### 📋 Clipboard Engine
+- **Rich Content Support** — Automatically captures formatted Text, Code (with syntax highlighting and language badges), HTML, RTF, Images (with high-res viewer & OCR text extraction), URLs, and Files
+- **Smart Monitoring** — Detects cut operations (Ctrl+X, Shift+Delete) via global keyboard hooks, duplicate detection, ghost clip filtering
+- **Instant Search** — Real-time full-text search with quick filter chips (Text, Code, Images, Links, Files) and live database counters
+
+### 🗂️ Organization
+- **Folders** — Organize clips into custom folders with drag & drop and edge auto-scrolling
+- **Favorites & Pinning** — Pin frequently used clips that stay at the top
+- **Bulk Management** — `Ctrl+Click` / `Shift+Click` for multi-select, `Ctrl+A` to select all visible clips
+- **Dual View Modes** — Full Mode (multi-column grid with zoom) or Compact Mode (high-density list with hover peek)
+
+### 🤖 AI Assistant
+- **Smart Actions** — Summarize, translate, explain code, or fix grammar
+- **Provider Support** — OpenAI, DeepSeek, Ollama, Groq, OpenRouter, or any OpenAI-compatible API
+- **Fully Customizable** — Custom prompts and action names for each AI operation
+
+### 🔔 Notifications & Feedback
+- **Smart HUD Toasts** — Corner notifications with countdown timer bars, duplicate detection, cut detection
+- **Sound Effects** — Synthesized or custom sound effects for clipboard capture, duplicates, and activation
+
+### 🔒 Privacy & Security
+- **100% Local-First** — SQLite storage in WAL mode with fast indexes. Zero analytics, zero telemetry
+- **Privacy Exceptions** — Ignore sensitive apps (password managers, banking tools) by process name or full executable path
+- **Ghost Clip Filtering** — Option to ignore clips from unknown sources
+
+### 🖥️ Desktop Integration
+- **Global Hotkey** — Toggle the clipboard window (default: `Ctrl+Shift+V`)
+- **Multi-Display Aware** — Automatically presents on the active monitor based on cursor position
+- **Modular Window Ecosystem** — Separate optimized windows for Main Clipboard, System Tray Menu, Multi-tab Settings, Image Viewer & OCR, and Toast Notifications
+- **Auto-Paste Injection** — Paste selected clips directly into the active application
+
+### 🎨 Customization
+- **4 Themes** — Dark, Light, CyberPaste (signature neon glow), and System
+- **Mica Effects** — Native Windows Mica & Mica-Alt vibrancies with custom corner radiuses
+- **Bilingual UI** — Complete native English and Spanish interface across all windows
+
+---
+
+## 🛠️ Tech Stack & Architecture
+
+- **Platform:** Windows 10 / 11
+- **Backend:** Rust + Tauri 2.x
+- **Frontend:** React 18 + TypeScript + Tailwind CSS
+- **Database:** SQLite (WAL mode)
+- **Package Manager:** pnpm
+
+```
+CyberPaste/
+├── src-tauri/               Rust backend & Tauri configuration
+│   ├── src/
+│   │   ├── main.rs          Entry point
+│   │   ├── lib.rs           App initialization, shortcuts & window managers
+│   │   ├── commands.rs      IPC command handlers & toasts
+│   │   ├── clipboard.rs     Clipboard monitoring & capture engine
+│   │   ├── database.rs      SQLite schema & persistence
+│   │   ├── models.rs        Data structures & settings definitions
+│   │   ├── ai.rs            AI integration (OpenAI-compatible API)
+│   │   ├── highlight.rs     Syntax highlighting
+│   │   ├── ocr.rs           OCR text extraction
+│   │   └── settings_manager.rs
+│   ├── Cargo.toml
+│   └── tauri.conf.json
+├── frontend/                React + TypeScript frontend
+│   ├── src/
+│   │   ├── components/      UI components (ClipCard, ClipList, ControlBar, Modals)
+│   │   ├── windows/         Dedicated window views (Toast, Viewer, About, TrayMenu)
+│   │   ├── hooks/           Custom React hooks (theme, language, keyboard)
+│   │   ├── i18n/            Internationalization (English & Spanish)
+│   │   ├── types/           TypeScript definitions
+│   │   ├── utils/           Helper utilities
+│   │   └── App.tsx          Main window application
+│   └── package.json
+└── README.md
+```
+
+---
+
+## 🚀 Getting Started
+
+### Install
 
 ```bash
 winget install CyberGems.CyberPaste
 ```
 
-### 2. Download from GitHub Releases (Windows)
+Or download from [GitHub Releases](https://github.com/CyberGems/CyberPaste/releases).
 
-Download the latest installer directly from:
-[https://github.com/CyberGems/CyberPaste/releases](https://github.com/CyberGems/CyberPaste/releases)
+### Development
 
-> **Downloads:** [github.com/CyberGems/CyberPaste/releases](https://github.com/CyberGems/CyberPaste/releases)
-
-## Keyboard Shortcuts
-
-### Global
-- **Toggle Window**: `Ctrl+Shift+V` (Default, customizable in Settings)
-
-### In-App
-- `↑ / ↓ / ← / →` - 2D grid and list navigation
-- `Enter` - Paste selected clip (with auto-paste injection)
-- `Space` - Open full preview / detail panel
-- `Ctrl + C` - Copy selected clip to clipboard
-- `Ctrl + F` - Focus search input
-- `Ctrl + A` - Select all visible clips (bulk selection mode)
-- `P` - Pin / unpin selected item
-- `Delete` - Delete selected item
-- `Escape` - Clear search / close modal or window
-
-## Application Exceptions (Ignored Apps)
-
-CyberPaste allows you to exclude specific applications from being recorded in the clipboard history. This is useful for privacy-sensitive applications like password managers or banking tools.
-
-**Logic & Behavior:**
-- **How to manage:** Go to Settings -> Ignored Applications. You can browse for an executable (`.exe`) or type its process name.
-- **Privacy Protection:** When content is copied, CyberPaste verifies the source application against your ignore list before saving.
-- **Robust Matching:** The system checks against **both**:
-    1. **Executable Name** (e.g., `notepad.exe`) - Matches any instance of this app regardless of location.
-    2. **Full File Path** (e.g., `C:\Windows\System32\notepad.exe`) - Matches only the specific installed instance.
-- **Case Insensitive:** Matching is case-insensitive to ensure reliable detection on Windows.
-
-## AI Features
-
-CyberPaste integrates powerful AI capabilities to help you process your clipboard content efficiently.
-
-- **Actions:** Right-click any clip or use the detail panel to access AI actions:
-    - **Summarize:** Get a concise summary of long texts.
-    - **Translate:** Translate content to your preferred language.
-    - **Explain Code:** Understand complex code snippets instantly.
-    - **Fix Grammar:** Polish your writing with professional grammar checks.
-- **Full Customization:**
-    - **Custom Names:** Rename AI actions in Settings (e.g., change "Translate" to "To Spanish").
-    - **Custom Prompts:** Override default system prompts to tailor the AI's behavior and output style.
-    - **Provider Support:** Support for OpenAI, DeepSeek, Ollama, Groq, OpenRouter, and other OpenAI-compatible APIs.
-
-*(An API key from your preferred provider is required for AI features).*
-
-## Tech Stack
-
-- **Backend**: Rust + Tauri 2.x
-- **Frontend**: React 18 + TypeScript + Tailwind CSS
-- **Database**: SQLite (WAL mode)
-- **Package Manager**: pnpm
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- Rust 1.77+
-- pnpm
-
-### Dev commands
+**Prerequisites:** Node.js 18+, Rust 1.77+, pnpm
 
 ```bash
-# Install dependencies
 pnpm install
-
-# Run development build
 pnpm tauri dev
 ```
 
-### Building
+### Build
 
 ```bash
-# Build for production
 pnpm tauri build
 ```
 
-## Project Structure
+---
 
-```text
-CyberPaste/
-├── src-tauri/               # Rust backend & Tauri configuration
-│   ├── src/
-│   │   ├── main.rs          # Entry point
-│   │   ├── lib.rs           # App initialization, shortcuts & window managers
-│   │   ├── commands.rs      # IPC command handlers & toasts
-│   │   ├── clipboard.rs     # Clipboard monitoring & capture engine
-│   │   ├── database.rs      # SQLite schema & persistence
-│   │   ├── models.rs        # Data structures & settings definitions
-│   │   └── settings_manager.rs # Thread-safe settings manager
-│   ├── Cargo.toml
-│   └── tauri.conf.json
-├── frontend/                # React + TypeScript frontend
-│   ├── src/
-│   │   ├── components/      # UI components (ClipCard, ClipList, ControlBar, Modals)
-│   │   ├── windows/         # Dedicated window views (Toast, Viewer, About, TrayMenu)
-│   │   ├── hooks/           # Custom React hooks (theme, language, keyboard)
-│   │   ├── i18n/            # Internationalization (English & Spanish locales)
-│   │   ├── types/           # TypeScript definitions
-│   │   ├── utils/           # Helper utilities
-│   │   └── App.tsx          # Main window application
-│   └── package.json
-└── README.md
-```
+## ⌨️ Keyboard Shortcuts
 
-## Privacy and Security
+### Global
 
-- **Local storage only** - All clipboard history and settings are stored locally in SQLite. No data is sent externally except to the AI provider you explicitly configure.
-- **Ignored apps** - Content from sensitive applications is never recorded.
+| Key | Action |
+|---|---|
+| `Ctrl+Shift+V` | Toggle clipboard window (customizable) |
 
-## Contributing
+### Navigation
+
+| Key | Action |
+|---|---|
+| `↑` `↓` `←` `→` | 2D grid and list navigation |
+| `Enter` | Paste selected clip (with auto-paste injection) |
+| `Space` | Open full preview / detail panel |
+| `PageUp` / `PageDown` / `Home` / `End` | Extended navigation with auto-scroll |
+
+### Actions
+
+| Key | Action |
+|---|---|
+| `Ctrl+C` | Copy selected clip to clipboard |
+| `Ctrl+F` | Focus search input |
+| `Ctrl+A` | Select all visible clips (bulk mode) |
+| `Ctrl+M` | Toggle Full / Compact view mode |
+| `Ctrl+Wheel` | Adjust grid zoom in Full mode (0.6x – 1.75x) |
+| `P` | Pin / unpin selected item |
+| `Delete` | Delete selected item |
+| `Escape` | Clear search / close modal or window |
+
+### Editor
+
+| Key | Action |
+|---|---|
+| `Tab` | Insert 2 spaces |
+| `Ctrl+S` / `Ctrl+Enter` | Save |
+| `Escape` | Cancel |
+
+---
+
+## ❓ Frequently Asked Questions
+
+### Is my clipboard data synced to the cloud?
+
+No. CyberPaste stores everything locally in a SQLite database. No data is sent externally except to the AI provider you explicitly configure.
+
+### How do I ignore sensitive applications?
+
+Go to **Settings → Ignored Applications**. You can browse for an executable (`.exe`) or type its process name. CyberPaste checks against both executable name and full file path, case-insensitively.
+
+### What content types does CyberPaste support?
+
+Formatted text, code (with syntax highlighting), HTML, RTF, images (with high-res viewer and OCR text extraction), URLs, and file paths.
+
+### How does the AI integration work?
+
+Right-click any clip or use the detail panel to access AI actions (Summarize, Translate, Explain Code, Fix Grammar). You need an API key from a supported provider (OpenAI, DeepSeek, Ollama, Groq, OpenRouter, or any OpenAI-compatible API). Prompts and action names are fully customizable in Settings.
+
+### What are the two view modes?
+
+- **Full Mode** — Responsive multi-column grid with live zoom scaling, 2D keyboard navigation, and vertical or horizontal layout options.
+- **Compact Mode** — High-density list with quick-access tabs, sidebar or horizontal folder bar, and hover peek preview.
+
+### Can I install CyberPaste via Winget?
+
+Yes. Run `winget install CyberGems.CyberPaste` in your terminal.
+
+---
+
+## 🤝 Contributing
 
 Contributions are welcome. Please open an issue describing the change before starting large work, and submit pull requests against the main branch.
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
 Originally forked from [PastePaw](https://github.com/XueshiQiao/PastePaw) by [XueshiQiao](https://github.com/XueshiQiao). CyberPaste has since been extensively rewritten and expanded by [CyberGems](https://cybergems.org/).
 
 This project also builds on open-source components including Tauri, React, SQLite, and Rust — thanks to their authors and maintainers.
 
-## Donate
+---
+
+## ❤️ Donate
 
 **CyberPaste** is a personal open-source project within the **CyberGems** suite. I've spent thousands of hours building and refining it — both for my own use and to share premium-quality software with the world for free.
 
@@ -203,9 +256,11 @@ If you'd like to support this work, a donation would mean a lot. Thank you! 🙏
 
 </details>
 
-## License
+---
 
-CyberPaste is distributed under the terms of the **GNU General Public License v3.0**. See [`LICENSE`](LICENSE) for the full license text.
+## 📄 License
+
+CyberPaste is distributed under the terms of the GNU General Public License v3.0. See [`LICENSE`](LICENSE) for the full license text.
 
 ---
 
