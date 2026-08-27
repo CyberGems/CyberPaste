@@ -226,12 +226,12 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
         </div>
 
         {/* Editor Main Canvas & Gutter */}
-        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[#0b0f19]/90 dark:bg-[#070a12]/95">
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
           <div className="relative flex min-h-0 flex-1 overflow-hidden">
             {/* Line Numbers Gutter */}
             <div
               ref={gutterRef}
-              className="no-scrollbar w-12 flex-shrink-0 select-none overflow-y-hidden border-r border-border/40 bg-black/25 py-3 pr-2.5 text-right font-mono text-[12px] leading-[22px] text-muted-foreground/35"
+              className="no-scrollbar w-12 flex-shrink-0 select-none overflow-y-hidden border-r border-border/40 bg-muted/40 py-3 pr-2.5 text-right font-mono text-[12px] leading-[22px] text-muted-foreground/60"
               aria-hidden="true"
             >
               {lines.map((_, i) => (
@@ -270,7 +270,7 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
           </div>
 
           {/* IDE Status Bar */}
-          <div className="flex flex-shrink-0 select-none items-center justify-between border-t border-border/50 bg-black/35 px-3 py-1.5 font-mono text-[11px] text-muted-foreground/75">
+          <div className="flex flex-shrink-0 select-none items-center justify-between border-t border-border/50 bg-muted/50 px-3 py-1.5 font-mono text-[11px] text-muted-foreground/75">
             <div className="flex items-center gap-2 sm:gap-3">
               <span className="font-semibold text-primary/90">
                 {t('editor.line')} {cursorPos.line}, {t('editor.col')} {cursorPos.col}

@@ -382,7 +382,12 @@ function App() {
     const persistWindow = debounce(async () => {
       if (isTogglingRef.current) return;
 
-      const currentSettings = settingsRef.current;
+      let currentSettings = settingsRef.current;
+      try {
+        currentSettings = await invoke<Settings>('get_settings');
+        settingsRef.current = currentSettings;
+        setSettings(currentSettings);
+      } catch {}
       if (!currentSettings) return;
 
       const size = await appWindow.innerSize();

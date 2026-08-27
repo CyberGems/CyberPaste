@@ -549,20 +549,14 @@ impl Database {
         let sample_clips = [
             (
                 "text",
-                "✨ ¡Bienvenido a CyberPaste! / Welcome to CyberPaste!\n\nAtajos de teclado esenciales / Essential shortcuts:\n• Ctrl+Shift+V : Alternar ventana / Toggle window\n• Ctrl+M       : Vista Completa / Compacta (Full & Compact modes)\n• Escribe...   : Búsqueda instantánea / Type to search\n• Enter        : Pegar clip seleccionado / Paste selected\n• Ctrl+Enter   : Copiar como texto plano / Copy plain text\n• P            : Fijar o desfijar clip / Pin or unpin\n• Supr         : Eliminar clip / Delete clip",
-                "✨ ¡Bienvenido a CyberPaste! / Welcome to CyberPaste!",
+                "✨ Welcome to CyberPaste! / ¡Bienvenido a CyberPaste!\n\nEssential shortcuts / Atajos esenciales:\n• Ctrl+Shift+V : Toggle window / Alternar ventana\n• Ctrl+M       : Full & Compact modes / Vista Completa / Compacta\n• Type...      : Instant search / Búsqueda instantánea\n• Enter        : Paste selected clip / Pegar clip seleccionado\n• Ctrl+Enter   : Copy as plain text / Copiar como texto plano\n• P            : Pin or unpin clip / Fijar o desfijar clip\n• Del          : Delete clip / Eliminar clip",
+                "✨ Welcome to CyberPaste! / ¡Bienvenido a CyberPaste!",
                 "CyberPaste.exe",
             ),
             (
-                "text",
-                "🎨 Paleta CyberNeon (Detección de colores):\n#00f2fe  Cyan Glow\n#4facfe  Electric Blue\n#a855f7  Neon Purple\n#ec4899  Cyber Pink\n#10b981  Emerald Bright",
-                "🎨 Paleta CyberNeon: #00f2fe #4facfe #a855f7 #ec4899 #10b981",
-                "Figma.exe",
-            ),
-            (
                 "code",
-                "// 🚀 CyberPaste: Modern Clipboard Manager\nexport interface ClipboardClip {\n  id: string;\n  type: 'text' | 'image' | 'code' | 'url';\n  content: string;\n  isPinned: boolean;\n  createdAt: Date;\n}",
-                "// 🚀 CyberPaste: Modern Clipboard Manager",
+                "// 🚀 CyberPaste: The Ultimate Clipboard Manager\nexport interface ClipboardClip {\n  id: string;\n  type: 'text' | 'image' | 'code' | 'url';\n  content: string;\n  isPinned: boolean;\n  createdAt: Date;\n}",
+                "// 🚀 CyberPaste: The Ultimate Clipboard Manager",
                 "Code.exe",
             ),
             (
@@ -573,8 +567,8 @@ impl Database {
             ),
             (
                 "text",
-                "# 💎 CyberPaste — Productividad sin límites\n\n- ⚡ **Ultra-rápido**: Motor nativo en Rust + SQLite local\n- 🔒 **100% Privado**: Tus datos nunca salen de tu equipo\n- 📁 **Carpetas**: Organiza clips arrastrando o con menús\n- 👁️ **Peek Popover**: Pasa el cursor en modo compacto para previsualizar\n- 🤖 **Acciones IA**: Resume, traduce o analiza código localmente",
-                "# 💎 CyberPaste — Productividad sin límites",
+                "# 💎 CyberPaste — Limitless Productivity\n\n- ⚡ **Ultra-fast**: Native Rust engine + local SQLite\n- 🔒 **100% Private**: Your data never leaves your device\n- 📁 **Folders**: Organize clips via drag & drop or menus\n- 👁️ **Peek Popover**: Hover in compact mode to preview\n- 🤖 **AI Actions**: Summarize, translate or analyze code locally",
+                "# 💎 CyberPaste — Limitless Productivity",
                 "Obsidian.exe",
             ),
             (
