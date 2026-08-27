@@ -288,9 +288,9 @@ async fn delete_clip_image_file_by_uuid(pool: &SqlitePool, clip_uuid: &str) -> R
 async fn cleanup_orphan_clip_image_files(pool: &SqlitePool) -> Result<(), String> {
     let orphan_paths: Vec<Option<String>> = sqlx::query_scalar(
         r#"
-        SELECT file_path
-        FROM clip_images
-        WHERE clip_uuid NOT IN (SELECT uuid FROM clips)
+        SELECT file_path FROM clip_images WHERE clip_uuid NOT IN (SELECT uuid FROM clips)
+        UNION ALL
+        SELECT file_path FROM clip_images WHERE clip_uuid IN (SELECT uuid FROM clips WHERE is_deleted = 1)
         "#,
     )
     .fetch_all(pool)
@@ -303,16 +303,37 @@ async fn cleanup_orphan_clip_image_files(pool: &SqlitePool) -> Result<(), String
         }
     }
 
-    sqlx::query(r#"DELETE FROM clip_images WHERE clip_uuid NOT IN (SELECT uuid FROM clips)"#)
+    sqlx::query(r#"DELETE FROM clip_images WHERE clip_uuid NOT IN (SELECT uuid FROM clips) OR clip_uuid IN (SELECT uuid FROM clips WHERE is_deleted = 1)"#)
         .execute(pool)
         .await
         .map_err(|e| e.to_string())?;
+
+    let data_dir = crate::get_data_dir();
+    let images_dir = data_dir.join("images");
+    if images_dir.exists() {
+        if let Ok(entries) = std::fs::read_dir(&images_dir) {
+            let valid_paths: std::collections::HashSet<String> = sqlx::query_scalar::<_, String>("SELECT file_path FROM clip_images WHERE file_path IS NOT NULL AND file_path != ''")
+                .fetch_all(pool)
+                .await
+                .unwrap_or_default()
+                .into_iter()
+                .collect();
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_file() {
+                    let path_str = path.to_string_lossy().to_string();
+                    if !valid_paths.contains(&path_str) {
+                        let _ = std::fs::remove_file(&path);
+                    }
+                }
+            }
+        }
+    }
 
     Ok(())
 }
 
 pub async fn prune_history(pool: &SqlitePool, max_items: i64) -> Result<(), String> {
-    // 1. Get count of clips NOT in folders and NOT pinned
     let count: i64 = sqlx::query_scalar(
         "SELECT COUNT(*) FROM clips WHERE folder_id IS NULL AND is_deleted = 0 AND is_pinned = 0",
     )
@@ -322,23 +343,36 @@ pub async fn prune_history(pool: &SqlitePool, max_items: i64) -> Result<(), Stri
 
     if count > max_items {
         let to_delete = count - max_items;
-        // 2. Delete the oldest 'to_delete' clips that are NOT in folders and NOT pinned
-        sqlx::query(
-            r#"
-            DELETE FROM clips 
-            WHERE uuid IN (
-                SELECT uuid FROM clips 
-                WHERE folder_id IS NULL AND is_deleted = 0 AND is_pinned = 0
-                ORDER BY created_at ASC 
-                LIMIT ?
-            )
-        "#,
+        let uuids: Vec<String> = sqlx::query_scalar(
+            "SELECT uuid FROM clips WHERE folder_id IS NULL AND is_deleted = 0 AND is_pinned = 0 ORDER BY created_at ASC LIMIT ?",
         )
         .bind(to_delete)
-        .execute(pool)
+        .fetch_all(pool)
         .await
         .map_err(|e| e.to_string())?;
+
+        for uuid in &uuids {
+            let _ = delete_clip_image_file_by_uuid(pool, uuid).await;
+        }
+
+        if !uuids.is_empty() {
+            let placeholders = uuids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+            let del_images_sql = format!("DELETE FROM clip_images WHERE clip_uuid IN ({})", placeholders);
+            let mut q = sqlx::query(&del_images_sql);
+            for uuid in &uuids {
+                q = q.bind(uuid);
+            }
+            let _ = q.execute(pool).await;
+
+            let del_clips_sql = format!("DELETE FROM clips WHERE uuid IN ({})", placeholders);
+            let mut q2 = sqlx::query(&del_clips_sql);
+            for uuid in &uuids {
+                q2 = q2.bind(uuid);
+            }
+            q2.execute(pool).await.map_err(|e| e.to_string())?;
+        }
     }
+    let _ = cleanup_orphan_clip_image_files(pool).await;
     Ok(())
 }
 

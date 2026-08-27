@@ -339,6 +339,19 @@ pub fn run_app() {
             }
             app.manage(Arc::new(settings_manager));
 
+            {
+                let db_prune = db_arc.clone();
+                let h = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_millis(1800)).await;
+                    let max = h
+                        .try_state::<Arc<SettingsManager>>()
+                        .map(|m| m.get().max_items)
+                        .unwrap_or(400);
+                    let _ = crate::commands::prune_history(&db_prune.pool, max).await;
+                });
+            }
+
             let handle = app.handle().clone();
             let db_for_clipboard = db_arc.clone();
 
@@ -1209,7 +1222,7 @@ pub fn animate_window_hide(
     });
 }
 
-fn get_data_dir() -> std::path::PathBuf {
+pub fn get_data_dir() -> std::path::PathBuf {
     let current_dir = std::env::current_dir().unwrap_or(std::path::PathBuf::from("."));
     match dirs::data_dir() {
         Some(path) => path.join("CyberPaste"),

@@ -86,16 +86,24 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
         }
     }
     log::info!(
-        "save_settings: auto_paste={}, language={}, theme={}",
+        "save_settings: auto_paste={}, language={}, theme={}, max_items={}, compact_sidebar_collapsed={}",
         new_settings.auto_paste,
         new_settings.language,
-        new_settings.theme
+        new_settings.theme,
+        new_settings.max_items,
+        new_settings.compact_sidebar_collapsed
     );
+    let max_items = new_settings.max_items;
     manager.save(new_settings)?;
     let _ = crate::rebuild_tray_menu(&app);
     // Broadcast so every window (main, settings, toast, tray_menu, image_viewer)
     // re-applies theme/colors live.
     let _ = app.emit("settings-changed", crate::models::AppSettings::clone(&manager.get()));
+    if max_items > 0 {
+        if let Some(db) = app.try_state::<std::sync::Arc<crate::database::Database>>() {
+            let _ = crate::commands::prune_history(&db.pool, max_items).await;
+        }
+    }
     Ok(())
 }
 
