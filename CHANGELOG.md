@@ -2,6 +2,22 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.16.0] — 2026-08-26
+
+### 🚀 The Ultimate Polish — Defaults, Persistence & Light Theme
+
+- **✨ New Title — The Ultimate Clipboard Manager**: Updated README header from `Clipboard History Manager` → `The Ultimate Clipboard Manager` with centered 128px logo glory! 💎
+- **🎨 Icon Glow-Up — Crispy Everywhere**: Regenerated all `src-tauri/icons` masters from `artifacts/icon.png` (1024px LANCZOS), high-res `tray.png/tray_white.png` (128px razor-sharp, no bilinear blur at 125%/150%/200% DPI), `icon.ico` (11-entry), `logo.png` (512px) + touched `build.rs` for clean rebuild! ✨
+- **⚡ Autostart ON by Default — Installer Ready**: `startup_with_windows` now `true` by default, auto-enables `tauri_plugin_autostart` on first run, NSIS `installMode: both` + `downloadBootstrapper` silent — no more manual toggle! 🔋
+- **🌗 CyberPaste Theme by Default**: `theme: "cyberpaste"` + `mica` default instead of `system` — signature neon on fresh installs! 🌌
+- **🌍 Auto Language — System Speaks**: `language: "auto"` with `navigator.language` resolver (`de/en/es/fr/ja/zh` → `en` fallback), new `Auto (System language)` selector, bilingual `EN → ES` ordering! 🗣️
+- **🐛 Fixed — Settings Vanish Bug**: Fresh installs wiped all settings on config close (stale `settingsRef` overwrite). Now `SettingsWindow` + `App:persistWindow` fetch fresh `get_settings()` before saving geometry — theme & all prefs survive! 🛡️
+- **📝 Editor Light Theme Rescue**: Light mode was stuck on `bg-[#0b0f19]` midnight canvas! Now `bg-background` / `bg-muted/40` / `bg-muted/50` with `text-foreground` — pure, readable bliss in Light ☀️ / Dark 🌙!
+- **💎 Starter Clips Reborn**: Removed useless `🎨 Palette CyberNeon` demo, promoted `EN primary → ES secondary`, translated `Limitless Productivity` to English, `Modern → The Ultimate Clipboard Manager` — clean bilingual showcase! 📋
+- **👁️ Demo Peek — Still Gorgeous**: Kept `generateImage` gradients for `CyberNeon UI` & `Compact Peek` (400×240) — press `Load demo clips` to admire, not seeded on fresh DB!
+- **🧪 Demo Button — One Click Away**: New `Load demo clips` button right beside `Clear History` in `Backup & Data` — `emit('load-demo-data')` alive in production, instant `toast.success`! 🎬
+- **🔔 Settings Persistence — Full Coverage**: Window size/pos saves no longer stomp theme/language — fresh installs stay exactly as you left them! ✅
+
 ## [1.15.0] — 2026-08-26
 
 ### 🎨 Brand New Official Application Icon & High-DPI Tray

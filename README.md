@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License" />
   <img src="https://img.shields.io/badge/platform-Windows%2010%2B-0078D4.svg" alt="Platform" />
   <img src="https://img.shields.io/badge/Tauri-2.x-24C8DB.svg" alt="Tauri" />
-  <img src="https://img.shields.io/badge/version-1.15.0-green.svg" alt="Version" />
+  <img src="https://img.shields.io/badge/version-1.16.0-green.svg" alt="Version" />
 </p>
 
 <p align="center">
