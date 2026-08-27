@@ -2,6 +2,11 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.17.1] — 2026-08-27
+
+### 🎯 Tray — Unified Icon
+- **Same icon Dark & Light**: `tray.png` + `tray_white.png` now identical `128px` desaturated new icon — no more more-saturated old vs new mismatch! ✨
+
 ## [1.17.0] — 2026-08-27
 
 ### 🌍 Language — Full Coverage Fix
