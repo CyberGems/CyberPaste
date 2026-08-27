@@ -137,7 +137,7 @@ function App() {
   const [previewClip, setPreviewClip] = useState<AppClipboardItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
-  const [theme, setTheme] = useState('system');
+  const [theme, setTheme] = useState('cyberpaste');
   const [settings, setSettings] = useState<Settings | null>(null);
   const [updateAvailable, setUpdateAvailable] = useState<any>(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);

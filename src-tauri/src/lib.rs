@@ -330,6 +330,13 @@ pub fn run_app() {
             let settings_manager = get_runtime().unwrap().block_on(async {
                 SettingsManager::new(app.handle(), &db_for_settings).await
             });
+            #[cfg(not(feature = "app-store"))]
+            {
+                use tauri_plugin_autostart::ManagerExt;
+                if settings_manager.get().startup_with_windows {
+                    let _ = app.handle().autolaunch().enable();
+                }
+            }
             app.manage(Arc::new(settings_manager));
 
             let handle = app.handle().clone();

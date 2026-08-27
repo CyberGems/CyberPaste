@@ -107,16 +107,16 @@ pub struct AppSettings {
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
-            theme: "system".to_string(),
-            mica_effect: "clear".to_string(),
-            language: "en".to_string(),
+            theme: "cyberpaste".to_string(),
+            mica_effect: "mica".to_string(),
+            language: "auto".to_string(),
             max_items: 300,
             auto_delete_days: 30,
             hotkey: "Ctrl+Shift+V".to_string(),
             view_mode_hotkey: "Ctrl+M".to_string(),
             auto_paste: false,
             ignore_ghost_clips: false,
-            startup_with_windows: false,
+            startup_with_windows: true,
             round_corners: true,
             view_mode: "compact".to_string(),
             scroll_direction: "vertical".to_string(),

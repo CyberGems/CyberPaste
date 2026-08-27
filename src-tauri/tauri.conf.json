@@ -56,7 +56,17 @@
                                 "icons/icon.icns",
                                 "icons/icon.ico"
                             ],
-                   "createUpdaterArtifacts":  true
+                   "createUpdaterArtifacts":  true,
+                   "windows":  {
+                                  "nsis":  {
+                                                "installMode":  "both",
+                                                "displayLanguageSelector":  false
+                                            },
+                                  "webviewInstallMode":  {
+                                                              "type":  "downloadBootstrapper",
+                                                              "silent":  true
+                                                          }
+                              }
                },
     "plugins":  {
                     "updater":  {

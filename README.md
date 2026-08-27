@@ -1,5 +1,9 @@
+<p align="center">
+  <img src="frontend/public/logo.png" alt="CyberPaste" width="128" height="128" />
+</p>
+
 <h1 align="center">
-    CyberPaste - Clipboard History Manager
+    CyberPaste - The Ultimate Clipboard Manager
 </h1>
 
 <p align="center">

@@ -415,6 +415,8 @@
     "interfaceTitle": "Interface",
     "languageTitle": "Interface language",
     "languageDesc": "Choose your preferred language for CyberPaste.",
+    "languageAuto": "Auto",
+    "languageAutoDesc": "System language",
     "versionLabel": "Version {{version}}",
     "aboutDescription": "A fast, local clipboard history manager built for focused workflows, with instant search and privacy by default.",
     "aboutUpdatesSection": "Updates & Maintenance",

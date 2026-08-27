@@ -749,9 +749,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         </div>
                         <div className="w-full flex-shrink-0 sm:w-[200px]">
                           <Select
-                            value={settings.language || 'en'}
+                            value={settings.language || 'auto'}
                             onChange={handleLanguageChange}
                             options={[
+                              { value: 'auto', label: `${t('settings.languageAuto')} (${t('settings.languageAutoDesc')})` },
                               { value: 'de', label: 'Deutsch' },
                               { value: 'en', label: 'English' },
                               { value: 'es', label: 'Español' },

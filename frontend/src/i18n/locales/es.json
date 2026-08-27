@@ -415,6 +415,8 @@
     "interfaceTitle": "Interfaz",
     "languageTitle": "Idioma de la interfaz",
     "languageDesc": "Elige tu idioma preferido para CyberPaste.",
+    "languageAuto": "Automático",
+    "languageAutoDesc": "Idioma del sistema",
     "versionLabel": "Versión {{version}}",
     "aboutDescription": "Un gestor local y rápido del historial del portapapeles, diseñado para flujos de trabajo enfocados, con búsqueda instantánea y privacidad por defecto.",
     "aboutUpdatesSection": "Actualizaciones y mantenimiento",

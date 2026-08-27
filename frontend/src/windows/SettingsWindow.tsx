@@ -1,12 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Settings } from '../types';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { useLanguage } from '../hooks/useLanguage';
 import { useTheme } from '../hooks/useTheme';
-
-
 
 export function SettingsWindow() {
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -21,18 +20,25 @@ export function SettingsWindow() {
 
   useEffect(() => {
     invoke<Settings>('get_settings').then(setSettings).catch(console.error);
+    const unlisten = listen<Settings>('settings-changed', (event) => {
+      setSettings(event.payload);
+    });
+    return () => {
+      unlisten.then((f) => f());
+    };
   }, []);
-
-
 
   useEffect(() => {
     if (settings) {
       // Small timeout to allow the DOM to render with the new theme classes before showing
       const timer = setTimeout(() => {
         const win = getCurrentWindow();
-        win.show().then(() => {
-          win.setFocus().catch(console.error);
-        }).catch(console.error);
+        win
+          .show()
+          .then(() => {
+            win.setFocus().catch(console.error);
+          })
+          .catch(console.error);
       }, 50);
       return () => clearTimeout(timer);
     }
@@ -50,8 +56,8 @@ export function SettingsWindow() {
         const logicalPos = pos.toLogical(factor);
 
         if (logicalSize.width > 100 && logicalSize.height > 100) {
-          const currentSettings = settingsRef.current;
-          if (currentSettings) {
+          try {
+            const currentSettings = await invoke<Settings>('get_settings');
             await invoke('save_settings', {
               settings: {
                 ...currentSettings,
@@ -61,6 +67,19 @@ export function SettingsWindow() {
                 settings_window_y: logicalPos.y,
               },
             });
+          } catch (e2) {
+            const fallback = settingsRef.current;
+            if (fallback) {
+              await invoke('save_settings', {
+                settings: {
+                  ...fallback,
+                  settings_window_width: logicalSize.width,
+                  settings_window_height: logicalSize.height,
+                  settings_window_x: logicalPos.x,
+                  settings_window_y: logicalPos.y,
+                },
+              });
+            }
           }
         }
       }
@@ -76,7 +95,11 @@ export function SettingsWindow() {
   };
 
   if (!settings) {
-    return <div className="flex h-screen items-center justify-center bg-background text-foreground">Loading...</div>;
+    return (
+      <div className="flex h-screen items-center justify-center bg-background text-foreground">
+        Loading...
+      </div>
+    );
   }
 
   return (
