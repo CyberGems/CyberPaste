@@ -25,6 +25,10 @@ All notable changes to CyberPaste are documented here.
 - **Confirmation**: `ConfirmDialog` with `loadDemoClipsTitle/Message` — explains *temporarily* shows 6 examples, real clips NOT deleted, return on restart/restore. No more silent replace confusion!
 - **README Footer**: New dark `Thanks for using CyberPaste! 🎉 — Made by CyberGems` footer (adapted from DEX example)!
 
+### 🗄️ Storage — Image Limit Respected
+- **Fixed 5500-image bloat**: `prune_history` now deletes `clip_images` + on-disk files + orphan cleanup (soft-deleted & dangling `images/`) — `max_items` now truly caps storage!
+- **Auto-prune**: Runs on `save_settings(max_items)` and startup (1.8s) — existing 5422 PNGs trim to ~400 on next launch!
+
 ## [1.16.0] — 2026-08-26
 
 ### 🚀 The Ultimate Polish — Defaults, Persistence & Light Theme
