@@ -5,13 +5,14 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen, emit } from '@tauri-apps/api/event';
 import { getVersion } from '@tauri-apps/api/app';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { useLanguage } from '../hooks/useLanguage';
+import { resolveLanguage, useLanguage } from '../hooks/useLanguage';
 import Tooltip from '../components/Tooltip';
 
 
 function getWelcomeTitle(version: string, lang?: string): string {
   const vStr = version ? ` v${version}` : '';
-  if (lang === 'es') {
+  const resolved = resolveLanguage(lang);
+  if (resolved === 'es') {
     return `CyberPaste${vStr} está listo`;
   }
   return `CyberPaste${vStr} is ready`;

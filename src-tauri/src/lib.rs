@@ -533,8 +533,14 @@ pub fn run_app() {
 
                 let manager = handle_for_toast.state::<Arc<SettingsManager>>();
                 let settings = manager.get();
-                let lang = settings.language.as_str();
-                let msg = if lang == "es" {
+                let lang_raw = settings.language.as_str();
+                let lang = if lang_raw == "auto" || lang_raw.is_empty() {
+                    sys_locale::get_locale().unwrap_or_else(|| "en".to_string())
+                } else {
+                    lang_raw.to_string()
+                };
+                let is_es = lang.to_lowercase().starts_with("es");
+                let msg = if is_es {
                     format!("Presiona {} para abrir", saved_hotkey_clone)
                 } else {
                     format!("Press {} to open", saved_hotkey_clone)

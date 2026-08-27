@@ -583,6 +583,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   const folderScrollRef = useRef<HTMLDivElement>(null);
   const clipListApiRef = useListRef(null);
   const isVertical = compactFolderLayout === 'vertical';
+  const isClipboardFlashing = useFolderFlash(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const didFocusRef = useRef(false);
 
@@ -1088,7 +1089,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
             : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
     );
 
-  const SIDEBAR_EXPANDED_W = 160;
+  const SIDEBAR_EXPANDED_W = 148;
   const SIDEBAR_COLLAPSED_W = 16;
   const sidebarWidth = isVertical
     ? compactSidebarCollapsed
@@ -1284,42 +1285,37 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   className="no-scrollbar flex h-full flex-col gap-1 overflow-y-auto py-2"
                   style={{ width: SIDEBAR_EXPANDED_W }}
                 >
-                  {(() => {
-                    const isClipboardFlashing = useFolderFlash(null);
-                    return (
-                      <Tooltip label={t('folders.clipboard')} placement="right">
-                        <button
-                          onClick={() => onSelectFolder(null)}
-                          data-folder-id="clipboard"
-                          data-selected={highlightedFolderId === null}
-                          className={cn(
-                            'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-md border px-2 py-1.5 text-[11px] font-medium transition-all',
-                            isClipboardFlashing && 'folder-double-flash',
-                            highlightedFolderId === null && dragTargetFolderId === undefined
-                              ? 'border-primary/30 bg-primary/15 font-semibold text-foreground shadow-[0_0_8px_rgba(var(--primary-rgb),0.12)]'
-                              : dragTargetFolderId === null && isDragging
-                                ? 'border-primary bg-primary/30 text-foreground'
-                                : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
-                          )}
-                          onMouseEnter={() => handleFolderHover(null)}
-                          onMouseLeave={onDragLeave}
-                        >
-                          <Clock size={11} className="flex-shrink-0" />
-                          <span className="min-w-0 flex-1 truncate text-left">
-                            {t('folders.clipboard')}
-                          </span>
-                          <span
-                            className={cn(
-                              'flex-shrink-0 text-[10px] tabular-nums opacity-35',
-                              selectedFolder === null && 'opacity-70'
-                            )}
-                          >
-                            ({totalClipCount})
-                          </span>
-                        </button>
-                      </Tooltip>
-                    );
-                  })()}
+                  <Tooltip label={t('folders.clipboard')} placement="right">
+                    <button
+                      onClick={() => onSelectFolder(null)}
+                      data-folder-id="clipboard"
+                      data-selected={highlightedFolderId === null}
+                      className={cn(
+                        'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-md border px-2 py-1.5 text-[11px] font-medium transition-all',
+                        isClipboardFlashing && 'folder-double-flash',
+                        highlightedFolderId === null && dragTargetFolderId === undefined
+                          ? 'border-primary/30 bg-primary/15 font-semibold text-foreground shadow-[0_0_8px_rgba(var(--primary-rgb),0.12)]'
+                          : dragTargetFolderId === null && isDragging
+                            ? 'border-primary bg-primary/30 text-foreground'
+                            : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
+                      )}
+                      onMouseEnter={() => handleFolderHover(null)}
+                      onMouseLeave={onDragLeave}
+                    >
+                      <Clock size={11} className="flex-shrink-0" />
+                      <span className="min-w-0 flex-1 truncate text-left">
+                        {t('folders.clipboard')}
+                      </span>
+                      <span
+                        className={cn(
+                          'flex-shrink-0 text-[10px] tabular-nums opacity-35',
+                          selectedFolder === null && 'opacity-70'
+                        )}
+                      >
+                        ({totalClipCount})
+                      </span>
+                    </button>
+                  </Tooltip>
                   {folders.map((folder) => {
                     const isSelected = highlightedFolderId === folder.id;
                     return (
@@ -1367,6 +1363,14 @@ export const CompactView: React.FC<CompactViewProps> = ({
                         </span>
                       </button>
                     </Tooltip>
+                  )}
+                  {folders.length === 0 && (
+                    <div className="mx-1.5 mt-6 flex flex-col items-center gap-2 rounded-lg border border-dashed border-border/40 bg-muted/20 px-3 py-5 text-center">
+                      <FolderIcon size={18} className="opacity-20" />
+                      <p className="text-[10px] leading-snug text-muted-foreground/60">
+                        {t('folders.noFoldersCreated', { defaultValue: 'No folders yet — drag clips to organize' })}
+                      </p>
+                    </div>
                   )}
                 </div>
 
@@ -1540,37 +1544,32 @@ export const CompactView: React.FC<CompactViewProps> = ({
               onWheel={handleWheel}
               className="no-scrollbar flex gap-1 overflow-x-auto scroll-smooth pb-1"
             >
-              {(() => {
-                const isClipboardFlashing = useFolderFlash(null);
-                return (
-                  <Tooltip label={t('folders.clipboard')} placement="bottom">
-                    <button
-                      onClick={() => onSelectFolder(null)}
-                      data-folder-id="clipboard"
-                      data-selected={highlightedFolderId === null}
-                      className={folderTabClass(
-                        highlightedFolderId === null,
-                        dragTargetFolderId === null,
-                        false,
-                        isClipboardFlashing
-                      )}
-                      onMouseEnter={() => handleFolderHover(null)}
-                      onMouseLeave={onDragLeave}
-                    >
-                      <Clock size={11} />
-                      {t('folders.clipboard')}
-                      <span
-                        className={cn(
-                          'flex-shrink-0 text-[10px] tabular-nums opacity-35',
-                          selectedFolder === null && 'opacity-70'
-                        )}
-                      >
-                        ({totalClipCount})
-                      </span>
-                    </button>
-                  </Tooltip>
-                );
-              })()}
+              <Tooltip label={t('folders.clipboard')} placement="bottom">
+                <button
+                  onClick={() => onSelectFolder(null)}
+                  data-folder-id="clipboard"
+                  data-selected={highlightedFolderId === null}
+                  className={folderTabClass(
+                    highlightedFolderId === null,
+                    dragTargetFolderId === null,
+                    false,
+                    isClipboardFlashing
+                  )}
+                  onMouseEnter={() => handleFolderHover(null)}
+                  onMouseLeave={onDragLeave}
+                >
+                  <Clock size={11} />
+                  {t('folders.clipboard')}
+                  <span
+                    className={cn(
+                      'flex-shrink-0 text-[10px] tabular-nums opacity-35',
+                      selectedFolder === null && 'opacity-70'
+                    )}
+                  >
+                    ({totalClipCount})
+                  </span>
+                </button>
+              </Tooltip>
               {folders.map((folder) => {
                 const isSelected = highlightedFolderId === folder.id;
                 return (

@@ -4,7 +4,7 @@ import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useTranslation } from 'react-i18next';
 import { AppWindow, Info, Pause, Play, Settings, Power } from 'lucide-react';
-import { useLanguage } from '../hooks/useLanguage';
+import { resolveLanguage, useLanguage } from '../hooks/useLanguage';
 import type { Settings as AppSettings } from '../types';
 
 /** Resolve the effective palette class for the tray menu (mirrors useTheme). */
@@ -42,8 +42,8 @@ const MENU_WIDTH = 268;
 const SHADOW_PAD = 26;
 
 export function TrayMenuWindow() {
-  useLanguage();
   const { t, i18n } = useTranslation();
+  useLanguage();
   const rootRef = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<TrayMenuState | null>(null);
   const closingRef = useRef(false);
@@ -110,8 +110,10 @@ export function TrayMenuWindow() {
     const unlistenState = listen<TrayMenuState>('tray-menu-state', (event) => {
       // Update labels only — never remasure/re-show (that caused the "refresh" bug)
       setState(event.payload);
-      if (event.payload.language && event.payload.language !== i18n.language) {
-        i18n.changeLanguage(event.payload.language);
+      const targetRaw = event.payload.language;
+      const target = resolveLanguage(targetRaw);
+      if (target && target !== i18n.language) {
+        i18n.changeLanguage(target);
       }
     });
 
@@ -131,6 +133,9 @@ export function TrayMenuWindow() {
     // Re-theme live when settings change elsewhere
     const unlistenSettings = listen<AppSettings>('settings-changed', (event) => {
       applyTrayTheme(event.payload.theme);
+      const target = resolveLanguage(event.payload.language);
+      if (target && target !== i18n.language) i18n.changeLanguage(target);
+      setState((prev) => (prev ? { ...prev, language: event.payload.language ?? prev.language } : prev));
     });
 
     // First open: window is created after the tray-menu-show emit, so that event
@@ -138,7 +143,10 @@ export function TrayMenuWindow() {
     invoke<TrayMenuState>('get_tray_menu_state')
       .then((s) => {
         setState(s);
-        if (s.language) i18n.changeLanguage(s.language);
+        if (s.language) {
+          const target = resolveLanguage(s.language);
+          if (target !== i18n.language) i18n.changeLanguage(target);
+        }
         openRef.current = true;
         closingRef.current = false;
         requestAnimationFrame(() => {

@@ -3,10 +3,16 @@ import { useTranslation } from 'react-i18next';
 
 const SUPPORTED = ['de', 'en', 'es', 'fr', 'ja', 'zh'] as const;
 
-function resolveAutoLanguage(): string {
+export function resolveAutoLanguage(): string {
   const nav = (typeof navigator !== 'undefined' ? navigator.language : 'en').toLowerCase();
   const base = nav.split('-')[0];
   return (SUPPORTED as readonly string[]).includes(base) ? base : 'en';
+}
+
+export function resolveLanguage(lang?: string | null): string {
+  if (!lang || lang === 'auto') return resolveAutoLanguage();
+  const base = lang.toLowerCase().split('-')[0];
+  return (SUPPORTED as readonly string[]).includes(base) ? base : lang;
 }
 
 export function useLanguage(language?: string) {
