@@ -2344,13 +2344,25 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <Database size={14} /> {t('settings.dataManagement')}
                     </h3>
                     <div className="rounded-xl border border-destructive/20 bg-card p-4">
-                      <button
-                        onClick={confirmClearHistory}
-                        className="btn w-full rounded-[4px] border border-destructive/20 bg-destructive/10 text-destructive hover:bg-destructive/20"
-                      >
-                        <Trash2 size={16} className="mr-2" />
-                        {t('settings.clearHistory')}
-                      </button>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <button
+                          onClick={confirmClearHistory}
+                          className="btn w-full rounded-[4px] border border-destructive/20 bg-destructive/10 text-destructive hover:bg-destructive/20"
+                        >
+                          <Trash2 size={16} className="mr-2" />
+                          {t('settings.clearHistory')}
+                        </button>
+                        <button
+                          onClick={async () => {
+                            await emit('load-demo-data');
+                            toast.success(t('settings.demoClipsLoaded'));
+                          }}
+                          className="btn w-full rounded-[4px] border border-primary/20 bg-primary/10 text-primary hover:bg-primary/20"
+                        >
+                          <Eye size={16} className="mr-2" />
+                          {t('settings.loadDemoClips')}
+                        </button>
+                      </div>
                     </div>
                   </section>
 

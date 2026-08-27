@@ -426,18 +426,17 @@ function App() {
       persistWindow();
     });
 
-    // Debug only: load demo clips / restore actual data when triggered from settings
-    const unlistenDemo = import.meta.env.DEV
-      ? Promise.all([
-          listen('load-demo-data', () => {
-            setClips(generateDemoClips());
-            setHasMore(false);
-          }),
-          listen('restore-actual-data', () => {
-            loadClips(selectedFolderRef.current, false, '');
-          }),
-        ])
-      : Promise.resolve([() => {}, () => {}]);
+    const unlistenDemo = Promise.all([
+      listen('load-demo-data', () => {
+        setClips(generateDemoClips());
+        setHasMore(false);
+        toast.success(t('settings.demoClipsLoaded'));
+      }),
+      listen('restore-actual-data', () => {
+        loadClips(selectedFolderRef.current, false, '');
+        toast.success(t('settings.dataRestored'));
+      }),
+    ]);
 
     return () => {
       unlisten.then((f) => f());
