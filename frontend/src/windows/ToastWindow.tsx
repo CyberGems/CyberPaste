@@ -547,6 +547,11 @@ export function ToastWindow() {
   const isClickable = clickAction !== 'none';
 
   const handleToastClick = () => {
+    if (toast?.toast_type === 'update') {
+      invoke('open_about').catch(console.error);
+      closeToast();
+      return;
+    }
     if (clickAction === 'none') {
       return;
     }

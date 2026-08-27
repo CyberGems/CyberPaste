@@ -64,6 +64,27 @@ export function AboutWindow() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    invoke<any>('get_tray_menu_state')
+      .then((state: any) => {
+        if (state?.update_available && !updateAvailable) {
+          check({ timeout: 15000 })
+            .then((u) => {
+              if (!cancelled && u) {
+                setUpdateAvailable(u);
+                invoke('set_update_available', { available: true }).catch(console.error);
+              }
+            })
+            .catch(() => {});
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!settings) return;
     const timer = setTimeout(() => {
       const win = getCurrentWindow();
@@ -242,13 +263,23 @@ export function AboutWindow() {
                       {t('settings.checkForUpdatesDesc')}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={checkForUpdates}
-                    className="btn min-w-[108px] rounded-[4px] border border-primary/20 bg-input px-3 py-2 text-xs text-foreground hover:bg-accent"
-                  >
-                    {t('settings.checkNow')}
-                  </button>
+                  {updateAvailable ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowUpdateModal(true)}
+                      className="btn min-w-[108px] rounded-[4px] border border-primary/20 bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary/90"
+                    >
+                      {t('settings.updatesUpdateNow')}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={checkForUpdates}
+                      className="btn min-w-[108px] rounded-[4px] border border-primary/20 bg-input px-3 py-2 text-xs text-foreground hover:bg-accent"
+                    >
+                      {t('settings.checkNow')}
+                    </button>
+                  )}
                 </div>
 
                 {updateCheckError && (
