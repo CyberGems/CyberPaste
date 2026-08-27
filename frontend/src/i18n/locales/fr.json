@@ -178,7 +178,12 @@
     "checkInternetConnection": "Vérifiez votre connexion Internet",
     "showTechnicalDetails": "Afficher les détails techniques",
     "hideTechnicalDetails": "Masquer les détails techniques",
-    "copyContent": "Copier le contenu"
+    "copyContent": "Copier le contenu",
+    "loadDemoClips": "Charger des exemples",
+    "loadDemoClipsTitle": "Charger des exemples ?",
+    "loadDemoClipsMessage": "7 exemples s'afficheront temporairement. Vos vrais clips ne seront PAS supprimés et reviendront au redémarrage.",
+    "demoClipsLoaded": "Exemples chargés",
+    "dataRestored": "Données restaurées"
   },
   "ai": {
     "processing": "Traitement par l'IA...",

@@ -178,7 +178,12 @@
     "checkInternetConnection": "インターネット接続を確認してください",
     "showTechnicalDetails": "技術的な詳細を表示",
     "hideTechnicalDetails": "技術的な詳細を非表示",
-    "copyContent": "内容をコピー"
+    "copyContent": "内容をコピー",
+    "loadDemoClips": "サンプルを読み込む",
+    "loadDemoClipsTitle": "サンプルを読み込みますか？",
+    "loadDemoClipsMessage": "7件のサンプルが一時的に表示されます。実際のクリップは削除されず、再起動で戻ります。",
+    "demoClipsLoaded": "サンプルを読み込みました",
+    "dataRestored": "データを復元しました"
   },
   "ai": {
     "processing": "AI で処理中...",

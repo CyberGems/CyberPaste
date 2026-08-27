@@ -2353,9 +2353,16 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           {t('settings.clearHistory')}
                         </button>
                         <button
-                          onClick={async () => {
-                            await emit('load-demo-data');
-                            toast.success(t('settings.demoClipsLoaded'));
+                          onClick={() => {
+                            setConfirmDialog({
+                              isOpen: true,
+                              title: t('settings.loadDemoClipsTitle', { defaultValue: t('settings.loadDemoClips') }),
+                              message: t('settings.loadDemoClipsMessage'),
+                              action: async () => {
+                                await emit('load-demo-data');
+                                toast.success(t('settings.demoClipsLoaded'));
+                              },
+                            });
                           }}
                           className="btn w-full rounded-[4px] border border-primary/20 bg-primary/10 text-primary hover:bg-primary/20"
                         >

@@ -178,7 +178,12 @@
     "checkInternetConnection": "请检查您的网络连接",
     "showTechnicalDetails": "显示技术详情",
     "hideTechnicalDetails": "隐藏技术详情",
-    "copyContent": "复制内容"
+    "copyContent": "复制内容",
+    "loadDemoClips": "加载示例",
+    "loadDemoClipsTitle": "加载示例？",
+    "loadDemoClipsMessage": "将临时显示 7 个示例剪贴。真实数据不会被删除，重启后恢复。",
+    "demoClipsLoaded": "示例已加载",
+    "dataRestored": "数据恢复"
   },
   "ai": {
     "processing": "AI 处理中...",

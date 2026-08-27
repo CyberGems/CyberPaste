@@ -546,46 +546,59 @@ impl Database {
     pub async fn seed_initial_clips(&self) -> Result<(), sqlx::Error> {
         use sha2::{Digest, Sha256};
 
-        let sample_clips = [
+        let sample_clips: Vec<(&str, String, String, &str, Option<String>)> = vec![
             (
                 "text",
-                "✨ Welcome to CyberPaste! / ¡Bienvenido a CyberPaste!\n\nEssential shortcuts / Atajos esenciales:\n• Ctrl+Shift+V : Toggle window / Alternar ventana\n• Ctrl+M       : Full & Compact modes / Vista Completa / Compacta\n• Type...      : Instant search / Búsqueda instantánea\n• Enter        : Paste selected clip / Pegar clip seleccionado\n• Ctrl+Enter   : Copy as plain text / Copiar como texto plano\n• P            : Pin or unpin clip / Fijar o desfijar clip\n• Del          : Delete clip / Eliminar clip",
-                "✨ Welcome to CyberPaste! / ¡Bienvenido a CyberPaste!",
+                "✨ Welcome to CyberPaste! / ¡Bienvenido a CyberPaste!\n\nEssential shortcuts / Atajos esenciales:\n• Ctrl+Shift+V : Toggle window / Alternar ventana\n• Ctrl+M       : Full & Compact modes / Vista Completa / Compacta\n• Type...      : Instant search / Búsqueda instantánea\n• Enter        : Paste selected clip / Pegar clip seleccionado\n• Ctrl+Enter   : Copy as plain text / Copiar como texto plano\n• P            : Pin or unpin clip / Fijar o desfijar clip\n• Del          : Delete clip / Eliminar clip".to_string(),
+                "✨ Welcome to CyberPaste! / ¡Bienvenido a CyberPaste!".to_string(),
                 "CyberPaste.exe",
+                None,
+            ),
+            (
+                "image",
+                "iVBORw0KGgoAAAANSUhEUgAAAZAAAADwCAIAAADMsG9rAAABcElEQVR4nO3BMQEAAADCoPVPbQ8HFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADg1QH5AAEL1Z9rAAAAAElFTkSuQmCC".to_string(),
+                "".to_string(),
+                "Figma.exe",
+                Some(r#"{"size_bytes":196608,"width":400,"height":240}"#.to_string()),
             ),
             (
                 "code",
-                "// 🚀 CyberPaste: The Ultimate Clipboard Manager\nexport interface ClipboardClip {\n  id: string;\n  type: 'text' | 'image' | 'code' | 'url';\n  content: string;\n  isPinned: boolean;\n  createdAt: Date;\n}",
-                "// 🚀 CyberPaste: The Ultimate Clipboard Manager",
+                "// 🚀 CyberPaste: The Ultimate Clipboard Manager\nexport interface ClipboardClip {\n  id: string;\n  type: 'text' | 'image' | 'code' | 'url';\n  content: string;\n  isPinned: boolean;\n  createdAt: Date;\n}".to_string(),
+                "// 🚀 CyberPaste: The Ultimate Clipboard Manager".to_string(),
                 "Code.exe",
+                None,
             ),
             (
                 "url",
-                "https://github.com/CyberGems/CyberPaste",
-                "https://github.com/CyberGems/CyberPaste",
+                "https://github.com/CyberGems/CyberPaste".to_string(),
+                "https://github.com/CyberGems/CyberPaste".to_string(),
                 "chrome.exe",
+                None,
             ),
             (
                 "text",
-                "# 💎 CyberPaste — Limitless Productivity\n\n- ⚡ **Ultra-fast**: Native Rust engine + local SQLite\n- 🔒 **100% Private**: Your data never leaves your device\n- 📁 **Folders**: Organize clips via drag & drop or menus\n- 👁️ **Peek Popover**: Hover in compact mode to preview\n- 🤖 **AI Actions**: Summarize, translate or analyze code locally",
-                "# 💎 CyberPaste — Limitless Productivity",
+                "# 💎 CyberPaste — Limitless Productivity\n\n- ⚡ **Ultra-fast**: Native Rust engine + local SQLite\n- 🔒 **100% Private**: Your data never leaves your device\n- 📁 **Folders**: Organize clips via drag & drop or menus\n- 👁️ **Peek Popover**: Hover in compact mode to preview\n- 🤖 **AI Actions**: Summarize, translate or analyze code locally".to_string(),
+                "# 💎 CyberPaste — Limitless Productivity".to_string(),
                 "Obsidian.exe",
+                None,
             ),
             (
                 "code",
-                "{\n  \"app\": \"CyberPaste\",\n  \"version\": \"1.15.0\",\n  \"theme\": \"cyberpaste\",\n  \"storage\": \"sqlite_local\",\n  \"offline_first\": true\n}",
-                "{\n  \"app\": \"CyberPaste\",\n  \"version\": \"1.15.0\"...",
+                "{\n  \"app\": \"CyberPaste\",\n  \"version\": \"1.17.0\",\n  \"theme\": \"cyberpaste\",\n  \"storage\": \"sqlite_local\",\n  \"offline_first\": true\n}".to_string(),
+                "{\n  \"app\": \"CyberPaste\",\n  \"version\": \"1.17.0\"...".to_string(),
                 "Code.exe",
+                None,
             ),
             (
                 "code",
-                "# CyberPaste: Modern & Lightweight Clipboard Tool\nnpm run dev",
-                "# CyberPaste: Modern & Lightweight Clipboard Tool",
+                "# CyberPaste: Modern & Lightweight Clipboard Tool\nnpm run dev".to_string(),
+                "# CyberPaste: Modern & Lightweight Clipboard Tool".to_string(),
                 "WindowsTerminal.exe",
+                None,
             ),
         ];
 
-        for (idx, (clip_type, content, preview, source_app)) in sample_clips.iter().enumerate() {
+        for (idx, (clip_type, content, preview, source_app, metadata)) in sample_clips.iter().enumerate() {
             let clip_uuid = uuid::Uuid::new_v4().to_string();
             let content_bytes = content.as_bytes();
             let mut hasher = Sha256::new();
@@ -600,7 +613,7 @@ impl Database {
                     folder_id, is_deleted, is_thumbnail, source_app, source_icon,
                     metadata, sort_order, is_pinned, created_at, last_accessed
                 )
-                VALUES (?, ?, ?, ?, ?, NULL, 0, 0, ?, NULL, NULL, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                VALUES (?, ?, ?, ?, ?, NULL, 0, 0, ?, NULL, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 "#,
             )
             .bind(&clip_uuid)
@@ -609,6 +622,7 @@ impl Database {
             .bind(preview)
             .bind(&hash)
             .bind(source_app)
+            .bind(metadata)
             .bind(sort_order)
             .execute(&self.pool)
             .await;

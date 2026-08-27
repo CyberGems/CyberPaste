@@ -178,7 +178,12 @@
     "checkInternetConnection": "Überprüfen Sie Ihre Internetverbindung",
     "showTechnicalDetails": "Technische Details anzeigen",
     "hideTechnicalDetails": "Technische Details ausblenden",
-    "copyContent": "Inhalt kopieren"
+    "copyContent": "Inhalt kopieren",
+    "loadDemoClips": "Beispiel-Clips laden",
+    "loadDemoClipsTitle": "Beispiel-Clips laden?",
+    "loadDemoClipsMessage": "Es werden temporär 7 Beispiel-Clips angezeigt. Deine echten Clips werden NICHT gelöscht und kehren nach Neustart zurück.",
+    "demoClipsLoaded": "Beispiel-Clips geladen",
+    "dataRestored": "Daten wiederhergestellt"
   },
   "ai": {
     "processing": "Verarbeitung mit KI...",

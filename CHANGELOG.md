@@ -2,6 +2,27 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.17.0] — 2026-08-27
+
+### 🌍 Language — Full Coverage Fix
+- **Tray & Toasts now fully bilingual**: `auto` → `navigator.language` resolver + `sys-locale` Rust detection for welcome toast — Spanish stays Spanish! 🇪🇸
+- **Fixed selective English**: `TrayMenuWindow` & `ToastWindow` now `resolveLanguage()` before `i18n.changeLanguage`, live `settings-changed` sync!
+
+### ⚡ Defaults ON — Paste Power 💥
+- **Auto-Paste ON by default**: `auto_paste: true` + `auto_inject_paste: true` — fresh installs paste instantly with `Ctrl+V` injection! No more OFF surprise.
+
+### 🐛 Crash Fix — Sidebar Collapse 💥→✅
+- **React #300 crash gone**: `useFolderFlash(null)` inside IIFE violated hooks order when collapsing. Moved to top-level `isClipboardFlashing` — toggle now silky smooth!
+
+### 📐 Compact Sidebar — Empty Space Tamed
+- **Slimmer**: `SIDEBAR_EXPANDED_W 160 → 148px` + dashed placeholder `No folders yet — drag clips to organize` when `folders.length===0` + `compact_sidebar_collapsed: true` by default — more room for clips, zero wasted void!
+
+### 💎 Demo & Fresh Install — Unified 7-Clips 🖼️
+- **1 Fantasy Image in Fresh DB**: Seeded 7 clips (was 6) — includes `image` with `{"size_bytes":196608,"width":400,"height":240}` fake metadata, no file I/O issues!
+- **Demo = Fresh**: `generateDemoClips` trimmed from 9 → 7 (removed extra image + local text), single `CyberNeon UI` gradient + same 7-clip lineup — demo now mirrors fresh install!
+- **Button**: `Load 20 demo clips` → `Load sample clips` / `Cargar clips de ejemplo` + all locales 🌐
+- **Confirmation**: `ConfirmDialog` with `loadDemoClipsTitle/Message` — explains *temporarily* shows 7 examples, real clips NOT deleted, return on restart/restore. No more silent replace confusion!
+
 ## [1.16.0] — 2026-08-26
 
 ### 🚀 The Ultimate Polish — Defaults, Persistence & Light Theme
