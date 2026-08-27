@@ -34,8 +34,8 @@ export function generateDemoClips(): ClipboardItem[] {
       id: 'demo-1',
       clip_type: 'text',
       content:
-        '✨ Welcome to CyberPaste! / ¡Bienvenido a CyberPaste!\n\nEssential shortcuts / Atajos esenciales:\n• Ctrl+Shift+V : Toggle window / Alternar ventana\n• Ctrl+M       : Full & Compact modes / Vista Completa o Compacta\n• Type...      : Instant search / Búsqueda instantánea\n• Enter        : Paste selected clip / Pegar clip seleccionado\n• Ctrl+Enter   : Copy as plain text / Copiar como texto plano\n• P            : Pin or unpin clip / Fijar o desfijar clip\n• Del          : Delete clip / Eliminar clip\n• PgUp/PgDn    : Page navigation / Navegar por páginas\n• Home/End     : First & Last clip / Primer / Último clip',
-      preview: '✨ Welcome to CyberPaste! / ¡Bienvenido a CyberPaste!',
+        '✨ Welcome to CyberPaste! / ¡Bienvenido a CyberPaste!\n\nEssential shortcuts / Atajos esenciales:\n• Ctrl+Shift+V : Toggle window / Alternar ventana\n• Ctrl+M       : Full & Compact modes / Vista Completa o Compacta\n• Type...      : Instant search / Búsqueda instantánea\n• Enter        : Paste selected clip / Pegar clip seleccionado\n• Ctrl+Enter   : Copy as plain text / Copiar como texto plano\n• P            : Pin or unpin clip / Fijar o desfijar clip\n• Del          : Delete clip / Eliminar clip\n• PgUp/PgDn    : Page navigation / Navegar por páginas\n• Home/End     : First & Last clip / Primer / Último clip\n\n# 💎 CyberPaste — Limitless Productivity\n\n- ⚡ **Ultra-fast**: Native Rust engine + local SQLite\n- 🔒 **100% Private**: Your data never leaves your device\n- 📁 **Folders**: Organize clips via drag & drop or menus\n- 👁️ **Peek Popover**: Hover in compact mode to preview\n- 🤖 **AI Actions**: Summarize, translate or analyze code locally',
+      preview: '✨ Welcome to CyberPaste! / ¡Bienvenido a CyberPaste! — Limitless Productivity',
       folder_id: null,
       created_at: ago(1),
       source_app: 'CyberPaste.exe',
@@ -79,18 +79,7 @@ export function generateDemoClips(): ClipboardItem[] {
       metadata: null,
       image_path: null,
     },
-    {
-      id: 'demo-6',
-      clip_type: 'text',
-      content: `# 💎 CyberPaste — Limitless Productivity\n\n- ⚡ **Ultra-fast**: Native Rust engine + local SQLite\n- 🔒 **100% Private**: Your data never leaves your device\n- 📁 **Folders**: Organize clips via drag & drop or menus\n- 👁️ **Peek Popover**: Hover in compact mode to preview\n- 🤖 **AI Actions**: Summarize, translate or analyze code locally`,
-      preview: '# 💎 CyberPaste — Limitless Productivity',
-      folder_id: null,
-      created_at: ago(15),
-      source_app: 'Obsidian.exe',
-      source_icon: null,
-      metadata: null,
-      image_path: null,
-    },
+
     {
       id: 'demo-8',
       clip_type: 'code',

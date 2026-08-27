@@ -17,11 +17,13 @@ All notable changes to CyberPaste are documented here.
 ### 📐 Compact Sidebar — Empty Space Tamed
 - **Slimmer**: `SIDEBAR_EXPANDED_W 160 → 148px` + dashed placeholder `No folders yet — drag clips to organize` when `folders.length===0` + `compact_sidebar_collapsed: true` by default — more room for clips, zero wasted void!
 
-### 💎 Demo & Fresh Install — Unified 7-Clips 🖼️
-- **1 Fantasy Image in Fresh DB**: Seeded 7 clips (was 6) — includes `image` with `{"size_bytes":196608,"width":400,"height":240}` fake metadata, no file I/O issues!
-- **Demo = Fresh**: `generateDemoClips` trimmed from 9 → 7 (removed extra image + local text), single `CyberNeon UI` gradient + same 7-clip lineup — demo now mirrors fresh install!
+### 💎 Demo & Fresh Install — Unified 6-Clips 🖼️
+- **1 Fantasy Image Fixed**: Seeded 6 clips — valid 400×240 PNG (base64 3KB) with `{"size_bytes":196608,"width":400,"height":240}` fantasy metadata, no broken icon! 🖼️
+- **Fused Texts**: `Welcome` + `Limitless Productivity` merged into 1 clip → no clip hidden off-screen on fresh install!
+- **Demo = Fresh**: `generateDemoClips` trimmed from 9 → 6 (removed extra image + local text), single `CyberNeon UI` gradient + same 6-clip lineup — demo now mirrors fresh install!
 - **Button**: `Load 20 demo clips` → `Load sample clips` / `Cargar clips de ejemplo` + all locales 🌐
-- **Confirmation**: `ConfirmDialog` with `loadDemoClipsTitle/Message` — explains *temporarily* shows 7 examples, real clips NOT deleted, return on restart/restore. No more silent replace confusion!
+- **Confirmation**: `ConfirmDialog` with `loadDemoClipsTitle/Message` — explains *temporarily* shows 6 examples, real clips NOT deleted, return on restart/restore. No more silent replace confusion!
+- **README Footer**: New dark `Thanks for using CyberPaste! 🎉 — Made by CyberGems` footer (adapted from DEX example)!
 
 ## [1.16.0] — 2026-08-26
 
