@@ -1891,7 +1891,7 @@ const ClipRow = memo(function ClipRow({
   return (
     <div className="relative h-full">
       {reorderEnabled && reorderTargetClipId === clip.id && reorderTargetPosition === 'before' && (
-        <div className="absolute left-2 right-2 top-0 z-30 h-0.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
+        <div className="pointer-events-none absolute left-2 right-2 -top-0.5 z-30 h-1 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.95)] ring-1 ring-cyan-300/60 animate-pulse" />
       )}
       <div
         data-clip-id={clip.id}
@@ -2139,7 +2139,7 @@ const ClipRow = memo(function ClipRow({
         </div>
       </div>
       {reorderEnabled && reorderTargetClipId === clip.id && reorderTargetPosition === 'after' && (
-        <div className="absolute bottom-0 left-2 right-2 z-30 h-0.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
+        <div className="pointer-events-none absolute left-2 right-2 -bottom-0.5 z-30 h-1 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.95)] ring-1 ring-cyan-300/60 animate-pulse" />
       )}
     </div>
   );

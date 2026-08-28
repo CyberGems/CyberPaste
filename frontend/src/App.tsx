@@ -672,9 +672,8 @@ function App() {
     };
 
     const updateReorderTarget = (clientX: number, clientY: number) => {
-      const elem = document.elementFromPoint(clientX, clientY);
-      const folderBtn = elem?.closest('[data-folder-id]');
-      if (folderBtn) {
+      const clipList = document.querySelector('[data-clip-list="true"]') as HTMLElement | null;
+      if (!clipList || clipsRef.current.length === 0) {
         if (dragStateRef.current.reorderTargetClipId !== null) {
           setReorderTargetClipId(null);
           setReorderTargetPosition(null);
@@ -684,8 +683,15 @@ function App() {
         return;
       }
 
-      const isOverClipList = elem?.closest('[data-clip-list="true"]');
-      if (!isOverClipList || clipsRef.current.length === 0) {
+      // Check if mouse is within the clip list area (with margin)
+      const listRect = clipList.getBoundingClientRect();
+      const isOverList =
+        clientX >= listRect.left - 40 &&
+        clientX <= listRect.right + 40 &&
+        clientY >= listRect.top - 40 &&
+        clientY <= listRect.bottom + 40;
+
+      if (!isOverList) {
         if (dragStateRef.current.reorderTargetClipId !== null) {
           setReorderTargetClipId(null);
           setReorderTargetPosition(null);
@@ -698,7 +704,7 @@ function App() {
       const currentClipId = dragStateRef.current.clipId;
       const isFullMode = settingsRef.current?.view_mode === 'full';
 
-      // Works for both Full mode (ClipCard) and Compact mode (CompactRow)
+      // Find all clip elements with data-clip-id in DOM
       const cardElems = document.querySelectorAll('[data-clip-id]');
       let closestId: string | null = null;
       let closestDist = Infinity;
@@ -706,36 +712,25 @@ function App() {
       let closestCenterY = 0;
       let closestCardRect: DOMRect | null = null;
 
-      // 1. Check if element under point is a clip card / row directly
-      const directCard = elem?.closest('[data-clip-id]') as HTMLElement | null;
-      const directId = directCard?.getAttribute('data-clip-id');
-      if (directId && directId !== currentClipId && directCard) {
-        closestId = directId;
-        closestCardRect = directCard.getBoundingClientRect();
-        closestCenterX = closestCardRect.left + closestCardRect.width / 2;
-        closestCenterY = closestCardRect.top + closestCardRect.height / 2;
-      } else {
-        // 2. Fallback: Distance search across all clip elements in view
-        for (let i = 0; i < cardElems.length; i++) {
-          const card = cardElems[i] as HTMLElement;
-          const cardId = card.getAttribute('data-clip-id');
-          if (cardId && cardId !== currentClipId) {
-            const rect = card.getBoundingClientRect();
-            const centerY = rect.top + rect.height / 2;
-            const centerX = rect.left + rect.width / 2;
-            const dist = Math.hypot(clientX - centerX, clientY - centerY);
-            if (dist < closestDist) {
-              closestDist = dist;
-              closestId = cardId;
-              closestCenterX = centerX;
-              closestCenterY = centerY;
-              closestCardRect = rect;
-            }
+      for (let i = 0; i < cardElems.length; i++) {
+        const card = cardElems[i] as HTMLElement;
+        const cardId = card.getAttribute('data-clip-id');
+        if (cardId && cardId !== currentClipId) {
+          const rect = card.getBoundingClientRect();
+          const centerY = rect.top + rect.height / 2;
+          const centerX = rect.left + rect.width / 2;
+          const dist = Math.hypot(clientX - centerX, clientY - centerY);
+          if (dist < closestDist) {
+            closestDist = dist;
+            closestId = cardId;
+            closestCenterX = centerX;
+            closestCenterY = centerY;
+            closestCardRect = rect;
           }
         }
       }
 
-      if (closestId && closestCardRect) {
+      if (closestId && closestCardRect && closestDist < 500) {
         let position: 'before' | 'after';
 
         if (isFullMode) {
@@ -2928,11 +2923,11 @@ function App() {
         {/* Floating Mobile-Style Card Drag Preview */}
         <div
           ref={dragIndicatorRef}
-          className="pointer-events-none fixed left-0 top-0 z-[9999] hidden select-none overflow-hidden rounded-xl border border-primary/50 bg-background/90 p-3 shadow-[0_16px_36px_rgba(0,0,0,0.65),0_0_24px_rgba(var(--primary-rgb),0.35)] backdrop-blur-md transition-shadow duration-200"
+          className="pointer-events-none fixed left-0 top-0 z-[9999] hidden select-none overflow-hidden rounded-xl border border-primary/50 bg-background/95 p-3 shadow-[0_16px_36px_rgba(0,0,0,0.65),0_0_24px_rgba(var(--primary-rgb),0.35)] backdrop-blur-md transition-shadow duration-200 *:pointer-events-none"
           style={{
-            width: '230px',
+            width: '220px',
             transform:
-              'translate3d(calc(var(--mouse-x, 0px) - 115px), calc(var(--mouse-y, 0px) - 30px), 0) scale(1.04) rotate(-1.5deg)',
+              'translate3d(calc(var(--mouse-x, 0px) + 16px), calc(var(--mouse-y, 0px) + 16px), 0) scale(0.96) rotate(-1.5deg)',
             willChange: 'transform',
           }}
         >

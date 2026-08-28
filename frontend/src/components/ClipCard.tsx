@@ -312,11 +312,11 @@ export const ClipCard = memo(
         >
           {/* Drop indicator - before (left edge vertical bar in grid) */}
           {reorderEnabled && reorderDropIndicator === 'before' && (
-            <div className="absolute -left-2 top-0 bottom-0 z-30 w-1 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.9)] animate-pulse" />
+            <div className="pointer-events-none absolute -left-1 top-0 bottom-0 z-40 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_16px_rgba(34,211,238,1)] ring-2 ring-cyan-300/50 animate-pulse" />
           )}
           {/* Drop indicator - after (right edge vertical bar in grid) */}
           {reorderEnabled && reorderDropIndicator === 'after' && (
-            <div className="absolute -right-2 top-0 bottom-0 z-30 w-1 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.9)] animate-pulse" />
+            <div className="pointer-events-none absolute -right-1 top-0 bottom-0 z-40 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_16px_rgba(34,211,238,1)] ring-2 ring-cyan-300/50 animate-pulse" />
           )}
           <div
             data-el="clip-card-inner"
