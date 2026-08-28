@@ -696,29 +696,28 @@ function App() {
       }
 
       const currentClipId = dragStateRef.current.clipId;
+      const isFullMode = settingsRef.current?.view_mode === 'full';
 
-      // 1. Direct hit on target card element
-      const directCard = elem?.closest('[data-el="clip-card"]') as HTMLElement | null;
-      let closestId: string | null = directCard?.getAttribute('data-clip-id') || null;
-      if (closestId === currentClipId) {
-        closestId = null;
-      }
-
+      // Works for both Full mode (ClipCard) and Compact mode (CompactRow)
+      const cardElems = document.querySelectorAll('[data-clip-id]');
+      let closestId: string | null = null;
+      let closestDist = Infinity;
       let closestCenterX = 0;
       let closestCenterY = 0;
       let closestCardRect: DOMRect | null = null;
 
-      if (closestId && directCard) {
+      // 1. Check if element under point is a clip card / row directly
+      const directCard = elem?.closest('[data-clip-id]') as HTMLElement | null;
+      const directId = directCard?.getAttribute('data-clip-id');
+      if (directId && directId !== currentClipId && directCard) {
+        closestId = directId;
         closestCardRect = directCard.getBoundingClientRect();
         closestCenterX = closestCardRect.left + closestCardRect.width / 2;
         closestCenterY = closestCardRect.top + closestCardRect.height / 2;
       } else {
-        // 2. Fallback: Distance search if hovering in gap between cards
-        const cards = document.querySelectorAll('[data-el="clip-card"]');
-        let closestDist = Infinity;
-
-        for (let i = 0; i < cards.length; i++) {
-          const card = cards[i] as HTMLElement;
+        // 2. Fallback: Distance search across all clip elements in view
+        for (let i = 0; i < cardElems.length; i++) {
+          const card = cardElems[i] as HTMLElement;
           const cardId = card.getAttribute('data-clip-id');
           if (cardId && cardId !== currentClipId) {
             const rect = card.getBoundingClientRect();
@@ -737,19 +736,21 @@ function App() {
       }
 
       if (closestId && closestCardRect) {
-        const isFullMode = settingsRef.current?.view_mode === 'full';
         let position: 'before' | 'after';
 
         if (isFullMode) {
           const rowDiff = clientY - closestCenterY;
           const colDiff = clientX - closestCenterX;
 
-          if (Math.abs(rowDiff) > closestCardRect.height * 0.4) {
+          // If vertically separated by > 35% card height, vertical determines row before/after
+          if (Math.abs(rowDiff) > closestCardRect.height * 0.35) {
             position = rowDiff < 0 ? 'before' : 'after';
           } else {
+            // Same row: horizontal position determines left (before) vs right (after)
             position = colDiff < 0 ? 'before' : 'after';
           }
         } else {
+          // Compact mode (vertical list)
           position = clientY < closestCenterY ? 'before' : 'after';
         }
 
