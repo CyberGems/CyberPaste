@@ -199,7 +199,7 @@ export const ClipList: React.FC<ClipListProps> = ({
     return (
       <div
         data-el="clip-cell"
-        data-clip-id={clip.id}
+        data-clip-cell-id={clip.id}
         style={calculatedStyle}
         className={clsx('flex items-center justify-center px-2', isVertical ? 'py-3' : 'h-full')}
       >

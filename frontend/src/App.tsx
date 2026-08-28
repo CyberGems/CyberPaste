@@ -39,8 +39,6 @@ import { LAYOUT } from './constants';
 import { generateDemoClips } from './debug/demoData';
 import {
   FileText,
-  Code,
-  Link,
   File as LucideFile,
   Image as ImageIcon,
   Eye,
@@ -211,6 +209,11 @@ function App() {
 
   // Simulated Drag State
   const [draggingClipId, setDraggingClipId] = useState<string | null>(null);
+
+  const draggingClip = useMemo(() => {
+    if (!draggingClipId) return null;
+    return clips.find((c) => c.id === draggingClipId) || null;
+  }, [draggingClipId, clips]);
   const [dragTargetFolderId, setDragTargetFolderId] = useState<string | null | undefined>(
     undefined
   );
@@ -692,69 +695,62 @@ function App() {
         return;
       }
 
-      const cards = document.querySelectorAll('[data-clip-id]');
-      let closestId: string | null = null;
-      let closestDist = Infinity;
+      const currentClipId = dragStateRef.current.clipId;
+
+      // 1. Direct hit on target card element
+      const directCard = elem?.closest('[data-el="clip-card"]') as HTMLElement | null;
+      let closestId: string | null = directCard?.getAttribute('data-clip-id') || null;
+      if (closestId === currentClipId) {
+        closestId = null;
+      }
+
       let closestCenterX = 0;
       let closestCenterY = 0;
       let closestCardRect: DOMRect | null = null;
 
-      const currentClipId = dragStateRef.current.clipId;
-      for (let i = 0; i < cards.length; i++) {
-        const card = cards[i] as HTMLElement;
-        const cardId = card.getAttribute('data-clip-id');
-        if (cardId && cardId !== currentClipId) {
-          const rect = card.getBoundingClientRect();
-          const centerY = rect.top + rect.height / 2;
-          const centerX = rect.left + rect.width / 2;
-          const dist = Math.hypot(clientX - centerX, clientY - centerY);
-          if (dist < closestDist) {
-            closestDist = dist;
-            closestId = cardId;
-            closestCenterX = centerX;
-            closestCenterY = centerY;
-            closestCardRect = rect;
+      if (closestId && directCard) {
+        closestCardRect = directCard.getBoundingClientRect();
+        closestCenterX = closestCardRect.left + closestCardRect.width / 2;
+        closestCenterY = closestCardRect.top + closestCardRect.height / 2;
+      } else {
+        // 2. Fallback: Distance search if hovering in gap between cards
+        const cards = document.querySelectorAll('[data-el="clip-card"]');
+        let closestDist = Infinity;
+
+        for (let i = 0; i < cards.length; i++) {
+          const card = cards[i] as HTMLElement;
+          const cardId = card.getAttribute('data-clip-id');
+          if (cardId && cardId !== currentClipId) {
+            const rect = card.getBoundingClientRect();
+            const centerY = rect.top + rect.height / 2;
+            const centerX = rect.left + rect.width / 2;
+            const dist = Math.hypot(clientX - centerX, clientY - centerY);
+            if (dist < closestDist) {
+              closestDist = dist;
+              closestId = cardId;
+              closestCenterX = centerX;
+              closestCenterY = centerY;
+              closestCardRect = rect;
+            }
           }
         }
       }
 
-      if (closestId && closestDist < 350) {
-        const draggedIndex = clipsRef.current.findIndex((c) => c.id === currentClipId);
-        const targetIndex = clipsRef.current.findIndex((c) => c.id === closestId);
-
+      if (closestId && closestCardRect) {
         const isFullMode = settingsRef.current?.view_mode === 'full';
         let position: 'before' | 'after';
 
-        if (isFullMode && closestCardRect) {
+        if (isFullMode) {
           const rowDiff = clientY - closestCenterY;
           const colDiff = clientX - closestCenterX;
 
-          // If on a different row (vertical distance > 40% of height), vertical determines position
           if (Math.abs(rowDiff) > closestCardRect.height * 0.4) {
             position = rowDiff < 0 ? 'before' : 'after';
           } else {
-            // On the same row: horizontal position determines left (before) vs right (after)
             position = colDiff < 0 ? 'before' : 'after';
           }
-
-          // Swap bias: if hovering over adjacent card, automatically pick the direction that completes the 1-slot swap!
-          if (draggedIndex >= 0 && targetIndex >= 0) {
-            if (draggedIndex < targetIndex && position === 'before' && targetIndex === draggedIndex + 1) {
-              position = 'after';
-            } else if (draggedIndex > targetIndex && position === 'after' && targetIndex === draggedIndex - 1) {
-              position = 'before';
-            }
-          }
         } else {
-          // Vertical list mode (compact)
           position = clientY < closestCenterY ? 'before' : 'after';
-          if (draggedIndex >= 0 && targetIndex >= 0) {
-            if (draggedIndex < targetIndex && position === 'before' && targetIndex === draggedIndex + 1) {
-              position = 'after';
-            } else if (draggedIndex > targetIndex && position === 'after' && targetIndex === draggedIndex - 1) {
-              position = 'before';
-            }
-          }
         }
 
         let finalTargetId = closestId;
@@ -2928,22 +2924,68 @@ function App() {
           variant="danger"
         />
 
+        {/* Floating Mobile-Style Card Drag Preview */}
         <div
           ref={dragIndicatorRef}
-          className="pointer-events-none fixed left-0 top-0 z-[9999] flex hidden h-7 w-7 items-center justify-center rounded-full border border-cyan-500/30 bg-black/85 shadow-[0_0_12px_rgba(34,211,238,0.5)] backdrop-blur-md"
+          className="pointer-events-none fixed left-0 top-0 z-[9999] hidden select-none overflow-hidden rounded-xl border border-primary/50 bg-background/90 p-3 shadow-[0_16px_36px_rgba(0,0,0,0.65),0_0_24px_rgba(var(--primary-rgb),0.35)] backdrop-blur-md transition-shadow duration-200"
           style={{
+            width: '230px',
             transform:
-              'translate3d(calc(var(--mouse-x, 0px) + 16px), calc(var(--mouse-y, 0px) + 16px), 0)',
+              'translate3d(calc(var(--mouse-x, 0px) - 115px), calc(var(--mouse-y, 0px) - 30px), 0) scale(1.04) rotate(-1.5deg)',
             willChange: 'transform',
           }}
         >
-          <ImageIcon data-drag-icon="image" size={13} className="hidden text-cyan-400" />
-          <Code data-drag-icon="code" size={13} className="hidden text-cyan-400" />
-          <Code data-drag-icon="html" size={13} className="hidden text-cyan-400" />
-          <Code data-drag-icon="rtf" size={13} className="hidden text-cyan-400" />
-          <Link data-drag-icon="url" size={13} className="hidden text-cyan-400" />
-          <LucideFile data-drag-icon="file" size={13} className="hidden text-cyan-400" />
-          <FileText data-drag-icon="text" size={13} className="hidden text-cyan-400" />
+          {draggingClip ? (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2 border-b border-border/60 pb-1.5">
+                {draggingClip.source_icon ? (
+                  <img
+                    src={`data:image/png;base64,${draggingClip.source_icon}`}
+                    alt=""
+                    className="h-4 w-4 shrink-0 object-contain"
+                  />
+                ) : (
+                  <div className="flex h-4 w-4 items-center justify-center rounded bg-primary/20 text-primary">
+                    {draggingClip.clip_type === 'image' ? (
+                      <ImageIcon size={10} />
+                    ) : draggingClip.clip_type === 'file' ? (
+                      <LucideFile size={10} />
+                    ) : (
+                      <FileText size={10} />
+                    )}
+                  </div>
+                )}
+                <span className="min-w-0 flex-1 truncate font-mono text-[10px] font-bold uppercase text-foreground">
+                  {draggingClip.source_app || draggingClip.clip_type}
+                </span>
+                <span className="rounded bg-primary/20 px-1.5 py-0.5 font-mono text-[8px] font-bold uppercase text-primary">
+                  {draggingClip.clip_type}
+                </span>
+              </div>
+              <div className="line-clamp-3 text-xs font-mono text-foreground/80">
+                {draggingClip.clip_type === 'image' ? (
+                  <div className="flex items-center gap-2 text-xs text-cyan-400 font-sans">
+                    <ImageIcon size={14} />
+                    <span className="font-medium">{t('clipType.image') || 'Imagen'}</span>
+                  </div>
+                ) : draggingClip.clip_type === 'file' ? (
+                  <div className="flex items-center gap-2 text-xs text-yellow-400 font-sans">
+                    <LucideFile size={14} />
+                    <span className="truncate font-medium">{draggingClip.preview || t('common.file')}</span>
+                  </div>
+                ) : (
+                  <pre className="whitespace-pre-wrap break-all text-[11px] font-mono leading-tight">
+                    {(draggingClip.preview || draggingClip.content || '').substring(0, 150)}
+                  </pre>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-xs font-medium text-primary">
+              <FileText size={14} />
+              <span>CyberPaste</span>
+            </div>
+          )}
         </div>
       </div>
     </div>

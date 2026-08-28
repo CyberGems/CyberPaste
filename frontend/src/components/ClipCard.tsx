@@ -310,13 +310,13 @@ export const ClipCard = memo(
           className="flex-shrink-0"
           title={ocrTooltip || undefined}
         >
-          {/* Drop indicator - before */}
+          {/* Drop indicator - before (left edge vertical bar in grid) */}
           {reorderEnabled && reorderDropIndicator === 'before' && (
-            <div className="absolute -top-1.5 left-0 right-0 z-30 h-1 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
+            <div className="absolute -left-2 top-0 bottom-0 z-30 w-1 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.9)] animate-pulse" />
           )}
-          {/* Drop indicator - after */}
+          {/* Drop indicator - after (right edge vertical bar in grid) */}
           {reorderEnabled && reorderDropIndicator === 'after' && (
-            <div className="absolute -bottom-1.5 left-0 right-0 z-30 h-1 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
+            <div className="absolute -right-2 top-0 bottom-0 z-30 w-1 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.9)] animate-pulse" />
           )}
           <div
             data-el="clip-card-inner"
