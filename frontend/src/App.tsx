@@ -695,7 +695,9 @@ function App() {
       const cards = document.querySelectorAll('[data-clip-id]');
       let closestId: string | null = null;
       let closestDist = Infinity;
+      let closestCenterX = 0;
       let closestCenterY = 0;
+      let closestCardRect: DOMRect | null = null;
 
       const currentClipId = dragStateRef.current.clipId;
       for (let i = 0; i < cards.length; i++) {
@@ -709,13 +711,51 @@ function App() {
           if (dist < closestDist) {
             closestDist = dist;
             closestId = cardId;
+            closestCenterX = centerX;
             closestCenterY = centerY;
+            closestCardRect = rect;
           }
         }
       }
 
       if (closestId && closestDist < 350) {
-        const position: 'before' | 'after' = clientY < closestCenterY ? 'before' : 'after';
+        const draggedIndex = clipsRef.current.findIndex((c) => c.id === currentClipId);
+        const targetIndex = clipsRef.current.findIndex((c) => c.id === closestId);
+
+        const isFullMode = settingsRef.current?.view_mode === 'full';
+        let position: 'before' | 'after';
+
+        if (isFullMode && closestCardRect) {
+          const rowDiff = clientY - closestCenterY;
+          const colDiff = clientX - closestCenterX;
+
+          // If on a different row (vertical distance > 40% of height), vertical determines position
+          if (Math.abs(rowDiff) > closestCardRect.height * 0.4) {
+            position = rowDiff < 0 ? 'before' : 'after';
+          } else {
+            // On the same row: horizontal position determines left (before) vs right (after)
+            position = colDiff < 0 ? 'before' : 'after';
+          }
+
+          // Swap bias: if hovering over adjacent card, automatically pick the direction that completes the 1-slot swap!
+          if (draggedIndex >= 0 && targetIndex >= 0) {
+            if (draggedIndex < targetIndex && position === 'before' && targetIndex === draggedIndex + 1) {
+              position = 'after';
+            } else if (draggedIndex > targetIndex && position === 'after' && targetIndex === draggedIndex - 1) {
+              position = 'before';
+            }
+          }
+        } else {
+          // Vertical list mode (compact)
+          position = clientY < closestCenterY ? 'before' : 'after';
+          if (draggedIndex >= 0 && targetIndex >= 0) {
+            if (draggedIndex < targetIndex && position === 'before' && targetIndex === draggedIndex + 1) {
+              position = 'after';
+            } else if (draggedIndex > targetIndex && position === 'after' && targetIndex === draggedIndex - 1) {
+              position = 'before';
+            }
+          }
+        }
 
         let finalTargetId = closestId;
         let finalPosition: 'before' | 'after' | null = position;
