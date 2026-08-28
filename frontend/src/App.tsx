@@ -717,9 +717,42 @@ function App() {
         const cardId = card.getAttribute('data-clip-id');
         if (cardId && cardId !== currentClipId) {
           const rect = card.getBoundingClientRect();
-          const centerY = rect.top + rect.height / 2;
           const centerX = rect.left + rect.width / 2;
-          const dist = Math.hypot(clientX - centerX, clientY - centerY);
+          const centerY = rect.top + rect.height / 2;
+
+          let dist: number;
+
+          if (isFullMode) {
+            // Check vertical distance to the card's vertical band [top, bottom]
+            let dy = 0;
+            if (clientY < rect.top) {
+              dy = rect.top - clientY;
+            } else if (clientY > rect.bottom) {
+              dy = clientY - rect.bottom;
+            }
+
+            // Check horizontal distance to the card's horizontal band [left, right]
+            let dx = 0;
+            if (clientX < rect.left) {
+              dx = rect.left - clientX;
+            } else if (clientX > rect.right) {
+              dx = clientX - rect.right;
+            }
+
+            // If cursor is directly inside the card bounds: dist is 0 (exact hit!)
+            if (dx === 0 && dy === 0) {
+              dist = 0;
+            } else {
+              // Weight vertical distance higher (3x) so horizontal row affinity is strong
+              dist = Math.hypot(dx, dy * 3);
+            }
+          } else {
+            // Compact mode (vertical list)
+            const dx = clientX - centerX;
+            const dy = clientY - centerY;
+            dist = Math.hypot(dx, dy);
+          }
+
           if (dist < closestDist) {
             closestDist = dist;
             closestId = cardId;
@@ -734,16 +767,9 @@ function App() {
         let position: 'before' | 'after';
 
         if (isFullMode) {
-          const rowDiff = clientY - closestCenterY;
+          // In grid mode: horizontal position within the card determines left (before) vs right (after)
           const colDiff = clientX - closestCenterX;
-
-          // If vertically separated by > 35% card height, vertical determines row before/after
-          if (Math.abs(rowDiff) > closestCardRect.height * 0.35) {
-            position = rowDiff < 0 ? 'before' : 'after';
-          } else {
-            // Same row: horizontal position determines left (before) vs right (after)
-            position = colDiff < 0 ? 'before' : 'after';
-          }
+          position = colDiff < 0 ? 'before' : 'after';
         } else {
           // Compact mode (vertical list)
           position = clientY < closestCenterY ? 'before' : 'after';
