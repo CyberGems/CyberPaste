@@ -764,15 +764,36 @@ function App() {
       }
 
       if (closestId && closestCardRect && closestDist < 500) {
+        const draggedIndex = clipsRef.current.findIndex((c) => c.id === currentClipId);
+        const targetIndex = clipsRef.current.findIndex((c) => c.id === closestId);
+
         let position: 'before' | 'after';
 
         if (isFullMode) {
           // In grid mode: horizontal position within the card determines left (before) vs right (after)
           const colDiff = clientX - closestCenterX;
           position = colDiff < 0 ? 'before' : 'after';
+
+          // Adjacent Swap Optimization & No-Op Elimination:
+          // If hovering over the immediate previous card, target 'before' so dropping immediately swaps!
+          // If hovering over the immediate next card, target 'after' so dropping immediately swaps!
+          if (draggedIndex >= 0 && targetIndex >= 0) {
+            if (targetIndex === draggedIndex - 1) {
+              position = 'before';
+            } else if (targetIndex === draggedIndex + 1) {
+              position = 'after';
+            }
+          }
         } else {
           // Compact mode (vertical list)
           position = clientY < closestCenterY ? 'before' : 'after';
+          if (draggedIndex >= 0 && targetIndex >= 0) {
+            if (targetIndex === draggedIndex - 1) {
+              position = 'before';
+            } else if (targetIndex === draggedIndex + 1) {
+              position = 'after';
+            }
+          }
         }
 
         let finalTargetId = closestId;
