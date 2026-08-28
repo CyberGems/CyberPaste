@@ -198,7 +198,16 @@
     "clipDeleteFailed": "クリップの削除に失敗しました",
     "folderDeleteFailed": "フォルダーの削除に失敗しました",
     "folderRenameFailed": "フォルダー名の変更に失敗しました",
-    "copyFailed": "コピーに失敗しました"
+    "copyFailed": "コピーに失敗しました",
+    "clipRestored": "クリップを復元しました",
+    "clipsRestored": "{{count}} 件のクリップを復元しました",
+    "restoreFailed": "復元に失敗しました"
+  },
+  "confirm": {
+    "deletePinnedTitle": "ピン留めされたクリップを削除しますか？",
+    "deletePinnedMessage": "このクリップはピン留めされています。本当に削除しますか？",
+    "deletePinnedBulkTitle": "ピン留めされたクリップを削除しますか？",
+    "deletePinnedBulkMessage": "選択したクリップにピン留めされた項目が含まれています。本当に削除しますか？"
   },
   "viewer": {
     "openOcrText": "抽出されたテキストを表示"

@@ -581,6 +581,8 @@ pub fn run_app() {
             commands::paste_clip,
             commands::delete_clip,
             commands::delete_clips,
+            commands::restore_clip,
+            commands::restore_clips,
             commands::move_clips_to_folder,
             commands::copy_clips_to_folder,
             commands::toggle_clip_pin,

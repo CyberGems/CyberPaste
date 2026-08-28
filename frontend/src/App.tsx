@@ -26,6 +26,7 @@ import { AiResultDialog } from './components/AiResultDialog';
 import { OcrResultModal } from './components/OcrResultModal';
 import { check } from '@tauri-apps/plugin-updater';
 import { UpdateModal } from './components/UpdateModal';
+import { ConfirmDialog } from './components/ConfirmDialog';
 import { useKeyboard } from './hooks/useKeyboard';
 import { useTheme } from './hooks/useTheme';
 import { useLanguage } from './hooks/useLanguage';
@@ -141,6 +142,18 @@ function App() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [updateAvailable, setUpdateAvailable] = useState<any>(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [deletedStack, setDeletedStack] = useState<{ ids: string[] }[]>([]);
+  const [pendingDeleteModal, setPendingDeleteModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    ids: string[];
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    ids: [],
+  });
   const settingsRef = useRef<Settings | null>(null);
   const isTogglingRef = useRef(false);
   const [viewModeFading, setViewModeFading] = useState(false);
@@ -1277,9 +1290,8 @@ function App() {
     };
   }, [refreshCurrentFolder, loadFolders, refreshTotalCount]);
 
-  const handleDelete = useCallback(
-    async (clipId: string | null) => {
-      if (!clipId) return;
+  const executeDelete = useCallback(
+    async (clipId: string) => {
       triggerDeleteFlash(clipId, 320);
       try {
         const deletePromise = invoke('delete_clip', { id: clipId, hardDelete: false });
@@ -1294,6 +1306,10 @@ function App() {
           next.delete(clipId);
           return next;
         });
+
+        // Add to temporary Undo stack (max 50 recent actions)
+        setDeletedStack((prev) => [...prev.slice(-49), { ids: [clipId] }]);
+
         // Refresh counts
         loadFolders();
         refreshTotalCount();
@@ -1304,6 +1320,24 @@ function App() {
       }
     },
     [loadFolders, refreshTotalCount, t]
+  );
+
+  const handleDelete = useCallback(
+    async (clipId: string | null) => {
+      if (!clipId) return;
+      const target = clipsRef.current.find((c) => c.id === clipId);
+      if (target?.is_pinned) {
+        setPendingDeleteModal({
+          isOpen: true,
+          title: t('confirm.deletePinnedTitle'),
+          message: t('confirm.deletePinnedMessage'),
+          ids: [clipId],
+        });
+        return;
+      }
+      await executeDelete(clipId);
+    },
+    [executeDelete, t]
   );
 
   const handleToggleClipPin = useCallback(
@@ -1628,26 +1662,85 @@ function App() {
     [selectedClipId]
   );
 
+  const executeBulkDelete = useCallback(
+    async (ids: string[]) => {
+      if (ids.length === 0) return;
+      triggerDeleteFlash(ids, 320);
+      try {
+        const deletePromise = invoke('delete_clips', { ids });
+        const animPromise = new Promise((resolve) => setTimeout(resolve, 320));
+        await Promise.all([deletePromise, animPromise]);
+
+        const idsSet = new Set(ids);
+        setClips((prev) => prev.filter((c) => !idsSet.has(c.id)));
+        setSelectedClipIds(new Set());
+
+        // Add to temporary Undo stack
+        setDeletedStack((prev) => [...prev.slice(-49), { ids }]);
+
+        loadFolders();
+        refreshTotalCount();
+      } catch (e) {
+        cancelDeleteFlash(ids);
+        console.error('Bulk delete failed:', e);
+        toast.error(t('notifications.deleteFailed'));
+      }
+    },
+    [loadFolders, refreshTotalCount, t]
+  );
+
   const handleBulkDelete = useCallback(async () => {
     const ids = Array.from(selectedClipIds);
     if (ids.length === 0) return;
-    triggerDeleteFlash(ids, 320);
-    try {
-      const deletePromise = invoke('delete_clips', { ids });
-      const animPromise = new Promise((resolve) => setTimeout(resolve, 320));
-      await Promise.all([deletePromise, animPromise]);
 
-      const idsSet = new Set(ids);
-      setClips((prev) => prev.filter((c) => !idsSet.has(c.id)));
-      setSelectedClipIds(new Set());
+    const selectedClips = clipsRef.current.filter((c) => selectedClipIds.has(c.id));
+    const hasPinned = selectedClips.some((c) => c.is_pinned);
+
+    if (hasPinned) {
+      setPendingDeleteModal({
+        isOpen: true,
+        title: ids.length === 1 ? t('confirm.deletePinnedTitle') : t('confirm.deletePinnedBulkTitle'),
+        message: ids.length === 1 ? t('confirm.deletePinnedMessage') : t('confirm.deletePinnedBulkMessage'),
+        ids,
+      });
+      return;
+    }
+    await executeBulkDelete(ids);
+  }, [selectedClipIds, executeBulkDelete, t]);
+
+  const handleConfirmPendingDelete = useCallback(async () => {
+    const ids = pendingDeleteModal.ids;
+    setPendingDeleteModal((prev) => ({ ...prev, isOpen: false }));
+    if (ids.length === 1) {
+      await executeDelete(ids[0]);
+    } else if (ids.length > 1) {
+      await executeBulkDelete(ids);
+    }
+  }, [pendingDeleteModal.ids, executeDelete, executeBulkDelete]);
+
+  const handleUndoDelete = useCallback(async () => {
+    if (deletedStack.length === 0) return;
+    const lastAction = deletedStack[deletedStack.length - 1];
+    setDeletedStack((prev) => prev.slice(0, -1));
+    try {
+      if (lastAction.ids.length === 1) {
+        await invoke('restore_clip', { id: lastAction.ids[0] });
+      } else {
+        await invoke('restore_clips', { ids: lastAction.ids });
+      }
+      refreshCurrentFolder();
       loadFolders();
       refreshTotalCount();
-    } catch (e) {
-      cancelDeleteFlash(ids);
-      console.error('Bulk delete failed:', e);
-      toast.error(t('notifications.deleteFailed'));
+      toast.success(
+        lastAction.ids.length === 1
+          ? t('notifications.clipRestored')
+          : t('notifications.clipsRestored', { count: lastAction.ids.length })
+      );
+    } catch (err) {
+      console.error('Failed to restore clip(s):', err);
+      toast.error(t('notifications.restoreFailed'));
     }
-  }, [selectedClipIds, loadFolders, refreshTotalCount, t]);
+  }, [deletedStack, refreshCurrentFolder, loadFolders, refreshTotalCount, t]);
 
   const handleBulkMove = useCallback(
     async (folderId: string | null) => {
@@ -2430,6 +2523,7 @@ function App() {
     onToggleMode: toggleViewMode,
     toggleModeHotkey: settings?.view_mode_hotkey,
     onStartTypingSearch: handleStartTypingSearch,
+    onUndo: handleUndoDelete,
   });
 
   return (
@@ -2542,6 +2636,8 @@ function App() {
               onBulkDelete={handleBulkDelete}
               onBulkMove={handleBulkMove}
               onPinClip={handleToggleClipPin}
+              canUndo={deletedStack.length > 0}
+              onUndo={handleUndoDelete}
             />
           ) : (
             <div
@@ -2613,6 +2709,8 @@ function App() {
                 onGridScaleChange={handleGridScaleChange}
                 detailPanelOpen={detailPanelOpen}
                 onToggleDetailPanel={() => setDetailPanelOpen((prev) => !prev)}
+                canUndo={deletedStack.length > 0}
+                onUndo={handleUndoDelete}
               />
 
               <main
@@ -2777,6 +2875,17 @@ function App() {
           isOpen={showUpdateModal}
           update={updateAvailable}
           onClose={() => setShowUpdateModal(false)}
+        />
+
+        <ConfirmDialog
+          isOpen={pendingDeleteModal.isOpen}
+          title={pendingDeleteModal.title}
+          message={pendingDeleteModal.message}
+          confirmText={t('common.delete')}
+          cancelText={t('common.cancel')}
+          onConfirm={handleConfirmPendingDelete}
+          onCancel={() => setPendingDeleteModal((prev) => ({ ...prev, isOpen: false }))}
+          variant="danger"
         />
 
         <div

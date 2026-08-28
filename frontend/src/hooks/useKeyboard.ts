@@ -33,6 +33,7 @@ interface KeyboardOptions {
   onToggleMode?: () => void;
   toggleModeHotkey?: string; // e.g. "Ctrl+M"
   onStartTypingSearch?: (char: string) => void;
+  onUndo?: () => void;
 }
 
 export function useKeyboard(options: KeyboardOptions) {
@@ -175,6 +176,14 @@ export function useKeyboard(options: KeyboardOptions) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'p' && options.onPin) {
         e.preventDefault();
         options.onPin();
+      }
+
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && options.onUndo) {
+        if (!isTyping || isSearchInput) {
+          e.preventDefault();
+          e.stopPropagation();
+          options.onUndo();
+        }
       }
 
       // Ctrl/Cmd+A — select all for bulk actions

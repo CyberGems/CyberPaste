@@ -200,7 +200,16 @@
     "folderRenameFailed": "重命名文件夹失败",
     "copyFailed": "复制失败",
     "clipMoved": "剪辑已成功移动",
-    "clipMoveFailed": "移动剪辑失败"
+    "clipMoveFailed": "移动剪辑失败",
+    "clipRestored": "已恢复剪贴",
+    "clipsRestored": "已恢复 {{count}} 个剪辑",
+    "restoreFailed": "恢复失败"
+  },
+  "confirm": {
+    "deletePinnedTitle": "删除固定剪贴？",
+    "deletePinnedMessage": "此剪贴已被固定。确定要删除吗？",
+    "deletePinnedBulkTitle": "删除固定剪贴？",
+    "deletePinnedBulkMessage": "选中的剪贴中包含固定项目。确定要删除吗？"
   },
   "viewer": {
     "openOcrText": "显示提取的文本"

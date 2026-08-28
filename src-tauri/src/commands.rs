@@ -1161,9 +1161,44 @@ pub async fn delete_clips(
     let mut tx = pool.begin().await.map_err(|e| e.to_string())?;
     let mut count = 0u64;
     for id in &ids {
-        // Remove on-disk image assets first (same as hard_delete path on delete_clip)
-        let _ = delete_clip_image_file_by_uuid(pool, id).await;
         let result = sqlx::query(r#"UPDATE clips SET is_deleted = 1 WHERE uuid = ?"#)
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| e.to_string())?;
+        count += result.rows_affected();
+    }
+    tx.commit().await.map_err(|e| e.to_string())?;
+    Ok(count)
+}
+
+#[tauri::command]
+pub async fn restore_clip(
+    id: String,
+    db: tauri::State<'_, Arc<Database>>,
+) -> Result<(), String> {
+    let pool = &db.pool;
+    sqlx::query(r#"UPDATE clips SET is_deleted = 0 WHERE uuid = ?"#)
+        .bind(&id)
+        .execute(pool)
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn restore_clips(
+    ids: Vec<String>,
+    db: tauri::State<'_, Arc<Database>>,
+) -> Result<u64, String> {
+    let pool = &db.pool;
+    if ids.is_empty() {
+        return Ok(0);
+    }
+    let mut tx = pool.begin().await.map_err(|e| e.to_string())?;
+    let mut count = 0u64;
+    for id in &ids {
+        let result = sqlx::query(r#"UPDATE clips SET is_deleted = 0 WHERE uuid = ?"#)
             .bind(id)
             .execute(&mut *tx)
             .await

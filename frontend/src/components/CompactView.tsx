@@ -51,6 +51,7 @@ import {
   Smile,
   Sun,
   RotateCcw,
+  Undo2,
   LayoutGrid,
   MoveHorizontal,
   MoveVertical,
@@ -362,6 +363,8 @@ interface CompactViewProps {
   // NUEVO: micro-animación de entrada
   entranceAnim?: boolean;
   compactPeekEnabled?: boolean;
+  canUndo?: boolean;
+  onUndo?: () => void;
   compactShowSourceIcon?: boolean;
   compactShowTime?: boolean;
   compactShowTypeIcon?: boolean;
@@ -571,6 +574,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
   onPinClip: _onPinClip,
   entranceAnim = true,
   compactPeekEnabled = true,
+  canUndo = false,
+  onUndo,
   compactShowSourceIcon = true,
   compactShowTime = true,
   compactShowTypeIcon = true,
@@ -1420,6 +1425,18 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     </Tooltip>
                   )}
                 </div>
+                {canUndo && onUndo && (
+                  <Tooltip label={t('common.undoDelete') || t('contextMenu.undo') || 'Undo'} placement="bottom">
+                    <button
+                      type="button"
+                      onClick={onUndo}
+                      className="flex h-8 shrink-0 items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 text-xs font-medium text-amber-500 transition-all hover:border-amber-500/70 hover:bg-amber-500/20 active:scale-95 shadow-[0_0_10px_rgba(245,158,11,0.15)]"
+                    >
+                      <Undo2 size={13} className="shrink-0" />
+                      <span className="hidden sm:inline text-[11px]">{t('contextMenu.undo')}</span>
+                    </button>
+                  </Tooltip>
+                )}
                 {onTypeFilterChange && (
                   <TypeFilterDropdown
                     value={typeFilter}
@@ -1529,6 +1546,18 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   </Tooltip>
                 )}
               </div>
+              {canUndo && onUndo && (
+                <Tooltip label={t('common.undoDelete') || t('contextMenu.undo') || 'Undo'} placement="bottom">
+                  <button
+                    type="button"
+                    onClick={onUndo}
+                    className="flex h-8 shrink-0 items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 text-xs font-medium text-amber-500 transition-all hover:border-amber-500/70 hover:bg-amber-500/20 active:scale-95 shadow-[0_0_10px_rgba(245,158,11,0.15)]"
+                  >
+                    <Undo2 size={13} className="shrink-0" />
+                    <span className="hidden sm:inline text-[11px]">{t('contextMenu.undo')}</span>
+                  </button>
+                </Tooltip>
+              )}
               {onTypeFilterChange && (
                 <TypeFilterDropdown
                   value={typeFilter}

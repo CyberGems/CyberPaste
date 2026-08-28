@@ -11,6 +11,7 @@ import {
   ZoomOut,
   PanelRightClose,
   PanelRightOpen,
+  Undo2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -40,6 +41,8 @@ interface TypeFilterChipRowProps {
   onGridScaleChange?: (next: number) => void;
   detailPanelOpen?: boolean;
   onToggleDetailPanel?: () => void;
+  canUndo?: boolean;
+  onUndo?: () => void;
 }
 
 export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
@@ -50,6 +53,8 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
   onGridScaleChange,
   detailPanelOpen = false,
   onToggleDetailPanel,
+  canUndo = false,
+  onUndo,
 }) => {
   const { t } = useTranslation();
   const isActive = value !== 'all';
@@ -102,6 +107,22 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
           </Tooltip>
         )}
       </div>
+
+      {canUndo && onUndo && (
+        <Tooltip
+          label={t('common.undoDelete') || t('contextMenu.undo') || 'Undo'}
+          placement="bottom"
+        >
+          <button
+            type="button"
+            onClick={onUndo}
+            className="flex h-7 shrink-0 items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 text-[11px] font-medium text-amber-500 transition-all hover:border-amber-500/70 hover:bg-amber-500/20 active:scale-95 shadow-[0_0_10px_rgba(245,158,11,0.15)]"
+          >
+            <Undo2 size={13} className="shrink-0" />
+            <span className="hidden sm:inline font-medium">{t('contextMenu.undo')}</span>
+          </button>
+        </Tooltip>
+      )}
 
       {onGridScaleChange && gridScale !== undefined && (
         <div className="flex shrink-0 items-center gap-0 rounded-md border border-border bg-secondary/40 px-0.5">

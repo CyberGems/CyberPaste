@@ -198,7 +198,16 @@
     "clipDeleteFailed": "Échec de la suppression de l'élément",
     "folderDeleteFailed": "Échec de la suppression du dossier",
     "folderRenameFailed": "Échec du renommage du dossier",
-    "copyFailed": "Échec de la copie"
+    "copyFailed": "Échec de la copie",
+    "clipRestored": "Élément restauré",
+    "clipsRestored": "{{count}} éléments restaurés",
+    "restoreFailed": "Échec de la restauration"
+  },
+  "confirm": {
+    "deletePinnedTitle": "Supprimer l'élément épinglé ?",
+    "deletePinnedMessage": "Cet élément est épinglé. Êtes-vous sûr de vouloir le supprimer ?",
+    "deletePinnedBulkTitle": "Supprimer les éléments épinglés ?",
+    "deletePinnedBulkMessage": "La sélection contient des éléments épinglés. Êtes-vous sûr de vouloir les supprimer ?"
   },
   "viewer": {
     "openOcrText": "Afficher le texte extrait"

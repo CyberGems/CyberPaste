@@ -54,7 +54,8 @@
     "yes": "Sí",
     "clipDetails": "Detalles del clip",
     "select": "Seleccionar",
-    "deselect": "Deseleccionar"
+    "deselect": "Deseleccionar",
+    "undoDelete": "Deshacer eliminación"
   },
   "bulk": {
     "selectedSingle": "seleccionado",
@@ -596,7 +597,16 @@
     "folderRenameFailed": "Error al renombrar la carpeta",
     "copyFailed": "Error al copiar",
     "clipMoved": "Clip movido correctamente",
-    "clipMoveFailed": "Error al mover el clip"
+    "clipMoveFailed": "Error al mover el clip",
+    "clipRestored": "Clip restaurado",
+    "clipsRestored": "{{count}} clips restaurados",
+    "restoreFailed": "Error al restaurar"
+  },
+  "confirm": {
+    "deletePinnedTitle": "¿Eliminar clip fijado?",
+    "deletePinnedMessage": "Este clip está fijado. ¿Estás seguro de que deseas eliminarlo?",
+    "deletePinnedBulkTitle": "¿Eliminar clips fijados?",
+    "deletePinnedBulkMessage": "La selección contiene clips fijados. ¿Estás seguro de que deseas eliminarlos?"
   },
   "viewer": {
     "title": "Visor de imágenes",

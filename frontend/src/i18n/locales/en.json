@@ -54,7 +54,8 @@
     "yes": "Yes",
     "clipDetails": "Clip details",
     "select": "Select",
-    "deselect": "Deselect"
+    "deselect": "Deselect",
+    "undoDelete": "Undo deletion"
   },
   "bulk": {
     "selectedSingle": "selected",
@@ -596,7 +597,16 @@
     "folderRenameFailed": "Failed to rename folder",
     "copyFailed": "Failed to copy",
     "clipMoved": "Clip moved successfully",
-    "clipMoveFailed": "Failed to move clip"
+    "clipMoveFailed": "Failed to move clip",
+    "clipRestored": "Clip restored",
+    "clipsRestored": "{{count}} clips restored",
+    "restoreFailed": "Failed to restore"
+  },
+  "confirm": {
+    "deletePinnedTitle": "Delete pinned clip?",
+    "deletePinnedMessage": "This clip is pinned. Are you sure you want to delete it?",
+    "deletePinnedBulkTitle": "Delete pinned clips?",
+    "deletePinnedBulkMessage": "The selection contains pinned clips. Are you sure you want to delete them?"
   },
   "viewer": {
     "title": "Image Viewer",
