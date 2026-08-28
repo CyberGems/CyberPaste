@@ -2,6 +2,13 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.17.2] — 2026-08-28
+
+### 🎯 Card Reordering & Grid Target Calibration ✨
+- **Precision Grid Reorder Detection**: Calibrated vertical sensitivity and row affinity thresholds for drag-and-drop card reordering across both Full and Compact views! 🎯
+- **Silky Smooth Drop Indicators**: Optimized adjacent card swap detection and eliminated no-op false drop indicators when dragging over adjacent cards! 💫
+- **Documentation & Donation Links**: Updated official community donation links! ☕
+
 ## [1.17.1] — 2026-08-27
 
 ### 🎯 Tray — Unified Icon

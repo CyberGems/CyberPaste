@@ -20,7 +20,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License" />
   <img src="https://img.shields.io/badge/platform-Windows%2010%2B-0078D4.svg?logo=windows&logoColor=white" alt="Platform" />
-  <img src="https://img.shields.io/badge/version-1.17.1-00F0FF.svg" alt="Version" />
+  <img src="https://img.shields.io/badge/version-1.17.2-00F0FF.svg" alt="Version" />
   <img src="https://img.shields.io/badge/Tauri-2.x-512BD4.svg?logo=tauri&logoColor=white" alt="Tauri" />
 </p>
 
@@ -238,7 +238,7 @@ This project also builds on open-source components including Tauri, React, SQLit
 
 If you'd like to support this work, a donation would mean a lot. Thank you! 🙏
 
-[![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-0070BA?style=for-the-badge&logo=paypal)](https://paypal.me/CyberGems) [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/cybergems)
+[![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-0070BA?style=for-the-badge&logo=paypal)](https://www.paypal.com/donate/?hosted_button_id=M4PY3UPJA5Y6Q) [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/cybergems)
 
 <details>
 <summary><b>Crypto donations (BTC, ETH, USDT, LTC) — choose the correct network</b></summary>
