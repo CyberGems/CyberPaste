@@ -213,6 +213,7 @@ export function TrayMenuWindow() {
           aria-label={t('tray.about', { defaultValue: 'About...' })}
           className="flex w-full select-none items-center justify-center gap-1.5 rounded-t-2xl px-3.5 pb-2.5 pt-3.5 text-center text-[12px] font-medium tracking-wide text-muted-foreground/70 transition-colors hover:bg-accent/40 hover:text-foreground"
         >
+          <img src="/logo.png" alt="" className="h-4 w-4 shrink-0 object-contain" />
           <span>CyberPaste v{state?.version ?? '…'}</span>
           {state?.update_available ? (
             <span

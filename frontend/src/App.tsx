@@ -1500,16 +1500,17 @@ function App() {
     try {
       const clip = clipsRef.current.find((c) => c.id === clipId);
       if (clip && clip.clip_type === 'image') {
-        const blob = await getFullImageBlob(clipId, clip);
-        await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+        try {
+          const blob = await getFullImageBlob(clipId, clip);
+          await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+        } catch (e) {
+          console.warn('Frontend navigator.clipboard.write fallback:', e);
+        }
       }
 
-      await invoke('paste_clip', { id: clipId });
-      // Force immediate refresh
+      await invoke('copy_clip', { clipId });
       refreshCurrentFolder();
       refreshTotalCount();
-
-      toast.success(t('common.copied'));
     } catch (error) {
       console.error('Failed to copy clip:', error);
       toast.error(t('notifications.copyFailed'));
@@ -2250,9 +2251,6 @@ function App() {
             label: t('contextMenu.openFullViewer'),
             icon: <Maximize2 size={14} />,
             onClick: () => {
-              if (settings?.show_action_messages) {
-                toast.info(t('toasts.openingViewer'));
-              }
               invoke('open_image_viewer', { clipId: clip.id }).catch(console.error);
             },
           });

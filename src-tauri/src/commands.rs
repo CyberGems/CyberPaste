@@ -1077,6 +1077,308 @@ pub async fn paste_clip(
     }
 }
 
+/// Copy a clip to the OS clipboard, bump it to the top of the main list (slot 1),
+/// emit changes, play sound, and display the usual copy toast, WITHOUT closing/hiding any window.
+#[tauri::command]
+pub async fn copy_clip(
+    clip_id: String,
+    app: AppHandle,
+    db: tauri::State<'_, Arc<Database>>,
+) -> Result<(), String> {
+    let pool = &db.pool;
+
+    let clip: Option<Clip> = sqlx::query_as(r#"SELECT * FROM clips WHERE uuid = ?"#)
+        .bind(&clip_id)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    match clip {
+        Some(mut clip) => {
+            // Synchronize clipboard access across the app
+            let _guard = crate::clipboard::CLIPBOARD_SYNC.lock().await;
+
+            let content_hash = clip.content_hash.clone();
+            let uuid = clip.uuid.clone();
+
+            // Stop monitor
+            if let Err(e) = stop_listening().await {
+                log::error!("Failed to stop listener: {}", e);
+            }
+
+            crate::clipboard::set_ignore_hash(content_hash.clone());
+
+            let mut final_res = Ok(());
+
+            if clip.clip_type == "image" {
+                let full = load_full_image_content(pool, &mut clip).await?;
+                if let Ok(ctx) = clipboard_rs::ClipboardContext::new() {
+                    use clipboard_rs::Clipboard;
+                    if let Ok(rust_img) = clipboard_rs::common::RustImage::from_bytes(&full) {
+                        if let Err(e) = ctx.set_image(rust_img) {
+                            log::warn!("Failed to set clipboard image via clipboard-rs: {}", e);
+                        }
+                    }
+                }
+            } else if clip.clip_type == "file" {
+                let paths: Vec<String> = serde_json::from_slice(&clip.content).unwrap_or_default();
+                let mut last_err = String::new();
+                for i in 0..5 {
+                    match write_files(paths.clone()).await {
+                        Ok(_) => {
+                            last_err.clear();
+                            break;
+                        }
+                        Err(e) => {
+                            last_err = e.to_string();
+                            log::warn!(
+                                "Clipboard write (files) attempt {} failed: {}. Retrying...",
+                                i + 1,
+                                last_err
+                            );
+                            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                        }
+                    }
+                }
+                if !last_err.is_empty() {
+                    final_res = Err(format!("Failed to set clipboard files: {}", last_err));
+                }
+            } else if clip.clip_type == "html" {
+                let html_content = String::from_utf8_lossy(&clip.content).to_string();
+                let plain_text = crate::clipboard::strip_html_tags(&html_content);
+                let mut last_err = String::new();
+                for i in 0..5 {
+                    match write_html(plain_text.clone(), html_content.clone()).await {
+                        Ok(_) => {
+                            last_err.clear();
+                            break;
+                        }
+                        Err(e) => {
+                            last_err = e.to_string();
+                            log::warn!(
+                                "Clipboard write (html) attempt {} failed: {}. Retrying...",
+                                i + 1,
+                                last_err
+                            );
+                            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                        }
+                    }
+                }
+                if !last_err.is_empty() {
+                    final_res = Err(format!("Failed to set clipboard html: {}", last_err));
+                }
+            } else if clip.clip_type == "rtf" {
+                let rtf_content = String::from_utf8_lossy(&clip.content).to_string();
+                let plain_text = crate::clipboard::strip_rtf_tags(&rtf_content);
+                let mut last_err = String::new();
+                for i in 0..5 {
+                    match write_rtf(plain_text.clone(), rtf_content.clone()).await {
+                        Ok(_) => {
+                            last_err.clear();
+                            break;
+                        }
+                        Err(e) => {
+                            last_err = e.to_string();
+                            log::warn!(
+                                "Clipboard write (rtf) attempt {} failed: {}. Retrying...",
+                                i + 1,
+                                last_err
+                            );
+                            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                        }
+                    }
+                }
+                if !last_err.is_empty() {
+                    final_res = Err(format!("Failed to set clipboard rtf: {}", last_err));
+                }
+            } else {
+                let content_str = String::from_utf8_lossy(&clip.content).to_string();
+                let mut last_err = String::new();
+                for i in 0..5 {
+                    match write_text(content_str.clone()).await {
+                        Ok(_) => {
+                            last_err.clear();
+                            break;
+                        }
+                        Err(e) => {
+                            last_err = e.to_string();
+                            log::warn!(
+                                "Clipboard write (text) attempt {} failed: {}. Retrying...",
+                                i + 1,
+                                last_err
+                            );
+                            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                        }
+                    }
+                }
+                if !last_err.is_empty() {
+                    final_res = Err(format!("Failed to set clipboard text: {}", last_err));
+                }
+            }
+
+            // LRU bump: unpinned main-list clips go to the live slot (slot 1); pinned/folder clips stay
+            let _ = sqlx::query(
+                r#"
+                UPDATE clips
+                SET created_at = CASE WHEN is_pinned = 1 OR folder_id IS NOT NULL THEN created_at ELSE CURRENT_TIMESTAMP END
+                WHERE uuid = ?
+                "#,
+            )
+            .bind(&uuid)
+            .execute(pool)
+            .await;
+            let _ = db.place_at_live_slot(&uuid).await;
+
+            // If reset_view_on_paste is enabled and the clip is in a folder, copy it to the main clipboard
+            let manager = app.state::<Arc<SettingsManager>>();
+            let settings = manager.get();
+            if settings.reset_view_on_paste && clip.folder_id.is_some() {
+                let existing_history_uuid: Option<String> = sqlx::query_scalar(
+                    "SELECT uuid FROM clips WHERE content_hash = ? AND folder_id IS NULL AND is_deleted = 0"
+                )
+                .bind(&content_hash)
+                .fetch_optional(pool)
+                .await
+                .unwrap_or(None);
+
+                if let Some(hist_uuid) = existing_history_uuid {
+                    let _ = sqlx::query(
+                        r#"
+                        UPDATE clips
+                        SET created_at = CASE WHEN is_pinned = 1 THEN created_at ELSE CURRENT_TIMESTAMP END
+                        WHERE uuid = ?
+                        "#,
+                    )
+                    .bind(&hist_uuid)
+                    .execute(pool)
+                    .await;
+                    let _ = db.place_at_live_slot(&hist_uuid).await;
+                } else {
+                    let new_uuid = uuid::Uuid::new_v4().to_string();
+                    let new_sort_order = sqlx::query_scalar::<_, i64>(
+                        "SELECT COALESCE(MAX(sort_order), 0) + 1 FROM clips WHERE is_deleted = 0 AND folder_id IS NULL",
+                    )
+                        .fetch_one(pool)
+                        .await
+                        .unwrap_or(0);
+
+                    let _ = sqlx::query(
+                        r#"
+                        INSERT INTO clips (
+                            uuid, clip_type, content, text_preview, content_hash, 
+                            folder_id, is_deleted, is_thumbnail, source_app, 
+                            source_icon, metadata, sort_order, created_at, last_accessed
+                        )
+                        VALUES (?, ?, ?, ?, ?, NULL, 0, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                        "#
+                    )
+                    .bind(&new_uuid)
+                    .bind(&clip.clip_type)
+                    .bind(&clip.content)
+                    .bind(&clip.text_preview)
+                    .bind(&clip.content_hash)
+                    .bind(clip.is_thumbnail)
+                    .bind(&clip.source_app)
+                    .bind(&clip.source_icon)
+                    .bind(&clip.metadata)
+                    .bind(new_sort_order)
+                    .execute(pool)
+                    .await;
+
+                    let _ = db.place_at_live_slot(&new_uuid).await;
+
+                    if clip.clip_type == "image" {
+                        if let Ok(Some(r)) = sqlx::query(
+                            "SELECT file_path, file_size, storage_kind, mime_type FROM clip_images WHERE clip_uuid = ?"
+                        )
+                        .bind(&uuid)
+                        .fetch_optional(pool)
+                        .await
+                        {
+                            let file_path: Option<String> = r.get(0);
+                            let file_size: i64 = r.get(1);
+                            let storage_kind: String = r.get(2);
+                            let mime_type: String = r.get(3);
+                            
+                            let _ = sqlx::query(
+                                r#"
+                                INSERT OR REPLACE INTO clip_images (clip_uuid, full_content, file_path, file_size, storage_kind, mime_type, created_at)
+                                VALUES (?, x'', ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                                "#
+                            )
+                            .bind(&new_uuid)
+                            .bind(file_path)
+                            .bind(file_size)
+                            .bind(storage_kind)
+                            .bind(mime_type)
+                            .execute(pool)
+                            .await;
+                        }
+                    }
+                }
+            }
+
+            // Notify frontend to refresh list
+            let _ = app.emit("clipboard-change", ());
+
+            // Restart monitor
+            let app_clone = app.clone();
+            if let Err(e) = start_listening(app_clone).await {
+                log::error!("Failed to restart listener: {}", e);
+            }
+
+            // Play clipboard sound if enabled
+            if settings.clipboard_sound_enabled {
+                let _ = play_clipboard_sound(settings.clipboard_sound_path.clone());
+            }
+
+            // Show standard copy toast notification
+            if settings.toast_enabled {
+                let (image_b64, msg) = if clip.clip_type == "image" {
+                    let full_bytes = load_full_image_content(pool, &mut clip).await.unwrap_or_default();
+                    let thumb_b64 = if !full_bytes.is_empty() {
+                        image::load_from_memory(&full_bytes).ok().and_then(|img| {
+                            let thumb = img.thumbnail(128, 128);
+                            let mut buf = Vec::new();
+                            let encoder = image::codecs::png::PngEncoder::new(&mut buf);
+                            use image::ImageEncoder;
+                            encoder
+                                .write_image(
+                                    thumb.to_rgba8().as_raw(),
+                                    thumb.width(),
+                                    thumb.height(),
+                                    image::ColorType::Rgba8,
+                                )
+                                .ok()?;
+                            Some(BASE64.encode(&buf))
+                        })
+                    } else {
+                        None
+                    };
+                    (thumb_b64, clip.text_preview.clone())
+                } else {
+                    (None, clip.text_preview.clone())
+                };
+
+                let _ = show_toast(
+                    app.clone(),
+                    msg,
+                    "info".to_string(),
+                    Some(clip.clip_type.clone()),
+                    image_b64,
+                    Some(clip_id),
+                    clip.source_app.clone(),
+                    clip.source_icon.clone(),
+                )
+                .await;
+            }
+
+            final_res
+        }
+        None => Err("Clip not found".to_string()),
+    }
+}
+
 #[tauri::command]
 pub async fn delete_clip(
     id: String,
@@ -3409,6 +3711,7 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
     .transparent(true)
     .always_on_top(false)
     .shadow(true)
+    .maximized(settings.viewer_window_maximized)
     .visible(false);
 
     if let (Some(x), Some(y)) = (settings.viewer_window_x, settings.viewer_window_y) {
@@ -3433,16 +3736,65 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
     let round_corners = settings.round_corners;
     crate::apply_window_effect(&win, &mica_effect, &current_theme, round_corners);
 
-    // Dismiss main first, then show viewer. Small delay remains as fail-safe for first paint.
-    present_image_viewer(&app, &win);
-    let win_clone = win.clone();
-    tauri::async_runtime::spawn(async move {
-        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
-        let _ = win_clone.show();
-        let _ = win_clone.set_focus();
-    });
+    // Dismiss main first. The viewer reveals itself from frontend once mounted and themed.
+    if let Some(main) = app.get_webview_window("main") {
+        match main.is_visible() {
+            Ok(true) => crate::animate_window_hide(&main, None),
+            Ok(false) => {}
+            Err(e) => log::warn!("Could not read main window visibility: {}", e),
+        }
+    }
 
     Ok(())
+}
+
+#[tauri::command]
+pub async fn open_image_in_system_viewer(
+    app: AppHandle,
+    clip_id: String,
+    db: tauri::State<'_, Arc<Database>>,
+) -> Result<(), String> {
+    log::info!("open_image_in_system_viewer called for clip_id: {}", clip_id);
+    let pool = &db.pool;
+
+    let clip: Option<Clip> = sqlx::query_as(r#"SELECT * FROM clips WHERE uuid = ?"#)
+        .bind(&clip_id)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let Some(mut clip) = clip else {
+        return Err("Clip not found".to_string());
+    };
+
+    let mut file_path: Option<String> =
+        sqlx::query_scalar(r#"SELECT file_path FROM clip_images WHERE clip_uuid = ?"#)
+            .bind(&clip.uuid)
+            .fetch_optional(pool)
+            .await
+            .unwrap_or(None);
+
+    if file_path.is_none() || file_path.as_ref().map(|p| !std::path::Path::new(p).exists()).unwrap_or(true) {
+        let full = load_full_image_content(pool, &mut clip).await?;
+        if let Ok(path) = crate::clipboard::persist_full_image_file(&clip.uuid, &full) {
+            let _ = sqlx::query("UPDATE clip_images SET file_path = ?, storage_kind = 'file' WHERE clip_uuid = ?")
+                .bind(&path)
+                .bind(&clip.uuid)
+                .execute(pool)
+                .await;
+            file_path = Some(path);
+        }
+    }
+
+    let Some(path_to_open) = file_path else {
+        return Err("Could not obtain image file path".to_string());
+    };
+
+    let manager = app.state::<Arc<crate::settings_manager::SettingsManager>>();
+    let settings = manager.get();
+    let editor_path = settings.image_editor_path.trim().to_string();
+
+    open_with(editor_path, path_to_open)
 }
 
 #[tauri::command]

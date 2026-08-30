@@ -17,6 +17,10 @@ interface ContextMenuProps {
   options: ContextMenuOption[];
   onClose: () => void;
   subMenuPlacement?: 'side' | 'below';
+  header?: {
+    icon?: string | React.ReactNode;
+    title?: string;
+  };
 }
 
 function ContextMenuItem({
@@ -169,6 +173,7 @@ export function ContextMenu({
   options,
   onClose,
   subMenuPlacement = 'side',
+  header,
 }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -238,6 +243,20 @@ export function ContextMenu({
       }}
       role="menu"
     >
+      {header && (
+        <div className="flex select-none items-center justify-center gap-2 px-3 py-2 text-center">
+          {typeof header.icon === 'string' ? (
+            <img src={header.icon} alt="" className="h-4 w-4 shrink-0 object-contain" />
+          ) : (
+            header.icon
+          )}
+          <span className="font-mono text-xs font-semibold tracking-tight text-muted-foreground/80">
+            {header.title || 'CyberPaste'}
+          </span>
+        </div>
+      )}
+      {header && <div className="mx-1.5 my-1 h-px bg-border/60" />}
+
       <div className="flex flex-col gap-0.5">
         {options.map((option, index) => (
           <ContextMenuItem

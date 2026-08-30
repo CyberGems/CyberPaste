@@ -68,6 +68,8 @@ pub struct AppSettings {
     pub viewer_window_height: f64,
     pub viewer_window_x: Option<i32>,
     pub viewer_window_y: Option<i32>,
+    #[serde(default)]
+    pub viewer_window_maximized: bool,
     pub show_action_messages: bool,
     pub type_to_search: bool,
     pub clip_numbering: String,
@@ -164,6 +166,7 @@ impl Default for AppSettings {
             viewer_window_height: 600.0,
             viewer_window_x: None,
             viewer_window_y: None,
+            viewer_window_maximized: false,
             show_action_messages: true,
             type_to_search: true,
             clip_numbering: "positional".to_string(),

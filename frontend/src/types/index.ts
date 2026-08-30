@@ -73,6 +73,7 @@ export interface Settings {
   viewer_window_height?: number;
   viewer_window_x?: number | null;
   viewer_window_y?: number | null;
+  viewer_window_maximized?: boolean;
   show_action_messages?: boolean;
   type_to_search?: boolean;
   clip_numbering?: 'positional' | 'countdown';

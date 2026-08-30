@@ -20,11 +20,13 @@ import {
   ChevronRight,
   ZoomIn,
   ZoomOut,
+  Image as ImageIcon,
+  Info,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
 import { de, enUS, es, fr, ja, zhCN } from 'date-fns/locale';
-import { ClipboardItem, Settings } from '../types';
+import type { ClipboardItem, Settings } from '../types';
 import { ContextMenu } from '../components/ContextMenu';
 import Tooltip from '../components/Tooltip';
 
@@ -50,6 +52,17 @@ function debounce<T extends (...args: any[]) => any>(fn: T, delay: number) {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => fn.apply(this, args), delay);
   };
+}
+
+function base64ToBlob(base64: string, mimeType: string = 'image/png'): Blob {
+  const cleanBase64 = base64.includes(',') ? base64.split(',')[1] : base64;
+  const byteCharacters = atob(cleanBase64);
+  const byteNumbers = new Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+  const byteArray = new Uint8Array(byteNumbers);
+  return new Blob([byteArray], { type: mimeType });
 }
 
 function detectMimeFromBase64(b64: string): string {
@@ -154,7 +167,6 @@ export function ImageViewerWindow() {
   const [imageIds, setImageIds] = useState<string[]>([]);
   const [ocrDrawerWidth, setOcrDrawerWidth] = useState(OCR_DRAWER_DEFAULT);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [imageEditorPath, setImageEditorPath] = useState<string | undefined>();
 
   const appWindow = getCurrentWebviewWindow();
   const settingsRef = useRef<Settings | null>(null);
@@ -320,13 +332,6 @@ export function ImageViewerWindow() {
     const urlParams = new URLSearchParams(window.location.search);
     const clipId = urlParams.get('clip_id');
 
-    appWindow
-      .show()
-      .then(() => {
-        appWindow.setFocus().catch(() => {});
-      })
-      .catch(() => {});
-
     if (clipId) {
       loadClip(clipId);
     }
@@ -340,34 +345,37 @@ export function ImageViewerWindow() {
     invoke<Settings>('get_settings')
       .then((s) => {
         settingsRef.current = s;
-        setImageEditorPath(s.image_editor_path);
         applyTheme(s.theme);
       })
       .catch(console.error);
 
     const unlistenSettings = listen<Settings>('settings-changed', (event) => {
       settingsRef.current = event.payload;
-      setImageEditorPath(event.payload.image_editor_path);
       applyTheme(event.payload.theme);
     });
 
     const unlistenUpdate = listen<string>('update-viewer-clip', (event) => {
       loadClip(event.payload);
-      appWindow
-        .show()
-        .then(() => {
-          appWindow.setFocus().catch(() => {});
-        })
-        .catch(() => {});
     });
 
     const persistWindow = debounce(async () => {
-      if (await appWindow.isMaximized()) return;
-
       const currentSettings = settingsRef.current;
       if (!currentSettings) return;
 
       try {
+        const isMax = await appWindow.isMaximized();
+        if (isMax) {
+          if (currentSettings.viewer_window_maximized !== true) {
+            invoke('save_settings', {
+              settings: {
+                ...currentSettings,
+                viewer_window_maximized: true,
+              },
+            }).catch(() => {});
+          }
+          return;
+        }
+
         const size = await appWindow.innerSize();
         const pos = await appWindow.innerPosition();
         const factor = await appWindow.scaleFactor();
@@ -379,6 +387,7 @@ export function ImageViewerWindow() {
           invoke('save_settings', {
             settings: {
               ...currentSettings,
+              viewer_window_maximized: false,
               viewer_window_width: logicalSize.width,
               viewer_window_height: logicalSize.height,
               viewer_window_x: logicalPos.x,
@@ -406,7 +415,22 @@ export function ImageViewerWindow() {
     };
   }, [loadClip, applyTheme]);
 
-  const canEdit = !!clip?.image_path;
+  // Reveal window smoothly after clip & theme paint to prevent white flash
+  useEffect(() => {
+    if (clip) {
+      const timer = setTimeout(() => {
+        appWindow
+          .show()
+          .then(() => {
+            appWindow.setFocus().catch(() => {});
+          })
+          .catch(() => {});
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [clip?.id, appWindow]);
+
+  const canEdit = !!clip;
 
   const handleClose = useCallback(() => {
     appWindow.close();
@@ -418,10 +442,23 @@ export function ImageViewerWindow() {
     });
   }, [appWindow]);
 
-  const handleMaximize = useCallback(() => {
-    appWindow.toggleMaximize().catch((err) => {
+  const handleMaximize = useCallback(async () => {
+    try {
+      await appWindow.toggleMaximize();
+      const max = await appWindow.isMaximized();
+      setIsMaximized(max);
+      const currentSettings = settingsRef.current;
+      if (currentSettings) {
+        invoke('save_settings', {
+          settings: {
+            ...currentSettings,
+            viewer_window_maximized: max,
+          },
+        }).catch(() => {});
+      }
+    } catch (err) {
       console.error('Failed to toggle maximize:', err);
-    });
+    }
   }, [appWindow]);
 
   const handleToggleAlwaysOnTop = useCallback(async () => {
@@ -443,38 +480,40 @@ export function ImageViewerWindow() {
     }
   }, [alwaysOnTop, appWindow, showStatus, t]);
 
-  const handleEdit = useCallback(() => {
+  const handleEdit = useCallback(async () => {
     const current = clipRef.current;
     if (!current) return;
-
-    if (!current.image_path) {
+    try {
+      await invoke('open_image_in_system_viewer', { clipId: current.id });
+    } catch (err) {
+      console.error('Failed to open image in system viewer:', err);
       setEditHint(t('viewer.noImagePath'));
       showStatus(t('viewer.noImagePath'), 2800);
-      return;
     }
+  }, [showStatus, t]);
 
-    const editorPath = settingsRef.current?.image_editor_path || imageEditorPath || '';
-    const path = current.image_path;
-    appWindow.close().then(() => {
-      invoke('open_with', {
-        appPath: editorPath,
-        filePath: path,
-      }).catch((err) => {
-        console.error('Failed to open external viewer after closing viewer:', err);
-      });
-    });
-  }, [appWindow, imageEditorPath, showStatus, t]);
-
-  const handleCopy = useCallback(() => {
+  const handleCopy = useCallback(async () => {
     const current = clipRef.current;
     if (!current) return;
-    invoke('paste_clip', { id: current.id })
-      .then(() => {
-        setCopied(true);
-        showStatus(t('viewer.copied'));
-        setTimeout(() => setCopied(false), 2000);
-      })
-      .catch(console.error);
+    try {
+      if (current.content) {
+        try {
+          const mime = mimeFromPath(current.image_path) || 'image/png';
+          const blob = base64ToBlob(current.content, mime.includes('png') ? 'image/png' : mime);
+          // Standard browser ClipboardItem prefers image/png for image writes
+          const pngBlob = blob.type === 'image/png' ? blob : base64ToBlob(current.content, 'image/png');
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
+        } catch (e) {
+          console.warn('Frontend navigator.clipboard.write fallback:', e);
+        }
+      }
+      await invoke('copy_clip', { clipId: current.id });
+      setCopied(true);
+      showStatus(t('viewer.copied'));
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy clip:', err);
+    }
   }, [showStatus, t]);
 
   const ocrText = useMemo(() => {
@@ -787,7 +826,7 @@ export function ImageViewerWindow() {
 
   return (
     <div
-      className={`flex h-screen w-screen flex-col overflow-hidden rounded-lg border shadow-2xl ${shellBg} ${shellBorder}`}
+      className={`flex h-screen w-screen flex-col overflow-hidden ${isMaximized ? 'rounded-none border-0' : 'rounded-lg border'} shadow-2xl ${shellBg} ${shellBorder}`}
       onContextMenu={handleContextMenu}
     >
       {contextMenu && (
@@ -798,34 +837,49 @@ export function ImageViewerWindow() {
           options={[
             {
               label: isFitMode ? t('viewer.originalSize') : t('viewer.fitToWindow'),
+              icon: isFitMode ? <Expand size={14} /> : <Scan size={14} />,
               onClick: () => (isFitMode ? setOriginalSize() : resetViewToFit()),
             },
             {
               label: t('viewer.zoomIn'),
+              icon: <ZoomIn size={14} />,
               onClick: () => zoomBy(ZOOM_STEP),
             },
             {
               label: t('viewer.zoomOut'),
+              icon: <ZoomOut size={14} />,
               onClick: () => zoomBy(1 / ZOOM_STEP),
             },
             {
               label: t('viewer.extractText'),
+              icon: <ScanText size={14} />,
               onClick: handleRunOcr,
             },
             {
-              label: t('common.edit', 'Edit'),
+              label: t('viewer.edit'),
+              icon: <ExternalLink size={14} />,
               onClick: handleEdit,
             },
             {
-              label: t('common.copy', 'Copy to Clipboard'),
+              label: t('viewer.copy'),
+              icon: <Copy size={14} />,
               onClick: handleCopy,
             },
             {
               label: alwaysOnTop ? t('viewer.unpinOnTop') : t('viewer.pinOnTop'),
+              icon: alwaysOnTop ? <Pin size={14} /> : <PinOff size={14} />,
               onClick: handleToggleAlwaysOnTop,
             },
             {
+              label: t('settings.about', 'About...'),
+              icon: <Info size={14} />,
+              onClick: () => {
+                invoke('open_about').catch(console.error);
+              },
+            },
+            {
               label: t('common.close', 'Close'),
+              icon: <X size={14} />,
               onClick: handleClose,
               danger: true,
             },
@@ -834,41 +888,27 @@ export function ImageViewerWindow() {
       )}
 
       {/* Header — drag region only on the title side so toolbar clicks aren't swallowed */}
-      <div className={`z-10 flex items-center justify-between border-b px-3 py-2 ${headerBg}`}>
-        <div className="flex min-w-0 flex-1 items-center gap-2.5 pr-2" data-tauri-drag-region>
+      <div
+        className={`z-10 flex select-none cursor-default items-center justify-between border-b px-3 py-2 ${headerBg}`}
+      >
+        <div
+          className="flex min-w-0 flex-1 select-none cursor-default items-center gap-2.5 pr-2"
+          data-tauri-drag-region
+        >
           <img
             src="/logo.png"
             alt=""
-            className="h-5 w-5 shrink-0 object-contain"
+            className="h-5 w-5 shrink-0 select-none cursor-default object-contain"
             draggable={false}
             data-tauri-drag-region
           />
 
-          <div className="flex min-w-0 items-center gap-2" data-tauri-drag-region>
-            <span
-              className={`shrink-0 text-sm font-bold tracking-tight ${textPrimary}`}
-              data-tauri-drag-region
-            >
-              {t('viewer.title')}
-            </span>
-
-            {friendlyDate && (
-              <>
-                <span
-                  className={`shrink-0 text-sm ${isDark ? 'text-zinc-600' : 'text-zinc-300'}`}
-                  data-tauri-drag-region
-                >
-                  //
-                </span>
-                <span
-                  className={`truncate font-mono text-[11px] font-medium ${accentIndigo}`}
-                  data-tauri-drag-region
-                >
-                  {friendlyDate}
-                </span>
-              </>
-            )}
-          </div>
+          <span
+            className={`shrink-0 select-none cursor-default text-sm font-bold tracking-tight ${textPrimary}`}
+            data-tauri-drag-region
+          >
+            {t('viewer.title')}
+          </span>
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
@@ -1199,9 +1239,20 @@ export function ImageViewerWindow() {
         className={`flex items-center justify-between gap-3 border-t px-3 py-1.5 font-mono text-[11px] ${footerBg}`}
       >
         <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-          <span className={`min-w-0 truncate ${accentCyan}`} title={fileName || undefined}>
-            {fileName}
-          </span>
+          <Tooltip label={fileName} placement="top">
+            <span
+              className={`flex shrink-0 cursor-default items-center transition-colors hover:text-cyan-400 ${accentCyan}`}
+            >
+              <ImageIcon size={13} className="shrink-0" />
+            </span>
+          </Tooltip>
+
+          {friendlyDate && (
+            <span className={`truncate font-mono text-[11px] font-medium ${accentIndigo}`}>
+              {friendlyDate}
+            </span>
+          )}
+
           {(dimsLabel || sizeLabel) && (
             <span className={`shrink-0 ${isDark ? 'text-zinc-600' : 'text-zinc-300'}`}>·</span>
           )}
