@@ -1107,7 +1107,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   return (
     <div
       className={cn(
-        "relative flex h-full w-full select-none flex-col overflow-hidden font-['Segoe_UI',system-ui,sans-serif]",
+        "relative flex h-full w-full select-none flex-col overflow-hidden bg-background font-['Segoe_UI',system-ui,sans-serif]",
         theme === 'light' ? 'text-slate-800' : 'text-white/90'
       )}
       style={{ border: '1px solid rgba(34, 211, 238, 0.1)' }}
@@ -1279,7 +1279,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
           {/* Sidebar */}
           <div
             className={cn(
-              'group/sidebar relative flex-shrink-0 overflow-hidden border-r border-border bg-transparent transition-all duration-200',
+              'group/sidebar relative flex-shrink-0 overflow-hidden border-r border-border bg-card transition-all duration-200',
               compactSidebarCollapsed && 'hover:bg-accent/60',
               isPeekVisible && 'blur-[3px]'
             )}
@@ -1411,7 +1411,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
           </div>
 
           {/* Content Area */}
-          <div className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex flex-1 flex-col overflow-hidden bg-background">
             {/* Search */}
             <div className={cn('flex-shrink-0 p-2', isPeekVisible && 'blur-[3px]')}>
               <div className="flex items-center gap-1.5">
@@ -1464,7 +1464,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
             </div>
 
             {/* List */}
-            <div data-clip-list="true" className="min-h-0 flex-1 overflow-hidden px-0 pb-0">
+            <div data-clip-list="true" className="min-h-0 flex-1 overflow-hidden bg-background px-0 pb-0">
               <CompactClipList
                 clips={filteredClips}
                 listRef={clipListApiRef}
@@ -1669,7 +1669,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
             </div>
           </div>
 
-          <div data-clip-list="true" className="min-h-0 flex-1 overflow-hidden">
+          <div data-clip-list="true" className="min-h-0 flex-1 overflow-hidden bg-background">
             <CompactClipList
               clips={filteredClips}
               listRef={clipListApiRef}
@@ -1940,21 +1940,32 @@ const ClipRow = memo(function ClipRow({
         }}
         draggable="false"
         className={clsx(
-          'group relative flex h-10 w-full cursor-pointer items-center gap-3 overflow-hidden rounded-lg border px-2 py-1.5 transition-colors',
+          'group relative flex h-10 w-full cursor-pointer items-center gap-3 overflow-hidden rounded-lg border bg-card px-2 py-1.5 transition-colors',
           isDeleting &&
-            'clip-deleting-row pointer-events-none border-rose-500/70 bg-rose-950/40 shadow-[0_0_16px_rgba(244,63,94,0.35)]',
+            'clip-deleting-row pointer-events-none border-rose-500/70 bg-rose-950 shadow-[0_0_16px_rgba(244,63,94,0.35)]',
           isSelected
-            ? 'border-primary bg-primary/20 text-foreground shadow-[0_0_12px_rgba(var(--primary-rgb),0.25)]'
+            ? 'border-primary ring-1 ring-primary/40 text-foreground shadow-[0_0_12px_rgba(var(--primary-rgb),0.25)]'
             : isNavigationSelected
-              ? 'border-primary/40 bg-primary/10 text-foreground shadow-[0_0_12px_rgba(var(--primary-rgb),0.12)]'
+              ? 'border-primary/40 text-foreground shadow-[0_0_12px_rgba(var(--primary-rgb),0.12)]'
               : showHover
-                ? 'border-primary/30 bg-accent/60 text-foreground'
-                : 'border-border bg-card/45 text-foreground/90',
+                ? 'border-primary/30 text-foreground'
+                : 'border-border text-foreground/90',
           shouldBlurForPeek && 'blur-[3px]',
           reorderEnabled && !isDragging && 'cursor-grab',
           isDragging && 'pointer-events-none scale-95 cursor-grabbing opacity-40'
         )}
       >
+        {/* Solid base layer state tints (layered on top of opaque bg-card) */}
+        {isSelected && (
+          <div className="pointer-events-none absolute inset-0 z-0 bg-primary/20" />
+        )}
+        {isNavigationSelected && !isSelected && (
+          <div className="pointer-events-none absolute inset-0 z-0 bg-primary/10" />
+        )}
+        {showHover && !isSelected && (
+          <div className="pointer-events-none absolute inset-0 z-0 bg-accent" />
+        )}
+
         {pinFlash && (
           <div className="clip-pin-flash pointer-events-none absolute inset-0 z-20 rounded-lg bg-primary/30 shadow-[inset_0_0_0_1px_rgba(var(--primary-rgb),0.75),0_0_16px_rgba(var(--primary-rgb),0.35)]" />
         )}
@@ -1971,7 +1982,7 @@ const ClipRow = memo(function ClipRow({
           </div>
         )}
         <div
-          className="flex min-w-0 flex-1 items-center gap-3"
+          className="relative z-10 flex min-w-0 flex-1 items-center gap-3"
           onMouseEnter={(e) => {
             if (clip.clip_type !== 'image') {
               onRowMouseEnter?.(clip, e);
@@ -2054,7 +2065,7 @@ const ClipRow = memo(function ClipRow({
         </div>
 
         <div
-          className="-my-1.5 flex flex-shrink-0 items-center gap-1.5 self-stretch py-1.5 pr-1"
+          className="relative z-10 -my-1.5 flex flex-shrink-0 items-center gap-1.5 self-stretch py-1.5 pr-1"
           onMouseOver={(e) => {
             e.stopPropagation();
             onClosePeek?.();
@@ -2224,7 +2235,7 @@ function CompactListRow({
     <div
       style={style}
       {...ariaAttributes}
-      className="box-border pl-2 pr-1"
+      className="box-border bg-background pl-2 pr-1"
       onMouseLeave={() => onRowMouseLeave?.()}
     >
       <ClipRow

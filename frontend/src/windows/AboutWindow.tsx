@@ -12,13 +12,12 @@ import {
   Github,
   HelpCircle,
   Info,
-  Maximize2,
   Minus,
   RotateCcw,
-  Square,
   Tag,
   WifiOff,
   X,
+  Heart,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Settings } from '../types';
@@ -37,7 +36,6 @@ const WEBSITE_URL = 'https://cybergems.org';
 export function AboutWindow() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [appVersion, setAppVersion] = useState('');
-  const [isMaximized, setIsMaximized] = useState(false);
   const [updateAvailable, setUpdateAvailable] = useState<UpdateType>(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [updateCheckError, setUpdateCheckError] = useState<string | null>(null);
@@ -50,9 +48,6 @@ export function AboutWindow() {
   useEffect(() => {
     getVersion().then(setAppVersion).catch(console.error);
     invoke<Settings>('get_settings').then(setSettings).catch(console.error);
-
-    const win = getCurrentWindow();
-    win.isMaximized().then(setIsMaximized).catch(console.error);
 
     const unlistenSettings = listen<Settings>('settings-changed', (event) => {
       setSettings(event.payload);
@@ -95,12 +90,6 @@ export function AboutWindow() {
 
   const close = () => {
     getCurrentWindow().close().catch(console.error);
-  };
-
-  const toggleMaximize = async () => {
-    const win = getCurrentWindow();
-    await win.toggleMaximize();
-    setIsMaximized(await win.isMaximized());
   };
 
   const updateAutoCheck = async () => {
@@ -163,8 +152,8 @@ export function AboutWindow() {
     <div className="settings-window h-screen">
       <div className="flex h-full flex-col overflow-hidden bg-background text-foreground">
         <header className="flex items-center justify-between border-b border-border bg-transparent px-4 py-3">
-          <div data-tauri-drag-region className="flex min-w-0 flex-1 items-center gap-3">
-            <img src="/logo.png" alt="CyberPaste" className="h-6 w-6 object-contain" />
+          <div data-tauri-drag-region className="flex min-w-0 flex-1 items-center gap-2.5">
+            <Info size={18} className="text-primary shrink-0" />
             <h1 className="text-[16px] font-semibold tracking-tight">{t('settings.about')}</h1>
           </div>
           <div className="flex items-center gap-1">
@@ -175,15 +164,6 @@ export function AboutWindow() {
                 className="icon-button flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-accent/50"
               >
                 <Minus size={14} />
-              </button>
-            </Tooltip>
-            <Tooltip label={isMaximized ? t('common.restore') : t('common.maximize')} placement="bottom">
-              <button
-                type="button"
-                onClick={toggleMaximize}
-                className="icon-button flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-accent/50"
-              >
-                {isMaximized ? <Square size={14} /> : <Maximize2 size={14} />}
               </button>
             </Tooltip>
             <button
@@ -201,8 +181,12 @@ export function AboutWindow() {
           <div className="mx-auto w-full max-w-3xl">
             <section className="grid grid-cols-[auto_minmax(200px,1fr)] items-center gap-9 py-1">
               <div className="flex items-center gap-5">
-                <div className="flex h-20 w-20 items-center justify-center rounded-[18px] border border-primary/20 bg-card shadow-[0_0_20px_rgba(var(--primary-rgb),0.12)]">
-                  <img src="/logo.png" alt="CyberPaste" className="h-[52px] w-[52px] object-contain" />
+                <div className="relative flex shrink-0 items-center justify-center">
+                  <img
+                    src="/logo.png"
+                    alt="CyberPaste"
+                    className="h-[68px] w-[68px] select-none object-contain animate-pulse drop-shadow-[0_0_24px_rgba(var(--primary-rgb),0.8)] transition-all duration-300"
+                  />
                 </div>
                 <div className="min-w-0">
                   <h2 className="text-[32px] font-bold tracking-tight">CyberPaste</h2>
@@ -379,6 +363,20 @@ export function AboutWindow() {
             </button>
           </span>
           <div className="flex items-center gap-1">
+            <Tooltip label={t('common.donate', 'Donate')} placement="top">
+              <button
+                type="button"
+                aria-label={t('common.donate', 'Donate')}
+                onClick={() =>
+                  openUrl('https://github.com/CyberGems/CyberPaste#%EF%B8%8F-donate').catch(
+                    console.error
+                  )
+                }
+                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-rose-500"
+              >
+                <Heart size={15} />
+              </button>
+            </Tooltip>
             <Tooltip label={t('settings.aboutWebsiteTooltip')} placement="top">
               <button
                 type="button"

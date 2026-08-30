@@ -1,5 +1,6 @@
 {
   "common": {
+    "donate": "Donate",
     "close": "Close",
     "cancel": "Cancel",
     "confirm": "Confirm",
@@ -610,6 +611,7 @@
     "deletePinnedBulkMessage": "The selection contains pinned clips. Are you sure you want to delete them?"
   },
   "viewer": {
+    "badge": "VIEWER",
     "title": "Image Viewer",
     "fitToWindow": "Fit to Window",
     "originalSize": "Original Size",

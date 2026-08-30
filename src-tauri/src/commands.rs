@@ -4309,7 +4309,7 @@ fn open_about_window(app: &AppHandle) {
     .inner_size(740.0, 500.0)
     .min_inner_size(600.0, 420.0)
     .resizable(true)
-    .maximizable(true)
+    .maximizable(false)
     .decorations(false)
     .transparent(false)
     .visible(false);

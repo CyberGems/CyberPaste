@@ -1,5 +1,6 @@
 {
   "common": {
+    "donate": "Donar",
     "close": "Cerrar",
     "cancel": "Cancelar",
     "confirm": "Confirmar",
@@ -610,6 +611,7 @@
     "deletePinnedBulkMessage": "La selección contiene clips fijados. ¿Estás seguro de que deseas eliminarlos?"
   },
   "viewer": {
+    "badge": "VISOR",
     "title": "Visor de imágenes",
     "fitToWindow": "Ajustar a la Ventana",
     "originalSize": "Tamaño Original",

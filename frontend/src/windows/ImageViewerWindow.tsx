@@ -892,23 +892,39 @@ export function ImageViewerWindow() {
         className={`z-10 flex select-none cursor-default items-center justify-between border-b px-3 py-2 ${headerBg}`}
       >
         <div
-          className="flex min-w-0 flex-1 select-none cursor-default items-center gap-2.5 pr-2"
+          className="flex min-w-0 flex-1 select-none cursor-default items-center gap-2 pr-2"
           data-tauri-drag-region
         >
-          <img
-            src="/logo.png"
-            alt=""
-            className="h-5 w-5 shrink-0 select-none cursor-default object-contain"
-            draggable={false}
+          <div
             data-tauri-drag-region
-          />
-
-          <span
-            className={`shrink-0 select-none cursor-default text-sm font-bold tracking-tight ${textPrimary}`}
-            data-tauri-drag-region
+            className="flex h-6 w-6 shrink-0 select-none cursor-default items-center justify-center overflow-hidden"
           >
-            {t('viewer.title')}
-          </span>
+            <img
+              src="/logo.png"
+              alt="Logo"
+              className="h-5 w-5 select-none cursor-default object-contain"
+              draggable={false}
+              data-tauri-drag-region
+            />
+          </div>
+
+          <div
+            data-tauri-drag-region
+            className="flex min-w-0 select-none cursor-default items-baseline gap-1.5"
+          >
+            <span
+              className={`shrink-0 select-none cursor-default text-sm font-bold tracking-tight ${textPrimary}`}
+              data-tauri-drag-region
+            >
+              CyberPaste
+            </span>
+            <span
+              data-tauri-drag-region
+              className="rounded border border-primary/20 bg-primary/10 px-1 py-px text-[8.5px] font-medium uppercase tracking-wider text-primary"
+            >
+              {t('viewer.badge', 'VISOR')}
+            </span>
+          </div>
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
