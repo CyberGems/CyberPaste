@@ -53,7 +53,9 @@ import {
   RotateCcw,
   Keyboard,
   HardDrive as StorageIcon,
+  Heart,
 } from 'lucide-react';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { FolderItem } from '../types';
 import { CONTEXT_MENU_EVENT, type ContextMenuEventDetail } from '../utils/contextMenuEvents';
 import { clsx } from 'clsx';
@@ -568,6 +570,20 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         {!showHud && <div className="min-w-0 flex-1" />}
 
         <div className="z-10 flex shrink-0 items-center gap-0.5">
+          <Tooltip label={t('common.donate', 'Donate')} placement="bottom">
+            <button
+              onClick={() =>
+                openUrl('https://github.com/CyberGems/CyberPaste#%EF%B8%8F-donate').catch(
+                  console.error
+                )
+              }
+              className={clsx(headerBtnClass, 'hover:text-rose-500 hover:border-rose-500/30')}
+              aria-label={t('common.donate', 'Donate')}
+            >
+              <Heart size={15} />
+            </button>
+          </Tooltip>
+
           {onTogglePin && (
             <Tooltip
               label={isPinned ? t('common.unpinWindow') : t('common.pinWindow')}

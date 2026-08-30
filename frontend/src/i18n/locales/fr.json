@@ -79,7 +79,8 @@
     "translate": "Traduire (IA)",
     "explainCode": "Expliquer le code (IA)",
     "fixGrammar": "Corriger la grammaire (IA)",
-    "openFullViewer": "Ouvrir la visionneuse complète"
+    "openFullViewer": "Ouvrir la visionneuse complète",
+    "donate": "Faire un don"
   },
   "settings": {
     "title": "Paramètres",

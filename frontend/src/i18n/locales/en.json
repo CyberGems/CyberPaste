@@ -192,7 +192,8 @@
     "extractText": "Extract Text (OCR)",
     "openInSystemViewer": "Open in system viewer",
     "closeToast": "Close",
-    "openWindow": "Open Window"
+    "openWindow": "Open Window",
+    "donate": "Donate"
   },
   "settings": {
     "title": "Configuration",

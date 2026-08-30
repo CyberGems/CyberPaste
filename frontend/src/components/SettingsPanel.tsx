@@ -28,6 +28,7 @@ import {
   Send,
   Languages,
   Palette,
+  Heart,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useTheme } from '../hooks/useTheme';
@@ -585,6 +586,21 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
             <h2 className="text-[18px] font-bold tracking-tight text-foreground">CyberPaste</h2>
           </div>
           <div className="flex items-center gap-1">
+            <Tooltip label={t('common.donate', 'Donate')} placement="bottom">
+              <button
+                type="button"
+                onClick={() =>
+                  openUrl('https://github.com/CyberGems/CyberPaste#%EF%B8%8F-donate').catch(
+                    console.error
+                  )
+                }
+                className="icon-button flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/50 hover:text-rose-500"
+                onMouseDown={(e) => e.stopPropagation()}
+                aria-label={t('common.donate', 'Donate')}
+              >
+                <Heart size={15} />
+              </button>
+            </Tooltip>
             <Tooltip label={t('common.minimize')} placement="bottom">
               <button
                 type="button"

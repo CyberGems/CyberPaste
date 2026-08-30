@@ -38,3 +38,6 @@ CLAUDE.md
 ## Local AI/runtime artifacts
 RELEASE_NOTES.txt
 artifacts/
+
+## GitHub Wiki (local copy — wiki lives on GitHub Wiki)
+docs/wiki/

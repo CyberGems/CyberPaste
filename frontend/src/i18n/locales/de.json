@@ -79,7 +79,8 @@
     "translate": "Übersetzen (KI)",
     "explainCode": "Code erklären (KI)",
     "fixGrammar": "Grammatik korrigieren (KI)",
-    "openFullViewer": "Vollbild-Viewer öffnen"
+    "openFullViewer": "Vollbild-Viewer öffnen",
+    "donate": "Spenden"
   },
   "settings": {
     "title": "Einstellungen",
