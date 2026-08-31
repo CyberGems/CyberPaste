@@ -2613,7 +2613,7 @@ function App() {
       {/* Content Container */}
       <div
         data-el="app-window"
-        className="relative h-full w-full overflow-hidden bg-background/92 backdrop-blur-xl"
+        className="relative h-full w-full overflow-hidden bg-background/95 backdrop-blur-2xl"
       >
         {/* View layer fades during compact ↔ full morph (keeps window chrome opaque) */}
         <div

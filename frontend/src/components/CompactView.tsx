@@ -1107,7 +1107,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   return (
     <div
       className={cn(
-        "relative flex h-full w-full select-none flex-col overflow-hidden font-['Segoe_UI',system-ui,sans-serif] bg-background/92 backdrop-blur-xl",
+        "relative flex h-full w-full select-none flex-col overflow-hidden font-['Segoe_UI',system-ui,sans-serif]",
         theme === 'light' ? 'text-slate-800' : 'text-white/90'
       )}
       style={{ border: '1px solid rgba(34, 211, 238, 0.1)' }}
@@ -1411,7 +1411,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
           </div>
 
           {/* Content Area */}
-          <div className="flex flex-1 flex-col overflow-hidden bg-background/85">
+          <div className="flex flex-1 flex-col overflow-hidden">
             {/* Search */}
             <div className={cn('flex-shrink-0 p-2', isPeekVisible && 'blur-[3px]')}>
               <div className="flex items-center gap-1.5">
@@ -1510,8 +1510,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
             {/* Footer */}
             <div
               className={cn(
-                'flex flex-shrink-0 items-center justify-between border-t border-border bg-muted/60 px-3 py-1.5 font-mono text-[9px] tracking-tighter text-muted-foreground/90 transition-opacity backdrop-blur-md',
-                entranceAnim && !mounted ? 'opacity-0' : 'opacity-85',
+                'flex flex-shrink-0 items-center justify-between border-t border-border/40 bg-black/25 px-3 py-1.5 font-mono text-[9px] tracking-tighter text-muted-foreground/80 backdrop-blur-md transition-opacity',
+                entranceAnim && !mounted ? 'opacity-0' : 'opacity-70',
                 isPeekVisible && 'blur-[3px]'
               )}
             >
@@ -1718,8 +1718,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
           {/* Footer */}
           <div
             className={cn(
-              'flex flex-shrink-0 items-center justify-between border-t border-border bg-muted/60 px-3 py-1.5 font-mono text-[9px] tracking-tighter text-muted-foreground/90 transition-opacity backdrop-blur-md',
-              entranceAnim && !mounted ? 'opacity-0' : 'opacity-85',
+              'flex flex-shrink-0 items-center justify-between border-t border-border/40 bg-black/25 px-3 py-1.5 font-mono text-[9px] tracking-tighter text-muted-foreground/80 backdrop-blur-md transition-opacity',
+              entranceAnim && !mounted ? 'opacity-0' : 'opacity-70',
               isPeekVisible && 'blur-[3px]'
             )}
           >
