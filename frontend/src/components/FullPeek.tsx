@@ -10,7 +10,7 @@ interface FullPeekProps {
   onClose: () => void;
 }
 
-const VIEWPORT_MARGIN = 16;
+const VIEWPORT_MARGIN = 20;
 
 export const FullPeek: React.FC<FullPeekProps> = ({
   clip,
@@ -57,16 +57,16 @@ export const FullPeek: React.FC<FullPeekProps> = ({
     }
   })();
 
-  const maxAvailableW = Math.min(1080, vw - VIEWPORT_MARGIN * 2);
-  const maxAvailableH = Math.min(680, vh - VIEWPORT_MARGIN * 2);
+  const maxAvailableW = Math.min(1280, vw - VIEWPORT_MARGIN * 2);
+  const maxAvailableH = Math.min(800, vh - VIEWPORT_MARGIN * 2);
 
-  let width = Math.min(680, maxAvailableW);
-  let calculatedMaxHeight = Math.min(460, maxAvailableH);
+  let width = Math.min(720, maxAvailableW);
+  let calculatedMaxHeight = Math.min(500, maxAvailableH);
 
   if (isImage && imageMeta?.width && imageMeta?.height) {
     const rawW = imageMeta.width;
     const rawH = imageMeta.height;
-    const headerHeight = 36;
+    const headerHeight = 38;
     const padding = 16;
     const maxImgW = maxAvailableW - padding;
     const maxImgH = maxAvailableH - headerHeight - padding;
@@ -76,34 +76,30 @@ export const FullPeek: React.FC<FullPeekProps> = ({
     const fitW = Math.round(rawW * scale);
     const fitH = Math.round(rawH * scale);
 
-    // Expand width to fit the image naturally
+    // Expand width and height to fit the image naturally
     width = Math.max(340, Math.min(maxAvailableW, fitW + padding));
     calculatedMaxHeight = Math.max(220, Math.min(maxAvailableH, fitH + headerHeight + padding));
   }
 
-  // Centering on card with viewport clamping
+  // Centering on card with strict 4-sided viewport bounds clamping
   const cardCenterX = anchorRect.x + anchorRect.width / 2;
+  const cardCenterY = anchorRect.y + anchorRect.height / 2;
+
   let left = cardCenterX - width / 2;
   if (left < VIEWPORT_MARGIN) left = VIEWPORT_MARGIN;
   if (left + width > vw - VIEWPORT_MARGIN) left = vw - VIEWPORT_MARGIN - width;
 
-  // Space above vs space below
-  const spaceAbove = anchorRect.y;
-  const spaceBelow = vh - (anchorRect.y + anchorRect.height);
-  const showAbove =
-    spaceAbove >= calculatedMaxHeight + VIEWPORT_MARGIN ||
-    (spaceAbove > spaceBelow && spaceBelow < calculatedMaxHeight);
+  let top = cardCenterY - calculatedMaxHeight / 2;
+  if (top < VIEWPORT_MARGIN) top = VIEWPORT_MARGIN;
+  if (top + calculatedMaxHeight > vh - VIEWPORT_MARGIN) top = vh - VIEWPORT_MARGIN - calculatedMaxHeight;
 
   const style: React.CSSProperties = {
+    position: 'fixed',
     left,
+    top,
     width,
+    maxHeight: calculatedMaxHeight,
   };
-
-  if (showAbove) {
-    style.bottom = vh - anchorRect.y + 8;
-  } else {
-    style.top = anchorRect.y + anchorRect.height + 8;
-  }
 
   const infoLabel = (() => {
     if (clip.clip_type === 'image') {
@@ -132,15 +128,15 @@ export const FullPeek: React.FC<FullPeekProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.1, ease: 'easeOut' }}
-            className="pointer-events-none fixed inset-0 z-[90] bg-background/30 backdrop-blur-[3px]"
+            className="pointer-events-none fixed inset-0 z-[90] bg-background/35 backdrop-blur-[3px]"
           />
 
           {/* Peek Popover Container */}
           <motion.div
             key={`full-peek-${clip.id}`}
-            initial={{ opacity: 0, scale: 0.96, y: showAbove ? 8 : -8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: showAbove ? 8 : -8 }}
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.96 }}
             transition={{ duration: 0.09, ease: 'easeOut' }}
             className="fixed z-[100]"
             style={style}
@@ -171,13 +167,13 @@ export const FullPeek: React.FC<FullPeekProps> = ({
                 imageSrc ? (
                   <div
                     className="checkerboard-bg relative flex w-full items-center justify-center overflow-hidden p-2"
-                    style={{ maxHeight: calculatedMaxHeight - 36 }}
+                    style={{ maxHeight: calculatedMaxHeight - 38 }}
                   >
                     <img
                       src={imageSrc}
                       alt="preview"
                       className="block max-h-full max-w-full rounded-lg object-contain shadow-md"
-                      style={{ maxHeight: calculatedMaxHeight - 52 }}
+                      style={{ maxHeight: calculatedMaxHeight - 54 }}
                     />
                   </div>
                 ) : (
