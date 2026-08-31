@@ -1150,16 +1150,16 @@ export const CompactView: React.FC<CompactViewProps> = ({
               data-tauri-drag-region
             />
           </div>
-          <div data-tauri-drag-region className="flex min-w-0 flex-1 items-baseline gap-1.5">
+          <div data-tauri-drag-region className="flex min-w-0 flex-1 items-center gap-2">
             <span
               data-tauri-drag-region
-              className="truncate text-sm font-bold tracking-tight text-foreground"
+              className="truncate text-sm font-bold tracking-tight text-foreground leading-none"
             >
               CyberPaste
             </span>
             <span
               data-tauri-drag-region
-              className="rounded border border-primary/20 bg-primary/10 px-1 py-px text-[8.5px] font-medium uppercase tracking-wider text-primary"
+              className="inline-flex items-center justify-center rounded-md border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-primary leading-none shadow-[0_0_8px_rgba(var(--primary-rgb),0.15)]"
             >
               Compact
             </span>

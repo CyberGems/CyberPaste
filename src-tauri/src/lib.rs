@@ -539,10 +539,8 @@ pub fn run_app() {
                     let _ = std::fs::write(&capture_sound_path, wav_bytes);
                 }
                 let duplicate_sound_path = data_dir.join("duplicate_sound.wav");
-                if !duplicate_sound_path.exists() {
-                    let wav_bytes = generate_duplicate_sound_wav();
-                    let _ = std::fs::write(&duplicate_sound_path, wav_bytes);
-                }
+                let wav_bytes = generate_duplicate_sound_wav();
+                let _ = std::fs::write(&duplicate_sound_path, wav_bytes);
 
                 let manager = handle_for_toast.state::<Arc<SettingsManager>>();
                 let settings = manager.get();
@@ -1291,13 +1289,28 @@ pub fn apply_window_effect(
     theme: &tauri::Theme,
     round_corners: bool,
 ) {
-    use window_vibrancy::{apply_mica, clear_mica};
+    use window_vibrancy::{apply_acrylic, apply_mica, clear_acrylic, clear_mica};
     match effect {
-        "mica" => {
+        "acrylic" => {
             let _ = clear_mica(window);
-            let _ = apply_mica(window, Some(matches!(theme, tauri::Theme::Dark)));
+            let _ = clear_acrylic(window);
+            let is_dark = matches!(theme, tauri::Theme::Dark);
+            let tint = if is_dark { (13, 15, 23, 160) } else { (223, 226, 234, 160) };
+            let _ = apply_acrylic(window, Some(tint));
+        }
+        "mica" => {
+            let _ = clear_acrylic(window);
+            let _ = clear_mica(window);
+            // On Windows 10/11, apply_acrylic renders true Gaussian blur of background windows
+            // while Mica only samples desktop wallpaper. Apply acrylic blur for real frosted glass:
+            let is_dark = matches!(theme, tauri::Theme::Dark);
+            let tint = if is_dark { (13, 15, 23, 160) } else { (223, 226, 234, 160) };
+            if apply_acrylic(window, Some(tint)).is_err() {
+                let _ = apply_mica(window, Some(is_dark));
+            }
         }
         "clear" | _ => {
+            let _ = clear_acrylic(window);
             let _ = clear_mica(window);
         }
     }
@@ -1339,9 +1352,8 @@ fn generate_activation_sound_wav() -> Vec<u8> {
     let v = 0.28;
 
     let sr = 44100;
-    let duration_ms = 90;
+    let duration_ms = 40;
     let n = sr * duration_ms / 1000;
-
     let data_size = n * 2;
     let mut wav = Vec::with_capacity(44 + data_size);
 
@@ -1360,49 +1372,17 @@ fn generate_activation_sound_wav() -> Vec<u8> {
     wav.extend_from_slice(b"data");
     wav.extend_from_slice(&(data_size as u32).to_le_bytes());
 
-    // Helpers
-    fn soft_clip(x: f64) -> f64 {
-        (x * 1.2).tanh() / 1.2f64.tanh()
-    }
-
-    fn env(t: f64, attack_ms: f64, decay_rate: f64) -> f64 {
-        let a = attack_ms / 1000.0;
-        let atk = if t < a {
-            (std::f64::consts::PI * 0.5 * t / a).sin()
-        } else {
-            1.0
-        };
-        atk * (-t * decay_rate).exp()
-    }
-
-    // Deterministic random generator for the noise transient
-    let mut state: u32 = 42;
-    let next_double = |state: &mut u32| -> f64 {
-        *state = state.wrapping_mul(1664525).wrapping_add(1013904223);
-        (*state as f64) / (u32::MAX as f64)
-    };
-
     for i in 0..n {
-        let t = (i as f64) / (sr as f64);
-
-        // Gentle noise transient
-        let noise_val = next_double(&mut state) * 2.0 - 1.0;
-        let noise = noise_val * (-t * 400.0).exp() * 0.06;
-
-        // Warm fundamental with slow chirp settling
-        let f0 = (720.0 + 20.0 * (-t * 80.0).exp()) * p;
-        let fund = (2.0 * std::f64::consts::PI * f0 * t).sin() * env(t, 4.0, 32.0) * 0.30;
-
-        // Soft harmonic
-        let h2 = (2.0 * std::f64::consts::PI * f0 * 2.0 * t).sin() * env(t, 4.0, 55.0) * (0.08 + c * 0.06);
-
-        // Sub body
-        let sub = (2.0 * std::f64::consts::PI * 260.0 * p * t).sin() * env(t, 6.0, 25.0) * 0.12;
-
-        let sample = soft_clip(noise + fund + h2 + sub) * v;
-
-        let sample_clamped = sample.clamp(-1.0, 1.0);
-        let sample_i16 = (sample_clamped * (i16::MAX as f64)) as i16;
+        let t = i as f64 / sr as f64;
+        let mut sum = 0.0;
+        let p_f0 = 200.0 * 2.0_f64.powf((12.0 * p - 12.0) / 12.0);
+        let c_f0 = 200.0 * 2.0_f64.powf((12.0 * c - 12.0) / 12.0);
+        let p_env = (-t * 120.0).exp();
+        sum += (2.0 * std::f64::consts::PI * p_f0 * t).sin() * p_env * 0.7;
+        let c_env = (-t * 120.0).exp();
+        sum += (2.0 * std::f64::consts::PI * c_f0 * t).sin() * c_env * 0.3;
+        let sample = (sum * v).clamp(-1.0, 1.0);
+        let sample_i16 = (sample * (i16::MAX as f64)) as i16;
         wav.extend_from_slice(&sample_i16.to_le_bytes());
     }
 
@@ -1411,45 +1391,7 @@ fn generate_activation_sound_wav() -> Vec<u8> {
 
 pub fn generate_capture_sound_wav() -> Vec<u8> {
     let sr = 44100;
-    let duration_ms = 65;
-    let n = sr * duration_ms / 1000;
-
-    let data_size = n * 2;
-    let mut wav = Vec::with_capacity(44 + data_size);
-
-    // Write WAV header
-    wav.extend_from_slice(b"RIFF");
-    wav.extend_from_slice(&((36 + data_size) as u32).to_le_bytes());
-    wav.extend_from_slice(b"WAVE");
-    wav.extend_from_slice(b"fmt ");
-    wav.extend_from_slice(&(16u32).to_le_bytes());
-    wav.extend_from_slice(&(1u16).to_le_bytes()); // PCM
-    wav.extend_from_slice(&(1u16).to_le_bytes()); // Mono
-    wav.extend_from_slice(&(sr as u32).to_le_bytes()); // Sample rate
-    wav.extend_from_slice(&((sr * 2) as u32).to_le_bytes()); // Byte rate
-    wav.extend_from_slice(&(2u16).to_le_bytes()); // Block align
-    wav.extend_from_slice(&(16u16).to_le_bytes()); // Bits per sample
-    wav.extend_from_slice(b"data");
-    wav.extend_from_slice(&(data_size as u32).to_le_bytes());
-
-    for i in 0..n {
-        let t = (i as f64) / (sr as f64);
-        // Fast pitch chirp that slides from 1100 Hz to 650 Hz
-        let f0 = 650.0 + 450.0 * (-t * 125.0).exp();
-        // Envelope with a snappy decay to sound like a digital click
-        let env_val = (-t * 85.0).exp();
-        let sample = (2.0 * std::f64::consts::PI * f0 * t).sin() * env_val * 0.20;
-        let sample_clamped = sample.clamp(-1.0, 1.0);
-        let sample_i16 = (sample_clamped * (i16::MAX as f64)) as i16;
-        wav.extend_from_slice(&sample_i16.to_le_bytes());
-    }
-
-    wav
-}
-
-pub fn generate_duplicate_sound_wav() -> Vec<u8> {
-    let sr = 44100;
-    let duration_ms = 170;
+    let duration_ms = 35;
     let n = sr * duration_ms / 1000;
     let data_size = n * 2;
     let mut wav = Vec::with_capacity(44 + data_size);
@@ -1470,12 +1412,44 @@ pub fn generate_duplicate_sound_wav() -> Vec<u8> {
 
     for i in 0..n {
         let t = i as f64 / sr as f64;
-        let first_note = t < 0.085;
-        let note_t = if first_note { t } else { t - 0.085 };
-        let frequency = if first_note { 920.0 } else { 680.0 };
-        let decay = if first_note { 52.0 } else { 42.0 };
-        let envelope = (-note_t * decay).exp() * (1.0 - (-note_t * 220.0).exp());
-        let sample = (2.0 * std::f64::consts::PI * frequency * note_t).sin() * envelope * 0.16;
+        let f0 = 480.0;
+        let env_val = (-t * 85.0).exp();
+        let sample = (2.0 * std::f64::consts::PI * f0 * t).sin() * env_val * 0.20;
+        let sample_clamped = sample.clamp(-1.0, 1.0);
+        let sample_i16 = (sample_clamped * (i16::MAX as f64)) as i16;
+        wav.extend_from_slice(&sample_i16.to_le_bytes());
+    }
+
+    wav
+}
+
+pub fn generate_duplicate_sound_wav() -> Vec<u8> {
+    let sr = 44100;
+    let duration_ms = 45; // Dry, tactile and brief
+    let n = sr * duration_ms / 1000;
+    let data_size = n * 2;
+    let mut wav = Vec::with_capacity(44 + data_size);
+
+    wav.extend_from_slice(b"RIFF");
+    wav.extend_from_slice(&((36 + data_size) as u32).to_le_bytes());
+    wav.extend_from_slice(b"WAVE");
+    wav.extend_from_slice(b"fmt ");
+    wav.extend_from_slice(&(16u32).to_le_bytes());
+    wav.extend_from_slice(&(1u16).to_le_bytes());
+    wav.extend_from_slice(&(1u16).to_le_bytes());
+    wav.extend_from_slice(&(sr as u32).to_le_bytes());
+    wav.extend_from_slice(&((sr * 2) as u32).to_le_bytes());
+    wav.extend_from_slice(&(2u16).to_le_bytes());
+    wav.extend_from_slice(&(16u16).to_le_bytes());
+    wav.extend_from_slice(b"data");
+    wav.extend_from_slice(&(data_size as u32).to_le_bytes());
+
+    for i in 0..n {
+        let t = i as f64 / sr as f64;
+        // Dry, low-mid mechanical tap with pitch drop from 320Hz to 160Hz
+        let freq = 320.0 * (-t * 40.0).exp() + 140.0;
+        let env = (-t * 95.0).exp() * (1.0 - (-t * 300.0).exp());
+        let sample = (2.0 * std::f64::consts::PI * freq * t).sin() * env * 0.22;
         let sample_i16 = (sample.clamp(-1.0, 1.0) * i16::MAX as f64) as i16;
         wav.extend_from_slice(&sample_i16.to_le_bytes());
     }
