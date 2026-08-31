@@ -2098,9 +2098,12 @@ function App() {
     await new Promise<void>((r) => setTimeout(r, 90));
 
     try {
-      await invoke('toggle_view_mode');
-      // Morph done + settings emitted — wait two frames for React to paint the new view
+      const newMode = await invoke<string>('toggle_view_mode');
+      // Synchronously switch view_mode in React state so the new component tree mounts cleanly while masked
+      setSettings((prev) => (prev ? { ...prev, view_mode: newMode as 'full' | 'compact' } : prev));
+      // Wait two frames for React to paint the new view in memory
       await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+      await new Promise<void>((r) => setTimeout(r, 50));
       setViewModeFading(false);
     } catch (e) {
       console.error('Failed to toggle view mode:', e);
@@ -2615,6 +2618,27 @@ function App() {
         data-el="app-window"
         className="relative h-full w-full overflow-hidden bg-background/80"
       >
+        {/* Morph Transition Loader Overlay */}
+        {viewModeFading && (
+          <div className="animate-in fade-in pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center gap-2.5 bg-background/50 backdrop-blur-md duration-150">
+            <div className="relative flex h-11 w-11 items-center justify-center">
+              {/* Pulsing cyan glow */}
+              <div className="absolute inset-0 rounded-full bg-primary/25 blur-md animate-pulse" />
+              {/* Spinning cyberpunk ring */}
+              <div className="absolute inset-0 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+              {/* App logo */}
+              <img
+                src="/logo.png"
+                alt="CyberPaste"
+                className="relative h-5 w-5 object-contain drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.6)]"
+              />
+            </div>
+            <div className="flex items-center gap-1.5 font-mono text-[10px] font-semibold tracking-wider text-primary uppercase">
+              <span>{settings?.view_mode === 'compact' ? t('common.switchToFull') : t('common.switchToCompact')}</span>
+            </div>
+          </div>
+        )}
+
         {/* View layer fades during compact ↔ full morph (keeps window chrome opaque) */}
         <div
           className="h-full w-full"
