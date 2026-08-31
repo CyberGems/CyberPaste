@@ -294,6 +294,8 @@
     "fullScrollDirection": "Dirección de desplazamiento",
     "fullScrollDirectionDesc": "Elige cómo desplazarte entre los clips",
     "fullVisibility": "Visibilidad del Modo Completo",
+    "fullPeekEnabled": "Mostrar Vista Previa al Hover",
+    "fullPeekEnabledDesc": "Muestra un panel flotante ampliado con imagen en alta resolución y metadatos al pasar el ratón sobre las tarjetas",
     "fullShowHud": "Mostrar atajos y tamaño de base de datos",
     "fullShowHudDesc": "Muestra los atajos de teclado y el tamaño de la base de datos en la barra de título",
     "fullShowSourceIcon": "Mostrar icono de la aplicación de origen",

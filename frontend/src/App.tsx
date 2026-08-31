@@ -2841,6 +2841,7 @@ function App() {
                   showTypeIcon={settings?.full_show_type_icon ?? true}
                   showNumber={settings?.full_show_number ?? true}
                   showScrollbar={settings?.full_show_scrollbar ?? true}
+                  fullPeekEnabled={settings?.full_peek_enabled ?? true}
                   actionTooltip={fullActionTooltip}
                   onRequestPreview={handleOpenPreview}
                   bulkSelectedIds={selectedClipIds}

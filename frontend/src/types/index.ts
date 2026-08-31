@@ -83,6 +83,7 @@ export interface Settings {
   full_grid_columns?: number; // 0 = automatic
   full_scroll_direction?: 'horizontal' | 'vertical';
   full_show_scrollbar?: boolean;
+  full_peek_enabled?: boolean;
   full_show_source_icon?: boolean;
   full_show_time?: boolean;
   full_show_type_icon?: boolean;

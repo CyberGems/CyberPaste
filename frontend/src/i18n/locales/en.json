@@ -297,6 +297,8 @@
     "fullScrollDirection": "Scroll Direction",
     "fullScrollDirectionDesc": "Choose how to move through clips",
     "fullVisibility": "Full View Visibility",
+    "fullPeekEnabled": "Show Card Hover Peek",
+    "fullPeekEnabledDesc": "Display an expanded overlay preview with high-res image and metadata when hovering over cards",
     "fullShowHud": "Show Hotkeys and Database Size",
     "fullShowHudDesc": "Show keyboard shortcut hints and database size in the title bar",
     "fullShowSourceIcon": "Show Source Application Icon",

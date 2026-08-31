@@ -70,6 +70,8 @@ interface ClipCardProps {
   showTypeIcon?: boolean;
   showNumber?: boolean;
   actionTooltip?: string;
+  onCardMouseEnter?: (e: React.MouseEvent, clip: ClipboardItem) => void;
+  onCardMouseLeave?: () => void;
 }
 
 export const ClipCard = memo(
@@ -93,6 +95,8 @@ export const ClipCard = memo(
       showTypeIcon = true,
       showNumber = true,
       actionTooltip,
+      onCardMouseEnter,
+      onCardMouseLeave,
     }: ClipCardProps,
     ref
   ) {
@@ -327,14 +331,16 @@ export const ClipCard = memo(
               }
             }}
             draggable="false"
-            onMouseEnter={() => {
+            onMouseEnter={(e) => {
               if (foreignMenuOpenRef.current) return;
               leftWhileMenuRef.current = false;
               setHovered(true);
+              onCardMouseEnter?.(e, clip);
             }}
             onMouseLeave={() => {
               if (menuHighlightRef.current) leftWhileMenuRef.current = true;
               else setHovered(false);
+              onCardMouseLeave?.();
             }}
             onClick={(e) => {
               if (onCardClick && (e.ctrlKey || e.metaKey || e.shiftKey)) {

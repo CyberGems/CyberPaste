@@ -80,6 +80,8 @@ pub struct AppSettings {
     pub full_scroll_direction: String,
     #[serde(default = "default_true")]
     pub full_show_scrollbar: bool,
+    #[serde(default = "default_true")]
+    pub full_peek_enabled: bool,
     pub full_show_source_icon: bool,
     pub full_show_time: bool,
     pub full_show_type_icon: bool,
@@ -176,6 +178,7 @@ impl Default for AppSettings {
             full_grid_columns: 0,
             full_scroll_direction: "vertical".to_string(),
             full_show_scrollbar: true,
+            full_peek_enabled: true,
             full_show_source_icon: true,
             full_show_time: true,
             full_show_type_icon: true,

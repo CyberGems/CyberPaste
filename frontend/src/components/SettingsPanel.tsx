@@ -292,6 +292,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         compact_show_type_icon: 'settings.compactShowTypeIcon',
         compact_show_number: 'settings.compactShowNumber',
         compact_show_scrollbar: 'settings.compactShowScrollbar',
+        full_peek_enabled: 'settings.fullPeekEnabled',
         full_show_hud: 'settings.fullShowHud',
         full_grid_scale: 'settings.fullGridScale',
         full_grid_columns: 'settings.fullGridColumns',
@@ -1577,6 +1578,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <div className="space-y-3 rounded-xl border border-border bg-card p-4">
                       {(
                         [
+                          ['full_peek_enabled', 'fullPeekEnabled'],
                           ['full_show_hud', 'fullShowHud'],
                           ['full_show_source_icon', 'fullShowSourceIcon'],
                           ['full_show_time', 'fullShowTime'],

@@ -1,7 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 // @ts-ignore
 import { Grid, GridImperativeAPI, CellComponentProps } from 'react-window';
 import { ClipCard } from './ClipCard';
+import { FullPeek } from './FullPeek';
+import { resolveImageSrc } from '../utils/image';
 import { ClipboardItem } from '../types';
 import { LAYOUT } from '../constants';
 import { clsx } from 'clsx';
@@ -31,6 +33,7 @@ interface ClipListProps {
   showTypeIcon?: boolean;
   showNumber?: boolean;
   showScrollbar?: boolean;
+  fullPeekEnabled?: boolean;
   actionTooltip?: string;
   onRequestPreview?: (id: string) => void;
   bulkSelectedIds?: Set<string>;
@@ -67,6 +70,7 @@ export const ClipList: React.FC<ClipListProps> = ({
   showTypeIcon = true,
   showNumber = true,
   showScrollbar = true,
+  fullPeekEnabled = true,
   actionTooltip,
   onRequestPreview,
   bulkSelectedIds,
@@ -82,6 +86,65 @@ export const ClipList: React.FC<ClipListProps> = ({
     LAYOUT.FULL_HEIGHT - LAYOUT.CONTROL_BAR_HEIGHT
   );
   const gridRef = useRef<GridImperativeAPI>(null);
+
+  // Full Mode Peek State
+  const [peekClip, setPeekClip] = useState<ClipboardItem | null>(null);
+  const [peekAnchor, setPeekAnchor] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
+  const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleCardMouseEnter = useCallback(
+    (e: React.MouseEvent, clip: ClipboardItem) => {
+      if (!fullPeekEnabled || !!draggingClipId) return;
+
+      // Cerrar peek si cambiamos a otro clip
+      setPeekClip((prev) => (prev && prev.id !== clip.id ? null : prev));
+      if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
+
+      // No iniciar peek si el cursor está sobre un botón de acción
+      const target = e.target as HTMLElement;
+      if (target.closest('button')) return;
+
+      // Evitar peek en textos muy cortos que caben perfectamente en la tarjeta
+      const isTextType =
+        clip.clip_type === 'text' ||
+        clip.clip_type === 'code' ||
+        clip.clip_type === 'url' ||
+        clip.clip_type === 'html' ||
+        clip.clip_type === 'rtf';
+      const previewText = (clip.preview || clip.content || '').trim();
+      const isShortText =
+        isTextType &&
+        !previewText.includes('\n') &&
+        !previewText.includes('\r') &&
+        previewText.length <= 50;
+      if (isShortText) return;
+
+      const cardEl =
+        (e.currentTarget as HTMLElement).closest('[data-clip-id]') ||
+        (e.currentTarget as HTMLElement);
+      const rect = cardEl.getBoundingClientRect();
+
+      peekTimerRef.current = setTimeout(() => {
+        setPeekClip(clip);
+        setPeekAnchor({ x: rect.left, y: rect.top, width: rect.width, height: rect.height });
+      }, 750);
+    },
+    [fullPeekEnabled, draggingClipId]
+  );
+
+  const handleCardMouseLeave = useCallback(() => {
+    if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
+  }, []);
+
+  const closePeek = useCallback(() => {
+    setPeekClip(null);
+    setPeekAnchor(null);
+  }, []);
 
   const isVertical = scrollDirection === 'vertical';
 
@@ -223,6 +286,8 @@ export const ClipList: React.FC<ClipListProps> = ({
           showTypeIcon={showTypeIcon}
           showNumber={showNumber}
           actionTooltip={actionTooltip}
+          onCardMouseEnter={handleCardMouseEnter}
+          onCardMouseLeave={handleCardMouseLeave}
         />
       </div>
     );
@@ -291,6 +356,14 @@ export const ClipList: React.FC<ClipListProps> = ({
         columnWidth={isVertical ? usableWidth / columnCount : effectiveCardWidth}
         overscanCount={4}
         onCellsRendered={handleCellsRendered}
+      />
+
+      {/* Full Mode Expanded Hover Peek Popover */}
+      <FullPeek
+        clip={peekClip}
+        anchorRect={peekAnchor}
+        resolveImageSrc={resolveImageSrc}
+        onClose={closePeek}
       />
     </div>
   );
