@@ -2,6 +2,32 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.18.0] — 2026-08-31
+
+### 👁️ Adaptive Full Mode Hover Peek ✨
+- **Full-Spectrum High-Res Previews**: Instant expanded hover peek for image cards, formatted code, and rich text without opening full editor windows! 🖼️
+- **Dynamic Aspect Ratio Calibration**: Automatically scales up to 1280×800px fitting the natural dimensions of images without large empty checkerboard borders! 📐
+- **Strict 4-Sided Viewport Clamping**: Perfectly centers on cards with safety bounds to guarantee zero clipping on top, bottom, or side window edges! 🛡️
+- **Fluid Dismissal Mechanics**: Instant dismissal on cursor movement (>6px), scroll wheel, or mouse click without moving across card boundaries! 🖱️
+- **Redundant Peek Suppression**: Filtered single-file clips and short snippets across both Full and Compact views! 📁
+- **Dedicated Settings Toggle**: Added full peek toggle with bilingual localization under *Modo Completo* settings! ⚙️
+
+### 🌀 Seamless View Mode Morph & Cyberpunk Transition Loader 💫
+- **Animated Transition Overlay**: Glowing holographic spinning scanline ring with pulsing cyan aura and logo branding during Compact ↔ Full window resizing! 🌀
+- **Eliminated Window Flash & Double Renders**: Synchronized React view mounting with Rust morph transitions and prevented redundant Win32 DWM vibrancy re-applications! ⚡
+
+### 🪟 True Hardware Acrylic Gaussian Blur 🌌
+- **Zero Background Bleed-Through**: Switched to native Win32 hardware Acrylic blur (`apply_acrylic`) for genuine desktop Gaussian blur behind windows! 💎
+
+### 🔊 Tactile Mechanical Duplicate Sound 🎵
+- **Dry Click Engine**: Replaced high-pitch alert beep with a dry, tactile mechanical click (320Hz → 140Hz) for duplicate clipboard copy events! 🔔
+
+### 📋 Smart HTML Web Clipboard Sanitization 🌐
+- **Clean Plain-Text Extraction**: Web copy operations (e.g. copying text on GitHub in Firefox) now prioritize clean plain text over internal browser HTML tags and markdown link wraps! 🛡️
+
+### 🎨 App Icon Suite & Crisp System Tray ✨
+- **High-Clarity System Tray**: Regenerated official icon suite with Lanczos 32×32px downsampling for razor-sharp system tray display! 🚀
+
 ## [1.17.2] — 2026-08-28
 
 ### 🎯 Card Reordering & Grid Target Calibration ✨

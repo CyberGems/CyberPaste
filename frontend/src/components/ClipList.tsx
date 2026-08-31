@@ -185,12 +185,18 @@ export const ClipList: React.FC<ClipListProps> = ({
       closePeek();
     };
 
+    const onWindowMouseDown = () => {
+      closePeek();
+    };
+
     window.addEventListener('mousemove', onWindowMouseMove, { passive: true });
     window.addEventListener('wheel', onWindowWheel, { passive: true });
+    window.addEventListener('mousedown', onWindowMouseDown, { passive: true });
 
     return () => {
       window.removeEventListener('mousemove', onWindowMouseMove);
       window.removeEventListener('wheel', onWindowWheel);
+      window.removeEventListener('mousedown', onWindowMouseDown);
     };
   }, [peekClip, closePeek]);
 
