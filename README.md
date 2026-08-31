@@ -22,7 +22,7 @@
   <img src="https://img.shields.io/badge/platform-Windows%2010%2B-0078D4.svg?logo=windows&logoColor=white" alt="Platform" />
   <img src="https://img.shields.io/badge/version-1.17.2-00F0FF.svg" alt="Version" />
   <img src="https://img.shields.io/badge/Tauri-2.x-512BD4.svg?logo=tauri&logoColor=white" alt="Tauri" />
-  <a href="https://github.com/CyberGems/CyberPaste/wiki"><img src="https://img.shields.io/badge/%F0%9F%93%96_Wiki-Documentation-222222.svg?logo=github&logoColor=white" alt="Wiki" /></a>
+  📖 [Wiki](https://github.com/CyberGems/CyberPaste/wiki)
 </p>
 
 A beautiful, privacy-focused **clipboard history manager** for Windows. CyberPaste stores everything you copy — text, code, images, files, URLs — in a local SQLite database, so you can recall any specific clip at any time. Search, organize, pin, edit, and paste instantly.
