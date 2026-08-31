@@ -151,10 +151,10 @@ export function AboutWindow() {
   return (
     <div className="settings-window h-screen">
       <div className="flex h-full flex-col overflow-hidden bg-background text-foreground">
-        <header className="flex items-center justify-between border-b border-border bg-transparent px-4 py-3">
+        <header className="flex items-center justify-between border-b border-border bg-transparent px-4 py-3 select-none cursor-default">
           <div data-tauri-drag-region className="flex min-w-0 flex-1 items-center gap-2.5">
             <Info size={18} className="text-primary shrink-0" />
-            <h1 className="text-[16px] font-semibold tracking-tight">{t('settings.about')}</h1>
+            <h1 className="text-[16px] font-semibold tracking-tight select-none cursor-default">{t('settings.about')}</h1>
           </div>
           <div className="flex items-center gap-1">
             <Tooltip label={t('common.minimize')} placement="bottom">
@@ -179,31 +179,33 @@ export function AboutWindow() {
 
         <main className="custom-scrollbar flex-1 overflow-y-auto px-[18px] py-3">
           <div className="mx-auto w-full max-w-3xl">
-            <section className="grid grid-cols-[auto_minmax(200px,1fr)] items-center gap-9 py-1">
+            <section className="grid grid-cols-[auto_minmax(200px,1fr)] items-center gap-9 py-1 select-none cursor-default">
               <div className="flex items-center gap-5">
-                <div className="relative flex shrink-0 items-center justify-center">
+                <div className="relative flex h-20 w-20 shrink-0 items-center justify-center">
+                  {/* Subtle ambient glow behind logo */}
+                  <div className="pointer-events-none absolute h-12 w-12 rounded-full bg-primary/25 blur-xl animate-pulse" />
                   <img
                     src="/logo.png"
                     alt="CyberPaste"
-                    className="h-[68px] w-[68px] select-none object-contain animate-pulse drop-shadow-[0_0_24px_rgba(var(--primary-rgb),0.8)] transition-all duration-300"
+                    className="relative z-10 h-14 w-14 select-none object-contain drop-shadow-[0_0_10px_rgba(var(--primary-rgb),0.4)]"
                   />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 select-none cursor-default">
                   <h2 className="text-[32px] font-bold tracking-tight">CyberPaste</h2>
                   <p className="mt-1 text-[14px] text-muted-foreground">
                     {t('settings.versionLabel', { version: appVersion || '...' })}
                   </p>
                 </div>
               </div>
-              <div className="rounded-xl border border-primary/20 bg-card px-5 py-4">
-                <p className="text-[13px] leading-6 text-foreground/80">
+              <div className="rounded-xl border border-primary/20 bg-card px-5 py-4 select-none cursor-default">
+                <p className="text-[13px] leading-6 text-foreground/80 select-none cursor-default">
                   {t('settings.aboutDescription')}
                 </p>
               </div>
             </section>
 
             <section className="mt-5 space-y-2">
-              <h3 className="px-0 text-[13px] font-semibold text-primary">
+              <h3 className="px-0 text-[13px] font-semibold text-primary select-none cursor-default">
                 {t('settings.aboutUpdatesSection')}
               </h3>
               <div className="rounded-[4px] border border-border bg-secondary px-4">

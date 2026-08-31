@@ -77,16 +77,16 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
                 type="button"
                 onClick={() => onChange(opt.value)}
                 className={clsx(
-                  'flex h-7 flex-shrink-0 items-center gap-1.5 rounded-lg border px-2 text-[11px] font-medium leading-none transition-all',
+                  'flex h-7 flex-shrink-0 items-center gap-1.5 rounded-lg border px-2 text-[11px] font-medium leading-normal transition-all',
                   selected
                     ? 'border-primary/40 bg-primary/15 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.18)]'
                     : 'border-border bg-secondary/40 text-muted-foreground hover:border-border hover:bg-secondary/70 hover:text-foreground'
                 )}
               >
                 <Icon size={12} className="shrink-0" />
-                <span className="whitespace-nowrap leading-none">{label}</span>
+                <span className="whitespace-nowrap leading-normal">{label}</span>
                 {typeof count === 'number' && (
-                  <span className="font-mono text-[10px] leading-none tabular-nums opacity-70">
+                  <span className="font-mono text-[10px] leading-normal tabular-nums opacity-70">
                     ({count})
                   </span>
                 )}

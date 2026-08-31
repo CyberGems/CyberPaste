@@ -946,12 +946,12 @@ export const CompactView: React.FC<CompactViewProps> = ({
         return;
       }
 
-      // Evitar peek en textos/URLs cortos que caben enteros en la fila (sin saltos de línea y longitud <= 45)
+      // Evitar peek en clips cortos que caben enteros en la fila (sin saltos de línea y preview <= 45 caracteres)
+      const previewText = (clip.preview || '').trim();
       const isShortText =
-        (clip.clip_type === 'text' || clip.clip_type === 'code' || clip.clip_type === 'url') &&
-        !clip.preview.includes('\n') &&
-        !clip.preview.includes('\r') &&
-        clip.content_length <= 45;
+        !previewText.includes('\n') &&
+        !previewText.includes('\r') &&
+        previewText.length <= 45;
       if (isShortText) {
         if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
         return;
@@ -1107,7 +1107,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   return (
     <div
       className={cn(
-        "relative flex h-full w-full select-none flex-col overflow-hidden bg-background font-['Segoe_UI',system-ui,sans-serif]",
+        "relative flex h-full w-full select-none flex-col overflow-hidden font-['Segoe_UI',system-ui,sans-serif] bg-background/92 backdrop-blur-xl",
         theme === 'light' ? 'text-slate-800' : 'text-white/90'
       )}
       style={{ border: '1px solid rgba(34, 211, 238, 0.1)' }}
@@ -1411,7 +1411,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
           </div>
 
           {/* Content Area */}
-          <div className="flex flex-1 flex-col overflow-hidden bg-background">
+          <div className="flex flex-1 flex-col overflow-hidden bg-background/85">
             {/* Search */}
             <div className={cn('flex-shrink-0 p-2', isPeekVisible && 'blur-[3px]')}>
               <div className="flex items-center gap-1.5">
@@ -1464,7 +1464,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
             </div>
 
             {/* List */}
-            <div data-clip-list="true" className="min-h-0 flex-1 overflow-hidden bg-background px-0 pb-0">
+            <div data-clip-list="true" className="min-h-0 flex-1 overflow-hidden px-0 pb-0">
               <CompactClipList
                 clips={filteredClips}
                 listRef={clipListApiRef}
@@ -1510,8 +1510,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
             {/* Footer */}
             <div
               className={cn(
-                'flex flex-shrink-0 items-center justify-between border-t border-white/5 bg-black/10 p-2 font-mono text-[9px] tracking-tighter transition-opacity',
-                entranceAnim && !mounted ? 'opacity-0' : 'opacity-40',
+                'flex flex-shrink-0 items-center justify-between border-t border-border bg-muted/60 px-3 py-1.5 font-mono text-[9px] tracking-tighter text-muted-foreground/90 transition-opacity backdrop-blur-md',
+                entranceAnim && !mounted ? 'opacity-0' : 'opacity-85',
                 isPeekVisible && 'blur-[3px]'
               )}
             >
@@ -1669,7 +1669,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
             </div>
           </div>
 
-          <div data-clip-list="true" className="min-h-0 flex-1 overflow-hidden bg-background">
+          <div data-clip-list="true" className="min-h-0 flex-1 overflow-hidden">
             <CompactClipList
               clips={filteredClips}
               listRef={clipListApiRef}
@@ -1718,8 +1718,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
           {/* Footer */}
           <div
             className={cn(
-              'flex flex-shrink-0 items-center justify-between border-t border-border bg-muted/40 p-2 font-mono text-[9px] tracking-tighter text-muted-foreground/90 transition-opacity',
-              entranceAnim && !mounted ? 'opacity-0' : 'opacity-80',
+              'flex flex-shrink-0 items-center justify-between border-t border-border bg-muted/60 px-3 py-1.5 font-mono text-[9px] tracking-tighter text-muted-foreground/90 transition-opacity backdrop-blur-md',
+              entranceAnim && !mounted ? 'opacity-0' : 'opacity-85',
               isPeekVisible && 'blur-[3px]'
             )}
           >
@@ -2052,12 +2052,12 @@ const ClipRow = memo(function ClipRow({
                 <span className="flex-shrink-0 text-[10px] font-bold uppercase text-yellow-400/70">
                   {t('common.file')}
                 </span>
-                <span className="truncate text-xs leading-none text-muted-foreground/80">
+                <span className="truncate text-xs leading-normal py-0.5 text-muted-foreground/80">
                   {clip.preview}
                 </span>
               </span>
             ) : (
-              <span className="truncate text-xs font-medium leading-none">
+              <span className="truncate text-xs font-medium leading-normal py-0.5">
                 {clip.preview.replace(/[\n\r\t]+/g, ' ')}
               </span>
             )}
@@ -2235,7 +2235,7 @@ function CompactListRow({
     <div
       style={style}
       {...ariaAttributes}
-      className="box-border bg-background pl-2 pr-1"
+      className="box-border pl-2 pr-1"
       onMouseLeave={() => onRowMouseLeave?.()}
     >
       <ClipRow

@@ -410,75 +410,82 @@ async fn process_clipboard_change(
                         log::debug!("CLIPBOARD: Found files: {}", clip_preview);
                     }
                 }
-            }
+                        // 2. Text / HTML format evaluation
+            // When a user copies on the web or in applications, browsers place BOTH text/plain and text/html on the clipboard.
+            // Almost always, the user intends to copy the visible text, NOT the internal HTML DOM wrapper.
+            // We only classify as HTML if:
+            //   a) HTML contains structural rich elements (table, img, iframe, etc.) that cannot be represented as text, OR
+            //   b) No plain text was provided and HTML is present.
+            if !found_content {
+                let maybe_html = if ctx.has(ContentFormat::Html) {
+                    ctx.get_html().ok().map(|h| h.trim().to_string()).filter(|h| !h.is_empty())
+                } else {
+                    None
+                };
 
-            // 2. Try HTML (richer than RTF/text, offered by browsers/wysiwyg editors)
-            if !found_content && ctx.has(ContentFormat::Html) {
-                if let Ok(html) = ctx.get_html() {
-                    let trimmed = html.trim();
-                    if !trimmed.is_empty() && is_rich_html(trimmed) {
-                        clip_content = trimmed.as_bytes().to_vec();
-                        clip_hash = calculate_hash(&clip_content);
-                        clip_type = "html";
-                        clip_preview = strip_html_tags(trimmed)
-                            .chars()
-                            .take(200)
-                            .collect::<String>();
-                        metadata = serde_json::json!({"format": "html"}).to_string();
-                        found_content = true;
-                        log::debug!("CLIPBOARD: Found HTML: {}", clip_preview);
-                    }
-                }
-            }
+                let maybe_text = if ctx.has(ContentFormat::Text) {
+                    ctx.get_text().ok().map(|t| t.trim().to_string()).filter(|t| !t.is_empty())
+                } else {
+                    None
+                };
 
-            // 3. Prefer plain text when available.
-            // Terminals/editors often put RTF+TEXT together; TEXT is the real snippet.
-            // Word/rich docs usually also offer HTML (handled above).
-            // Also handle CF_TEXT that is itself an RTF document (e.g. re-copied from edit modal).
-            if !found_content && ctx.has(ContentFormat::Text) {
-                if let Ok(text) = ctx.get_text() {
-                    let trimmed = text.trim().to_string();
-                    if !trimmed.is_empty() {
-                        let looks_like_rtf = trimmed.starts_with("{\\rtf");
-                        if looks_like_rtf {
-                            let plain = strip_rtf_tags(&trimmed);
-                            if is_trivial_rtf_plain(&trimmed, &plain) {
-                                // Empty/noise RTF body (e.g. fonttbl + a stray quote) — skip
-                                log::debug!(
-                                    "CLIPBOARD: Skipping trivial RTF-as-text (stripped={:?})",
-                                    plain
-                                );
-                            } else {
-                                clip_content = plain.as_bytes().to_vec();
-                                clip_hash = calculate_hash(&clip_content);
-                                clip_type = if is_url(&plain) {
-                                    "url"
-                                } else if is_code_snippet(&plain) {
-                                    "code"
-                                } else {
-                                    "text"
-                                };
-                                clip_preview = plain.chars().take(200).collect::<String>();
-                                metadata = serde_json::json!({"format": "rtf", "converted": true})
-                                    .to_string();
-                                found_content = true;
-                                log::debug!(
-                                    "CLIPBOARD: Found text from RTF: {} (type={})",
-                                    clip_preview,
-                                    clip_type
-                                );
-                            }
+                if let Some(text) = maybe_text {
+                    let looks_like_rtf = text.starts_with("{\\rtf");
+                    if looks_like_rtf {
+                        let plain = strip_rtf_tags(&text);
+                        if is_trivial_rtf_plain(&text, &plain) {
+                            // Empty/noise RTF body (e.g. fonttbl + a stray quote) — skip
+                            log::debug!(
+                                "CLIPBOARD: Skipping trivial RTF-as-text (stripped={:?})",
+                                plain
+                            );
                         } else {
-                            clip_content = trimmed.as_bytes().to_vec();
+                            clip_content = plain.as_bytes().to_vec();
                             clip_hash = calculate_hash(&clip_content);
-                            clip_type = if is_url(&trimmed) {
+                            clip_type = if is_url(&plain) {
                                 "url"
-                            } else if is_code_snippet(&trimmed) {
+                            } else if is_code_snippet(&plain) {
                                 "code"
                             } else {
                                 "text"
                             };
-                            clip_preview = trimmed.chars().take(200).collect::<String>();
+                            clip_preview = plain.chars().take(200).collect::<String>();
+                            metadata = serde_json::json!({"format": "rtf", "converted": true})
+                                .to_string();
+                            found_content = true;
+                            log::debug!(
+                                "CLIPBOARD: Found text from RTF: {} (type={})",
+                                clip_preview,
+                                clip_type
+                            );
+                        }
+                    } else {
+                        // Check if HTML is present AND has actual structural richness (e.g. table, img)
+                        let is_structural_html = maybe_html.as_deref().map(is_structural_rich_html).unwrap_or(false);
+
+                        if is_structural_html {
+                            let html = maybe_html.unwrap();
+                            clip_content = html.as_bytes().to_vec();
+                            clip_hash = calculate_hash(&clip_content);
+                            clip_type = "html";
+                            clip_preview = strip_html_tags(&html)
+                                .chars()
+                                .take(200)
+                                .collect::<String>();
+                            metadata = serde_json::json!({"format": "html"}).to_string();
+                            found_content = true;
+                            log::debug!("CLIPBOARD: Found structural rich HTML: {}", clip_preview);
+                        } else {
+                            clip_content = text.as_bytes().to_vec();
+                            clip_hash = calculate_hash(&clip_content);
+                            clip_type = if is_url(&text) {
+                                "url"
+                            } else if is_code_snippet(&text) {
+                                "code"
+                            } else {
+                                "text"
+                            };
+                            clip_preview = text.chars().take(200).collect::<String>();
                             found_content = true;
                             log::debug!(
                                 "CLIPBOARD: Found text: {} (type={})",
@@ -487,8 +494,39 @@ async fn process_clipboard_change(
                             );
                         }
                     }
+                } else if let Some(html) = maybe_html {
+                    // HTML available but NO plain text was offered
+                    if is_rich_html(&html) {
+                        clip_content = html.as_bytes().to_vec();
+                        clip_hash = calculate_hash(&clip_content);
+                        clip_type = "html";
+                        clip_preview = strip_html_tags(&html)
+                            .chars()
+                            .take(200)
+                            .collect::<String>();
+                        metadata = serde_json::json!({"format": "html"}).to_string();
+                        found_content = true;
+                        log::debug!("CLIPBOARD: Found standalone HTML: {}", clip_preview);
+                    } else {
+                        let plain = strip_html_tags(&html);
+                        let trimmed = plain.trim();
+                        if !trimmed.is_empty() {
+                            clip_content = trimmed.as_bytes().to_vec();
+                            clip_hash = calculate_hash(&clip_content);
+                            clip_type = if is_url(trimmed) {
+                                "url"
+                            } else if is_code_snippet(trimmed) {
+                                "code"
+                            } else {
+                                "text"
+                            };
+                            clip_preview = trimmed.chars().take(200).collect::<String>();
+                            found_content = true;
+                            log::debug!("CLIPBOARD: Converted HTML to text: {}", clip_preview);
+                        }
+                    }
                 }
-            }
+            }      }
 
             // 4. RTF only when no plain text was available
             if !found_content && ctx.has(ContentFormat::Rtf) {
@@ -1444,26 +1482,17 @@ pub fn strip_html_tags(html: &str) -> String {
     out.trim().to_string()
 }
 
-pub fn is_rich_html(html: &str) -> bool {
-    let plain_text = strip_html_tags(html);
-    let is_single_line = !plain_text.contains('\n') && !plain_text.contains('\r');
-
+pub fn is_structural_rich_html(html: &str) -> bool {
     let bytes = html.as_bytes();
     let mut i = 0;
     while i < bytes.len() {
         if bytes[i] == b'<' {
             i += 1;
-            if i < bytes.len() && bytes[i] == b'!' {
+            if i < bytes.len() && (bytes[i] == b'!' || bytes[i] == b'?') {
                 i += 1;
                 continue;
             }
-            if i < bytes.len() && bytes[i] == b'?' {
-                i += 1;
-                continue;
-            }
-            let mut _is_closing = false;
             if i < bytes.len() && bytes[i] == b'/' {
-                _is_closing = true;
                 i += 1;
             }
             let start = i;
@@ -1474,31 +1503,26 @@ pub fn is_rich_html(html: &str) -> bool {
             if end > start {
                 let tag_name = std::str::from_utf8(&bytes[start..end]).unwrap_or("");
                 let tag_lower = tag_name.to_lowercase();
-                
-                if is_single_line {
-                    match tag_lower.as_str() {
-                        "a" | "img" | "iframe" => {
-                            return true;
-                        }
-                        _ => {}
+                match tag_lower.as_str() {
+                    "table" | "tr" | "td" | "th" | "thead" | "tbody" | "tfoot" | "img"
+                    | "iframe" | "svg" | "canvas" | "video" | "audio" => {
+                        return true;
                     }
-                } else {
-                    match tag_lower.as_str() {
-                        "a" | "img" | "table" | "tr" | "td" | "th" | "ul" | "ol" | "li" | 
-                        "p" | "br" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | 
-                        "strong" | "b" | "em" | "i" | "u" | "s" | "strike" | "del" | "ins" | 
-                        "code" | "pre" | "blockquote" | "hr" | "iframe" | "button" | "input" |
-                        "textarea" | "select" | "option" => {
-                            return true;
-                        }
-                        _ => {}
-                    }
+                    _ => {}
                 }
             }
         }
         i += 1;
     }
     false
+}
+
+pub fn is_rich_html(html: &str) -> bool {
+    let plain_text = strip_html_tags(html);
+    if plain_text.trim().is_empty() {
+        return false;
+    }
+    is_structural_rich_html(html)
 }
 
 /// Cheap URL detector. Recognises a single absolute URL (http/https/ftp/ftps/file)
