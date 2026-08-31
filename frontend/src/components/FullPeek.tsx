@@ -10,7 +10,6 @@ interface FullPeekProps {
   onClose: () => void;
 }
 
-const PEEK_MAX_HEIGHT = 460;
 const VIEWPORT_MARGIN = 16;
 
 export const FullPeek: React.FC<FullPeekProps> = ({
@@ -40,35 +39,6 @@ export const FullPeek: React.FC<FullPeekProps> = ({
   const vw = window.innerWidth;
   const vh = window.innerHeight;
 
-  // Horizontal sizing & centering on the card
-  const width = Math.min(680, vw - VIEWPORT_MARGIN * 2);
-  const cardCenterX = anchorRect.x + anchorRect.width / 2;
-  let left = cardCenterX - width / 2;
-  if (left < VIEWPORT_MARGIN) left = VIEWPORT_MARGIN;
-  if (left + width > vw - VIEWPORT_MARGIN) left = vw - VIEWPORT_MARGIN - width;
-
-  // Vertical placement (above or below card)
-  const spaceAbove = anchorRect.y;
-  const spaceBelow = vh - (anchorRect.y + anchorRect.height);
-  const showAbove = spaceAbove >= PEEK_MAX_HEIGHT + VIEWPORT_MARGIN || (spaceAbove > spaceBelow && spaceBelow < 260);
-
-  const style: React.CSSProperties = {
-    left,
-    width,
-  };
-
-  let calculatedMaxHeight = PEEK_MAX_HEIGHT;
-  if (showAbove) {
-    style.bottom = vh - anchorRect.y + 8;
-    calculatedMaxHeight = Math.min(PEEK_MAX_HEIGHT, anchorRect.y - VIEWPORT_MARGIN - 8);
-  } else {
-    style.top = anchorRect.y + anchorRect.height + 8;
-    calculatedMaxHeight = Math.min(
-      PEEK_MAX_HEIGHT,
-      vh - (anchorRect.y + anchorRect.height) - VIEWPORT_MARGIN - 8
-    );
-  }
-
   const isImage = clip.clip_type === 'image';
   const textToShow = (clip.content || clip.preview || '').slice(0, 4000);
   const imageSrc = isImage ? resolveImageSrc(clip.content || clip.image_path || '') : '';
@@ -86,6 +56,54 @@ export const FullPeek: React.FC<FullPeekProps> = ({
       return null;
     }
   })();
+
+  const maxAvailableW = Math.min(1080, vw - VIEWPORT_MARGIN * 2);
+  const maxAvailableH = Math.min(680, vh - VIEWPORT_MARGIN * 2);
+
+  let width = Math.min(680, maxAvailableW);
+  let calculatedMaxHeight = Math.min(460, maxAvailableH);
+
+  if (isImage && imageMeta?.width && imageMeta?.height) {
+    const rawW = imageMeta.width;
+    const rawH = imageMeta.height;
+    const headerHeight = 36;
+    const padding = 16;
+    const maxImgW = maxAvailableW - padding;
+    const maxImgH = maxAvailableH - headerHeight - padding;
+
+    // Calculate proportional fit without massive empty letterboxing
+    const scale = Math.min(maxImgW / rawW, maxImgH / rawH, 1.0);
+    const fitW = Math.round(rawW * scale);
+    const fitH = Math.round(rawH * scale);
+
+    // Expand width to fit the image naturally
+    width = Math.max(340, Math.min(maxAvailableW, fitW + padding));
+    calculatedMaxHeight = Math.max(220, Math.min(maxAvailableH, fitH + headerHeight + padding));
+  }
+
+  // Centering on card with viewport clamping
+  const cardCenterX = anchorRect.x + anchorRect.width / 2;
+  let left = cardCenterX - width / 2;
+  if (left < VIEWPORT_MARGIN) left = VIEWPORT_MARGIN;
+  if (left + width > vw - VIEWPORT_MARGIN) left = vw - VIEWPORT_MARGIN - width;
+
+  // Space above vs space below
+  const spaceAbove = anchorRect.y;
+  const spaceBelow = vh - (anchorRect.y + anchorRect.height);
+  const showAbove =
+    spaceAbove >= calculatedMaxHeight + VIEWPORT_MARGIN ||
+    (spaceAbove > spaceBelow && spaceBelow < calculatedMaxHeight);
+
+  const style: React.CSSProperties = {
+    left,
+    width,
+  };
+
+  if (showAbove) {
+    style.bottom = vh - anchorRect.y + 8;
+  } else {
+    style.top = anchorRect.y + anchorRect.height + 8;
+  }
 
   const infoLabel = (() => {
     if (clip.clip_type === 'image') {
@@ -113,23 +131,22 @@ export const FullPeek: React.FC<FullPeekProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.12, ease: 'easeOut' }}
-            className="pointer-events-none fixed inset-0 z-[90] bg-background/25 backdrop-blur-[4px]"
+            transition={{ duration: 0.1, ease: 'easeOut' }}
+            className="pointer-events-none fixed inset-0 z-[90] bg-background/30 backdrop-blur-[3px]"
           />
 
           {/* Peek Popover Container */}
           <motion.div
             key={`full-peek-${clip.id}`}
-            initial={{ opacity: 0, scale: 0.95, y: showAbove ? 6 : -6 }}
+            initial={{ opacity: 0, scale: 0.96, y: showAbove ? 8 : -8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: showAbove ? 6 : -6 }}
-            transition={{ duration: 0.1, ease: 'easeOut' }}
+            exit={{ opacity: 0, scale: 0.96, y: showAbove ? 8 : -8 }}
+            transition={{ duration: 0.09, ease: 'easeOut' }}
             className="fixed z-[100]"
             style={style}
-            onMouseLeave={onClose}
           >
             <div
-              className="flex w-full flex-col overflow-hidden rounded-2xl border border-primary/45 bg-popover shadow-[0_0_30px_rgba(var(--primary-rgb),0.22),0_20px_50px_rgba(0,0,0,0.65)]"
+              className="flex w-full flex-col overflow-hidden rounded-2xl border border-primary/45 bg-popover shadow-[0_0_35px_rgba(var(--primary-rgb),0.25),0_20px_50px_rgba(0,0,0,0.7)]"
               style={{ maxHeight: calculatedMaxHeight }}
             >
               {/* Header Info Bar */}

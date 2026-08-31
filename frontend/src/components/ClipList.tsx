@@ -96,42 +96,64 @@ export const ClipList: React.FC<ClipListProps> = ({
     height: number;
   } | null>(null);
   const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const peekOriginMousePosRef = useRef<{ x: number; y: number } | null>(null);
+
+  const closePeek = useCallback(() => {
+    setPeekClip(null);
+    setPeekAnchor(null);
+    peekOriginMousePosRef.current = null;
+    if (peekTimerRef.current) {
+      clearTimeout(peekTimerRef.current);
+      peekTimerRef.current = null;
+    }
+  }, []);
 
   const handleCardMouseEnter = useCallback(
     (e: React.MouseEvent, clip: ClipboardItem) => {
       if (!fullPeekEnabled || !!draggingClipId) return;
 
       // Cerrar peek si cambiamos a otro clip
-      setPeekClip((prev) => (prev && prev.id !== clip.id ? null : prev));
       if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
+      setPeekClip((prev) => {
+        if (prev && prev.id !== clip.id) {
+          setPeekAnchor(null);
+          return null;
+        }
+        return prev;
+      });
 
       // No iniciar peek si el cursor está sobre un botón de acción
       const target = e.target as HTMLElement;
       if (target.closest('button')) return;
 
-      // Evitar peek en textos muy cortos que caben perfectamente en la tarjeta
-      const isTextType =
+      // Evitar peek en textos, URLs o archivos individuales que caben perfectamente en la tarjeta
+      const isTextOrFileType =
         clip.clip_type === 'text' ||
         clip.clip_type === 'code' ||
         clip.clip_type === 'url' ||
         clip.clip_type === 'html' ||
-        clip.clip_type === 'rtf';
+        clip.clip_type === 'rtf' ||
+        clip.clip_type === 'file';
       const previewText = (clip.preview || clip.content || '').trim();
-      const isShortText =
-        isTextType &&
+      const isShortContent =
+        isTextOrFileType &&
         !previewText.includes('\n') &&
         !previewText.includes('\r') &&
         previewText.length <= 50;
-      if (isShortText) return;
+      if (isShortContent) return;
 
       const cardEl =
         (e.currentTarget as HTMLElement).closest('[data-clip-id]') ||
         (e.currentTarget as HTMLElement);
       const rect = cardEl.getBoundingClientRect();
+      const startX = e.clientX;
+      const startY = e.clientY;
+      peekOriginMousePosRef.current = { x: startX, y: startY };
 
       peekTimerRef.current = setTimeout(() => {
         setPeekClip(clip);
         setPeekAnchor({ x: rect.left, y: rect.top, width: rect.width, height: rect.height });
+        peekOriginMousePosRef.current = { x: startX, y: startY };
       }, 750);
     },
     [fullPeekEnabled, draggingClipId]
@@ -141,10 +163,36 @@ export const ClipList: React.FC<ClipListProps> = ({
     if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
   }, []);
 
-  const closePeek = useCallback(() => {
-    setPeekClip(null);
-    setPeekAnchor(null);
-  }, []);
+  // Al aparecer el peek en vista full, desaparece suavemente al mover el cursor o hacer scroll
+  useEffect(() => {
+    if (!peekClip) return;
+
+    const origin = peekOriginMousePosRef.current;
+
+    const onWindowMouseMove = (e: MouseEvent) => {
+      if (origin) {
+        const dist = Math.hypot(e.clientX - origin.x, e.clientY - origin.y);
+        // Umbral de 6px para evitar jitter del sensor
+        if (dist > 6) {
+          closePeek();
+        }
+      } else {
+        closePeek();
+      }
+    };
+
+    const onWindowWheel = () => {
+      closePeek();
+    };
+
+    window.addEventListener('mousemove', onWindowMouseMove, { passive: true });
+    window.addEventListener('wheel', onWindowWheel, { passive: true });
+
+    return () => {
+      window.removeEventListener('mousemove', onWindowMouseMove);
+      window.removeEventListener('wheel', onWindowWheel);
+    };
+  }, [peekClip, closePeek]);
 
   const isVertical = scrollDirection === 'vertical';
 
@@ -285,7 +333,7 @@ export const ClipList: React.FC<ClipListProps> = ({
           showTime={showTime}
           showTypeIcon={showTypeIcon}
           showNumber={showNumber}
-          actionTooltip={actionTooltip}
+          actionTooltip={peekClip ? undefined : actionTooltip}
           onCardMouseEnter={handleCardMouseEnter}
           onCardMouseLeave={handleCardMouseLeave}
         />

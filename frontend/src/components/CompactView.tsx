@@ -946,21 +946,22 @@ export const CompactView: React.FC<CompactViewProps> = ({
         return;
       }
 
-      // Evitar peek en textos/URLs cortos que ya caben enteros en la fila.
-      // Los clips de imagen o archivos SIEMPRE deben permitir el peek para ver el preview ampliado.
-      const isTextType =
+      // Evitar peek en textos, URLs o archivos individuales que ya caben enteros en la fila.
+      // Los clips de imagen SIEMPRE deben permitir el peek para ver el preview ampliado.
+      const isTextOrFileType =
         clip.clip_type === 'text' ||
         clip.clip_type === 'code' ||
         clip.clip_type === 'url' ||
         clip.clip_type === 'html' ||
-        clip.clip_type === 'rtf';
+        clip.clip_type === 'rtf' ||
+        clip.clip_type === 'file';
       const previewText = (clip.preview || '').trim();
-      const isShortText =
-        isTextType &&
+      const isShortContent =
+        isTextOrFileType &&
         !previewText.includes('\n') &&
         !previewText.includes('\r') &&
-        previewText.length <= 45;
-      if (isShortText) {
+        previewText.length <= 50;
+      if (isShortContent) {
         if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
         return;
       }
