@@ -2620,20 +2620,20 @@ function App() {
       >
         {/* Morph Transition Loader Overlay */}
         {viewModeFading && (
-          <div className="animate-in fade-in pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center gap-2.5 bg-background/50 backdrop-blur-md duration-150">
-            <div className="relative flex h-11 w-11 items-center justify-center">
+          <div className="animate-in fade-in pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center gap-3.5 bg-background/50 backdrop-blur-md duration-150">
+            <div className="relative flex h-16 w-16 items-center justify-center">
               {/* Pulsing cyan glow */}
-              <div className="absolute inset-0 rounded-full bg-primary/25 blur-md animate-pulse" />
+              <div className="absolute inset-0 rounded-full bg-primary/25 blur-lg animate-pulse" />
               {/* Spinning cyberpunk ring */}
-              <div className="absolute inset-0 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+              <div className="absolute inset-0 rounded-full border-[2.5px] border-primary/20 border-t-primary animate-spin shadow-[0_0_16px_rgba(var(--primary-rgb),0.35)]" />
               {/* App logo */}
               <img
                 src="/logo.png"
                 alt="CyberPaste"
-                className="relative h-5 w-5 object-contain drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.6)]"
+                className="relative h-8 w-8 object-contain drop-shadow-[0_0_10px_rgba(var(--primary-rgb),0.65)]"
               />
             </div>
-            <div className="flex items-center gap-1.5 font-mono text-[10px] font-semibold tracking-wider text-primary uppercase">
+            <div className="flex items-center gap-1.5 font-mono text-[10.5px] font-semibold tracking-wider text-primary uppercase drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.3)]">
               <span>{settings?.view_mode === 'compact' ? t('common.switchToFull') : t('common.switchToCompact')}</span>
             </div>
           </div>

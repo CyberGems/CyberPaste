@@ -37,37 +37,44 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
     let current = manager.get();
     new_settings.ignored_apps = current.ignored_apps;
 
-    // Window effect: derived from the theme (mica_effect is no longer user-selectable)
+    // Window effect: only re-apply DWM vibrancy if theme or round_corners actually changed
     let theme_str = crate::normalize_theme(&new_settings.theme).to_string();
     new_settings.theme = theme_str.clone();
     let mica_effect = crate::effect_for_theme(&theme_str).to_string();
     new_settings.mica_effect = mica_effect.clone();
     let round_corners = new_settings.round_corners;
-    log::info!(
-        "save_settings: theme={}, effect={}",
-        theme_str,
-        mica_effect
-    );
-    match app.get_webview_window("main") {
-        Some(win) => {
-            let current_theme = if theme_str == "light" {
-                tauri::Theme::Light
-            } else if theme_str == "dark" || theme_str == "cyberpaste" {
-                tauri::Theme::Dark
-            } else {
-                let mode = dark_light::detect().map_err(|e| {
-                    log::error!("save_settings: dark_light::detect() failed: {:?}", e);
-                    e.to_string()
-                })?;
-                match mode {
-                    Mode::Dark => tauri::Theme::Dark,
-                    _ => tauri::Theme::Light,
-                }
-            };
-            crate::apply_window_effect(&win, &mica_effect, &current_theme, round_corners);
-        }
-        None => {
-            log::warn!("save_settings: main window not found, skipping window effect");
+
+    let theme_changed = current.theme != new_settings.theme
+        || current.round_corners != new_settings.round_corners;
+
+    if theme_changed {
+        log::info!(
+            "save_settings: theme changed ({} -> {}), applying window effect: {}",
+            current.theme,
+            theme_str,
+            mica_effect
+        );
+        match app.get_webview_window("main") {
+            Some(win) => {
+                let current_theme = if theme_str == "light" {
+                    tauri::Theme::Light
+                } else if theme_str == "dark" || theme_str == "cyberpaste" {
+                    tauri::Theme::Dark
+                } else {
+                    let mode = dark_light::detect().map_err(|e| {
+                        log::error!("save_settings: dark_light::detect() failed: {:?}", e);
+                        e.to_string()
+                    })?;
+                    match mode {
+                        Mode::Dark => tauri::Theme::Dark,
+                        _ => tauri::Theme::Light,
+                    }
+                };
+                crate::apply_window_effect(&win, &mica_effect, &current_theme, round_corners);
+            }
+            None => {
+                log::warn!("save_settings: main window not found, skipping window effect");
+            }
         }
     }
 
