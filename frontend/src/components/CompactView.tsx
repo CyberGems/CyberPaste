@@ -114,6 +114,50 @@ const getRelativeTime = (dateStr: string, lang: string) => {
   }
 };
 
+const COMPACT_TIME_CLOCK_PX = 10;
+/** Tailwind `gap-1` = 0.25rem. */
+const COMPACT_TIME_GAP_REM = 0.25;
+
+let compactTimeMeasureEl: HTMLSpanElement | null = null;
+const compactTimeLabelWidthCache = new Map<string, number>();
+
+function measureCompactTimeLabel(label: string): number {
+  if (!label) return 0;
+  const cached = compactTimeLabelWidthCache.get(label);
+  if (cached != null) return cached;
+  if (typeof document === 'undefined') return label.length * 6;
+  if (!compactTimeMeasureEl || !compactTimeMeasureEl.isConnected) {
+    compactTimeMeasureEl = document.createElement('span');
+    compactTimeMeasureEl.setAttribute('aria-hidden', 'true');
+    compactTimeMeasureEl.style.cssText =
+      'position:absolute;left:-9999px;top:0;pointer-events:none;white-space:nowrap;font-size:10px;font-variant-numeric:tabular-nums;';
+    document.body.appendChild(compactTimeMeasureEl);
+  }
+  compactTimeMeasureEl.style.fontFamily = getComputedStyle(document.body).fontFamily;
+  compactTimeMeasureEl.textContent = label;
+  const width = compactTimeMeasureEl.getBoundingClientRect().width;
+  if (width <= 0) return label.length * 6;
+  compactTimeLabelWidthCache.set(label, width);
+  return width;
+}
+
+function getCompactTimeColumnWidth(clips: { created_at: string }[], lang: string): number {
+  let maxLabel = 0;
+  const seen = new Set<string>();
+  for (const clip of clips) {
+    const label = getRelativeTime(clip.created_at, lang);
+    if (seen.has(label)) continue;
+    seen.add(label);
+    maxLabel = Math.max(maxLabel, measureCompactTimeLabel(label));
+  }
+  if (maxLabel <= 0) return 0;
+  const rem =
+    typeof document === 'undefined'
+      ? 16
+      : parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  return Math.ceil(maxLabel + COMPACT_TIME_CLOCK_PX + rem * COMPACT_TIME_GAP_REM);
+}
+
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -1814,6 +1858,7 @@ const ClipRow = memo(function ClipRow({
   compactShowTime = true,
   compactShowTypeIcon = true,
   compactShowNumber = true,
+  timeColWidth = 0,
 }: {
   clip: AppClip;
   index: number;
@@ -1842,6 +1887,7 @@ const ClipRow = memo(function ClipRow({
   compactShowTime?: boolean;
   compactShowTypeIcon?: boolean;
   compactShowNumber?: boolean;
+  timeColWidth?: number;
 }) {
   const { i18n } = useTranslation();
   const typeLabel = useMemo(() => {
@@ -2138,8 +2184,11 @@ const ClipRow = memo(function ClipRow({
             )}
             {compactShowTime && (
               <Tooltip label={absoluteTimeLabel} placement="left" disabled={isPeekVisible}>
-                <span className="flex items-center gap-1">
-                  <Clock size={10} className="text-current" />
+                <span
+                  className="flex shrink-0 items-center gap-1 overflow-hidden tabular-nums"
+                  style={timeColWidth > 0 ? { width: timeColWidth } : undefined}
+                >
+                  <Clock size={10} className="shrink-0 text-current" />
                   {relativeTimeLabel}
                 </span>
               </Tooltip>
@@ -2212,6 +2261,7 @@ type CompactListRowProps = {
   compactShowTime?: boolean;
   compactShowTypeIcon?: boolean;
   compactShowNumber?: boolean;
+  timeColWidth?: number;
 };
 
 function CompactListRow({
@@ -2243,6 +2293,7 @@ function CompactListRow({
   compactShowTime,
   compactShowTypeIcon,
   compactShowNumber,
+  timeColWidth,
 }: RowComponentProps<CompactListRowProps>) {
   const clip = clips[index];
   if (!clip) return null;
@@ -2281,6 +2332,7 @@ function CompactListRow({
         compactShowTime={compactShowTime}
         compactShowTypeIcon={compactShowTypeIcon}
         compactShowNumber={compactShowNumber}
+        timeColWidth={timeColWidth}
       />
     </div>
   );
@@ -2355,10 +2407,16 @@ function CompactClipList({
   compactShowNumber?: boolean;
   showScrollbar?: boolean;
 }) {
+  const { i18n } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   // Start with a sensible fallback so the list paints before the first ResizeObserver tick
   // (Tauri windows often measure as 0px on the initial hidden/layout frame).
   const [height, setHeight] = useState(() => Math.max(120, LAYOUT.COMPACT_HEIGHT - 140));
+
+  const timeColWidth = useMemo(
+    () => (compactShowTime ? getCompactTimeColumnWidth(clips, i18n.language) : 0),
+    [clips, compactShowTime, i18n.language]
+  );
 
   useEffect(() => {
     const el = containerRef.current;
@@ -2418,6 +2476,7 @@ function CompactClipList({
       compactShowTime,
       compactShowTypeIcon,
       compactShowNumber,
+      timeColWidth,
     }),
     [
       clips,
@@ -2445,6 +2504,7 @@ function CompactClipList({
       compactShowTime,
       compactShowTypeIcon,
       compactShowNumber,
+      timeColWidth,
     ]
   );
 
