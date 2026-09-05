@@ -887,32 +887,27 @@ export function ImageViewerWindow() {
         />
       )}
 
-      {/* Header — drag on the brand; toolbar stays clickable */}
+      {/* Header — branding matches Settings; drag on the brand; toolbar stays clickable */}
       <div
-        className={`relative z-10 flex select-none cursor-default items-center justify-between border-b px-3 py-2 ${headerBg}`}
+        className={`relative z-10 flex select-none cursor-default items-center justify-between border-b px-4 py-3 ${headerBg}`}
       >
         <div
-          className="z-10 flex min-w-0 select-none cursor-default items-center gap-2 pr-2"
+          className="z-10 flex min-w-0 select-none cursor-default items-center gap-3"
           data-tauri-drag-region
         >
-          <div
+          <img
+            src="/logo.png"
+            alt="CyberPaste"
+            className="h-5 w-5 shrink-0 select-none object-contain"
+            draggable={false}
             data-tauri-drag-region
-            className="flex h-6 w-6 shrink-0 select-none cursor-default items-center justify-center overflow-hidden"
-          >
-            <img
-              src="/logo.png"
-              alt="Logo"
-              className="h-5 w-5 select-none cursor-default object-contain"
-              draggable={false}
-              data-tauri-drag-region
-            />
-          </div>
-          <span
-            className={`shrink-0 select-none cursor-default text-sm font-bold tracking-tight ${textPrimary}`}
+          />
+          <h2
+            className={`shrink-0 select-none text-[18px] font-bold tracking-tight ${textPrimary}`}
             data-tauri-drag-region
           >
             CyberPaste
-          </span>
+          </h2>
         </div>
 
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
@@ -1248,7 +1243,8 @@ export function ImageViewerWindow() {
 
       {/* Footer info */}
       <div
-        className={`flex items-center justify-between gap-3 border-t px-3 py-1.5 font-mono text-[11px] ${footerBg}`}
+        className={`flex select-none items-center justify-between gap-3 border-t px-3 py-1.5 font-mono text-[11px] ${footerBg}`}
+        onMouseDown={(e) => e.preventDefault()}
       >
         <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
           <Tooltip label={fileName} placement="top">
