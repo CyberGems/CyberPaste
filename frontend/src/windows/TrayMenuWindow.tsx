@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useTranslation } from 'react-i18next';
-import { AppWindow, Book, ChevronRight, CircleHelp, Globe, Heart, Info, Pause, Play, Power, RefreshCw, Settings, Tag } from 'lucide-react';
+import { AppWindow, Book, ChevronRight, Globe, Heart, HelpCircle, Info, Pause, Play, Power, RefreshCw, Settings, Tag } from 'lucide-react';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { resolveLanguage, useLanguage } from '../hooks/useLanguage';
 import type { Settings as AppSettings } from '../types';
@@ -278,7 +278,7 @@ export function TrayMenuWindow() {
             onClick={() => runAction('settings')}
           />
           <TrayItem
-            icon={<CircleHelp size={15} strokeWidth={1.75} />}
+            icon={<HelpCircle size={15} strokeWidth={1.75} />}
             label={t('tray.help', { defaultValue: 'Help' })}
             trailing={
               <ChevronRight
@@ -297,7 +297,7 @@ export function TrayMenuWindow() {
                 onClick={() => hideThenOpen(WIKI_URL)}
               />
               <TrayItem
-                icon={<CircleHelp size={15} strokeWidth={1.75} />}
+                icon={<HelpCircle size={15} strokeWidth={1.75} />}
                 label={t('tray.faq', { defaultValue: 'Frequently Asked Questions' })}
                 onClick={() => hideThenOpen(FAQ_URL)}
               />
