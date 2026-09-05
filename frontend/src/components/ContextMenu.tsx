@@ -198,21 +198,35 @@ export function ContextMenu({
     el.style.visibility = 'visible';
   }, [x, y, options.length]);
 
-  // Close on outside pointer / Escape without a full-screen overlay
+  // Close on outside pointer / Escape without a full-screen overlay.
+  // Stop the closing left-click so it does not hit a clip (paste + hide window).
   useEffect(() => {
-    const onPointerDown = (e: PointerEvent) => {
+    const isInsideMenu = (target: EventTarget | null) => {
       const el = menuRef.current;
-      if (!el) return;
-      if (!el.contains(e.target as Node)) {
-        onClose();
-      }
+      return !!(el && target && el.contains(target as Node));
     };
-    const onClick = (e: MouseEvent) => {
-      const el = menuRef.current;
-      if (!el) return;
-      if (!el.contains(e.target as Node)) {
-        onClose();
+
+    const onPointerDown = (e: PointerEvent) => {
+      if (isInsideMenu(e.target)) return;
+      if (e.button === 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        const eatClick = (ev: Event) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          ev.stopImmediatePropagation();
+        };
+        window.addEventListener('click', eatClick, true);
+        const pointerId = e.pointerId;
+        const onUp = (ev: PointerEvent) => {
+          if (ev.pointerId !== pointerId) return;
+          window.removeEventListener('pointerup', onUp, true);
+          window.setTimeout(() => window.removeEventListener('click', eatClick, true), 0);
+        };
+        window.addEventListener('pointerup', onUp, true);
       }
+      onClose();
     };
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -220,12 +234,10 @@ export function ContextMenu({
     const onBlur = () => onClose();
 
     window.addEventListener('pointerdown', onPointerDown, true);
-    window.addEventListener('click', onClick, true);
     window.addEventListener('keydown', onKeyDown, true);
     window.addEventListener('blur', onBlur);
     return () => {
       window.removeEventListener('pointerdown', onPointerDown, true);
-      window.removeEventListener('click', onClick, true);
       window.removeEventListener('keydown', onKeyDown, true);
       window.removeEventListener('blur', onBlur);
     };

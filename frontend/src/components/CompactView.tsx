@@ -2126,7 +2126,7 @@ const ClipRow = memo(function ClipRow({
         </div>
 
         <div
-          className="relative z-10 -my-1.5 flex flex-shrink-0 items-center gap-1.5 self-stretch py-1.5 pr-1"
+          className="relative z-10 -my-1.5 flex flex-shrink-0 items-center gap-1 self-stretch py-1.5 pr-0.5"
           onMouseOver={(e) => {
             e.stopPropagation();
             onClosePeek?.();
@@ -2197,7 +2197,7 @@ const ClipRow = memo(function ClipRow({
 
           <div
             className={clsx(
-              'flex w-6 flex-shrink-0 items-center justify-center transition-opacity duration-150',
+              'flex w-5 flex-shrink-0 items-center justify-center transition-opacity duration-150',
               showActions ? 'opacity-100' : 'pointer-events-none opacity-0'
             )}
           >
@@ -2220,9 +2220,9 @@ const ClipRow = memo(function ClipRow({
                   e.stopPropagation();
                   onContextMenu?.(e, clip.id);
                 }}
-                className="flex h-7 w-6 items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground active:scale-95"
+                className="flex h-6 w-5 items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:bg-white/10 hover:text-foreground active:scale-95"
               >
-                <MoreVertical size={14} />
+                <MoreVertical size={14} className="pointer-events-none" />
               </button>
             </Tooltip>
           </div>
