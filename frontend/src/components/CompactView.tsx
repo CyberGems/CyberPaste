@@ -68,7 +68,6 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
 import { clsx, type ClassValue } from 'clsx';
@@ -85,6 +84,7 @@ import { CompactPeek } from './CompactPeek';
 import { usePinFlash } from '../hooks/usePinFlash';
 import { useFolderFlash } from '../hooks/useFolderFlash';
 import { useDeleteFlash } from '../hooks/useDeleteFlash';
+import { usePeekPointerArm } from '../hooks/usePeekPointerArm';
 
 const localeMap: Record<string, any> = {
   de,
@@ -649,6 +649,17 @@ export const CompactView: React.FC<CompactViewProps> = ({
   const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const peekOriginMousePosRef = useRef<{ x: number; y: number } | null>(null);
 
+  const closePeek = useCallback(() => {
+    setPeekClipId(null);
+    setPeekAnchor(null);
+    peekOriginMousePosRef.current = null;
+    if (peekTimerRef.current) {
+      clearTimeout(peekTimerRef.current);
+      peekTimerRef.current = null;
+    }
+  }, []);
+  const { armedRef: peekArmedRef, notePointer: notePeekPointer } = usePeekPointerArm(closePeek);
+
   // NUEVO: micro-animación de entrada
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -973,6 +984,9 @@ export const CompactView: React.FC<CompactViewProps> = ({
     (clip: AppClip, e: React.MouseEvent) => {
       if (!compactPeekEnabled || isDragging) return;
 
+      notePeekPointer(e.screenX, e.screenY);
+      if (!peekArmedRef.current) return;
+
       // Si pasamos a un clip diferente, cerramos el peek activo inmediatamente
       setPeekClipId((prevId) => {
         if (prevId && prevId !== clip.id) {
@@ -1023,18 +1037,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
         peekOriginMousePosRef.current = { x: startX, y: startY };
       }, 750); // delay de 750ms para menor invasión
     },
-    [compactPeekEnabled, isDragging]
+    [compactPeekEnabled, isDragging, notePeekPointer, peekArmedRef]
   );
-
-  const closePeek = useCallback(() => {
-    setPeekClipId(null);
-    setPeekAnchor(null);
-    peekOriginMousePosRef.current = null;
-    if (peekTimerRef.current) {
-      clearTimeout(peekTimerRef.current);
-      peekTimerRef.current = null;
-    }
-  }, []);
 
   const handleRowMouseLeave = useCallback(() => {
     closePeek();
@@ -1091,18 +1095,6 @@ export const CompactView: React.FC<CompactViewProps> = ({
       closePeek();
     }
   }, [isDragging, closePeek]);
-
-  // Limpiar peek al cambiar la visibilidad de la ventana
-  useEffect(() => {
-    const unlisten = listen<boolean>('window-visibility', () => {
-      closePeek();
-    });
-    return () => {
-      unlisten.then((u) => {
-        if (typeof u === 'function') u();
-      });
-    };
-  }, [closePeek]);
 
   // Limpiar peek al abrir cualquier menú contextual
   useEffect(() => {

@@ -8,6 +8,7 @@ import { ClipboardItem } from '../types';
 import { LAYOUT } from '../constants';
 import { clsx } from 'clsx';
 import { useTranslation } from 'react-i18next';
+import { usePeekPointerArm } from '../hooks/usePeekPointerArm';
 
 interface ClipListProps {
   clips: ClipboardItem[];
@@ -107,10 +108,14 @@ export const ClipList: React.FC<ClipListProps> = ({
       peekTimerRef.current = null;
     }
   }, []);
+  const { armedRef: peekArmedRef, notePointer: notePeekPointer } = usePeekPointerArm(closePeek);
 
   const handleCardMouseEnter = useCallback(
     (e: React.MouseEvent, clip: ClipboardItem) => {
       if (!fullPeekEnabled || !!draggingClipId) return;
+
+      notePeekPointer(e.screenX, e.screenY);
+      if (!peekArmedRef.current) return;
 
       // Cerrar peek si cambiamos a otro clip
       if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
@@ -156,7 +161,7 @@ export const ClipList: React.FC<ClipListProps> = ({
         peekOriginMousePosRef.current = { x: startX, y: startY };
       }, 750);
     },
-    [fullPeekEnabled, draggingClipId]
+    [fullPeekEnabled, draggingClipId, notePeekPointer, peekArmedRef]
   );
 
   const handleCardMouseLeave = useCallback(() => {
