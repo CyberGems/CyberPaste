@@ -128,6 +128,10 @@
     "grantPermission": "Accorder l'autorisation",
     "startupWithWindows": "Démarrer avec Windows",
     "startupWithWindowsDesc": "Démarrer automatiquement au lancement de Windows",
+    "keepVisibleInTray": "Garder CyberPaste visible dans la barre des tâches",
+    "keepVisibleInTrayDesc": "Windows masque les nouvelles icônes derrière le débordement (^). Faites glisser CyberPaste vers la barre des tâches, ou épinglez-le dans les Paramètres Windows.",
+    "keepVisibleInTrayTooltip": "Ouvre la page Windows où vous pouvez épingler CyberPaste dans la zone de notification visible.",
+    "openWindowsSettings": "Ouvrir les Paramètres Windows",
     "roundCorners": "Coins arrondis",
     "roundCornersDesc": "Arrondir les coins de la fenêtre via DWM (Windows 11). Sans effet en mode Clear.",
     "autoPaste": "Collage automatique",
@@ -212,7 +216,8 @@
     "deletePinnedBulkMessage": "La sélection contient des éléments épinglés. Êtes-vous sûr de vouloir les supprimer ?"
   },
   "viewer": {
-    "openOcrText": "Afficher le texte extrait"
+    "openOcrText": "Afficher le texte extrait",
+    "title": "Visionneuse d'images"
   },
   "toasts": {
     "tooltipWithContextMenu": "{{action}} · Cliquez avec le bouton droit pour ouvrir le menu contextuel",
@@ -224,5 +229,13 @@
     "clipCopyFailed": "Échec de la copie du clip",
     "clipsCopiedToFolder": "{{count}} éléments copiés dans le dossier",
     "clipsCopiedToMain": "{{count}} éléments copiés dans le presse-papiers"
+  },
+  "trayPinTip": {
+    "title": "Garder CyberPaste visible dans la barre des tâches",
+    "body": "Windows masque les nouvelles icônes derrière le débordement (^). Faites glisser CyberPaste vers la barre des tâches, ou épinglez-le dans les Paramètres Windows.",
+    "dontShowAgain": "Ne plus afficher",
+    "gotIt": "Compris",
+    "openWindowsSettings": "Ouvrir les Paramètres Windows",
+    "dismiss": "Fermer"
   }
 }

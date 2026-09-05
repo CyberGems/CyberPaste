@@ -96,6 +96,14 @@
     "about": "About...",
     "quit": "Exit"
   },
+  "trayPinTip": {
+    "title": "Keep CyberPaste visible in the tray",
+    "body": "Windows hides new tray icons behind the overflow (^). Drag CyberPaste onto the taskbar, or pin it in Windows Settings.",
+    "dontShowAgain": "Don't show again",
+    "gotIt": "Got it",
+    "openWindowsSettings": "Open Windows Settings",
+    "dismiss": "Dismiss"
+  },
   "compact": {
     "enterToPaste": "ENTER TO PASTE",
     "arrowsFolders": "←→ FOLDERS",
@@ -247,6 +255,10 @@
     "launchAtLoginDesc": "Start automatically when logging into Windows",
     "startupWithWindows": "Start with Windows",
     "startupWithWindowsDesc": "Automatically start when Windows boots",
+    "keepVisibleInTray": "Keep CyberPaste visible in the tray",
+    "keepVisibleInTrayDesc": "Windows hides new tray icons behind the overflow (^). Drag CyberPaste onto the taskbar, or pin it in Windows Settings.",
+    "keepVisibleInTrayTooltip": "Open the Windows page where you can pin CyberPaste to the visible tray.",
+    "openWindowsSettings": "Open Windows Settings",
     "accessibilityPermission": "Accessibility Permission",
     "accessibilityPermissionDesc": "Required for Auto-Paste to work on macOS",
     "grantPermission": "Grant Permission",
@@ -613,7 +625,6 @@
     "deletePinnedBulkMessage": "The selection contains pinned clips. Are you sure you want to delete them?"
   },
   "viewer": {
-    "badge": "VIEWER",
     "title": "Image Viewer",
     "fitToWindow": "Fit to Window",
     "originalSize": "Original Size",

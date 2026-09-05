@@ -4359,7 +4359,7 @@ fn open_settings_window(app: &AppHandle, tab: Option<&str>) {
         "settings",
         tauri::WebviewUrl::App(url.into()),
     )
-    .title("Settings")
+    .title("CyberPaste Settings")
     .inner_size(
         settings.settings_window_width.unwrap_or(800.0),
         settings.settings_window_height.unwrap_or(700.0),

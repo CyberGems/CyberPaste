@@ -128,6 +128,10 @@
     "grantPermission": "権限を付与",
     "startupWithWindows": "Windows 起動時に開始",
     "startupWithWindowsDesc": "Windows の起動時に自動的に開始します",
+    "keepVisibleInTray": "トレイに CyberPaste を表示する",
+    "keepVisibleInTrayDesc": "Windows は新しいトレイ アイコンをオーバーフロー（^）の後ろに隠します。CyberPaste をタスクバーにドラッグするか、Windows の設定でピン留めしてください。",
+    "keepVisibleInTrayTooltip": "CyberPaste を表示トレイに固定できる Windows のページを開きます。",
+    "openWindowsSettings": "Windows の設定を開く",
     "roundCorners": "角を丸くする",
     "roundCornersDesc": "DWM でウィンドウの角を丸くします (Windows 11)。Clear モードでは無効です。",
     "autoPaste": "自動貼り付け",
@@ -212,7 +216,8 @@
     "deletePinnedBulkMessage": "選択したクリップにピン留めされた項目が含まれています。本当に削除しますか？"
   },
   "viewer": {
-    "openOcrText": "抽出されたテキストを表示"
+    "openOcrText": "抽出されたテキストを表示",
+    "title": "画像ビューア"
   },
   "toasts": {
     "tooltipWithContextMenu": "{{action}} · 右クリックでコンテキストメニューを開く",
@@ -224,5 +229,13 @@
     "clipCopyFailed": "クリップのコピーに失敗しました",
     "clipsCopiedToFolder": "{{count}} 件をフォルダーにコピーしました",
     "clipsCopiedToMain": "{{count}} 件をクリップボードにコピーしました"
+  },
+  "trayPinTip": {
+    "title": "トレイに CyberPaste を表示する",
+    "body": "Windows は新しいトレイ アイコンをオーバーフロー（^）の後ろに隠します。CyberPaste をタスクバーにドラッグするか、Windows の設定でピン留めしてください。",
+    "dontShowAgain": "次回から表示しない",
+    "gotIt": "了解",
+    "openWindowsSettings": "Windows の設定を開く",
+    "dismiss": "閉じる"
   }
 }

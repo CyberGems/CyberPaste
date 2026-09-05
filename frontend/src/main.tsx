@@ -5,6 +5,7 @@ import { AboutWindow } from './windows/AboutWindow';
 import { ToastWindow } from './windows/ToastWindow';
 import { ImageViewerWindow } from './windows/ImageViewerWindow';
 import { TrayMenuWindow } from './windows/TrayMenuWindow';
+import { TrayPinTipWindow } from './windows/TrayPinTipWindow';
 import { attachConsole } from '@tauri-apps/plugin-log';
 import './i18n/config'; // Initialize i18n
 import './index.css';
@@ -28,6 +29,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <ImageViewerWindow />
   ) : windowLabel === 'tray_menu' ? (
     <TrayMenuWindow />
+  ) : windowLabel === 'tray_pin_tip' ? (
+    <TrayPinTipWindow />
   ) : (
     <App />
   )

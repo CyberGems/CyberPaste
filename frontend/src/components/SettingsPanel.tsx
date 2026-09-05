@@ -29,6 +29,7 @@ import {
   Languages,
   Palette,
   Heart,
+  Pin,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useTheme } from '../hooks/useTheme';
@@ -581,12 +582,20 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
       />
       <div className="flex h-full select-none flex-col bg-background text-foreground">
         {/* Header */}
-        <div className="flex cursor-default items-center justify-between border-b border-border bg-transparent px-4 py-3">
-          <div data-tauri-drag-region className="flex min-w-0 flex-1 items-center gap-3">
+        <div
+          data-tauri-drag-region
+          className="relative flex cursor-default items-center justify-between border-b border-border bg-transparent px-4 py-3"
+        >
+          <div className="z-10 flex min-w-0 items-center gap-3">
             <img src="/logo.png" alt="CyberPaste" className="h-5 w-5 object-contain" />
             <h2 className="text-[18px] font-bold tracking-tight text-foreground">CyberPaste</h2>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <h1 className="max-w-[46%] truncate text-[14px] font-semibold tracking-tight text-foreground">
+              {t('settings.title')}
+            </h1>
+          </div>
+          <div className="z-10 flex items-center gap-1">
             <Tooltip label={t('common.donate', 'Donate')} placement="bottom">
               <button
                 type="button"
@@ -646,11 +655,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         <div className="flex flex-1 overflow-hidden">
           {/* Sidebar */}
           <div className="w-[170px] flex-shrink-0 border-r border-border bg-transparent px-2.5 py-3.5">
-            <div className="mb-4 px-2.5">
-              <h1 className="text-[14px] font-bold tracking-tight text-foreground">
-                {t('settings.title')}
-              </h1>
-            </div>
             <div className="flex flex-col gap-1">
               <button
                 onClick={() => setActiveTab('general')}
@@ -835,6 +839,28 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <div
                         className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.startup_with_windows ? 'translate-x-5' : 'translate-x-0.5'}`}
                       />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">
+                    <div className="flex min-w-0 gap-3">
+                      <Pin className="mt-0.5 h-5 w-5 flex-shrink-0 text-muted-foreground/80" />
+                      <div>
+                        <span className="text-sm font-medium">
+                          {t('settings.keepVisibleInTray')}
+                        </span>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {t('settings.keepVisibleInTrayDesc')}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => invoke('open_tray_icon_settings').catch(console.error)}
+                      title={t('settings.keepVisibleInTrayTooltip')}
+                      className="btn btn-primary shrink-0 rounded-[4px] px-3 py-1.5 text-xs"
+                    >
+                      {t('settings.openWindowsSettings')}
                     </button>
                   </div>
 

@@ -887,12 +887,12 @@ export function ImageViewerWindow() {
         />
       )}
 
-      {/* Header — drag region only on the title side so toolbar clicks aren't swallowed */}
+      {/* Header — drag on the brand; toolbar stays clickable */}
       <div
-        className={`z-10 flex select-none cursor-default items-center justify-between border-b px-3 py-2 ${headerBg}`}
+        className={`relative z-10 flex select-none cursor-default items-center justify-between border-b px-3 py-2 ${headerBg}`}
       >
         <div
-          className="flex min-w-0 flex-1 select-none cursor-default items-center gap-2 pr-2"
+          className="z-10 flex min-w-0 select-none cursor-default items-center gap-2 pr-2"
           data-tauri-drag-region
         >
           <div
@@ -907,27 +907,23 @@ export function ImageViewerWindow() {
               data-tauri-drag-region
             />
           </div>
-
-          <div
+          <span
+            className={`shrink-0 select-none cursor-default text-sm font-bold tracking-tight ${textPrimary}`}
             data-tauri-drag-region
-            className="flex min-w-0 select-none cursor-default items-baseline gap-1.5"
           >
-            <span
-              className={`shrink-0 select-none cursor-default text-sm font-bold tracking-tight ${textPrimary}`}
-              data-tauri-drag-region
-            >
-              CyberPaste
-            </span>
-            <span
-              data-tauri-drag-region
-              className="rounded border border-primary/20 bg-primary/10 px-1 py-px text-[8.5px] font-medium uppercase tracking-wider text-primary"
-            >
-              {t('viewer.badge', 'VISOR')}
-            </span>
-          </div>
+            CyberPaste
+          </span>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <h1
+            className={`max-w-[40%] truncate text-[14px] font-semibold tracking-tight ${textPrimary}`}
+          >
+            {t('viewer.title')}
+          </h1>
+        </div>
+
+        <div className="z-10 flex shrink-0 items-center gap-2">
           {/* Nav */}
           <div className={`flex items-center gap-0.5 rounded-lg border p-0.5 ${groupBg}`}>
             <Tooltip label={t('viewer.previousImage')} placement="bottom">

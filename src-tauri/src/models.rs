@@ -106,6 +106,9 @@ pub struct AppSettings {
     pub wheel_folder_navigation: bool,
     #[serde(default = "default_true")]
     pub title_bar_animation_enabled: bool,
+    /// First-run balloon pointing at the tray overflow. Once true, never shown again.
+    #[serde(default)]
+    pub has_seen_tray_pin_tip: bool,
 }
 
 impl Default for AppSettings {
@@ -201,6 +204,7 @@ impl Default for AppSettings {
             settings_window_y: None,
             wheel_folder_navigation: false,
             title_bar_animation_enabled: true,
+            has_seen_tray_pin_tip: false,
         }
     }
 }

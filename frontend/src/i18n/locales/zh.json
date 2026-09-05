@@ -128,6 +128,10 @@
     "grantPermission": "授予权限",
     "startupWithWindows": "开机启动",
     "startupWithWindowsDesc": "Windows 启动时自动运行",
+    "keepVisibleInTray": "让 CyberPaste 显示在托盘中",
+    "keepVisibleInTrayDesc": "Windows 会将新的托盘图标隐藏在溢出菜单（^）后面。请将 CyberPaste 拖到任务栏，或在 Windows 设置中固定它。",
+    "keepVisibleInTrayTooltip": "打开可在可见托盘中固定 CyberPaste 的 Windows 页面。",
+    "openWindowsSettings": "打开 Windows 设置",
     "roundCorners": "圆角窗口",
     "roundCornersDesc": "通过 DWM 实现窗口圆角（仅 Windows 11）。对 Clear 模式无效。",
     "autoPaste": "自动粘贴",
@@ -214,7 +218,8 @@
     "deletePinnedBulkMessage": "选中的剪贴中包含固定项目。确定要删除吗？"
   },
   "viewer": {
-    "openOcrText": "显示提取的文本"
+    "openOcrText": "显示提取的文本",
+    "title": "图片查看器"
   },
   "toasts": {
     "tooltipWithContextMenu": "{{action}} · 右键单击以打开上下文菜单",
@@ -226,5 +231,13 @@
     "clipCopyFailed": "复制剪辑失败",
     "clipsCopiedToFolder": "已将 {{count}} 个剪辑复制到文件夹",
     "clipsCopiedToMain": "已将 {{count}} 个剪辑复制到剪贴板"
+  },
+  "trayPinTip": {
+    "title": "让 CyberPaste 显示在托盘中",
+    "body": "Windows 会将新的托盘图标隐藏在溢出菜单（^）后面。请将 CyberPaste 拖到任务栏，或在 Windows 设置中固定它。",
+    "dontShowAgain": "不再显示",
+    "gotIt": "知道了",
+    "openWindowsSettings": "打开 Windows 设置",
+    "dismiss": "关闭"
   }
 }

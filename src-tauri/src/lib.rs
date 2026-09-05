@@ -27,6 +27,10 @@ mod models;
 mod ocr;
 mod settings_commands;
 mod settings_manager;
+#[cfg(target_os = "windows")]
+mod tray_pin_tip;
+#[cfg(target_os = "windows")]
+mod windows_notification_area;
 
 /// Force Win11 immersive dark popup menus (rounded corners, soft chrome).
 /// Kept for any remaining native menus; tray uses a custom HTML popup.
@@ -429,6 +433,19 @@ pub fn run_app() {
 
             rebuild_tray_menu(app.handle())?;
 
+            // First-run balloon: Windows hides new tray icons behind the overflow (^).
+            // Delay so the icon exists before we point at it.
+            #[cfg(target_os = "windows")]
+            {
+                let app_tip = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
+                    if let Err(e) = crate::tray_pin_tip::show_if_needed(app_tip).await {
+                        log::warn!("startup.tray-pin-tip: {e}");
+                    }
+                });
+            }
+
             // Pre-create the tray menu webview (hidden) so the first right-click opens instantly
             // instead of paying the WebView2 creation cost (~300-800ms).
             {
@@ -650,7 +667,11 @@ pub fn run_app() {
             commands::set_update_available,
             commands::hide_tray_menu,
             commands::tray_menu_ready,
-            commands::tray_menu_action
+            commands::tray_menu_action,
+            tray_pin_tip::open_tray_icon_settings,
+            tray_pin_tip::get_tray_pin_tip_edge,
+            tray_pin_tip::tray_pin_tip_ready,
+            tray_pin_tip::dismiss_tray_pin_tip
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

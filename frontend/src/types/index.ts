@@ -106,6 +106,7 @@ export interface Settings {
   settings_window_y?: number | null;
   wheel_folder_navigation?: boolean;
   title_bar_animation_enabled?: boolean;
+  has_seen_tray_pin_tip?: boolean;
 }
 
 export type ClipType = 'text' | 'image' | 'html' | 'rtf' | 'file' | 'url' | 'code';

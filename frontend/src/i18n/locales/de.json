@@ -128,6 +128,10 @@
     "grantPermission": "Berechtigung erteilen",
     "startupWithWindows": "Mit Windows starten",
     "startupWithWindowsDesc": "Automatisch starten, wenn Windows hochfährt",
+    "keepVisibleInTray": "CyberPaste im Infobereich sichtbar halten",
+    "keepVisibleInTrayDesc": "Windows blendet neue Infobereich-Symbole hinter dem Überlauf (^) aus. Ziehe CyberPaste auf die Taskleiste oder hefte es in den Windows-Einstellungen an.",
+    "keepVisibleInTrayTooltip": "Öffnet die Windows-Seite, auf der du CyberPaste im sichtbaren Infobereich anheften kannst.",
+    "openWindowsSettings": "Windows-Einstellungen öffnen",
     "roundCorners": "Abgerundete Ecken",
     "roundCornersDesc": "Fensterecken über DWM abrunden (Windows 11). Kein Effekt im Clear-Modus.",
     "autoPaste": "Automatisch einfügen",
@@ -205,7 +209,8 @@
     "clipMoveFailed": "Fehler beim Verschieben des Clips"
   },
   "viewer": {
-    "openOcrText": "Erkannten Text anzeigen"
+    "openOcrText": "Erkannten Text anzeigen",
+    "title": "Bildbetrachter"
   },
   "toasts": {
     "tooltipWithContextMenu": "{{action}} · Rechtsklick, um das Kontextmenü zu öffnen",
@@ -217,5 +222,13 @@
     "clipCopyFailed": "Fehler beim Kopieren des Clips",
     "clipsCopiedToFolder": "{{count}} Elemente in Ordner kopiert",
     "clipsCopiedToMain": "{{count}} Elemente in Zwischenablage kopiert"
+  },
+  "trayPinTip": {
+    "title": "CyberPaste im Infobereich sichtbar halten",
+    "body": "Windows blendet neue Infobereich-Symbole hinter dem Überlauf (^) aus. Ziehe CyberPaste auf die Taskleiste oder hefte es in den Windows-Einstellungen an.",
+    "dontShowAgain": "Nicht mehr anzeigen",
+    "gotIt": "Verstanden",
+    "openWindowsSettings": "Windows-Einstellungen öffnen",
+    "dismiss": "Schließen"
   }
 }

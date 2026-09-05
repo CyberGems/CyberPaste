@@ -30,12 +30,16 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
     let manager = app.state::<Arc<SettingsManager>>();
 
     // Deserialize incoming settings (Frontend sends full object except ignored_apps)
+    let incoming_has_tray_pin_tip = settings.get("has_seen_tray_pin_tip").is_some();
     let mut new_settings: crate::models::AppSettings =
         serde_json::from_value(settings).map_err(|e| e.to_string())?;
 
     // Preserve ignored_apps from current state (as frontend doesn't send it in this call)
     let current = manager.get();
     new_settings.ignored_apps = current.ignored_apps;
+    if !incoming_has_tray_pin_tip {
+        new_settings.has_seen_tray_pin_tip = current.has_seen_tray_pin_tip;
+    }
 
     // Window effect: only re-apply DWM vibrancy if theme or round_corners actually changed
     let theme_str = crate::normalize_theme(&new_settings.theme).to_string();

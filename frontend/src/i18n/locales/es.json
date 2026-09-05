@@ -96,6 +96,14 @@
     "about": "Acerca de...",
     "quit": "Salir"
   },
+  "trayPinTip": {
+    "title": "Mantén CyberPaste visible en la bandeja",
+    "body": "Windows oculta los iconos nuevos detrás de la flecha (^). Arrastra CyberPaste a la barra de tareas, o fíjalo en Configuración de Windows.",
+    "dontShowAgain": "No mostrar más",
+    "gotIt": "Entendido",
+    "openWindowsSettings": "Abrir Configuración de Windows",
+    "dismiss": "Cerrar"
+  },
   "compact": {
     "enterToPaste": "ENTER PARA PEGAR",
     "arrowsFolders": "←→ CARPETAS",
@@ -247,6 +255,10 @@
     "launchAtLoginDesc": "Inicia automáticamente al entrar a Windows",
     "startupWithWindows": "Iniciar con Windows",
     "startupWithWindowsDesc": "Inicia automáticamente al arrancar Windows",
+    "keepVisibleInTray": "Mantén CyberPaste visible en la bandeja",
+    "keepVisibleInTrayDesc": "Windows oculta los iconos nuevos detrás de la flecha (^). Arrastra CyberPaste a la barra de tareas, o fíjalo en Configuración de Windows.",
+    "keepVisibleInTrayTooltip": "Abre la página de Windows donde puedes fijar CyberPaste en la bandeja visible.",
+    "openWindowsSettings": "Abrir Configuración de Windows",
     "roundCorners": "Esquinas Redondeadas",
     "roundCornersDesc": "Redondea las esquinas (Windows 11). No aplica en modo Clear.",
     "autoPaste": "Pegado Automático",
@@ -613,7 +625,6 @@
     "deletePinnedBulkMessage": "La selección contiene clips fijados. ¿Estás seguro de que deseas eliminarlos?"
   },
   "viewer": {
-    "badge": "VISOR",
     "title": "Visor de imágenes",
     "fitToWindow": "Ajustar a la Ventana",
     "originalSize": "Tamaño Original",
