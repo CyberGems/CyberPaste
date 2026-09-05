@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { emit, listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { getVersion } from '@tauri-apps/api/app';
@@ -111,7 +111,7 @@ export function AboutWindow() {
     }
   };
 
-  const checkForUpdates = async () => {
+  const checkForUpdates = useCallback(async () => {
     const loadingToast = toast.loading(t('settings.checkingUpdates'));
     setUpdateCheckError(null);
     setShowTechnicalDetails(false);
@@ -138,7 +138,16 @@ export function AboutWindow() {
         toast.error(t('settings.updateError'));
       }
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    const unlisten = listen('about-check-updates', () => {
+      void checkForUpdates();
+    });
+    return () => {
+      unlisten.then((f) => f());
+    };
+  }, [checkForUpdates]);
 
   if (!settings) {
     return (

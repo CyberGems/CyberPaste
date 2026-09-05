@@ -94,7 +94,14 @@
     "updateAvailable": "Update available",
     "settings": "Settings...",
     "about": "About...",
-    "quit": "Exit"
+    "quit": "Exit",
+    "help": "Help",
+    "docs": "Documentation & Wiki",
+    "faq": "Frequently Asked Questions",
+    "changelog": "Changelog",
+    "website": "Website",
+    "donate": "Donate",
+    "checkUpdates": "Check for Update..."
   },
   "trayPinTip": {
     "title": "Keep CyberPaste visible in the tray",
@@ -103,6 +110,15 @@
     "gotIt": "Got it",
     "openWindowsSettings": "Open Windows Settings",
     "dismiss": "Dismiss"
+  },
+  "titleBar": {
+    "moreMenu": {
+      "docs": "Documentation & Wiki",
+      "website": "Website",
+      "changelog": "Changelog",
+      "github": "GitHub",
+      "about": "About CyberPaste..."
+    }
   },
   "compact": {
     "enterToPaste": "ENTER TO PASTE",

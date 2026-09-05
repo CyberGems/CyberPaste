@@ -230,6 +230,16 @@
     "clipsCopiedToFolder": "{{count}} éléments copiés dans le dossier",
     "clipsCopiedToMain": "{{count}} éléments copiés dans le presse-papiers"
   },
+  "tray": {
+    "help": "Aide",
+    "docs": "Documentation et Wiki",
+    "faq": "Foire aux questions",
+    "changelog": "Journal des modifications",
+    "website": "Site web",
+    "donate": "Faire un don",
+    "about": "À propos...",
+    "checkUpdates": "Rechercher des mises à jour..."
+  },
   "trayPinTip": {
     "title": "Garder CyberPaste visible dans la barre des tâches",
     "body": "Windows masque les nouvelles icônes derrière le débordement (^). Faites glisser CyberPaste vers la barre des tâches, ou épinglez-le dans les Paramètres Windows.",
@@ -237,5 +247,14 @@
     "gotIt": "Compris",
     "openWindowsSettings": "Ouvrir les Paramètres Windows",
     "dismiss": "Fermer"
+  },
+  "titleBar": {
+    "moreMenu": {
+      "docs": "Documentation et Wiki",
+      "website": "Site web",
+      "changelog": "Journal des modifications",
+      "github": "GitHub",
+      "about": "À propos de CyberPaste..."
+    }
   }
 }

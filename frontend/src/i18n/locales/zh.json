@@ -232,6 +232,16 @@
     "clipsCopiedToFolder": "已将 {{count}} 个剪辑复制到文件夹",
     "clipsCopiedToMain": "已将 {{count}} 个剪辑复制到剪贴板"
   },
+  "tray": {
+    "help": "帮助",
+    "docs": "文档和 Wiki",
+    "faq": "常见问题",
+    "changelog": "更新日志",
+    "website": "网站",
+    "donate": "捐赠",
+    "about": "关于...",
+    "checkUpdates": "检查更新..."
+  },
   "trayPinTip": {
     "title": "让 CyberPaste 显示在托盘中",
     "body": "Windows 会将新的托盘图标隐藏在溢出菜单（^）后面。请将 CyberPaste 拖到任务栏，或在 Windows 设置中固定它。",
@@ -239,5 +249,14 @@
     "gotIt": "知道了",
     "openWindowsSettings": "打开 Windows 设置",
     "dismiss": "关闭"
+  },
+  "titleBar": {
+    "moreMenu": {
+      "docs": "文档和 Wiki",
+      "website": "网站",
+      "changelog": "更新日志",
+      "github": "GitHub",
+      "about": "关于 CyberPaste..."
+    }
   }
 }

@@ -3,7 +3,8 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useTranslation } from 'react-i18next';
-import { AppWindow, Info, Pause, Play, Settings, Power } from 'lucide-react';
+import { AppWindow, Book, ChevronRight, CircleHelp, Globe, Heart, Info, Pause, Play, Power, RefreshCw, Settings, Tag } from 'lucide-react';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { resolveLanguage, useLanguage } from '../hooks/useLanguage';
 import type { Settings as AppSettings } from '../types';
 
@@ -33,7 +34,13 @@ export interface TrayMenuState {
   language: string;
 }
 
-type TrayAction = 'show' | 'toggle_pause' | 'settings' | 'about' | 'quit';
+type TrayAction = 'show' | 'toggle_pause' | 'settings' | 'about' | 'check_updates' | 'quit';
+
+const DONATE_URL = 'https://github.com/CyberGems/CyberPaste#%EF%B8%8F-donate';
+const WIKI_URL = 'https://github.com/CyberGems/CyberPaste/wiki';
+const FAQ_URL = 'https://github.com/CyberGems/CyberPaste/wiki/FAQ';
+const CHANGELOG_URL = 'https://github.com/CyberGems/CyberPaste/releases';
+const WEBSITE_URL = 'https://cybergems.org';
 
 /** Card width — room for label + Ctrl+Shift+V without clipping */
 const MENU_WIDTH = 268;
@@ -46,6 +53,7 @@ export function TrayMenuWindow() {
   useLanguage();
   const rootRef = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<TrayMenuState | null>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
   const closingRef = useRef(false);
   const openRef = useRef(false);
 
@@ -99,12 +107,30 @@ export function TrayMenuWindow() {
 
   const runAction = useCallback(async (action: TrayAction) => {
     openRef.current = false;
+    setHelpOpen(false);
     try {
       await invoke('tray_menu_action', { action });
     } catch (e) {
       console.error('tray_menu_action failed:', e);
     }
   }, []);
+
+  const hideThenOpen = useCallback(async (url: string) => {
+    openRef.current = false;
+    setHelpOpen(false);
+    try {
+      await invoke('hide_tray_menu');
+    } catch (e) {
+      console.error('hide_tray_menu failed:', e);
+    }
+    openUrl(url).catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(reportSize);
+    });
+  }, [helpOpen, reportSize]);
 
   useEffect(() => {
     const unlistenState = listen<TrayMenuState>('tray-menu-state', (event) => {
@@ -120,6 +146,7 @@ export function TrayMenuWindow() {
     const unlistenShow = listen('tray-menu-show', () => {
       openRef.current = true;
       closingRef.current = false;
+      setHelpOpen(false);
       // Double rAF: wait for React to paint updated labels, then measure outer shell
       requestAnimationFrame(() => {
         requestAnimationFrame(reportSize);
@@ -128,6 +155,7 @@ export function TrayMenuWindow() {
 
     const unlistenHide = listen('tray-menu-hide', () => {
       openRef.current = false;
+      setHelpOpen(false);
     });
 
     // Re-theme live when settings change elsewhere
@@ -250,10 +278,57 @@ export function TrayMenuWindow() {
             onClick={() => runAction('settings')}
           />
           <TrayItem
-            icon={<Info size={15} strokeWidth={1.75} />}
-            label={t('tray.about', { defaultValue: 'About...' })}
-            onClick={() => runAction('about')}
+            icon={<CircleHelp size={15} strokeWidth={1.75} />}
+            label={t('tray.help', { defaultValue: 'Help' })}
+            trailing={
+              <ChevronRight
+                size={14}
+                strokeWidth={2}
+                className={`text-muted-foreground transition-transform duration-150 ${helpOpen ? 'rotate-90' : ''}`}
+              />
+            }
+            onClick={() => setHelpOpen((v) => !v)}
           />
+          {helpOpen && (
+            <div className="ml-2 flex flex-col gap-0.5 border-l border-border/70 pl-1.5">
+              <TrayItem
+                icon={<Book size={15} strokeWidth={1.75} />}
+                label={t('tray.docs', { defaultValue: 'Documentation & Wiki' })}
+                onClick={() => hideThenOpen(WIKI_URL)}
+              />
+              <TrayItem
+                icon={<CircleHelp size={15} strokeWidth={1.75} />}
+                label={t('tray.faq', { defaultValue: 'Frequently Asked Questions' })}
+                onClick={() => hideThenOpen(FAQ_URL)}
+              />
+              <TrayItem
+                icon={<Tag size={15} strokeWidth={1.75} />}
+                label={t('tray.changelog', { defaultValue: 'Changelog' })}
+                onClick={() => hideThenOpen(CHANGELOG_URL)}
+              />
+              <TrayItem
+                icon={<Globe size={15} strokeWidth={1.75} />}
+                label={t('tray.website', { defaultValue: 'Website' })}
+                onClick={() => hideThenOpen(WEBSITE_URL)}
+              />
+              <TrayItem
+                icon={<Heart size={15} strokeWidth={1.75} className="text-[#00D8F1]" />}
+                label={t('tray.donate', { defaultValue: 'Donate' })}
+                onClick={() => hideThenOpen(DONATE_URL)}
+              />
+              <div className="mx-1 my-0.5 h-px bg-accent" />
+              <TrayItem
+                icon={<Info size={15} strokeWidth={1.75} />}
+                label={t('tray.about', { defaultValue: 'About...' })}
+                onClick={() => runAction('about')}
+              />
+              <TrayItem
+                icon={<RefreshCw size={15} strokeWidth={1.75} />}
+                label={t('tray.checkUpdates', { defaultValue: 'Check for Update...' })}
+                onClick={() => runAction('check_updates')}
+              />
+            </div>
+          )}
         </div>
 
         <div className="mx-2.5 h-px bg-accent" />
@@ -274,11 +349,13 @@ function TrayItem({
   icon,
   label,
   shortcut,
+  trailing,
   onClick,
 }: {
   icon: ReactNode;
   label: string;
   shortcut?: string;
+  trailing?: ReactNode;
   onClick: () => void;
 }) {
   return (
@@ -298,11 +375,12 @@ function TrayItem({
       <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground/90 group-hover:text-foreground">
         {label}
       </span>
-      {shortcut ? (
-        <span className="flex-shrink-0 pl-3 text-[11px] font-medium tabular-nums text-muted-foreground">
-          {shortcut}
-        </span>
-      ) : null}
+      {trailing ??
+        (shortcut ? (
+          <span className="flex-shrink-0 pl-3 text-[11px] font-medium tabular-nums text-muted-foreground">
+            {shortcut}
+          </span>
+        ) : null)}
     </button>
   );
 }

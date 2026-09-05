@@ -223,6 +223,16 @@
     "clipsCopiedToFolder": "{{count}} Elemente in Ordner kopiert",
     "clipsCopiedToMain": "{{count}} Elemente in Zwischenablage kopiert"
   },
+  "tray": {
+    "help": "Hilfe",
+    "docs": "Dokumentation & Wiki",
+    "faq": "Häufig gestellte Fragen",
+    "changelog": "Änderungsprotokoll",
+    "website": "Webseite",
+    "donate": "Spenden",
+    "about": "Über...",
+    "checkUpdates": "Nach Updates suchen..."
+  },
   "trayPinTip": {
     "title": "CyberPaste im Infobereich sichtbar halten",
     "body": "Windows blendet neue Infobereich-Symbole hinter dem Überlauf (^) aus. Ziehe CyberPaste auf die Taskleiste oder hefte es in den Windows-Einstellungen an.",
@@ -230,5 +240,14 @@
     "gotIt": "Verstanden",
     "openWindowsSettings": "Windows-Einstellungen öffnen",
     "dismiss": "Schließen"
+  },
+  "titleBar": {
+    "moreMenu": {
+      "docs": "Dokumentation & Wiki",
+      "website": "Webseite",
+      "changelog": "Änderungsprotokoll",
+      "github": "GitHub",
+      "about": "Über CyberPaste..."
+    }
   }
 }

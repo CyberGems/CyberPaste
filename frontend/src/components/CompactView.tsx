@@ -65,9 +65,7 @@ import {
   File as LucideFile,
   Image as ImageIcon,
   Trash2,
-  Heart,
 } from 'lucide-react';
-import { openUrl } from '@tauri-apps/plugin-opener';
 import type { LucideIcon } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
@@ -77,6 +75,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import Tooltip from './Tooltip';
+import { TitleBarMenu } from './TitleBarMenu';
 import { de, enUS, es, fr, ja, zhCN } from 'date-fns/locale';
 import { List, useListRef, type RowComponentProps } from 'react-window';
 import { CONTEXT_MENU_EVENT, type ContextMenuEventDetail } from '../utils/contextMenuEvents';
@@ -1225,19 +1224,6 @@ export const CompactView: React.FC<CompactViewProps> = ({
           </div>
         </div>
         <div className="flex cursor-default items-center gap-0.5">
-          <Tooltip label={t('common.donate', 'Donate')} placement="bottom">
-            <button
-              onClick={() =>
-                openUrl('https://github.com/CyberGems/CyberPaste#%EF%B8%8F-donate').catch(
-                  console.error
-                )
-              }
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-rose-500 active:bg-accent/80"
-              aria-label={t('common.donate', 'Donate')}
-            >
-              <Heart size={14} />
-            </button>
-          </Tooltip>
           {onTogglePin && (
             <Tooltip
               label={isPinned ? t('common.unpinWindowShort') : t('common.pinWindowShort')}
@@ -1291,6 +1277,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
               <Settings size={14} />
             </button>
           </Tooltip>
+
+          <TitleBarMenu iconSize={14} />
 
           <Tooltip
             label={isMaximized ? t('common.restore') : t('common.maximize')}

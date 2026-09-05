@@ -230,6 +230,16 @@
     "clipsCopiedToFolder": "{{count}} 件をフォルダーにコピーしました",
     "clipsCopiedToMain": "{{count}} 件をクリップボードにコピーしました"
   },
+  "tray": {
+    "help": "ヘルプ",
+    "docs": "ドキュメントと Wiki",
+    "faq": "よくある質問",
+    "changelog": "変更履歴",
+    "website": "ウェブサイト",
+    "donate": "寄付する",
+    "about": "情報...",
+    "checkUpdates": "アップデートを確認..."
+  },
   "trayPinTip": {
     "title": "トレイに CyberPaste を表示する",
     "body": "Windows は新しいトレイ アイコンをオーバーフロー（^）の後ろに隠します。CyberPaste をタスクバーにドラッグするか、Windows の設定でピン留めしてください。",
@@ -237,5 +247,14 @@
     "gotIt": "了解",
     "openWindowsSettings": "Windows の設定を開く",
     "dismiss": "閉じる"
+  },
+  "titleBar": {
+    "moreMenu": {
+      "docs": "ドキュメントと Wiki",
+      "website": "ウェブサイト",
+      "changelog": "変更履歴",
+      "github": "GitHub",
+      "about": "CyberPaste について..."
+    }
   }
 }

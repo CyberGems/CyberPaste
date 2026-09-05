@@ -4433,6 +4433,14 @@ pub async fn tray_menu_action(app: AppHandle, action: String) -> Result<(), Stri
         }
         "settings" => open_settings_window(&app, None),
         "about" => open_about_window(&app),
+        "check_updates" => {
+            open_about_window(&app);
+            let handle = app.clone();
+            tauri::async_runtime::spawn(async move {
+                tokio::time::sleep(std::time::Duration::from_millis(400)).await;
+                let _ = handle.emit("about-check-updates", ());
+            });
+        }
         "quit" => {
             app.exit(0);
         }
