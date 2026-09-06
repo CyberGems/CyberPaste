@@ -35,6 +35,7 @@
     "files": "Files",
     "more": "+{{count}} more",
     "moreActions": "More actions",
+    "moreActionsHint": "More actions (Space)",
     "pinnedClip": "Pinned Clip",
     "copyToClipboard": "Copy to clipboard",
     "file": "File",

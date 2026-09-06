@@ -24,6 +24,7 @@ import { de, enUS, es, fr, ja, zhCN } from 'date-fns/locale';
 import { CONTEXT_MENU_EVENT, type ContextMenuEventDetail } from '../utils/contextMenuEvents';
 import { usePinFlash } from '../hooks/usePinFlash';
 import { useDeleteFlash } from '../hooks/useDeleteFlash';
+import { isListHoverLocked, useListHoverLocked } from '../hooks/useListHoverLock';
 
 const localeMap: Record<string, any> = {
   de,
@@ -115,6 +116,7 @@ export const ClipCard = memo(
       return t('clipType.text') === 'clipType.text' ? 'Text' : t('clipType.text');
     }, [clip.clip_type, t]);
     const [hovered, setHovered] = useState(false);
+    const hoverLocked = useListHoverLocked();
     const title = clip.source_app || clip.clip_type.toUpperCase();
 
     const filePaths = useMemo(() => {
@@ -267,7 +269,11 @@ export const ClipCard = memo(
     const pinFlash = usePinFlash(clip.id);
     const isDeleting = useDeleteFlash(clip.id);
     const foreignMenuOpenRef = useRef(false);
-    const showHover = menuHighlight || (hovered && !foreignMenuOpenRef.current);
+    const showHover = menuHighlight || (hovered && !hoverLocked && !foreignMenuOpenRef.current);
+
+    useEffect(() => {
+      if (hoverLocked) setHovered(false);
+    }, [hoverLocked]);
 
     useEffect(() => {
       const onMenu = (e: Event) => {
@@ -332,10 +338,14 @@ export const ClipCard = memo(
             }}
             draggable="false"
             onMouseEnter={(e) => {
-              if (foreignMenuOpenRef.current) return;
+              if (hoverLocked || isListHoverLocked() || foreignMenuOpenRef.current) return;
               leftWhileMenuRef.current = false;
               setHovered(true);
               onCardMouseEnter?.(e, clip);
+            }}
+            onMouseMove={() => {
+              if (hoverLocked || isListHoverLocked() || foreignMenuOpenRef.current) return;
+              setHovered(true);
             }}
             onMouseLeave={() => {
               if (menuHighlightRef.current) leftWhileMenuRef.current = true;
@@ -368,7 +378,7 @@ export const ClipCard = memo(
                     ? 'border-primary/50'
                     : 'border-border',
               isDragging && 'pointer-events-none scale-95 cursor-grabbing opacity-40',
-              'group'
+              !hoverLocked && 'group'
             )}
           >
             {pinFlash && (

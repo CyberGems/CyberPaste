@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { lockListHover } from './useListHoverLock';
 
 interface KeyboardOptions {
   onClose?: () => void;
@@ -134,6 +135,7 @@ export function useKeyboard(options: KeyboardOptions) {
           return;
         }
         e.preventDefault();
+        lockListHover();
         options.onDelete();
       }
 
@@ -160,6 +162,16 @@ export function useKeyboard(options: KeyboardOptions) {
         }
       }
 
+      // Space — open the selected clip's action menu (arrows + Enter to choose).
+      if (e.key === ' ' && options.onOpenContextMenu && !isTyping) {
+        if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          options.onOpenContextMenu();
+          return;
+        }
+      }
+
       // Type-to-search: activate search when user types a printable character
       if (
         options.onStartTypingSearch &&
@@ -170,6 +182,7 @@ export function useKeyboard(options: KeyboardOptions) {
         !e.metaKey
       ) {
         e.preventDefault();
+        lockListHover();
         options.onStartTypingSearch(e.key);
       }
 
@@ -201,6 +214,7 @@ export function useKeyboard(options: KeyboardOptions) {
         }
         e.preventDefault();
         e.stopPropagation();
+        lockListHover();
         options.onNavigatePrev();
       }
 
@@ -210,6 +224,7 @@ export function useKeyboard(options: KeyboardOptions) {
         }
         e.preventDefault();
         e.stopPropagation();
+        lockListHover();
         options.onNavigateNext();
       }
 
@@ -219,6 +234,7 @@ export function useKeyboard(options: KeyboardOptions) {
         }
         e.preventDefault();
         e.stopPropagation();
+        lockListHover();
         options.onNavigateFirst();
       }
 
@@ -228,6 +244,7 @@ export function useKeyboard(options: KeyboardOptions) {
         }
         e.preventDefault();
         e.stopPropagation();
+        lockListHover();
         options.onNavigateLast();
       }
 
@@ -237,6 +254,7 @@ export function useKeyboard(options: KeyboardOptions) {
         }
         e.preventDefault();
         e.stopPropagation();
+        lockListHover();
         options.onNavigatePageUp();
       }
 
@@ -246,6 +264,7 @@ export function useKeyboard(options: KeyboardOptions) {
         }
         e.preventDefault();
         e.stopPropagation();
+        lockListHover();
         options.onNavigatePageDown();
       }
 
@@ -257,15 +276,18 @@ export function useKeyboard(options: KeyboardOptions) {
           if (options.onFolderPrev) {
             e.preventDefault();
             e.stopPropagation();
+            lockListHover();
             options.onFolderPrev();
           }
         } else if (options.onNavigateLeft) {
           e.preventDefault();
           e.stopPropagation();
+          lockListHover();
           options.onNavigateLeft();
         } else if (options.onFolderPrev) {
           e.preventDefault();
           e.stopPropagation();
+          lockListHover();
           options.onFolderPrev();
         }
       }
@@ -275,15 +297,18 @@ export function useKeyboard(options: KeyboardOptions) {
           if (options.onFolderNext) {
             e.preventDefault();
             e.stopPropagation();
+            lockListHover();
             options.onFolderNext();
           }
         } else if (options.onNavigateRight) {
           e.preventDefault();
           e.stopPropagation();
+          lockListHover();
           options.onNavigateRight();
         } else if (options.onFolderNext) {
           e.preventDefault();
           e.stopPropagation();
+          lockListHover();
           options.onFolderNext();
         }
       }

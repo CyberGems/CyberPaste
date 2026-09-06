@@ -9,6 +9,7 @@ import { LAYOUT } from '../constants';
 import { clsx } from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { usePeekPointerArm } from '../hooks/usePeekPointerArm';
+import { isListHoverLocked, subscribeListHoverLock } from '../hooks/useListHoverLock';
 
 interface ClipListProps {
   clips: ClipboardItem[];
@@ -110,8 +111,13 @@ export const ClipList: React.FC<ClipListProps> = ({
   }, []);
   const { armedRef: peekArmedRef, notePointer: notePeekPointer } = usePeekPointerArm(closePeek);
 
+  useEffect(() => subscribeListHoverLock((locked) => {
+    if (locked) closePeek();
+  }), [closePeek]);
+
   const handleCardMouseEnter = useCallback(
     (e: React.MouseEvent, clip: ClipboardItem) => {
+      if (isListHoverLocked()) return;
       if (!fullPeekEnabled || !!draggingClipId) return;
 
       notePeekPointer(e.screenX, e.screenY);

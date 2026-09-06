@@ -23,21 +23,56 @@ interface ContextMenuProps {
   };
 }
 
+function firstEnabledIndex(options: ContextMenuOption[]): number {
+  const i = options.findIndex((o) => !o.disabled);
+  return i >= 0 ? i : 0;
+}
+
+function nextEnabledIndex(options: ContextMenuOption[], from: number, dir: 1 | -1): number {
+  if (options.length === 0) return 0;
+  let i = from;
+  for (let n = 0; n < options.length; n++) {
+    i = (i + dir + options.length) % options.length;
+    if (!options[i]?.disabled) return i;
+  }
+  return from;
+}
+
+function activateOption(option: ContextMenuOption | undefined, onClose: () => void) {
+  if (!option || option.disabled) return;
+  if (option.subMenu && option.subMenu.length > 0) return;
+  option.onClick?.();
+  onClose();
+}
+
 function ContextMenuItem({
   option,
   onClose,
   subMenuPlacement = 'side',
+  focused = false,
+  forceSubOpen = false,
+  subFocusedIndex = -1,
+  onHover,
 }: {
   option: ContextMenuOption;
   onClose: () => void;
   subMenuPlacement?: 'side' | 'below';
+  focused?: boolean;
+  forceSubOpen?: boolean;
+  subFocusedIndex?: number;
+  onHover?: () => void;
 }) {
   const SUBMENU_HOVER_DELAY = 140;
-  const [isOpen, setIsOpen] = useState(false);
+  const [hoverOpen, setHoverOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const subMenuRef = useRef<HTMLDivElement>(null);
   const openTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [subPos, setSubPos] = useState<{ left?: string; right?: string; top?: string }>({ left: '100%' });
+  const [subPos, setSubPos] = useState<{ left?: string; right?: string; top?: string }>({
+    left: '100%',
+  });
+
+  const hasSubMenu = !!(option.subMenu && option.subMenu.length > 0);
+  const isOpen = hoverOpen || forceSubOpen;
 
   useEffect(() => {
     return () => {
@@ -56,47 +91,42 @@ function ContextMenuItem({
     let newRight: string | undefined = undefined;
     let newTop: string | undefined = '0px';
 
-    // Horizontal overflow check
     if (parentRect.right + subRect.width > window.innerWidth - pad) {
       newLeft = undefined;
       newRight = '100%';
     }
 
-    // Vertical overflow check
     if (parentRect.top + subRect.height > window.innerHeight - pad) {
-      const offset = (parentRect.top + subRect.height) - (window.innerHeight - pad);
+      const offset = parentRect.top + subRect.height - (window.innerHeight - pad);
       newTop = `-${offset}px`;
     }
 
     setSubPos({ left: newLeft, right: newRight, top: newTop });
   }, [isOpen]);
 
-  const hasSubMenu = !!(option.subMenu && option.subMenu.length > 0);
-
   return (
     <div
       ref={containerRef}
       className="relative"
       onMouseEnter={() => {
+        onHover?.();
         if (!hasSubMenu) return;
         if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
-        openTimeoutRef.current = setTimeout(() => setIsOpen(true), SUBMENU_HOVER_DELAY);
+        openTimeoutRef.current = setTimeout(() => setHoverOpen(true), SUBMENU_HOVER_DELAY);
       }}
       onMouseLeave={() => {
         if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
-        setIsOpen(false);
+        setHoverOpen(false);
       }}
     >
       <button
         type="button"
         role="menuitem"
         disabled={option.disabled}
+        aria-expanded={hasSubMenu ? isOpen : undefined}
         onClick={(e) => {
-          if (hasSubMenu) {
-            e.stopPropagation();
-            return;
-          }
           e.stopPropagation();
+          if (hasSubMenu) return;
           if (!option.disabled && option.onClick) {
             option.onClick();
             onClose();
@@ -115,15 +145,22 @@ function ContextMenuItem({
           'flex w-full items-center rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors group',
           option.disabled ? 'pointer-events-none opacity-40' : '',
           option.danger
-            ? 'text-foreground/90 hover:bg-red-500/10'
-            : 'text-foreground/90 hover:bg-accent hover:text-primary'
+            ? clsx('text-foreground/90 hover:bg-red-500/10', focused && 'bg-red-500/10')
+            : clsx(
+                'text-foreground/90 hover:bg-accent hover:text-primary',
+                focused && 'bg-accent text-primary'
+              )
         )}
       >
         {option.icon && (
-          <span className={clsx(
-            "mr-2 flex items-center justify-center transition-colors shrink-0",
-            option.danger ? "text-red-500" : "text-muted-foreground group-hover:text-primary"
-          )}>
+          <span
+            className={clsx(
+              'mr-2 flex shrink-0 items-center justify-center transition-colors',
+              option.danger
+                ? 'text-red-500'
+                : clsx('text-muted-foreground group-hover:text-primary', focused && 'text-primary')
+            )}
+          >
             {option.icon}
           </span>
         )}
@@ -158,6 +195,7 @@ function ContextMenuItem({
                 option={subOpt}
                 onClose={onClose}
                 subMenuPlacement={subMenuPlacement}
+                focused={forceSubOpen && subFocusedIndex === index}
               />
             ))}
           </div>
@@ -176,8 +214,20 @@ export function ContextMenu({
   header,
 }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(() => firstEnabledIndex(options));
+  const [openSubIndex, setOpenSubIndex] = useState<number | null>(null);
+  const [subActiveIndex, setSubActiveIndex] = useState(0);
+  const activeIndexRef = useRef(activeIndex);
+  const openSubIndexRef = useRef(openSubIndex);
+  const subActiveIndexRef = useRef(subActiveIndex);
+  const optionsRef = useRef(options);
+  const onCloseRef = useRef(onClose);
+  activeIndexRef.current = activeIndex;
+  openSubIndexRef.current = openSubIndex;
+  subActiveIndexRef.current = subActiveIndex;
+  optionsRef.current = options;
+  onCloseRef.current = onClose;
 
-  // Position before paint — mutate DOM directly to avoid a second React render.
   useLayoutEffect(() => {
     const el = menuRef.current;
     if (!el) return;
@@ -198,8 +248,6 @@ export function ContextMenu({
     el.style.visibility = 'visible';
   }, [x, y, options.length]);
 
-  // Close on outside pointer / Escape without a full-screen overlay.
-  // Stop the closing left-click so it does not hit a clip (paste + hide window).
   useEffect(() => {
     const isInsideMenu = (target: EventTarget | null) => {
       const el = menuRef.current;
@@ -226,12 +274,114 @@ export function ContextMenu({
         };
         window.addEventListener('pointerup', onUp, true);
       }
-      onClose();
+      onCloseRef.current();
     };
+
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      const navKeys = [
+        'Escape',
+        'ArrowDown',
+        'ArrowUp',
+        'ArrowLeft',
+        'ArrowRight',
+        'Enter',
+        ' ',
+        'Home',
+        'End',
+      ];
+      if (!navKeys.includes(e.key)) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      const opts = optionsRef.current;
+      const close = onCloseRef.current;
+      const subIdx = openSubIndexRef.current;
+      const inSub = subIdx !== null && !!opts[subIdx]?.subMenu?.length;
+      const list = inSub ? opts[subIdx]!.subMenu! : opts;
+      const current = inSub ? subActiveIndexRef.current : activeIndexRef.current;
+
+      if (e.key === 'Escape') {
+        if (inSub) {
+          setOpenSubIndex(null);
+          return;
+        }
+        close();
+        return;
+      }
+
+      if (e.key === 'ArrowDown') {
+        const next = nextEnabledIndex(list, current, 1);
+        if (inSub) setSubActiveIndex(next);
+        else {
+          setActiveIndex(next);
+          setOpenSubIndex(null);
+        }
+        return;
+      }
+
+      if (e.key === 'ArrowUp') {
+        const next = nextEnabledIndex(list, current, -1);
+        if (inSub) setSubActiveIndex(next);
+        else {
+          setActiveIndex(next);
+          setOpenSubIndex(null);
+        }
+        return;
+      }
+
+      if (e.key === 'Home') {
+        const next = firstEnabledIndex(list);
+        if (inSub) setSubActiveIndex(next);
+        else {
+          setActiveIndex(next);
+          setOpenSubIndex(null);
+        }
+        return;
+      }
+
+      if (e.key === 'End') {
+        const next = nextEnabledIndex(list, firstEnabledIndex(list), -1);
+        if (inSub) setSubActiveIndex(next);
+        else {
+          setActiveIndex(next);
+          setOpenSubIndex(null);
+        }
+        return;
+      }
+
+      if (e.key === 'ArrowRight') {
+        if (inSub) return;
+        const option = opts[activeIndexRef.current];
+        if (option?.subMenu && option.subMenu.length > 0 && !option.disabled) {
+          setOpenSubIndex(activeIndexRef.current);
+          setSubActiveIndex(firstEnabledIndex(option.subMenu));
+        }
+        return;
+      }
+
+      if (e.key === 'ArrowLeft') {
+        if (inSub) setOpenSubIndex(null);
+        return;
+      }
+
+      if (e.key === 'Enter' || e.key === ' ') {
+        if (inSub) {
+          activateOption(list[current], close);
+          return;
+        }
+        const option = opts[activeIndexRef.current];
+        if (option?.subMenu && option.subMenu.length > 0 && !option.disabled) {
+          setOpenSubIndex(activeIndexRef.current);
+          setSubActiveIndex(firstEnabledIndex(option.subMenu));
+          return;
+        }
+        activateOption(option, close);
+      }
     };
-    const onBlur = () => onClose();
+
+    const onBlur = () => onCloseRef.current();
 
     window.addEventListener('pointerdown', onPointerDown, true);
     window.addEventListener('keydown', onKeyDown, true);
@@ -241,7 +391,7 @@ export function ContextMenu({
       window.removeEventListener('keydown', onKeyDown, true);
       window.removeEventListener('blur', onBlur);
     };
-  }, [onClose]);
+  }, []);
 
   return (
     <div
@@ -276,6 +426,13 @@ export function ContextMenu({
             option={option}
             onClose={onClose}
             subMenuPlacement={subMenuPlacement}
+            focused={activeIndex === index}
+            forceSubOpen={openSubIndex === index}
+            subFocusedIndex={openSubIndex === index ? subActiveIndex : -1}
+            onHover={() => {
+              setActiveIndex(index);
+              if (!option.subMenu?.length) setOpenSubIndex(null);
+            }}
           />
         ))}
       </div>

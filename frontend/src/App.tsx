@@ -28,6 +28,7 @@ import { check } from '@tauri-apps/plugin-updater';
 import { UpdateModal } from './components/UpdateModal';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { useKeyboard } from './hooks/useKeyboard';
+import { lockListHover } from './hooks/useListHoverLock';
 import { useTheme } from './hooks/useTheme';
 import { useLanguage } from './hooks/useLanguage';
 import { triggerPinFlash } from './hooks/usePinFlash';
@@ -206,6 +207,7 @@ function App() {
 
     const visibilityPromise = listen<boolean>('window-visibility', (event) => {
       setIsWindowActive(event.payload);
+      if (event.payload) lockListHover();
     });
 
     updateVisibility();

@@ -1,11 +1,14 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { MoreVertical, Heart, Globe, Tag, Github, Info, Book } from 'lucide-react';
+import { MoreVertical, Heart, Globe, Tag, Github, Info, Book, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { invoke } from '@tauri-apps/api/core';
+import { emit } from '@tauri-apps/api/event';
 import { clsx } from 'clsx';
 import Tooltip from './Tooltip';
+import { ConfirmDialog } from './ConfirmDialog';
+import { systemToast as toast } from '../utils/toast';
 
 const DONATE_URL = 'https://github.com/CyberGems/CyberPaste#%EF%B8%8F-donate';
 const WIKI_URL = 'https://github.com/CyberGems/CyberPaste/wiki';
@@ -16,6 +19,7 @@ const GITHUB_URL = 'https://github.com/CyberGems/CyberPaste';
 export function TitleBarMenu({ iconSize = 14 }: { iconSize?: number }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
   const [pos, setPos] = useState({ top: 0, right: 0 });
   const wrapRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -74,9 +78,28 @@ export function TitleBarMenu({ iconSize = 14 }: { iconSize?: number }) {
     fn();
   };
 
+  const confirmClearHistory = () => {
+    setOpen(false);
+    setConfirmClear(true);
+  };
+
+  const handleClearHistory = async () => {
+    setConfirmClear(false);
+    try {
+      await invoke('clear_all_clips');
+      await emit('clipboard-change');
+      toast.success(t('settings.clearHistorySuccess'));
+    } catch (error) {
+      console.error('Failed to clear history:', error);
+      toast.error(t('settings.failedToClearHistory', { error }));
+    }
+  };
+
   const itemClass =
     'group flex w-full items-center gap-2.5 rounded-md px-2.5 py-[7px] text-left text-[13px] font-medium text-foreground/90 transition-colors hover:bg-accent hover:text-foreground';
   const iconClass = 'shrink-0 text-muted-foreground transition-colors group-hover:text-primary';
+  const dangerItemClass =
+    'group flex w-full items-center gap-2.5 rounded-md px-2.5 py-[7px] text-left text-[13px] font-medium text-destructive transition-colors hover:bg-destructive/10 hover:text-destructive';
 
   return (
     <div ref={wrapRef} className="relative flex items-center">
@@ -193,6 +216,18 @@ export function TitleBarMenu({ iconSize = 14 }: { iconSize?: number }) {
             <button
               type="button"
               role="menuitem"
+              className={dangerItemClass}
+              onClick={confirmClearHistory}
+            >
+              <Trash2 size={14} className="shrink-0 text-destructive" />
+              <span>{t('settings.clearHistory')}</span>
+            </button>
+
+            <div className="mx-1.5 my-1 h-px bg-border" />
+
+            <button
+              type="button"
+              role="menuitem"
               className={itemClass}
               onClick={() =>
                 closeAnd(() => {
@@ -203,6 +238,25 @@ export function TitleBarMenu({ iconSize = 14 }: { iconSize?: number }) {
               <Info size={14} className={iconClass} />
               <span>{t('titleBar.moreMenu.about')}</span>
             </button>
+          </div>,
+          document.body
+        )}
+
+      {confirmClear &&
+        createPortal(
+          <div className="relative z-[400]">
+            <ConfirmDialog
+              isOpen={confirmClear}
+              title={t('settings.clearHistoryTitle')}
+              message={t('settings.clearHistoryMessage')}
+              confirmText={t('settings.clearHistory')}
+              cancelText={t('common.cancel')}
+              onConfirm={() => {
+                void handleClearHistory();
+              }}
+              onCancel={() => setConfirmClear(false)}
+              variant="danger"
+            />
           </div>,
           document.body
         )}

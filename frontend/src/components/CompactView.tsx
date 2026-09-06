@@ -86,6 +86,7 @@ import { usePinFlash } from '../hooks/usePinFlash';
 import { useFolderFlash } from '../hooks/useFolderFlash';
 import { useDeleteFlash } from '../hooks/useDeleteFlash';
 import { usePeekPointerArm } from '../hooks/usePeekPointerArm';
+import { isListHoverLocked, subscribeListHoverLock, useListHoverLocked } from '../hooks/useListHoverLock';
 
 const localeMap: Record<string, any> = {
   de,
@@ -667,6 +668,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
   }, []);
   const { armedRef: peekArmedRef, notePointer: notePeekPointer } = usePeekPointerArm(closePeek);
 
+  useEffect(() => subscribeListHoverLock((locked) => {
+    if (locked) closePeek();
+  }), [closePeek]);
+
   // NUEVO: micro-animación de entrada
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -989,6 +994,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   // NUEVO: handlers para peek popover
   const handleRowMouseEnter = useCallback(
     (clip: AppClip, e: React.MouseEvent) => {
+      if (isListHoverLocked()) return;
       if (!compactPeekEnabled || isDragging) return;
 
       notePeekPointer(e.screenX, e.screenY);
@@ -1921,15 +1927,16 @@ const ClipRow = memo(function ClipRow({
   );
 
   const [hovered, setHovered] = useState(false);
+  const hoverLocked = useListHoverLocked();
   const [menuHighlight, setMenuHighlight] = useState(false);
   const menuHighlightRef = useRef(false);
   const leftWhileMenuRef = useRef(false);
   const foreignMenuOpenRef = useRef(false);
   menuHighlightRef.current = menuHighlight;
   const isNavigationSelected = selectedClipId === clip.id && !(isPeekVisible && index === 0);
-  const showHover =
-    menuHighlight || isNavigationSelected || (hovered && !foreignMenuOpenRef.current);
-  const showActions = menuHighlight || (hovered && !foreignMenuOpenRef.current);
+  const pointerHover = hovered && !hoverLocked && !foreignMenuOpenRef.current;
+  const showHover = menuHighlight || isNavigationSelected || pointerHover;
+  const showActions = menuHighlight || pointerHover || isNavigationSelected;
   const shouldBlurForPeek = isPeekVisible && peekClipId !== clip.id;
   const pinFlash = usePinFlash(clip.id);
   const isDeleting = useDeleteFlash(clip.id);
@@ -1957,6 +1964,10 @@ const ClipRow = memo(function ClipRow({
     return () => window.removeEventListener(CONTEXT_MENU_EVENT, onMenu);
   }, [clip.id]);
 
+  useEffect(() => {
+    if (hoverLocked) setHovered(false);
+  }, [hoverLocked]);
+
   return (
     <div className="relative h-full">
       {reorderEnabled && reorderTargetClipId === clip.id && reorderTargetPosition === 'before' && (
@@ -1983,8 +1994,12 @@ const ClipRow = memo(function ClipRow({
           }
         }}
         onMouseEnter={() => {
-          if (foreignMenuOpenRef.current) return;
+          if (hoverLocked || isListHoverLocked() || foreignMenuOpenRef.current) return;
           leftWhileMenuRef.current = false;
+          setHovered(true);
+        }}
+        onMouseMove={() => {
+          if (hoverLocked || isListHoverLocked() || foreignMenuOpenRef.current) return;
           setHovered(true);
         }}
         onMouseLeave={() => {
@@ -1994,7 +2009,8 @@ const ClipRow = memo(function ClipRow({
         }}
         draggable="false"
         className={clsx(
-          'group relative flex h-10 w-full cursor-pointer items-center gap-3 overflow-hidden rounded-lg border bg-card px-2 py-1.5 transition-colors',
+          'relative flex h-10 w-full cursor-pointer items-center gap-3 overflow-hidden rounded-lg border bg-card px-2 py-1.5 transition-colors',
+          !hoverLocked && 'group',
           isDeleting &&
             'clip-deleting-row pointer-events-none border-rose-500/70 bg-rose-950 shadow-[0_0_16px_rgba(244,63,94,0.35)]',
           isSelected
@@ -2195,14 +2211,14 @@ const ClipRow = memo(function ClipRow({
             )}
           >
             <Tooltip
-              label={`${t('common.moreActions')} (Shift+F10)`}
+              label={t('common.moreActionsHint')}
               placement="left"
               disabled={isPeekVisible}
             >
               <button
                 type="button"
-                aria-label={`${t('common.moreActions')} (Shift+F10)`}
-                aria-keyshortcuts="Shift+F10"
+                aria-label={t('common.moreActionsHint')}
+                aria-keyshortcuts="Space Shift+F10"
                 onMouseDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();

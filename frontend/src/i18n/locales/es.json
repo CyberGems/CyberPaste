@@ -35,6 +35,7 @@
     "files": "Archivos",
     "more": "+{{count}} más",
     "moreActions": "Más acciones",
+    "moreActionsHint": "Más acciones (Espacio)",
     "pinnedClip": "Clip Fijado",
     "copyToClipboard": "Copiar al portapapeles",
     "file": "Archivo",
