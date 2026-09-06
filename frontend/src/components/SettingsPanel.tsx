@@ -21,6 +21,7 @@ import {
   Command,
   Lock,
   Database,
+  HardDrive,
   Bell,
   Layers,
   Monitor,
@@ -53,6 +54,12 @@ interface SettingsPanelProps {
 }
 
 type Tab = 'general' | 'folders' | 'full' | 'compact' | 'ai' | 'notifications' | 'maintenance';
+
+function formatDbSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 function PromptEditor({
   label,
@@ -161,6 +168,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
   });
   const [settings, setSettings] = useState<Settings>(initialSettings);
   const [_historySize, setHistorySize] = useState<number>(0);
+  const [dbSizeBytes, setDbSizeBytes] = useState<number | null>(null);
   const [recordingTarget, setRecordingTarget] = useState<'hotkey' | 'view_mode_hotkey' | null>(
     null
   );
@@ -430,6 +438,13 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     }
   }, []);
 
+  useEffect(() => {
+    if (activeTab !== 'maintenance') return;
+    invoke<number>('get_db_size')
+      .then(setDbSizeBytes)
+      .catch(() => setDbSizeBytes(null));
+  }, [activeTab]);
+
   const addAppToIgnored = async (appName: string) => {
     const trimmed = appName.trim();
     if (!trimmed) return;
@@ -488,6 +503,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
           await invoke('clear_all_clips');
           await emit('clipboard-change');
           setHistorySize(0);
+          invoke<number>('get_db_size')
+            .then(setDbSizeBytes)
+            .catch(() => setDbSizeBytes(null));
           toast.success(t('settings.clearHistorySuccess'));
         } catch (error) {
           console.error('Failed to clear history:', error);
@@ -586,9 +604,24 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
           data-tauri-drag-region
           className="relative flex cursor-default items-center justify-between border-b border-border bg-transparent px-4 py-3"
         >
-          <div className="z-10 flex min-w-0 items-center gap-3">
-            <img src="/logo.png" alt="CyberPaste" className="h-5 w-5 object-contain" />
-            <h2 className="text-[18px] font-bold tracking-tight text-foreground">CyberPaste</h2>
+          <div className="z-10 flex min-w-0 items-center">
+            <Tooltip label={t('common.openAbout')} placement="bottom">
+              <button
+                type="button"
+                className="no-drag flex min-w-0 items-center gap-3 rounded-md px-1.5 py-1 -ml-1.5 transition-colors hover:bg-accent/60"
+                aria-label={t('common.openAbout')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  invoke('open_about').catch(console.error);
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                <img src="/logo.png" alt="" className="h-5 w-5 object-contain" />
+                <span className="text-[18px] font-bold tracking-tight text-foreground">
+                  CyberPaste
+                </span>
+              </button>
+            </Tooltip>
           </div>
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <h1 className="max-w-[46%] truncate text-[14px] font-semibold tracking-tight text-foreground">
@@ -2365,18 +2398,37 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <FolderOpen size={14} /> {t('settings.systemDebug')}
                     </h3>
                     <div className="rounded-xl border border-border bg-card p-4">
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <p className="max-w-[520px] text-sm leading-relaxed text-muted-foreground/80">
-                          {t('settings.systemDebugDesc')}
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            onClick={openDataDir}
-                            className="flex items-center gap-2 rounded-[4px] border border-border bg-input px-3 py-2 text-xs font-medium transition-all hover:bg-white/10"
-                          >
-                            <FolderOpen size={16} />
-                            {t('settings.dataDirectory')}
-                          </button>
+                      <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex gap-3">
+                            <HardDrive className="h-5 w-5 flex-shrink-0 text-amber-500/80" />
+                            <div>
+                              <span className="block text-sm font-medium text-foreground">
+                                {t('common.databaseSize')}
+                              </span>
+                              <span className="mt-0.5 block text-xs text-muted-foreground">
+                                {t('settings.databaseSizeDesc')}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="font-mono text-sm font-semibold tabular-nums text-amber-600/90 dark:text-amber-400/90 sm:text-right">
+                            {dbSizeBytes == null ? '—' : formatDbSize(dbSizeBytes)}
+                          </span>
+                        </div>
+                        <div className="h-px bg-border" />
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                          <p className="max-w-[520px] text-sm leading-relaxed text-muted-foreground/80">
+                            {t('settings.systemDebugDesc')}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              onClick={openDataDir}
+                              className="flex items-center gap-2 rounded-[4px] border border-border bg-input px-3 py-2 text-xs font-medium transition-all hover:bg-white/10"
+                            >
+                              <FolderOpen size={16} />
+                              {t('settings.dataDirectory')}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>

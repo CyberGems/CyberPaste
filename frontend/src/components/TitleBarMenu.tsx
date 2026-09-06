@@ -98,8 +98,6 @@ export function TitleBarMenu({ iconSize = 14 }: { iconSize?: number }) {
   const itemClass =
     'group flex w-full items-center gap-2.5 rounded-md px-2.5 py-[7px] text-left text-[13px] font-medium text-foreground/90 transition-colors hover:bg-accent hover:text-foreground';
   const iconClass = 'shrink-0 text-muted-foreground transition-colors group-hover:text-primary';
-  const dangerItemClass =
-    'group flex w-full items-center gap-2.5 rounded-md px-2.5 py-[7px] text-left text-[13px] font-medium text-destructive transition-colors hover:bg-destructive/10 hover:text-destructive';
 
   return (
     <div ref={wrapRef} className="relative flex items-center">
@@ -216,7 +214,7 @@ export function TitleBarMenu({ iconSize = 14 }: { iconSize?: number }) {
             <button
               type="button"
               role="menuitem"
-              className={dangerItemClass}
+              className={itemClass}
               onClick={confirmClearHistory}
             >
               <Trash2 size={14} className="shrink-0 text-destructive" />

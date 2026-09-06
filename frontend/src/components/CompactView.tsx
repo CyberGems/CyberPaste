@@ -1202,31 +1202,26 @@ export const CompactView: React.FC<CompactViewProps> = ({
           data-tauri-drag-region
           className="flex min-w-0 flex-1 cursor-move items-center gap-2 self-stretch"
         >
-          <div
-            data-tauri-drag-region
-            className="flex h-6 w-6 items-center justify-center overflow-hidden"
-          >
-            <img
-              src="/logo.png"
-              alt="Logo"
-              className="h-5 w-5 object-contain"
-              data-tauri-drag-region
-            />
-          </div>
-          <div data-tauri-drag-region className="flex min-w-0 flex-1 items-center gap-2">
-            <span
-              data-tauri-drag-region
-              className="truncate text-sm font-bold tracking-tight text-foreground leading-none"
+          <Tooltip label={t('common.openAbout')} placement="bottom">
+            <button
+              type="button"
+              className="no-drag flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1 -ml-1.5 transition-colors hover:bg-accent/60"
+              aria-label={t('common.openAbout')}
+              onClick={(e) => {
+                e.stopPropagation();
+                invoke('open_about').catch(console.error);
+              }}
             >
-              CyberPaste
-            </span>
-            <span
-              data-tauri-drag-region
-              className="inline-flex items-center justify-center rounded-md border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-primary leading-none shadow-[0_0_8px_rgba(var(--primary-rgb),0.15)]"
-            >
-              Compact
-            </span>
-          </div>
+              <img src="/logo.png" alt="" className="h-5 w-5 shrink-0 object-contain" />
+              <span className="truncate text-sm font-bold tracking-tight text-foreground leading-5">
+                CyberPaste
+              </span>
+              <span className="inline-flex shrink-0 items-center justify-center rounded border border-primary/30 bg-primary/10 px-1 py-px text-[8px] font-semibold uppercase tracking-wide text-primary leading-none shadow-[0_0_8px_rgba(var(--primary-rgb),0.15)]">
+                Compact
+              </span>
+            </button>
+          </Tooltip>
+          <div data-tauri-drag-region className="min-h-full min-w-0 flex-1 self-stretch" />
         </div>
         <div className="flex cursor-default items-center gap-0.5">
           <TitleBarUpdateButton

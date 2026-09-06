@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 // @ts-ignore
 import { Grid, GridImperativeAPI, CellComponentProps } from 'react-window';
+import { listen } from '@tauri-apps/api/event';
 import { ClipCard } from './ClipCard';
 import { FullPeek } from './FullPeek';
 import { resolveImageSrc } from '../utils/image';
@@ -214,34 +215,57 @@ export const ClipList: React.FC<ClipListProps> = ({
   const isVertical = scrollDirection === 'vertical';
 
   useEffect(() => {
-    let rafId: number;
+    const el = containerRef.current;
+    if (!el) return;
+
+    let raf1 = 0;
+    let raf2 = 0;
+    let raf3 = 0;
+    let visTimer: ReturnType<typeof setTimeout> | undefined;
+
     const updateSize = () => {
-      if (containerRef.current) {
-        const w = containerRef.current.offsetWidth;
-        const h = containerRef.current.offsetHeight;
-        if (w > 0 && h > 0) {
-          // Batch updates with requestAnimationFrame for smooth resizing
-          cancelAnimationFrame(rafId);
-          rafId = requestAnimationFrame(() => {
-            setContainerWidth(w);
-            setContainerHeight(h);
-          });
-        }
-      }
+      const w = el.clientWidth;
+      const h = el.clientHeight;
+      // Tauri hide/show often reports 0 on a transient frame; keep the last good size.
+      if (w <= 0 || h <= 0) return;
+      cancelAnimationFrame(raf3);
+      raf3 = requestAnimationFrame(() => {
+        setContainerWidth((prev) => (prev === w ? prev : w));
+        setContainerHeight((prev) => (prev === h ? prev : h));
+      });
     };
 
     updateSize();
-    window.addEventListener('resize', updateSize);
+    raf1 = requestAnimationFrame(() => {
+      updateSize();
+      raf2 = requestAnimationFrame(updateSize);
+    });
 
     const observer = new ResizeObserver(updateSize);
-    if (containerRef.current) observer.observe(containerRef.current);
+    observer.observe(el);
+    window.addEventListener('resize', updateSize);
+
+    const unlistenVis = listen<boolean>('window-visibility', (event) => {
+      if (!event.payload) return;
+      updateSize();
+      requestAnimationFrame(() => {
+        requestAnimationFrame(updateSize);
+      });
+      // Layout can settle a frame or two after the webview is shown again.
+      clearTimeout(visTimer);
+      visTimer = setTimeout(updateSize, 50);
+    });
 
     return () => {
-      cancelAnimationFrame(rafId);
-      window.removeEventListener('resize', updateSize);
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      cancelAnimationFrame(raf3);
+      clearTimeout(visTimer);
       observer.disconnect();
+      window.removeEventListener('resize', updateSize);
+      unlistenVis.then((f) => f());
     };
-  }, []);
+  }, [isLoading, clips.length]);
 
   // Adaptive column count: fit as many ~CARD_WIDTH columns as the container allows.
   // In horizontal mode, every clip is its own column (single scrollable row).
@@ -358,25 +382,8 @@ export const ClipList: React.FC<ClipListProps> = ({
     );
   };
 
-  if (isLoading && clips.length === 0) {
-    return (
-      <div className="flex h-full w-full items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-          <p className="text-sm text-muted-foreground">{t('clipList.loadingClips')}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (clips.length === 0) {
-    return (
-      <div className="flex h-full w-full flex-col items-center justify-center p-8 text-center">
-        <h3 className="mb-2 text-lg font-semibold text-gray-400">{t('clipList.empty')}</h3>
-        <p className="max-w-xs text-sm text-gray-500">{t('clipList.emptyDesc')}</p>
-      </div>
-    );
-  }
+  const showLoading = isLoading && clips.length === 0;
+  const showEmpty = !showLoading && clips.length === 0;
 
   const handleWheel = (e: React.WheelEvent) => {
     if (!isVertical && containerRef.current) {
@@ -400,28 +407,42 @@ export const ClipList: React.FC<ClipListProps> = ({
       className="h-full w-full flex-1 overflow-hidden"
       onWheel={handleWheel}
     >
-      <Grid
-        data-el="clip-list"
-        cellComponent={Cell}
-        cellProps={{}}
-        className={clsx('no-scrollbar', showScrollbar && 'full-mode-scrollbar')}
-        style={{
-          height: gridHeight,
-          width: containerWidth,
-          scrollBehavior: 'smooth',
-          position: 'relative',
-          overflowX: isVertical ? 'hidden' : 'auto',
-        }}
-        defaultHeight={gridHeight}
-        defaultWidth={containerWidth}
-        gridRef={gridRef}
-        rowCount={rowCount}
-        rowHeight={isVertical ? effectiveRowHeight : Math.round(180 * gridScale)}
-        columnCount={columnCount}
-        columnWidth={isVertical ? usableWidth / columnCount : effectiveCardWidth}
-        overscanCount={4}
-        onCellsRendered={handleCellsRendered}
-      />
+      {showLoading ? (
+        <div className="flex h-full w-full items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+            <p className="text-sm text-muted-foreground">{t('clipList.loadingClips')}</p>
+          </div>
+        </div>
+      ) : showEmpty ? (
+        <div className="flex h-full w-full flex-col items-center justify-center p-8 text-center">
+          <h3 className="mb-2 text-lg font-semibold text-gray-400">{t('clipList.empty')}</h3>
+          <p className="max-w-xs text-sm text-gray-500">{t('clipList.emptyDesc')}</p>
+        </div>
+      ) : (
+        <Grid
+          data-el="clip-list"
+          cellComponent={Cell}
+          cellProps={{}}
+          className={clsx('no-scrollbar', showScrollbar && 'full-mode-scrollbar')}
+          style={{
+            height: gridHeight,
+            width: containerWidth,
+            scrollBehavior: 'smooth',
+            position: 'relative',
+            overflowX: isVertical ? 'hidden' : 'auto',
+          }}
+          defaultHeight={gridHeight}
+          defaultWidth={containerWidth}
+          gridRef={gridRef}
+          rowCount={rowCount}
+          rowHeight={isVertical ? effectiveRowHeight : Math.round(180 * gridScale)}
+          columnCount={columnCount}
+          columnWidth={isVertical ? usableWidth / columnCount : effectiveCardWidth}
+          overscanCount={4}
+          onCellsRendered={handleCellsRendered}
+        />
+      )}
 
       {/* Full Mode Expanded Hover Peek Popover */}
       <FullPeek

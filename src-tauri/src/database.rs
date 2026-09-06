@@ -85,8 +85,9 @@ fn reorder_unpinned_in_holes(
 }
 
 /// Resolve a top/bottom jump. `before` is true when the clip should sit in
-/// front of the returned uuid. Main-list slot 0 is the live clipboard item, so
-/// unpinned jumps skip it — same rule as drag-reorder.
+/// front of the returned uuid. Main-list unpinned "top" is the live slot
+/// (visual 0 when that hole is free). Bottom still skips the live slot so
+/// drag-adjacent history order is unchanged.
 fn edge_target(
     visual: &[ListClip],
     clip: &str,
@@ -114,7 +115,7 @@ fn edge_target(
         let unpinned: Vec<&ListClip> = visual
             .iter()
             .enumerate()
-            .filter(|(i, c)| !c.is_pinned && !(is_main && *i == 0))
+            .filter(|(i, c)| !c.is_pinned && !(is_main && !to_top && *i == 0))
             .map(|(_, c)| c)
             .collect();
         if to_top {
@@ -425,6 +426,14 @@ impl Database {
 
         let visual = self.load_list_clips(folder_id).await?;
         let is_main = folder_id.is_none();
+        let clip_pinned = visual
+            .iter()
+            .find(|c| c.uuid == clip_uuid)
+            .map(|c| c.is_pinned)
+            .unwrap_or(false);
+        if is_main && edge == "top" && !clip_pinned {
+            return self.place_at_live_slot(clip_uuid).await;
+        }
         let Some((target_uuid, before)) = edge_target(&visual, clip_uuid, edge, is_main) else {
             return Ok(());
         };
@@ -763,7 +772,7 @@ mod tests {
     }
 
     #[test]
-    fn edge_target_unpinned_skips_live_slot_on_main_list() {
+    fn edge_target_unpinned_top_uses_live_slot_on_main_list() {
         let visual = vec![
             lc("A", false),
             lc("B", true),
@@ -772,14 +781,28 @@ mod tests {
         ];
         assert_eq!(
             edge_target(&visual, "D", "top", true),
-            Some(("C".to_string(), true))
+            Some(("A".to_string(), true))
         );
-        assert_eq!(edge_target(&visual, "C", "top", true), None);
+        assert_eq!(edge_target(&visual, "A", "top", true), None);
         assert_eq!(
             edge_target(&visual, "C", "bottom", true),
             Some(("D".to_string(), false))
         );
         assert_eq!(edge_target(&visual, "D", "bottom", true), None);
+    }
+
+    #[test]
+    fn edge_target_unpinned_top_uses_first_free_hole_when_live_pinned() {
+        let visual = vec![
+            lc("P", true),
+            lc("A", false),
+            lc("D", false),
+        ];
+        assert_eq!(
+            edge_target(&visual, "D", "top", true),
+            Some(("A".to_string(), true))
+        );
+        assert_eq!(edge_target(&visual, "A", "top", true), None);
     }
 
     #[test]

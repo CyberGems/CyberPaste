@@ -887,27 +887,36 @@ export function ImageViewerWindow() {
         />
       )}
 
-      {/* Header — branding matches Settings; drag on the brand; toolbar stays clickable */}
+      {/* Header — branding opens About; remaining chrome stays draggable */}
       <div
+        data-tauri-drag-region
         className={`relative z-10 flex select-none cursor-default items-center justify-between border-b px-4 py-3 ${headerBg}`}
       >
-        <div
-          className="z-10 flex min-w-0 select-none cursor-default items-center gap-3"
-          data-tauri-drag-region
-        >
-          <img
-            src="/logo.png"
-            alt="CyberPaste"
-            className="h-5 w-5 shrink-0 select-none object-contain"
-            draggable={false}
-            data-tauri-drag-region
-          />
-          <h2
-            className={`shrink-0 select-none text-[18px] font-bold tracking-tight ${textPrimary}`}
-            data-tauri-drag-region
-          >
-            CyberPaste
-          </h2>
+        <div className="z-10 flex min-w-0 select-none cursor-default items-center">
+          <Tooltip label={t('common.openAbout')} placement="bottom">
+            <button
+              type="button"
+              className="no-drag flex min-w-0 items-center gap-3 rounded-md px-1.5 py-1 -ml-1.5 transition-colors hover:bg-accent/60"
+              aria-label={t('common.openAbout')}
+              onClick={(e) => {
+                e.stopPropagation();
+                invoke('open_about').catch(console.error);
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <img
+                src="/logo.png"
+                alt=""
+                className="h-5 w-5 shrink-0 select-none object-contain"
+                draggable={false}
+              />
+              <span
+                className={`shrink-0 select-none text-[18px] font-bold tracking-tight ${textPrimary}`}
+              >
+                CyberPaste
+              </span>
+            </button>
+          </Tooltip>
         </div>
 
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
@@ -918,7 +927,7 @@ export function ImageViewerWindow() {
           </h1>
         </div>
 
-        <div className="z-10 flex shrink-0 items-center gap-2">
+        <div className="no-drag z-10 flex shrink-0 items-center gap-2">
           {/* Nav */}
           <div className={`flex items-center gap-0.5 rounded-lg border p-0.5 ${groupBg}`}>
             <Tooltip label={t('viewer.previousImage')} placement="bottom">

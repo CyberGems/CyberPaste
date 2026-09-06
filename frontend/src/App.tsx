@@ -120,9 +120,12 @@ function clipEdgeDisabled(
     if (edge === 'top') return clips[0]?.id === clipId;
     return !hasMore && clips[clips.length - 1]?.id === clipId;
   }
+  if (edge === 'top') {
+    if (isMainList) return clips[0]?.id === clipId;
+    const unpinned = clips.filter((c) => !c.is_pinned);
+    return unpinned[0]?.id === clipId;
+  }
   const unpinned = clips.filter((c, i) => !c.is_pinned && !(isMainList && i === 0));
-  if (unpinned.length === 0) return true;
-  if (edge === 'top') return unpinned[0]?.id === clipId;
   return !hasMore && unpinned[unpinned.length - 1]?.id === clipId;
 }
 
@@ -219,19 +222,6 @@ function App() {
       visibilityPromise.then((f) => f());
     };
   }, [settings?.pinned]);
-
-  // DB size for HUD status strip
-  const [dbSizeBytes, setDbSizeBytes] = useState(0);
-  useEffect(() => {
-    if (!isWindowActive) return;
-    const fetchSize = () =>
-      invoke<number>('get_db_size')
-        .then(setDbSizeBytes)
-        .catch(() => {});
-    fetchSize();
-    const timer = setInterval(fetchSize, 30000); // refresh every 30s
-    return () => clearInterval(timer);
-  }, [isWindowActive]);
 
   // Simulated Drag State
   const [draggingClipId, setDraggingClipId] = useState<string | null>(null);
@@ -1518,7 +1508,15 @@ function App() {
   const handleMoveClipToEdge = useCallback(
     async (clipId: string, edge: 'top' | 'bottom') => {
       try {
-        await invoke('move_clip_to_edge', { clipUuid: clipId, edge });
+        const clip = clipsRef.current.find((c) => c.id === clipId);
+        const promoteToLive =
+          edge === 'top' && selectedFolderRef.current === null && clip && !clip.is_pinned;
+
+        if (promoteToLive) {
+          await invoke('copy_clip', { clipId });
+        } else {
+          await invoke('move_clip_to_edge', { clipUuid: clipId, edge });
+        }
         await loadClips(selectedFolderRef.current);
         await loadFolders();
         refreshTotalCount();
@@ -2913,7 +2911,6 @@ function App() {
                 onTogglePin={handleTogglePin}
                 onResetSize={handleResetSize}
                 hotkey={settings?.hotkey}
-                dbSizeBytes={dbSizeBytes}
                 onReorderFolder={handleReorderFolder}
                 showHud={settings?.full_show_hud ?? true}
                 titleBarAnimationEnabled={settings?.title_bar_animation_enabled ?? true}

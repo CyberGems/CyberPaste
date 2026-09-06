@@ -52,7 +52,6 @@ import {
   Pin,
   RotateCcw,
   Keyboard,
-  HardDrive as StorageIcon,
 } from 'lucide-react';
 import { FolderItem } from '../types';
 import { CONTEXT_MENU_EVENT, type ContextMenuEventDetail } from '../utils/contextMenuEvents';
@@ -62,6 +61,7 @@ import Tooltip from './Tooltip';
 import { TitleBarMenu } from './TitleBarMenu';
 import { TitleBarUpdateButton } from './TitleBarUpdateButton';
 import { useFolderFlash } from '../hooks/useFolderFlash';
+import { invoke } from '@tauri-apps/api/core';
 
 const IconMap: Record<string, any> = {
   Zap,
@@ -134,7 +134,6 @@ interface ControlBarProps {
   style?: React.CSSProperties;
   hotkey?: string;
   showHud?: boolean;
-  dbSizeBytes?: number;
   onReorderFolder?: (folderId: string, targetId: string, position: 'before' | 'after') => void;
   isWindowActive?: boolean;
   wheelFolderNavigation?: boolean;
@@ -241,7 +240,6 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   style,
   hotkey,
   showHud = true,
-  dbSizeBytes,
   onReorderFolder,
   isWindowActive = true,
   wheelFolderNavigation = false,
@@ -479,13 +477,6 @@ export const ControlBar: React.FC<ControlBarProps> = ({
     return () => clearInterval(timer);
   }, [isWindowActive]);
 
-  // ── DB size formatting ──
-  const formatBytes = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
   const headerBtnClass =
     'flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80';
 
@@ -517,10 +508,19 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         )}
 
         <div className="z-10 flex shrink-0 items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center overflow-hidden">
-            <img src="/logo.png" alt="Logo" className="h-5 w-5 object-contain" />
-          </div>
-          <span className="text-sm font-bold tracking-tight text-foreground">CyberPaste</span>
+          <Tooltip label={t('common.openAbout')} placement="bottom">
+            <button
+              type="button"
+              className="flex items-center gap-2 rounded-md px-1.5 py-1 -ml-1.5 transition-colors hover:bg-accent/60"
+              aria-label={t('common.openAbout')}
+              onClick={() => invoke('open_about').catch(console.error)}
+            >
+              <img src="/logo.png" alt="" className="h-5 w-5 object-contain" />
+              <span className="text-sm font-bold tracking-tight text-foreground leading-5">
+                CyberPaste
+              </span>
+            </button>
+          </Tooltip>
         </div>
 
         {showHud && (
@@ -550,23 +550,6 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                   <span className="rounded border border-primary/20 bg-primary/10 px-1.5 py-px font-mono text-[10px] font-bold text-primary">
                     {hotkey}
                   </span>
-                </Tooltip>
-              </>
-            )}
-
-            {dbSizeBytes != null && dbSizeBytes > 0 && (
-              <>
-                <div className="h-3 w-px bg-border" />
-                <Tooltip
-                  label={`${t('common.databaseSize')}: ${formatBytes(dbSizeBytes)}`}
-                  placement="bottom"
-                >
-                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground/70">
-                    <StorageIcon size={10} className="text-amber-500/60" />
-                    <span className="font-mono text-amber-600/90 dark:text-amber-400/75">
-                      {formatBytes(dbSizeBytes)}
-                    </span>
-                  </div>
                 </Tooltip>
               </>
             )}
