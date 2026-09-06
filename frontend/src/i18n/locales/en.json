@@ -457,6 +457,7 @@
     "aboutDescription": "A fast, local clipboard history manager built for focused workflows, with instant search and privacy by default.",
     "aboutUpdatesSection": "Updates & Maintenance",
     "aboutWebsiteTooltip": "Visit the CyberGems website",
+    "aboutDocsTooltip": "Online documentation",
     "aboutGithubTooltip": "View CyberPaste on GitHub",
     "aboutIssuesTooltip": "Report a bug or open an issue",
     "aboutReleasesTooltip": "View releases and changelogs",

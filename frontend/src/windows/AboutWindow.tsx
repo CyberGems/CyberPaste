@@ -7,10 +7,11 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { check } from '@tauri-apps/plugin-updater';
 import {
   AlertCircle,
+  BookOpen,
   ChevronDown,
   ExternalLink,
   Github,
-  HelpCircle,
+  Globe,
   Info,
   Minus,
   RotateCcw,
@@ -32,6 +33,37 @@ type UpdateType = Awaited<ReturnType<typeof check>>;
 
 const REPO_URL = 'https://github.com/CyberGems/CyberPaste';
 const WEBSITE_URL = 'https://cybergems.org';
+const WIKI_URL = 'https://github.com/CyberGems/CyberPaste/wiki';
+const DONATE_URL = 'https://github.com/CyberGems/CyberPaste#%EF%B8%8F-donate';
+const HEART_COLOR = '#F43F5E';
+
+function BugIcon({ size = 15 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLineJoin="round"
+      aria-hidden
+    >
+      <path d="m8 2 1.88 1.88" />
+      <path d="M14.12 3.88 16 2" />
+      <path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1" />
+      <path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6" />
+      <path d="M12 20v-9" />
+      <path d="M6.53 9C4.6 8.8 3 7.1 3 5" />
+      <path d="M6 13H2" />
+      <path d="M3 21c0-2.1 1.7-3.9 3.8-4" />
+      <path d="M20.97 5c0 2.1-1.6 3.8-3.5 4" />
+      <path d="M22 13h-4" />
+      <path d="M17.2 17c2.1.1 3.8 1.9 3.8 4" />
+    </svg>
+  );
+}
 
 export function AboutWindow() {
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -374,28 +406,24 @@ export function AboutWindow() {
             </button>
           </span>
           <div className="flex items-center gap-1">
-            <Tooltip label={t('common.donate', 'Donate')} placement="top">
-              <button
-                type="button"
-                aria-label={t('common.donate', 'Donate')}
-                onClick={() =>
-                  openUrl('https://github.com/CyberGems/CyberPaste#%EF%B8%8F-donate').catch(
-                    console.error
-                  )
-                }
-                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-rose-500"
-              >
-                <Heart size={15} />
-              </button>
-            </Tooltip>
             <Tooltip label={t('settings.aboutWebsiteTooltip')} placement="top">
               <button
                 type="button"
                 aria-label={t('settings.aboutWebsiteTooltip')}
                 onClick={() => openUrl(WEBSITE_URL).catch(console.error)}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                className="flex h-[30px] w-[30px] items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
-                <ExternalLink size={15} />
+                <Globe size={15} strokeWidth={1.5} />
+              </button>
+            </Tooltip>
+            <Tooltip label={t('settings.aboutDocsTooltip')} placement="top">
+              <button
+                type="button"
+                aria-label={t('settings.aboutDocsTooltip')}
+                onClick={() => openUrl(WIKI_URL).catch(console.error)}
+                className="flex h-[30px] w-[30px] items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <BookOpen size={15} strokeWidth={1.5} />
               </button>
             </Tooltip>
             <Tooltip label={t('settings.aboutGithubTooltip')} placement="top">
@@ -403,9 +431,9 @@ export function AboutWindow() {
                 type="button"
                 aria-label={t('settings.aboutGithubTooltip')}
                 onClick={() => openUrl(REPO_URL).catch(console.error)}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                className="flex h-[30px] w-[30px] items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
-                <Github size={15} />
+                <Github size={15} strokeWidth={1.5} />
               </button>
             </Tooltip>
             <Tooltip label={t('settings.aboutIssuesTooltip')} placement="top">
@@ -413,9 +441,9 @@ export function AboutWindow() {
                 type="button"
                 aria-label={t('settings.aboutIssuesTooltip')}
                 onClick={() => openUrl(`${REPO_URL}/issues`).catch(console.error)}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                className="flex h-[30px] w-[30px] items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
-                <HelpCircle size={15} />
+                <BugIcon size={15} />
               </button>
             </Tooltip>
             <Tooltip label={t('settings.aboutReleasesTooltip')} placement="top">
@@ -423,19 +451,19 @@ export function AboutWindow() {
                 type="button"
                 aria-label={t('settings.aboutReleasesTooltip')}
                 onClick={() => openUrl(`${REPO_URL}/releases`).catch(console.error)}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                className="flex h-[30px] w-[30px] items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
-                <Tag size={15} />
+                <Tag size={15} strokeWidth={1.5} />
               </button>
             </Tooltip>
-            <Tooltip label={t('settings.aboutLicenseTooltip')} placement="top">
+            <Tooltip label={t('common.donate')} placement="top">
               <button
                 type="button"
-                aria-label={t('settings.aboutLicenseTooltip')}
-                onClick={() => openUrl(`${REPO_URL}/blob/main/LICENSE`).catch(console.error)}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                aria-label={t('common.donate')}
+                onClick={() => openUrl(DONATE_URL).catch(console.error)}
+                className="flex h-[30px] w-[30px] items-center justify-center rounded-md transition-colors hover:bg-accent"
               >
-                <Info size={15} />
+                <Heart size={15} strokeWidth={1.5} fill={HEART_COLOR} stroke={HEART_COLOR} />
               </button>
             </Tooltip>
           </div>
