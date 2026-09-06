@@ -6,7 +6,7 @@ import {
   X,
   ExternalLink,
   Copy,
-  Maximize,
+  Maximize2,
   Minimize2,
   Minus,
   ScanText,
@@ -29,6 +29,7 @@ import { de, enUS, es, fr, ja, zhCN } from 'date-fns/locale';
 import type { ClipboardItem, Settings } from '../types';
 import { ContextMenu } from '../components/ContextMenu';
 import Tooltip from '../components/Tooltip';
+import { TitleBarMenu } from '../components/TitleBarMenu';
 
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 8;
@@ -887,12 +888,12 @@ export function ImageViewerWindow() {
         />
       )}
 
-      {/* Header — branding opens About; remaining chrome stays draggable */}
+      {/* Header — branding opens About; title sits in leftover space so it never overlaps the toolbar */}
       <div
         data-tauri-drag-region
-        className={`relative z-10 flex select-none cursor-default items-center justify-between border-b px-4 py-3 ${headerBg}`}
+        className={`relative z-10 flex select-none cursor-default items-center gap-2 border-b px-4 py-3 ${headerBg}`}
       >
-        <div className="z-10 flex min-w-0 select-none cursor-default items-center">
+        <div className="z-10 flex min-w-0 shrink-0 select-none cursor-default items-center">
           <Tooltip label={t('common.openAbout')} placement="bottom">
             <button
               type="button"
@@ -919,13 +920,11 @@ export function ImageViewerWindow() {
           </Tooltip>
         </div>
 
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <h1
-            className={`max-w-[40%] truncate text-[14px] font-semibold tracking-tight ${textPrimary}`}
-          >
-            {t('viewer.title')}
-          </h1>
-        </div>
+        <h1
+          className={`min-w-0 flex-1 truncate px-1 text-center text-[14px] font-semibold tracking-tight ${textPrimary}`}
+        >
+          {t('viewer.title')}
+        </h1>
 
         <div className="no-drag z-10 flex shrink-0 items-center gap-2">
           {/* Nav */}
@@ -1053,6 +1052,8 @@ export function ImageViewerWindow() {
             </Tooltip>
           </div>
 
+          <TitleBarMenu iconSize={15} variant="viewer" />
+
           {/* Window controls */}
           <div className="flex items-center gap-0.5">
             <Tooltip label={t('common.minimize')} placement="bottom">
@@ -1074,7 +1075,7 @@ export function ImageViewerWindow() {
                 onClick={handleMaximize}
                 className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
               >
-                {isMaximized ? <Minimize2 size={16} /> : <Maximize size={16} />}
+                {isMaximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
               </button>
             </Tooltip>
 

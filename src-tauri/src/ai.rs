@@ -5,7 +5,7 @@ use std::error::Error;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AiConfig {
-    pub provider: String, // "openai", "deepseek", "custom"
+    pub provider: String, // "openai", "deepseek", "kimi", "gemini", "grok", "custom"
     pub api_key: String,
     pub model: String,
     pub base_url: Option<String>,
@@ -64,8 +64,7 @@ pub async fn process_text(
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": text}
-        ],
-        "temperature": 0.7
+        ]
     });
 
     let res = client

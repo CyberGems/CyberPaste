@@ -164,6 +164,7 @@
     "providerDeepSeek": "DeepSeek",
     "providerKimi": "Kimi",
     "providerGemini": "Gemini",
+    "providerGrok": "Grok",
     "providerCustom": "カスタム (OpenAI 互換)",
     "apiKey": "API キー",
     "model": "モデル",

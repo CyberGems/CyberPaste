@@ -164,6 +164,7 @@
     "providerDeepSeek": "DeepSeek",
     "providerKimi": "Kimi",
     "providerGemini": "Gemini",
+    "providerGrok": "Grok",
     "providerCustom": "Personnalisé (compatible OpenAI)",
     "apiKey": "Clé API",
     "model": "Modèle",

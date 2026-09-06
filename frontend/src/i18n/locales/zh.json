@@ -164,6 +164,7 @@
     "providerDeepSeek": "DeepSeek",
     "providerKimi": "Kimi",
     "providerGemini": "Gemini",
+    "providerGrok": "Grok",
     "providerCustom": "自定义 (兼容 OpenAI)",
     "apiKey": "API 密钥",
     "model": "模型",

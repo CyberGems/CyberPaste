@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { MoreVertical, Heart, Globe, Tag, Github, Info, Book, Trash2 } from 'lucide-react';
+import { MoreVertical, Heart, Globe, Tag, Github, Info, Book, Trash2, Settings } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { invoke } from '@tauri-apps/api/core';
@@ -16,7 +16,15 @@ const WEBSITE_URL = 'https://cybergems.org';
 const CHANGELOG_URL = 'https://github.com/CyberGems/CyberPaste/releases';
 const GITHUB_URL = 'https://github.com/CyberGems/CyberPaste';
 
-export function TitleBarMenu({ iconSize = 14 }: { iconSize?: number }) {
+export type TitleBarMenuVariant = 'main' | 'settings' | 'viewer';
+
+export function TitleBarMenu({
+  iconSize = 14,
+  variant = 'main',
+}: {
+  iconSize?: number;
+  variant?: TitleBarMenuVariant;
+}) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
@@ -99,8 +107,11 @@ export function TitleBarMenu({ iconSize = 14 }: { iconSize?: number }) {
     'group flex w-full items-center gap-2.5 rounded-md px-2.5 py-[7px] text-left text-[13px] font-medium text-foreground/90 transition-colors hover:bg-accent hover:text-foreground';
   const iconClass = 'shrink-0 text-muted-foreground transition-colors group-hover:text-primary';
 
+  const showClearHistory = variant === 'main';
+  const showOpenSettings = variant === 'viewer';
+
   return (
-    <div ref={wrapRef} className="relative flex items-center">
+    <div ref={wrapRef} className="no-drag relative flex items-center">
       <Tooltip label={t('common.moreActions')} placement="bottom" disabled={open}>
         <button
           type="button"
@@ -108,6 +119,7 @@ export function TitleBarMenu({ iconSize = 14 }: { iconSize?: number }) {
           aria-expanded={open}
           aria-label={t('common.moreActions')}
           onClick={() => setOpen((v) => !v)}
+          onMouseDown={(e) => e.stopPropagation()}
           className={clsx(
             'flex h-8 w-8 items-center justify-center rounded-lg border transition-all',
             open
@@ -209,17 +221,41 @@ export function TitleBarMenu({ iconSize = 14 }: { iconSize?: number }) {
               <span>{t('titleBar.moreMenu.github')}</span>
             </button>
 
-            <div className="mx-1.5 my-1 h-px bg-border" />
+            {showClearHistory && (
+              <>
+                <div className="mx-1.5 my-1 h-px bg-border" />
 
-            <button
-              type="button"
-              role="menuitem"
-              className={itemClass}
-              onClick={confirmClearHistory}
-            >
-              <Trash2 size={14} className="shrink-0 text-destructive" />
-              <span>{t('settings.clearHistory')}</span>
-            </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={itemClass}
+                  onClick={confirmClearHistory}
+                >
+                  <Trash2 size={14} className="shrink-0 text-destructive" />
+                  <span>{t('settings.clearHistory')}</span>
+                </button>
+              </>
+            )}
+
+            {showOpenSettings && (
+              <>
+                <div className="mx-1.5 my-1 h-px bg-border" />
+
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={itemClass}
+                  onClick={() =>
+                    closeAnd(() => {
+                      invoke('open_settings').catch(console.error);
+                    })
+                  }
+                >
+                  <Settings size={14} className={iconClass} />
+                  <span>{t('common.settings')}</span>
+                </button>
+              </>
+            )}
 
             <div className="mx-1.5 my-1 h-px bg-border" />
 
@@ -240,7 +276,8 @@ export function TitleBarMenu({ iconSize = 14 }: { iconSize?: number }) {
           document.body
         )}
 
-      {confirmClear &&
+      {showClearHistory &&
+        confirmClear &&
         createPortal(
           <div className="relative z-[400]">
             <ConfirmDialog

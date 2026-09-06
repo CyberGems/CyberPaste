@@ -29,7 +29,6 @@ import {
   Send,
   Languages,
   Palette,
-  Heart,
   Pin,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -47,6 +46,7 @@ import { ThemeCard, ThemeMode } from './ThemeCard';
 import { useShortcutRecorder } from 'use-shortcut-recorder';
 import { clsx } from 'clsx';
 import Tooltip from './Tooltip';
+import { TitleBarMenu } from './TitleBarMenu';
 
 interface SettingsPanelProps {
   settings: Settings;
@@ -127,32 +127,32 @@ function PromptEditor({
 
 const PROVIDER_MODELS: Record<string, { value: string; label: string }[]> = {
   openai: [
-    { value: 'gpt-4o', label: 'gpt-4o (Most Capable)' },
-    { value: 'gpt-4o-mini', label: 'gpt-4o-mini (Fast & Cheap)' },
-    { value: 'o1', label: 'o1 (Reasoning)' },
-    { value: 'o1-mini', label: 'o1-mini (Reasoning)' },
-    { value: 'o3-mini', label: 'o3-mini (Recent Reasoning)' },
-    { value: 'custom', label: 'Custom Model...' },
+    { value: 'gpt-5.6-luna', label: 'GPT-5.6 Luna (Fast & cheap)' },
+    { value: 'gpt-5.6-terra', label: 'GPT-5.6 Terra (Balanced)' },
+    { value: 'gpt-5.6-sol', label: 'GPT-5.6 Sol (Flagship)' },
+    { value: 'gpt-6-astra', label: 'GPT-6 Astra (Most capable)' },
   ],
   deepseek: [
-    { value: 'deepseek-chat', label: 'deepseek-chat (V3 / R1)' },
-    { value: 'deepseek-reasoner', label: 'deepseek-reasoner (R1)' },
-    { value: 'custom', label: 'Custom Model...' },
+    { value: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash' },
+    { value: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro' },
   ],
   kimi: [
-    { value: 'moonshot-v1-8k', label: 'moonshot-v1-8k' },
-    { value: 'moonshot-v1-32k', label: 'moonshot-v1-32k' },
-    { value: 'moonshot-v1-128k', label: 'moonshot-v1-128k' },
-    { value: 'custom', label: 'Custom Model...' },
+    { value: 'kimi-k2.6', label: 'Kimi K2.6' },
+    { value: 'kimi-k2.5', label: 'Kimi K2.5' },
+    { value: 'kimi-k3', label: 'Kimi K3 (Flagship)' },
   ],
   gemini: [
-    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
-    { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
-    { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
-    { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
-    { value: 'custom', label: 'Custom Model...' },
+    { value: 'gemini-3.1-flash-lite', label: 'Gemini 3.1 Flash-Lite' },
+    { value: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash' },
+    { value: 'gemini-3.8-flash', label: 'Gemini 3.8 Flash' },
+    { value: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro' },
   ],
-  custom: [{ value: 'custom', label: 'Custom Model...' }],
+  grok: [
+    { value: 'grok-4.6', label: 'Grok 4.6' },
+    { value: 'grok-4.5', label: 'Grok 4.5' },
+    { value: 'grok-4.3', label: 'Grok 4.3' },
+  ],
+  custom: [],
 };
 
 export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPanelProps) {
@@ -225,7 +225,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
   };
   const [localApiKey, setLocalApiKey] = useState(initialSettings.ai_api_key || '');
   const [localBaseUrl, setLocalBaseUrl] = useState(initialSettings.ai_base_url || '');
-  const [localModel, setLocalModel] = useState(initialSettings.ai_model || 'gpt-3.5-turbo');
+  const [localModel, setLocalModel] = useState(initialSettings.ai_model || 'gpt-5.6-luna');
   const [isCustomModel, setIsCustomModel] = useState(() => {
     const provider = initialSettings.ai_provider || 'openai';
     const models = PROVIDER_MODELS[provider] || PROVIDER_MODELS.custom;
@@ -629,21 +629,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
             </h1>
           </div>
           <div className="z-10 flex items-center gap-1">
-            <Tooltip label={t('common.donate', 'Donate')} placement="bottom">
-              <button
-                type="button"
-                onClick={() =>
-                  openUrl('https://github.com/CyberGems/CyberPaste#%EF%B8%8F-donate').catch(
-                    console.error
-                  )
-                }
-                className="icon-button flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/50 hover:text-rose-500"
-                onMouseDown={(e) => e.stopPropagation()}
-                aria-label={t('common.donate', 'Donate')}
-              >
-                <Heart size={15} />
-              </button>
-            </Tooltip>
+            <TitleBarMenu iconSize={15} variant="settings" />
             <Tooltip label={t('common.minimize')} placement="bottom">
               <button
                 type="button"
@@ -1928,8 +1914,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               {activeTab === 'ai' &&
                 (() => {
                   const currentProvider = settings.ai_provider || 'openai';
-                  const modelsForProvider =
-                    PROVIDER_MODELS[currentProvider] || PROVIDER_MODELS.custom;
+                  const modelsForProvider = [
+                    ...(PROVIDER_MODELS[currentProvider] || []),
+                    { value: 'custom', label: t('settings.customModel') },
+                  ];
                   const isPredefinedModel = modelsForProvider.some(
                     (m) => m.value === settings.ai_model
                   );
@@ -1954,30 +1942,36 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               // Auto-fill Base URL and Model based on provider
                               if (newProvider === 'openai') {
                                 updates.ai_base_url = 'https://api.openai.com/v1';
-                                updates.ai_model = 'gpt-4o-mini';
+                                updates.ai_model = 'gpt-5.6-luna';
                                 setLocalBaseUrl('https://api.openai.com/v1');
-                                setLocalModel('gpt-4o-mini');
+                                setLocalModel('gpt-5.6-luna');
                                 setIsCustomModel(false);
                               } else if (newProvider === 'deepseek') {
                                 updates.ai_base_url = 'https://api.deepseek.com';
-                                updates.ai_model = 'deepseek-chat';
+                                updates.ai_model = 'deepseek-v4-flash';
                                 setLocalBaseUrl('https://api.deepseek.com');
-                                setLocalModel('deepseek-chat');
+                                setLocalModel('deepseek-v4-flash');
                                 setIsCustomModel(false);
                               } else if (newProvider === 'kimi') {
                                 updates.ai_base_url = 'https://api.moonshot.ai/v1';
-                                updates.ai_model = 'moonshot-v1-8k';
+                                updates.ai_model = 'kimi-k2.6';
                                 setLocalBaseUrl('https://api.moonshot.ai/v1');
-                                setLocalModel('moonshot-v1-8k');
+                                setLocalModel('kimi-k2.6');
                                 setIsCustomModel(false);
                               } else if (newProvider === 'gemini') {
                                 updates.ai_base_url =
                                   'https://generativelanguage.googleapis.com/v1beta/openai';
-                                updates.ai_model = 'gemini-2.5-flash';
+                                updates.ai_model = 'gemini-3.5-flash';
                                 setLocalBaseUrl(
                                   'https://generativelanguage.googleapis.com/v1beta/openai'
                                 );
-                                setLocalModel('gemini-2.5-flash');
+                                setLocalModel('gemini-3.5-flash');
+                                setIsCustomModel(false);
+                              } else if (newProvider === 'grok') {
+                                updates.ai_base_url = 'https://api.x.ai/v1';
+                                updates.ai_model = 'grok-4.6';
+                                setLocalBaseUrl('https://api.x.ai/v1');
+                                setLocalModel('grok-4.6');
                                 setIsCustomModel(false);
                               } else {
                                 setIsCustomModel(true);
@@ -1990,6 +1984,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               { value: 'deepseek', label: t('settings.providerDeepSeek') },
                               { value: 'kimi', label: t('settings.providerKimi') },
                               { value: 'gemini', label: t('settings.providerGemini') },
+                              { value: 'grok', label: t('settings.providerGrok') },
                               { value: 'custom', label: t('settings.providerCustom') },
                             ]}
                           />

@@ -144,7 +144,7 @@ impl Default for AppSettings {
 
             ai_provider: "openai".to_string(),
             ai_api_key: "".to_string(),
-            ai_model: "gpt-4o-mini".to_string(),
+            ai_model: "gpt-5.6-luna".to_string(),
             ai_base_url: "https://api.openai.com/v1".to_string(),
 
             ai_prompt_summarize: "Summarize this content concisely.".to_string(),
