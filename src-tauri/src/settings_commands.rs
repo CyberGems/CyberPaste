@@ -85,15 +85,10 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
     #[cfg(not(feature = "app-store"))]
     {
         use tauri_plugin_autostart::ManagerExt;
-        // Check if startup changed
         let startup = new_settings.startup_with_windows;
         let current_state = app.autolaunch().is_enabled().unwrap_or(false);
         if startup != current_state {
-            if startup {
-                let _ = app.autolaunch().enable();
-            } else {
-                let _ = app.autolaunch().disable();
-            }
+            crate::apply_autostart(&app, startup);
         }
     }
     log::info!(

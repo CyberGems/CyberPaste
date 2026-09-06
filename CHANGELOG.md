@@ -2,6 +2,11 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.19.1] — 2026-09-06
+
+### 🐛 Windows Autostart Fix 💥→✅
+- **Quoted Run command**: Explorer now launches CyberPaste at logon from `C:\Program Files\...` — the unquoted path plus leftover `--flag1 --flag2` example args never started, even with the toggle ON! 🔋
+
 ## [1.19.0] — 2026-09-06
 
 ### ⬆️ Title-Bar Update Button ✨

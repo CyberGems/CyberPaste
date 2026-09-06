@@ -132,7 +132,7 @@ pub fn run_app() {
         builder = builder
             .plugin(tauri_plugin_autostart::init(
                 MacosLauncher::LaunchAgent,
-                Some(vec!["--flag1", "--flag2"]),
+                None,
             ))
             .plugin(tauri_plugin_updater::Builder::new().build());
     }
@@ -336,9 +336,8 @@ pub fn run_app() {
             });
             #[cfg(not(feature = "app-store"))]
             {
-                use tauri_plugin_autostart::ManagerExt;
                 if settings_manager.get().startup_with_windows {
-                    let _ = app.handle().autolaunch().enable();
+                    apply_autostart(app.handle(), true);
                 }
             }
             app.manage(Arc::new(settings_manager));
@@ -1243,6 +1242,55 @@ pub fn animate_window_hide(
             callback();
         }
     });
+}
+
+/// Enable or disable OS autostart. On Windows the auto-launch crate writes an
+/// unquoted `Program Files` path plus any plugin args, which Explorer cannot
+/// launch from HKCU\...\Run. After enable() we rewrite a quoted command.
+#[cfg(not(feature = "app-store"))]
+pub(crate) fn apply_autostart(app: &tauri::AppHandle, enable: bool) {
+    use tauri_plugin_autostart::ManagerExt;
+    if enable {
+        if let Err(e) = app.autolaunch().enable() {
+            log::warn!("autostart.enable failed: {e}");
+        }
+        #[cfg(windows)]
+        quote_windows_run_command();
+    } else if let Err(e) = app.autolaunch().disable() {
+        log::warn!("autostart.disable failed: {e}");
+    }
+}
+
+/// Rewrite HKCU Run so the path is quoted (required when it contains spaces).
+#[cfg(all(windows, not(feature = "app-store")))]
+fn quote_windows_run_command() {
+    use windows::core::{w, HSTRING};
+    use windows::Win32::Foundation::WIN32_ERROR;
+    use windows::Win32::System::Registry::{RegSetKeyValueW, HKEY_CURRENT_USER, REG_SZ};
+
+    let Ok(exe) = std::env::current_exe() else {
+        log::warn!("autostart: current_exe() failed");
+        return;
+    };
+    let cmd = format!("\"{}\"", exe.display());
+    let data: Vec<u16> = cmd.encode_utf16().chain(std::iter::once(0)).collect();
+    let bytes = (data.len() * 2) as u32;
+    let name = HSTRING::from(env!("CARGO_PKG_NAME"));
+    let status = unsafe {
+        RegSetKeyValueW(
+            HKEY_CURRENT_USER,
+            w!("Software\\Microsoft\\Windows\\CurrentVersion\\Run"),
+            &name,
+            REG_SZ.0,
+            Some(data.as_ptr().cast()),
+            bytes,
+        )
+    };
+    if status == WIN32_ERROR(0) {
+        log::info!("autostart: Run command set to {cmd}");
+    } else {
+        log::warn!("autostart: quoting Run command failed ({})", status.0);
+    }
 }
 
 pub fn get_data_dir() -> std::path::PathBuf {

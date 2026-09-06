@@ -6,31 +6,17 @@ Welcome to the official **CyberPaste {{VERSION}}** release! CyberPaste is a ligh
 
 ### ✨ Key Features & Highlights
 
-- ⬆️ **Title-Bar Update Button**:
+- 🐛 **Windows Autostart Fix**:
+  - The “Start with Windows” toggle now actually launches CyberPaste at logon.
+  - The Run command is quoted so Explorer can start `C:\Program Files\CyberPaste\CyberPaste.exe`.
+  - Removed leftover `--flag1 --flag2` example args from the Tauri autostart plugin.
+
+- ⬆️ **Title-Bar Update Button** (from 1.19.0):
   - Dynamic CyberWall-style pill appears to the left of the window controls when a newer version is available.
   - Collapsed arrow in rest; hover expands to **Update** / **Actualizar**.
-  - Click opens the existing update modal, and the signal stays in sync with About and the tray.
 
-- 📚 **Title-Bar & Tray Help Menus**:
+- 📚 **Title-Bar & Tray Help Menus** (from 1.19.0):
   - CyberFeeds-style overflow menu with Documentation & Wiki, website, changelog, GitHub, and About.
-  - Matching Help entries in the tray, including FAQ and donate links.
-
-- 📌 **Tray Pin-Tip First Run**:
-  - First-launch tip explaining how to keep CyberPaste visible in the Windows tray overflow.
-
-- 🩷 **About Footer — CyberWall Icon Row**:
-  - Globe, docs, GitHub, issues, releases, and a filled rose heart (`#F43F5E`) for donate — same order and emphasis as CyberWall.
-
-- 🎛️ **Quieter Full-Mode Header**:
-  - Centered type-filter chips, a clear-filter control, and selected folder tabs without the old glow border.
-
-- 🧭 **Compact Row Polish**:
-  - Reserved timestamp column so type and source icons stay aligned.
-  - Tighter row-menu hit target; context menus dismiss without pasting.
-
-- 🐛 **Stability Fixes**:
-  - Peek no longer opens when the window appears under a still cursor.
-  - Startup crash from lucide `CircleHelp` / `HelpCircle` mismatch is gone.
 
 ---
 
