@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Download, Loader2, AlertTriangle, Sparkles, ExternalLink } from 'lucide-react';
 import { check } from '@tauri-apps/plugin-updater';
@@ -74,17 +74,17 @@ export function UpdateModal({ isOpen, update, onClose }: UpdateModalProps) {
   };
 
   const handleOpenReleasePage = () => {
-    openUrl('https://github.com/CyberGems/CyberPaste/releases/latest').catch(console.error);
+    openUrl(githubReleaseUrl(update.version)).catch(console.error);
   };
 
   return (
     <div className="animate-in fade-in fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md duration-300">
-      <div className="animate-in zoom-in-95 relative w-full max-w-md overflow-hidden rounded-xl border border-primary/20 bg-background/90 p-6 shadow-2xl shadow-primary/10 duration-300">
+      <div className="animate-in zoom-in-95 relative flex max-h-[min(90vh,680px)] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-primary/20 bg-background/90 p-6 shadow-2xl shadow-primary/10 duration-300">
         
         <div className="absolute -left-16 -top-16 h-32 w-32 rounded-full bg-primary/10 blur-2xl" />
         <div className="absolute -right-16 -bottom-16 h-32 w-32 rounded-full bg-cyan-500/10 blur-2xl" />
 
-        <div className="relative mb-5 flex items-center justify-between">
+        <div className="relative mb-5 flex shrink-0 items-center justify-between">
           <div className="flex items-center gap-2 text-primary">
             <Sparkles size={20} className="animate-pulse" />
             <h3 className="text-lg font-bold tracking-wide">
@@ -101,14 +101,14 @@ export function UpdateModal({ isOpen, update, onClose }: UpdateModalProps) {
           )}
         </div>
 
-        <div className="relative z-10 min-h-[120px] flex flex-col justify-center">
+        <div className="relative z-10 flex min-h-0 flex-1 flex-col">
           {status === 'prompt' && (
-            <div className="space-y-4">
-              <p className="text-sm font-medium text-foreground/90">
+            <div className="flex min-h-0 flex-1 flex-col space-y-4">
+              <p className="shrink-0 text-sm font-medium text-foreground/90">
                 {t('settings.updatesNewVersionAvailable')}
               </p>
               
-              <div className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-secondary/50 p-3.5 text-xs font-mono">
+              <div className="grid shrink-0 grid-cols-2 gap-3 rounded-lg border border-border bg-secondary/50 p-3.5 text-xs font-mono">
                 <div>
                   <span className="text-muted-foreground block mb-0.5">
                     {t('settings.updatesCurrentVersion', { version: '' }).replace(':', '')}
@@ -128,23 +128,33 @@ export function UpdateModal({ isOpen, update, onClose }: UpdateModalProps) {
               </div>
               
               {update.body && (
-                <div className="max-h-24 overflow-y-auto rounded border border-border/50 bg-black/10 p-2 text-xs text-muted-foreground scrollbar-thin">
-                  {update.body}
+                <div className="flex min-h-0 flex-1 flex-col gap-2">
+                  <div className="min-h-[9rem] max-h-[240px] overflow-y-auto rounded-lg border border-border/60 bg-black/20 px-3.5 py-3 text-[12.5px] leading-relaxed text-foreground/80 scrollbar-thin">
+                    <ReleaseNotes body={update.body} />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleOpenReleasePage}
+                    className="inline-flex shrink-0 items-center gap-1.5 self-start text-xs font-medium text-primary transition-colors hover:text-primary/80 hover:underline"
+                  >
+                    <ExternalLink size={12} />
+                    {t('settings.updatesViewOnGithub')}
+                  </button>
                 </div>
               )}
 
-              <div className="flex justify-end gap-3 pt-2">
+              <div className="flex shrink-0 justify-end gap-3 pt-1">
                 <button
                   onClick={onClose}
-                  className="rounded-md border border-input bg-transparent px-4 py-2 text-sm font-medium text-muted-foreground transition-all hover:bg-accent hover:text-accent-foreground"
+                  className="rounded-md border border-border bg-white/5 px-4 py-2 text-sm font-medium text-foreground/85 transition-all hover:bg-accent hover:text-foreground"
                 >
                   {t('settings.updatesLater')}
                 </button>
                 <button
                   onClick={handleUpdate}
-                  className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-all hover:bg-primary/95 hover:shadow-primary/35"
+                  className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:bg-primary/90 hover:shadow-primary/35"
                 >
-                  <Download size={16} />
+                  <Download size={16} strokeWidth={2.4} className="text-primary-foreground" />
                   {t('settings.updatesUpdateNow')}
                 </button>
               </div>
@@ -210,4 +220,75 @@ export function UpdateModal({ isOpen, update, onClose }: UpdateModalProps) {
       </div>
     </div>
   );
+}
+
+function githubReleaseUrl(version: string) {
+  const tag = version.startsWith('v') ? version : `v${version}`;
+  return `https://github.com/CyberGems/CyberPaste/releases/tag/${tag}`;
+}
+
+function renderInline(text: string): ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return (
+        <strong key={i} className="font-semibold text-foreground">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    if (part.startsWith('`') && part.endsWith('`')) {
+      return (
+        <code key={i} className="rounded bg-white/10 px-1 py-px font-mono text-[11px] text-foreground/90">
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+    return part;
+  });
+}
+
+function ReleaseNotes({ body }: { body: string }) {
+  const lines = body.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').split('\n');
+  const nodes: ReactNode[] = [];
+  let listItems: string[] = [];
+
+  const flushList = () => {
+    if (!listItems.length) return;
+    const items = listItems;
+    listItems = [];
+    nodes.push(
+      <ul key={`list-${nodes.length}`} className="my-1.5 list-disc space-y-1 pl-4 marker:text-primary/70">
+        {items.map((item, i) => (
+          <li key={i}>{renderInline(item)}</li>
+        ))}
+      </ul>
+    );
+  };
+
+  for (const line of lines) {
+    const heading = line.match(/^#{1,3}\s+(.*)$/);
+    const bullet = line.match(/^[-*]\s+(.*)$/);
+    if (heading) {
+      flushList();
+      nodes.push(
+        <h4 key={`h-${nodes.length}`} className="mb-1 mt-2.5 first:mt-0 text-[13px] font-semibold text-foreground">
+          {renderInline(heading[1])}
+        </h4>
+      );
+    } else if (bullet) {
+      listItems.push(bullet[1]);
+    } else if (!line.trim() || /^---+/.test(line.trim())) {
+      flushList();
+    } else {
+      flushList();
+      nodes.push(
+        <p key={`p-${nodes.length}`} className="text-[12.5px] leading-relaxed">
+          {renderInline(line)}
+        </p>
+      );
+    }
+  }
+  flushList();
+  return <div className="space-y-0.5">{nodes}</div>;
 }

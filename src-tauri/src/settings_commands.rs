@@ -107,7 +107,11 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
     let _ = app.emit("settings-changed", crate::models::AppSettings::clone(&manager.get()));
     if max_items > 0 {
         if let Some(db) = app.try_state::<std::sync::Arc<crate::database::Database>>() {
-            let _ = crate::commands::prune_history(&db.pool, max_items).await;
+            if let Ok(deleted) = crate::commands::prune_history(&db.pool, max_items).await {
+                if deleted > 0 {
+                    let _ = app.emit("clipboard-change", ());
+                }
+            }
         }
     }
     Ok(())

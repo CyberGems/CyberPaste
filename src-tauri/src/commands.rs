@@ -333,16 +333,19 @@ async fn cleanup_orphan_clip_image_files(pool: &SqlitePool) -> Result<(), String
     Ok(())
 }
 
-pub async fn prune_history(pool: &SqlitePool, max_items: i64) -> Result<(), String> {
-    let count: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM clips WHERE folder_id IS NULL AND is_deleted = 0 AND is_pinned = 0",
+pub async fn prune_history(pool: &SqlitePool, max_items: i64) -> Result<usize, String> {
+    // Cap the visible main list. Pinned clips are never deleted, but they count
+    // toward max_items so the history the user sees cannot grow past the limit.
+    let total: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM clips WHERE folder_id IS NULL AND is_deleted = 0",
     )
     .fetch_one(pool)
     .await
     .map_err(|e| e.to_string())?;
 
-    if count > max_items {
-        let to_delete = count - max_items;
+    let mut deleted = 0usize;
+    if total > max_items {
+        let to_delete = total - max_items;
         let uuids: Vec<String> = sqlx::query_scalar(
             "SELECT uuid FROM clips WHERE folder_id IS NULL AND is_deleted = 0 AND is_pinned = 0 ORDER BY created_at ASC LIMIT ?",
         )
@@ -370,10 +373,17 @@ pub async fn prune_history(pool: &SqlitePool, max_items: i64) -> Result<(), Stri
                 q2 = q2.bind(uuid);
             }
             q2.execute(pool).await.map_err(|e| e.to_string())?;
+            deleted = uuids.len();
+            log::info!(
+                "prune_history: main list {} > max {}, deleted {} oldest unpinned",
+                total,
+                max_items,
+                deleted
+            );
         }
     }
     let _ = cleanup_orphan_clip_image_files(pool).await;
-    Ok(())
+    Ok(deleted)
 }
 
 pub async fn migrate_images_to_files(pool: &SqlitePool) -> Result<(), String> {
@@ -1963,6 +1973,20 @@ pub async fn reorder_clip(
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<(), String> {
     db.reorder_clip_visual(&clip_uuid, &target_uuid, &position)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn move_clip_to_edge(
+    clip_uuid: String,
+    edge: String,
+    db: tauri::State<'_, Arc<Database>>,
+) -> Result<(), String> {
+    if edge != "top" && edge != "bottom" {
+        return Err("Invalid edge".to_string());
+    }
+    db.move_clip_to_edge(&clip_uuid, &edge)
         .await
         .map_err(|e| e.to_string())
 }
@@ -4300,14 +4324,20 @@ fn open_about_window(app: &AppHandle) {
         return;
     }
 
+    let manager = app.state::<std::sync::Arc<crate::settings_manager::SettingsManager>>();
+    let settings = manager.get();
     let reference_window = app.get_webview_window("main");
-    let builder = tauri::WebviewWindowBuilder::new(
+
+    let width = settings.about_window_width.unwrap_or(740.0);
+    let height = settings.about_window_height.unwrap_or(500.0);
+
+    let mut builder = tauri::WebviewWindowBuilder::new(
         app,
         "about",
         tauri::WebviewUrl::App("index.html?window=about".into()),
     )
     .title("About CyberPaste")
-    .inner_size(740.0, 500.0)
+    .inner_size(width, height)
     .min_inner_size(600.0, 420.0)
     .resizable(true)
     .maximizable(false)
@@ -4315,22 +4345,27 @@ fn open_about_window(app: &AppHandle) {
     .transparent(false)
     .visible(false);
 
-    let builder = if let Some(ref_win) = reference_window {
-        if let Some(monitor) = crate::get_monitor_at_cursor(&ref_win) {
-            let scale_factor = monitor.scale_factor();
-            let monitor_pos = monitor.position();
-            let monitor_size = monitor.size();
-            let window_w = (740.0 * scale_factor) as u32;
-            let window_h = (500.0 * scale_factor) as u32;
-            let x = monitor_pos.x + ((monitor_size.width as i32 - window_w as i32) / 2);
-            let y = monitor_pos.y + ((monitor_size.height as i32 - window_h as i32) / 2);
-            builder.position(x as f64, y as f64)
-        } else {
-            builder.center()
-        }
-    } else {
-        builder.center()
+    let saved_pos = match (settings.about_window_x, settings.about_window_y) {
+        (Some(x), Some(y)) => Some((x as f64, y as f64)),
+        _ => None,
     };
+
+    let position = if let Some(ref_win) = &reference_window {
+        let saved_on_screen = saved_pos
+            .filter(|(x, y)| crate::is_logical_point_on_any_monitor(ref_win, *x, *y));
+        saved_on_screen.or_else(|| {
+            crate::get_monitor_at_cursor(ref_win)
+                .map(|m| crate::logical_center_on_monitor(&m, width, height))
+        })
+    } else {
+        saved_pos
+    };
+
+    if let Some((x, y)) = position {
+        builder = builder.position(x, y);
+    } else {
+        builder = builder.center();
+    }
 
     let _ = builder.build();
 }

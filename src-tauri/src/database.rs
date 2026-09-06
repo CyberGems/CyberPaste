@@ -84,6 +84,55 @@ fn reorder_unpinned_in_holes(
     result
 }
 
+/// Resolve a top/bottom jump. `before` is true when the clip should sit in
+/// front of the returned uuid. Main-list slot 0 is the live clipboard item, so
+/// unpinned jumps skip it — same rule as drag-reorder.
+fn edge_target(
+    visual: &[ListClip],
+    clip: &str,
+    edge: &str,
+    is_main: bool,
+) -> Option<(String, bool)> {
+    let clip_pinned = visual.iter().find(|c| c.uuid == clip)?.is_pinned;
+    let to_top = edge == "top";
+
+    if clip_pinned {
+        if to_top {
+            let first = visual.first()?;
+            if first.uuid == clip {
+                return None;
+            }
+            Some((first.uuid.clone(), true))
+        } else {
+            let last = visual.last()?;
+            if last.uuid == clip {
+                return None;
+            }
+            Some((last.uuid.clone(), false))
+        }
+    } else {
+        let unpinned: Vec<&ListClip> = visual
+            .iter()
+            .enumerate()
+            .filter(|(i, c)| !c.is_pinned && !(is_main && *i == 0))
+            .map(|(_, c)| c)
+            .collect();
+        if to_top {
+            let first = unpinned.first()?;
+            if first.uuid == clip {
+                return None;
+            }
+            Some((first.uuid.clone(), true))
+        } else {
+            let last = unpinned.last()?;
+            if last.uuid == clip {
+                return None;
+            }
+            Some((last.uuid.clone(), false))
+        }
+    }
+}
+
 impl Database {
     pub async fn new(db_path: &str) -> Self {
         let options = sqlx::sqlite::SqliteConnectOptions::new()
@@ -365,6 +414,23 @@ impl Database {
             reorder_unpinned_in_holes(&visual, clip_uuid, target_uuid, before)
         };
         self.apply_list_order(&new_order).await
+    }
+
+    pub async fn move_clip_to_edge(&self, clip_uuid: &str, edge: &str) -> Result<(), sqlx::Error> {
+        let folder_id: Option<i64> =
+            sqlx::query_scalar("SELECT folder_id FROM clips WHERE uuid = ?")
+                .bind(clip_uuid)
+                .fetch_one(&self.pool)
+                .await?;
+
+        let visual = self.load_list_clips(folder_id).await?;
+        let is_main = folder_id.is_none();
+        let Some((target_uuid, before)) = edge_target(&visual, clip_uuid, edge, is_main) else {
+            return Ok(());
+        };
+        let position = if before { "before" } else { "after" };
+        self.reorder_clip_visual(clip_uuid, &target_uuid, position)
+            .await
     }
 
     pub async fn migrate(&self) -> Result<(), sqlx::Error> {
@@ -693,6 +759,61 @@ mod tests {
         assert_eq!(
             reorder_unpinned_in_holes(&visual, "C", "D", false),
             vec!["A", "B", "D", "C"]
+        );
+    }
+
+    #[test]
+    fn edge_target_unpinned_skips_live_slot_on_main_list() {
+        let visual = vec![
+            lc("A", false),
+            lc("B", true),
+            lc("C", false),
+            lc("D", false),
+        ];
+        assert_eq!(
+            edge_target(&visual, "D", "top", true),
+            Some(("C".to_string(), true))
+        );
+        assert_eq!(edge_target(&visual, "C", "top", true), None);
+        assert_eq!(
+            edge_target(&visual, "C", "bottom", true),
+            Some(("D".to_string(), false))
+        );
+        assert_eq!(edge_target(&visual, "D", "bottom", true), None);
+    }
+
+    #[test]
+    fn edge_target_folder_uses_first_unpinned() {
+        let visual = vec![
+            lc("A", false),
+            lc("B", true),
+            lc("C", false),
+            lc("D", false),
+        ];
+        assert_eq!(
+            edge_target(&visual, "D", "top", false),
+            Some(("A".to_string(), true))
+        );
+        assert_eq!(
+            edge_target(&visual, "A", "bottom", false),
+            Some(("D".to_string(), false))
+        );
+    }
+
+    #[test]
+    fn edge_target_pinned_uses_visual_ends() {
+        let visual = vec![
+            lc("A", false),
+            lc("B", true),
+            lc("C", false),
+        ];
+        assert_eq!(
+            edge_target(&visual, "B", "top", true),
+            Some(("A".to_string(), true))
+        );
+        assert_eq!(
+            edge_target(&visual, "B", "bottom", true),
+            Some(("C".to_string(), false))
         );
     }
 }

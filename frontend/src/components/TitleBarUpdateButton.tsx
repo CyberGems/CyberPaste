@@ -7,7 +7,6 @@ export function TitleBarUpdateButton({
   visible,
   version,
   onClick,
-  iconSize = 14,
 }: {
   visible: boolean;
   version?: string;
@@ -28,23 +27,23 @@ export function TitleBarUpdateButton({
         onClick={onClick}
         aria-label={tooltip}
         className={clsx(
-          'group mr-1 flex h-8 items-center overflow-hidden rounded-full border',
-          'border-primary/40 bg-primary/10 text-primary',
-          'shadow-[0_0_10px_rgba(var(--primary-rgb),0.22)]',
+          'group mr-1 inline-flex h-7 shrink-0 items-center self-center overflow-hidden rounded-full border',
+          'border-primary/50 bg-primary/10 text-primary',
+          'shadow-[0_0_8px_rgba(var(--primary-rgb),0.2)]',
           'transition-colors duration-200',
-          'hover:border-primary/70 hover:bg-primary/20',
+          'hover:border-primary/80 hover:bg-primary/20',
           'focus:outline-none focus-visible:ring-0'
         )}
       >
-        <span className="grid grid-cols-[0fr] overflow-hidden opacity-0 transition-[grid-template-columns,opacity] duration-200 ease-out group-hover:grid-cols-[1fr] group-hover:opacity-100">
-          <span className="min-w-0 overflow-hidden">
-            <span className="whitespace-nowrap pl-3 pr-1 text-xs font-semibold text-primary">
+        <span className="grid h-7 grid-cols-[0fr] items-center overflow-hidden opacity-0 transition-[grid-template-columns,opacity] duration-200 ease-out group-hover:grid-cols-[1fr] group-hover:opacity-100">
+          <span className="flex h-7 min-w-0 items-center overflow-hidden">
+            <span className="whitespace-nowrap pl-2.5 pr-1 text-[11px] font-semibold leading-none tracking-wide text-primary">
               {t('titleBar.update')}
             </span>
           </span>
         </span>
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center">
-          <ArrowDown size={iconSize} strokeWidth={2.4} className="text-primary" />
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center">
+          <ArrowDown size={12} strokeWidth={2.6} className="-translate-y-px text-primary" />
         </span>
       </button>
     </Tooltip>

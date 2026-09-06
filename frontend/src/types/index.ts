@@ -104,6 +104,10 @@ export interface Settings {
   settings_window_height?: number | null;
   settings_window_x?: number | null;
   settings_window_y?: number | null;
+  about_window_width?: number | null;
+  about_window_height?: number | null;
+  about_window_x?: number | null;
+  about_window_y?: number | null;
   wheel_folder_navigation?: boolean;
   title_bar_animation_enabled?: boolean;
   has_seen_tray_pin_tip?: boolean;

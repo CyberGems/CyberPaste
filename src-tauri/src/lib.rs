@@ -351,7 +351,11 @@ pub fn run_app() {
                         .try_state::<Arc<SettingsManager>>()
                         .map(|m| m.get().max_items)
                         .unwrap_or(400);
-                    let _ = crate::commands::prune_history(&db_prune.pool, max).await;
+                    if let Ok(deleted) = crate::commands::prune_history(&db_prune.pool, max).await {
+                        if deleted > 0 {
+                            let _ = h.emit("clipboard-change", ());
+                        }
+                    }
                 });
             }
 
@@ -604,6 +608,7 @@ pub fn run_app() {
             commands::move_to_folder,
             commands::copy_to_folder,
             commands::reorder_clip,
+            commands::move_clip_to_edge,
             commands::reorder_folder,
             commands::create_folder,
             commands::rename_folder,
@@ -1330,6 +1335,40 @@ pub fn get_monitor_at_cursor(window: &tauri::WebviewWindow) -> Option<tauri::Mon
     } else {
         window.current_monitor().ok().flatten()
     }
+}
+
+/// Center a logical-sized window on a monitor. `Monitor::position()` is physical;
+/// `WebviewWindowBuilder::position()` is logical — mixing them lands on the wrong display.
+pub fn logical_center_on_monitor(
+    monitor: &tauri::Monitor,
+    logical_w: f64,
+    logical_h: f64,
+) -> (f64, f64) {
+    let scale = monitor.scale_factor().max(0.1);
+    let pos = monitor.position();
+    let size = monitor.size();
+    let x = (pos.x as f64 / scale) + ((size.width as f64 / scale) - logical_w) / 2.0;
+    let y = (pos.y as f64 / scale) + ((size.height as f64 / scale) - logical_h) / 2.0;
+    (x, y)
+}
+
+pub fn is_logical_point_on_any_monitor(window: &tauri::WebviewWindow, x: f64, y: f64) -> bool {
+    let Ok(monitors) = window.available_monitors() else {
+        return false;
+    };
+    for m in monitors {
+        let scale = m.scale_factor().max(0.1);
+        let pos = m.position();
+        let size = m.size();
+        let lx = pos.x as f64 / scale;
+        let ly = pos.y as f64 / scale;
+        let lw = size.width as f64 / scale;
+        let lh = size.height as f64 / scale;
+        if x >= lx - 80.0 && x <= lx + lw && y >= ly - 80.0 && y <= ly + lh {
+            return true;
+        }
+    }
+    false
 }
 
 /// Canonical theme id. Maps legacy values and unknowns to the supported set.

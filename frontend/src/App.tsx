@@ -59,6 +59,8 @@ import {
   Trash2,
   PanelRightClose,
   PanelRightOpen,
+  ChevronsUp,
+  ChevronsDown,
 } from 'lucide-react';
 
 const base64ToBlob = (base64: string, mimeType: string = 'image/png'): Blob => {
@@ -104,6 +106,25 @@ function isLiveMainListClip(
   return selectedFolder === null && !!clipId && clips[0]?.id === clipId;
 }
 
+function clipEdgeDisabled(
+  clips: { id: string; is_pinned?: boolean }[],
+  clipId: string,
+  edge: 'top' | 'bottom',
+  isMainList: boolean,
+  hasMore: boolean
+): boolean {
+  const clip = clips.find((c) => c.id === clipId);
+  if (!clip) return true;
+  if (clip.is_pinned) {
+    if (edge === 'top') return clips[0]?.id === clipId;
+    return !hasMore && clips[clips.length - 1]?.id === clipId;
+  }
+  const unpinned = clips.filter((c, i) => !c.is_pinned && !(isMainList && i === 0));
+  if (unpinned.length === 0) return true;
+  if (edge === 'top') return unpinned[0]?.id === clipId;
+  return !hasMore && unpinned[unpinned.length - 1]?.id === clipId;
+}
+
 // Debounce utility for window persistence
 function debounce<T extends (...args: any[]) => any>(fn: T, delay: number) {
   let timeoutId: any;
@@ -136,6 +157,8 @@ function App() {
   const [previewClip, setPreviewClip] = useState<AppClipboardItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
+  const hasMoreRef = useRef(hasMore);
+  hasMoreRef.current = hasMore;
   const [theme, setTheme] = useState('cyberpaste');
   const [settings, setSettings] = useState<Settings | null>(null);
   const [updateAvailable, setUpdateAvailable] = useState<any>(null);
@@ -1490,6 +1513,30 @@ function App() {
     [t]
   );
 
+  const handleMoveClipToEdge = useCallback(
+    async (clipId: string, edge: 'top' | 'bottom') => {
+      try {
+        await invoke('move_clip_to_edge', { clipUuid: clipId, edge });
+        await loadClips(selectedFolderRef.current);
+        await loadFolders();
+        refreshTotalCount();
+        setSelectedClipId(clipId);
+        requestAnimationFrame(() => {
+          document
+            .querySelector<HTMLElement>(`[data-clip-id="${CSS.escape(clipId)}"]`)
+            ?.scrollIntoView({ block: 'nearest', behavior: 'smooth', inline: 'nearest' });
+        });
+        toast.success(
+          edge === 'top' ? t('toasts.clipMovedToTop') : t('toasts.clipMovedToBottom')
+        );
+      } catch (error) {
+        console.error('Failed to move clip:', error);
+        toast.error(t('toasts.clipReorderFailed'));
+      }
+    },
+    [loadClips, loadFolders, refreshTotalCount, t]
+  );
+
   const getFullImageBlob = useCallback(
     async (clipId: string, fallbackClip: AppClipboardItem): Promise<Blob> => {
       const detail = await invoke<AppClipboardItem>('get_clip_detail', { id: clipId });
@@ -2412,6 +2459,34 @@ function App() {
           onClick: () => handleToggleClipPin(itemId),
         });
 
+        const isMainList = selectedFolderRef.current === null;
+        const moveTopDisabled = clipEdgeDisabled(
+          clipsRef.current,
+          itemId,
+          'top',
+          isMainList,
+          hasMoreRef.current
+        );
+        const moveBottomDisabled = clipEdgeDisabled(
+          clipsRef.current,
+          itemId,
+          'bottom',
+          isMainList,
+          hasMoreRef.current
+        );
+        opts.push({
+          label: t('contextMenu.moveToTop'),
+          icon: <ChevronsUp size={14} />,
+          disabled: moveTopDisabled,
+          onClick: () => handleMoveClipToEdge(itemId, 'top'),
+        });
+        opts.push({
+          label: t('contextMenu.moveToBottom'),
+          icon: <ChevronsDown size={14} />,
+          disabled: moveBottomDisabled,
+          onClick: () => handleMoveClipToEdge(itemId, 'bottom'),
+        });
+
         opts.push({
           label: t('contextMenu.copyToFolder') || t('contextMenu.moveToFolder'),
           icon: <FolderInput size={14} />,
@@ -2508,6 +2583,7 @@ function App() {
       handleAiAction,
       handlePaste,
       handleToggleClipPin,
+      handleMoveClipToEdge,
       handleDelete,
       handleDeleteFolder,
       detailPanelOpen,

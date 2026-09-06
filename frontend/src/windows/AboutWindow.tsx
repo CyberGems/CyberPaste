@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { emit, listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { getVersion } from '@tauri-apps/api/app';
@@ -8,17 +8,19 @@ import { check } from '@tauri-apps/plugin-updater';
 import {
   AlertCircle,
   BookOpen,
+  Check,
   ChevronDown,
   ExternalLink,
   Github,
   Globe,
+  Heart,
   Info,
+  Loader2,
   Minus,
   RotateCcw,
   Tag,
   WifiOff,
   X,
-  Heart,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Settings } from '../types';
@@ -67,12 +69,18 @@ function BugIcon({ size = 15 }: { size?: number }) {
 
 export function AboutWindow() {
   const [settings, setSettings] = useState<Settings | null>(null);
+  const settingsRef = useRef<Settings | null>(null);
   const [appVersion, setAppVersion] = useState('');
   const [updateAvailable, setUpdateAvailable] = useState<UpdateType>(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [updateCheckError, setUpdateCheckError] = useState<string | null>(null);
   const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
+  const [checkStatus, setCheckStatus] = useState<'idle' | 'checking' | 'upToDate'>('idle');
   const { t } = useTranslation();
+
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
 
   useLanguage(settings?.language);
   useTheme(settings?.theme ?? 'cyberpaste');
@@ -120,8 +128,53 @@ export function AboutWindow() {
     return () => clearTimeout(timer);
   }, [settings]);
 
-  const close = () => {
-    getCurrentWindow().close().catch(console.error);
+  const handleClose = async () => {
+    const win = getCurrentWindow();
+    try {
+      if (!(await win.isMaximized()) && !(await win.isMinimized())) {
+        const size = await win.innerSize();
+        const pos = await win.innerPosition();
+        const factor = await win.scaleFactor();
+        const logicalSize = size.toLogical(factor);
+        const logicalPos = pos.toLogical(factor);
+
+        if (logicalSize.width > 100 && logicalSize.height > 100) {
+          try {
+            const currentSettings = await invoke<Settings>('get_settings');
+            await invoke('save_settings', {
+              settings: {
+                ...currentSettings,
+                about_window_width: logicalSize.width,
+                about_window_height: logicalSize.height,
+                about_window_x: logicalPos.x,
+                about_window_y: logicalPos.y,
+              },
+            });
+          } catch {
+            const fallback = settingsRef.current;
+            if (fallback) {
+              await invoke('save_settings', {
+                settings: {
+                  ...fallback,
+                  about_window_width: logicalSize.width,
+                  about_window_height: logicalSize.height,
+                  about_window_x: logicalPos.x,
+                  about_window_y: logicalPos.y,
+                },
+              });
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to save about window size/position:', e);
+    }
+
+    try {
+      await win.close();
+    } catch (e) {
+      console.error('Failed to close about window:', e);
+    }
   };
 
   const updateAutoCheck = async () => {
@@ -144,33 +197,27 @@ export function AboutWindow() {
   };
 
   const checkForUpdates = useCallback(async () => {
-    const loadingToast = toast.loading(t('settings.checkingUpdates'));
+    setCheckStatus('checking');
     setUpdateCheckError(null);
     setShowTechnicalDetails(false);
     try {
       const update = await check({ timeout: 15000 });
-      toast.dismiss(loadingToast);
       if (update) {
+        setCheckStatus('idle');
         setUpdateAvailable(update);
         setShowUpdateModal(true);
-        toast.update(t('settings.updateAvailable', { version: update.version }));
         invoke('set_update_available', { available: true }).catch(console.error);
       } else {
         invoke('set_update_available', { available: false }).catch(console.error);
-        toast.info(t('settings.noUpdates'));
+        setCheckStatus('upToDate');
       }
     } catch (error: unknown) {
-      toast.dismiss(loadingToast);
       const raw = formatUpdaterError(error);
+      setCheckStatus('idle');
       setUpdateCheckError(raw);
       console.error('Update check failed:', error);
-      if (isUpdaterNetworkError(raw)) {
-        toast.error(t('settings.checkInternetConnection'));
-      } else {
-        toast.error(t('settings.updateError'));
-      }
     }
-  }, [t]);
+  }, []);
 
   useEffect(() => {
     const unlisten = listen('about-check-updates', () => {
@@ -209,7 +256,7 @@ export function AboutWindow() {
             </Tooltip>
             <button
               type="button"
-              onClick={close}
+              onClick={handleClose}
               aria-label={t('common.close')}
               className="icon-button flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-destructive/20 hover:text-destructive"
             >
@@ -287,14 +334,26 @@ export function AboutWindow() {
                       {t('settings.checkForUpdates')}
                     </span>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {t('settings.checkForUpdatesDesc')}
+                      {checkStatus === 'checking' ? (
+                        <span className="inline-flex items-center gap-1.5 text-foreground">
+                          <Loader2 size={12} className="animate-spin text-primary" />
+                          {t('settings.checkingUpdates')}
+                        </span>
+                      ) : checkStatus === 'upToDate' ? (
+                        <span className="inline-flex items-center gap-1.5 text-foreground">
+                          <Check size={12} className="text-primary" />
+                          {t('settings.noUpdates')}
+                        </span>
+                      ) : (
+                        t('settings.checkForUpdatesDesc')
+                      )}
                     </p>
                   </div>
                   {updateAvailable ? (
                     <button
                       type="button"
                       onClick={() => setShowUpdateModal(true)}
-                      className="btn min-w-[108px] rounded-[4px] border border-primary/20 bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary/90"
+                      className="btn min-w-[108px] rounded-[4px] border border-primary/20 bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
                     >
                       {t('settings.updatesUpdateNow')}
                     </button>
@@ -302,9 +361,17 @@ export function AboutWindow() {
                     <button
                       type="button"
                       onClick={checkForUpdates}
-                      className="btn min-w-[108px] rounded-[4px] border border-primary/20 bg-input px-3 py-2 text-xs text-foreground hover:bg-accent"
+                      disabled={checkStatus === 'checking'}
+                      className="btn min-w-[108px] rounded-[4px] border border-primary/20 bg-input px-3 py-2 text-xs text-foreground hover:bg-accent disabled:opacity-60 disabled:pointer-events-none"
                     >
-                      {t('settings.checkNow')}
+                      {checkStatus === 'checking' ? (
+                        <span className="inline-flex items-center justify-center gap-1.5">
+                          <Loader2 size={12} className="animate-spin" />
+                          {t('settings.checkNow')}
+                        </span>
+                      ) : (
+                        t('settings.checkNow')
+                      )}
                     </button>
                   )}
                 </div>
