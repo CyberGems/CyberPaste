@@ -2,6 +2,30 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.19.0] — 2026-09-06
+
+### ⬆️ Title-Bar Update Button ✨
+- **CyberWall-Style Pill**: A dynamic update control appears to the left of the window buttons when a newer version is available! ⬆️
+- **Hover Expand**: Collapsed arrow in rest; hover reveals **Update** / **Actualizar**! 🖱️
+- **Shared Signal**: Stays in sync with About and the tray LED, and opens the existing update modal! 🔄
+
+### 📚 Help Menus & First-Run Tray Tip 🧭
+- **Title-Bar Overflow**: Documentation & Wiki, website, changelog, GitHub, and About — matching the CyberFeeds help menu! 📚
+- **Tray Help**: Wiki, FAQ, changelog, website, and donate from the tray! 🖱️
+- **Pin-Tip First Run**: Explains how to keep CyberPaste visible in the Windows tray overflow! 📌
+
+### 🩷 About Footer — CyberWall Icon Row 💎
+- **Same Order & Heart**: Globe, docs, GitHub, issues, releases, then a filled rose heart (`#F43F5E`) for donate! 🩷
+
+### 🎛️ Header & Compact Polish ✨
+- **Centered Type Filters**: Full-mode chips sit in the middle with a clear-filter control; selected folders drop the glow border! 🎛️
+- **Aligned Compact Rows**: Reserved timestamp column so type and source icons stay lined up! 📐
+- **Safer Menus**: Tighter compact row-menu hit target; dismissing a context menu no longer pastes! 🛡️
+
+### 🐛 Stability Fixes 💥→✅
+- **Still-Cursor Peek**: The compact peek no longer opens when the window appears under an unmoved cursor! 👁️
+- **Lucide Startup Crash**: `HelpCircle` (lucide 0.294) replaces the missing `CircleHelp` import! 🚑
+
 ## [1.18.0] — 2026-08-31
 
 ### 👁️ Adaptive Full Mode Hover Peek ✨

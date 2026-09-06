@@ -6,30 +6,31 @@ Welcome to the official **CyberPaste {{VERSION}}** release! CyberPaste is a ligh
 
 ### ✨ Key Features & Highlights
 
-- 👁️ **Adaptive Full Mode Hover Peek**:
-  - Instant high-resolution preview popover for image cards and expanded scrollable monospace views for code & text.
-  - Automatic aspect-ratio calibration expanding up to **1280×800px** without empty letterbox padding.
-  - Smart 4-sided viewport bounds clamping preventing any screen edge cutoffs.
-  - Instant dismissal on subtle cursor movement, scroll wheel, or mouse click.
-  - Redundant peek suppression for single-file clips and short snippets across both Full and Compact modes.
-  - Dedicated toggle setting under *Modo Completo* in Settings.
+- ⬆️ **Title-Bar Update Button**:
+  - Dynamic CyberWall-style pill appears to the left of the window controls when a newer version is available.
+  - Collapsed arrow in rest; hover expands to **Update** / **Actualizar**.
+  - Click opens the existing update modal, and the signal stays in sync with About and the tray.
 
-- 🌀 **Seamless View Mode Morph & Cyberpunk Transition Loader**:
-  - Redesigned window resizing animation between Compact and Full modes with real-time UI masking.
-  - Holographic spinning scanline ring with pulsing cyan glow and official logo branding during mode morphs.
-  - Eradicated all post-toggle background flashes and double renders by preventing redundant Win32 DWM vibrancy re-applications.
+- 📚 **Title-Bar & Tray Help Menus**:
+  - CyberFeeds-style overflow menu with Documentation & Wiki, website, changelog, GitHub, and About.
+  - Matching Help entries in the tray, including FAQ and donate links.
 
-- 🪟 **True Hardware Acrylic Gaussian Blur**:
-  - Replaced legacy backdrop with native Win32 hardware Acrylic blur (`apply_acrylic`), eliminating background desktop bleed-through.
+- 📌 **Tray Pin-Tip First Run**:
+  - First-launch tip explaining how to keep CyberPaste visible in the Windows tray overflow.
 
-- 🔊 **Refined Tactile Duplicate Sound**:
-  - Replaced high-pitch alert beep with a dry, tactile mechanical click (320Hz → 140Hz) for duplicate clipboard copy events.
+- 🩷 **About Footer — CyberWall Icon Row**:
+  - Globe, docs, GitHub, issues, releases, and a filled rose heart (`#F43F5E`) for donate — same order and emphasis as CyberWall.
 
-- 📋 **Smart HTML Web Clipboard Sanitization**:
-  - Web copy operations (e.g. copying text on GitHub in Firefox) now prioritize clean plain text over internal browser HTML tags and markdown link wraps.
+- 🎛️ **Quieter Full-Mode Header**:
+  - Centered type-filter chips, a clear-filter control, and selected folder tabs without the old glow border.
 
-- 🎨 **App Icon Suite & Razor-Sharp System Tray**:
-  - Refreshed official brand icon suite with Lanczos 32×32px downsampling for crystal-clear system tray rendering.
+- 🧭 **Compact Row Polish**:
+  - Reserved timestamp column so type and source icons stay aligned.
+  - Tighter row-menu hit target; context menus dismiss without pasting.
+
+- 🐛 **Stability Fixes**:
+  - Peek no longer opens when the window appears under a still cursor.
+  - Startup crash from lucide `CircleHelp` / `HelpCircle` mismatch is gone.
 
 ---
 
