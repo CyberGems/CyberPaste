@@ -113,6 +113,8 @@
     "dismiss": "Cerrar"
   },
   "titleBar": {
+    "update": "Actualizar",
+    "updateAvailable": "Actualización disponible — v{{version}}",
     "moreMenu": {
       "docs": "Documentación y Wiki",
       "website": "Sitio web",

@@ -139,6 +139,7 @@ function App() {
   const [theme, setTheme] = useState('cyberpaste');
   const [settings, setSettings] = useState<Settings | null>(null);
   const [updateAvailable, setUpdateAvailable] = useState<any>(null);
+  const updateAvailableRef = useRef<any>(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [deletedStack, setDeletedStack] = useState<{ ids: string[] }[]>([]);
   const [pendingDeleteModal, setPendingDeleteModal] = useState<{
@@ -324,11 +325,13 @@ function App() {
             check({ timeout: 15000 })
               .then((update) => {
                 if (update) {
+                  updateAvailableRef.current = update;
                   setUpdateAvailable(update);
                   setShowUpdateModal(true);
                   toast.update(t('settings.updateAvailable', { version: update.version }));
                   invoke('set_update_available', { available: true }).catch(console.error);
                 } else {
+                  updateAvailableRef.current = null;
                   invoke('set_update_available', { available: false }).catch(console.error);
                 }
               })
@@ -462,6 +465,48 @@ function App() {
       unlistenReset.then((f) => f());
       unlistenResize.then((f) => f());
       unlistenDemo.then((fs) => fs.forEach((f) => f()));
+    };
+  }, []);
+
+  const handleShowUpdate = useCallback(async () => {
+    if (updateAvailableRef.current) {
+      setShowUpdateModal(true);
+      return;
+    }
+    try {
+      const update = await check({ timeout: 15000 });
+      if (update) {
+        updateAvailableRef.current = update;
+        setUpdateAvailable(update);
+        setShowUpdateModal(true);
+        invoke('set_update_available', { available: true }).catch(console.error);
+      }
+    } catch (err) {
+      console.warn('Update check from title bar failed:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    const unlisten = listen<boolean>('update-available', (event) => {
+      if (event.payload) {
+        if (updateAvailableRef.current) return;
+        check({ timeout: 15000 })
+          .then((update) => {
+            if (update) {
+              updateAvailableRef.current = update;
+              setUpdateAvailable(update);
+            }
+          })
+          .catch((err) => {
+            console.warn('Update payload refresh failed:', err);
+          });
+      } else {
+        updateAvailableRef.current = null;
+        setUpdateAvailable(null);
+      }
+    });
+    return () => {
+      unlisten.then((f) => f());
     };
   }, []);
 
@@ -2680,6 +2725,9 @@ function App() {
               compactShowNumber={settings?.compact_show_number ?? true}
               compactShowScrollbar={settings?.compact_show_scrollbar ?? true}
               titleBarAnimationEnabled={settings?.title_bar_animation_enabled ?? true}
+              updateAvailable={!!updateAvailable}
+              updateVersion={updateAvailable?.version}
+              onShowUpdate={handleShowUpdate}
               totalClipCount={totalClipCount}
               onFolderContextMenu={(e, folderId) => {
                 if (folderId) handleContextMenu(e, 'folder', folderId);
@@ -2791,6 +2839,9 @@ function App() {
                 onReorderFolder={handleReorderFolder}
                 showHud={settings?.full_show_hud ?? true}
                 titleBarAnimationEnabled={settings?.title_bar_animation_enabled ?? true}
+                updateAvailable={!!updateAvailable}
+                updateVersion={updateAvailable?.version}
+                onShowUpdate={handleShowUpdate}
               />
 
               {/* Type filter chips (Full mode) */}

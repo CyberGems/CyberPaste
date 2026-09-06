@@ -4035,6 +4035,7 @@ pub fn get_tray_menu_state(app: AppHandle) -> TrayMenuState {
 #[tauri::command]
 pub fn set_update_available(app: AppHandle, available: bool) -> Result<(), String> {
     UPDATE_AVAILABLE.store(available, Ordering::SeqCst);
+    let _ = app.emit("update-available", available);
     crate::rebuild_tray_menu(&app).map_err(|error| error.to_string())
 }
 

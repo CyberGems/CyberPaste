@@ -60,6 +60,7 @@ import { clsx } from 'clsx';
 import { useTranslation } from 'react-i18next';
 import Tooltip from './Tooltip';
 import { TitleBarMenu } from './TitleBarMenu';
+import { TitleBarUpdateButton } from './TitleBarUpdateButton';
 import { useFolderFlash } from '../hooks/useFolderFlash';
 
 const IconMap: Record<string, any> = {
@@ -138,6 +139,9 @@ interface ControlBarProps {
   isWindowActive?: boolean;
   wheelFolderNavigation?: boolean;
   titleBarAnimationEnabled?: boolean;
+  updateAvailable?: boolean;
+  updateVersion?: string;
+  onShowUpdate?: () => void;
 }
 
 interface FolderTabButtonProps {
@@ -242,6 +246,9 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   isWindowActive = true,
   wheelFolderNavigation = false,
   titleBarAnimationEnabled = true,
+  updateAvailable = false,
+  updateVersion,
+  onShowUpdate,
 }) => {
   const foldersRef = React.useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
@@ -569,6 +576,12 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         {!showHud && <div className="min-w-0 flex-1" />}
 
         <div className="z-10 flex shrink-0 items-center gap-0.5">
+          <TitleBarUpdateButton
+            visible={updateAvailable}
+            version={updateVersion}
+            onClick={() => onShowUpdate?.()}
+            iconSize={15}
+          />
           {onTogglePin && (
             <Tooltip
               label={isPinned ? t('common.unpinWindow') : t('common.pinWindow')}

@@ -252,6 +252,8 @@
     "dismiss": "关闭"
   },
   "titleBar": {
+    "update": "更新",
+    "updateAvailable": "有可用更新 — v{{version}}",
     "moreMenu": {
       "docs": "文档和 Wiki",
       "website": "网站",

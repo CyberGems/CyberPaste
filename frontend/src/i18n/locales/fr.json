@@ -250,6 +250,8 @@
     "dismiss": "Fermer"
   },
   "titleBar": {
+    "update": "Mettre à jour",
+    "updateAvailable": "Mise à jour disponible — v{{version}}",
     "moreMenu": {
       "docs": "Documentation et Wiki",
       "website": "Site web",

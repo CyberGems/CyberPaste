@@ -75,6 +75,7 @@ import { twMerge } from 'tailwind-merge';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import Tooltip from './Tooltip';
 import { TitleBarMenu } from './TitleBarMenu';
+import { TitleBarUpdateButton } from './TitleBarUpdateButton';
 import { de, enUS, es, fr, ja, zhCN } from 'date-fns/locale';
 import { List, useListRef, type RowComponentProps } from 'react-window';
 import { CONTEXT_MENU_EVENT, type ContextMenuEventDetail } from '../utils/contextMenuEvents';
@@ -417,6 +418,9 @@ interface CompactViewProps {
   compactShowScrollbar?: boolean;
   wheelFolderNavigation?: boolean;
   titleBarAnimationEnabled?: boolean;
+  updateAvailable?: boolean;
+  updateVersion?: string;
+  onShowUpdate?: () => void;
 }
 
 interface CompactSidebarFolderItemProps {
@@ -628,6 +632,9 @@ export const CompactView: React.FC<CompactViewProps> = ({
   compactShowScrollbar = true,
   wheelFolderNavigation = false,
   titleBarAnimationEnabled = true,
+  updateAvailable = false,
+  updateVersion,
+  onShowUpdate,
 }) => {
   const { t } = useTranslation();
   const folderScrollRef = useRef<HTMLDivElement>(null);
@@ -1216,6 +1223,12 @@ export const CompactView: React.FC<CompactViewProps> = ({
           </div>
         </div>
         <div className="flex cursor-default items-center gap-0.5">
+          <TitleBarUpdateButton
+            visible={updateAvailable}
+            version={updateVersion}
+            onClick={() => onShowUpdate?.()}
+            iconSize={14}
+          />
           {onTogglePin && (
             <Tooltip
               label={isPinned ? t('common.unpinWindowShort') : t('common.pinWindowShort')}
