@@ -64,7 +64,9 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
       data-el="type-filter-row"
       className="flex w-full items-center gap-2 px-4 pb-1.5 pt-2.5"
     >
-      <div className="no-scrollbar flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
+      <div className="min-w-0 flex-1" aria-hidden />
+
+      <div className="no-scrollbar flex min-w-0 max-w-[60%] items-center justify-center gap-0.5 overflow-x-auto">
         {FULL_TYPE_FILTER_OPTIONS.map((opt) => {
           const Icon = opt.icon;
           const selected = opt.value === value;
@@ -77,114 +79,127 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
                 type="button"
                 onClick={() => onChange(opt.value)}
                 className={clsx(
-                  'flex h-7 flex-shrink-0 items-center gap-1.5 rounded-lg border px-2 text-[11px] font-medium leading-normal transition-all',
+                  'flex h-7 flex-shrink-0 items-center gap-1.5 px-2.5 text-[11px] font-medium leading-normal transition-colors focus:outline-none focus-visible:ring-0',
                   selected
-                    ? 'border-primary/40 bg-primary/15 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.18)]'
-                    : 'border-border bg-secondary/40 text-muted-foreground hover:border-border hover:bg-secondary/70 hover:text-foreground'
+                    ? 'rounded-full bg-primary/15 text-primary'
+                    : 'rounded-full text-muted-foreground/75 hover:text-foreground'
                 )}
               >
                 <Icon size={12} className="shrink-0" />
                 <span className="whitespace-nowrap leading-normal">{label}</span>
                 {typeof count === 'number' && (
-                  <span className="font-mono text-[10px] leading-normal tabular-nums opacity-70">
-                    ({count})
+                  <span
+                    className={clsx(
+                      'font-mono text-[10px] leading-normal tabular-nums',
+                      selected ? 'opacity-70' : 'opacity-40'
+                    )}
+                  >
+                    {count}
                   </span>
                 )}
               </button>
             </Tooltip>
           );
         })}
-        {isActive && (
-          <Tooltip label={t('common.clearSearch') || 'Clear filter'} placement="bottom">
-            <button
-              type="button"
-              onClick={() => onChange('all')}
-              className="flex h-[26px] w-[26px] flex-shrink-0 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground"
-              aria-label="Clear type filter"
-            >
-              <X size={12} />
-            </button>
-          </Tooltip>
-        )}
-      </div>
-
-      {canUndo && onUndo && (
-        <Tooltip
-          label={t('common.undoDelete') || t('contextMenu.undo') || 'Undo'}
-          placement="bottom"
-        >
+        <Tooltip label={t('common.clearFilter')} placement="bottom" disabled={!isActive}>
           <button
             type="button"
-            onClick={onUndo}
-            className="flex h-7 shrink-0 items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 text-[11px] font-medium text-amber-500 transition-all hover:border-amber-500/70 hover:bg-amber-500/20 active:scale-95 shadow-[0_0_10px_rgba(245,158,11,0.15)]"
+            onClick={() => onChange('all')}
+            disabled={!isActive}
+            tabIndex={isActive ? 0 : -1}
+            aria-hidden={!isActive}
+            aria-label={t('common.clearFilter')}
+            className={clsx(
+              'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full transition-colors',
+              isActive
+                ? 'text-muted-foreground/70 hover:text-foreground'
+                : 'invisible pointer-events-none'
+            )}
           >
-            <Undo2 size={13} className="shrink-0" />
-            <span className="hidden sm:inline font-medium">{t('contextMenu.undo')}</span>
+            <X size={12} />
           </button>
         </Tooltip>
-      )}
+      </div>
 
-      {onGridScaleChange && gridScale !== undefined && (
-        <div className="flex shrink-0 items-center gap-0 rounded-md border border-border bg-secondary/40 px-0.5">
-          <Tooltip label={t('common.zoomOut')} placement="bottom">
-            <button
-              type="button"
-              onClick={() =>
-                onGridScaleChange(Math.max(0.6, Number((gridScale - 0.25).toFixed(2))))
-              }
-              disabled={gridScale <= 0.6}
-              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:text-primary disabled:opacity-20"
-            >
-              <ZoomOut size={12} />
-            </button>
-          </Tooltip>
+      <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+        {canUndo && onUndo && (
           <Tooltip
-            label={`${t('common.zoom')}: ${Math.round(gridScale * 100)}%`}
+            label={t('common.undoDelete') || t('contextMenu.undo') || 'Undo'}
             placement="bottom"
           >
             <button
               type="button"
-              onClick={() => onGridScaleChange(1)}
-              className="min-w-[38px] cursor-pointer text-center font-mono text-[10px] font-bold tabular-nums text-primary/80 hover:text-primary"
+              onClick={onUndo}
+              className="flex h-7 shrink-0 items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 text-[11px] font-medium text-amber-500 transition-all hover:border-amber-500/70 hover:bg-amber-500/20 active:scale-95 shadow-[0_0_10px_rgba(245,158,11,0.15)]"
             >
-              {Math.round(gridScale * 100)}%
+              <Undo2 size={13} className="shrink-0" />
+              <span className="hidden sm:inline font-medium">{t('contextMenu.undo')}</span>
             </button>
           </Tooltip>
-          <Tooltip label={t('common.zoomIn')} placement="bottom">
+        )}
+
+        {onGridScaleChange && gridScale !== undefined && (
+          <div className="flex shrink-0 items-center gap-0 rounded-md border border-border bg-secondary/40 px-0.5">
+            <Tooltip label={t('common.zoomOut')} placement="bottom">
+              <button
+                type="button"
+                onClick={() =>
+                  onGridScaleChange(Math.max(0.6, Number((gridScale - 0.25).toFixed(2))))
+                }
+                disabled={gridScale <= 0.6}
+                className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:text-primary disabled:opacity-20"
+              >
+                <ZoomOut size={12} />
+              </button>
+            </Tooltip>
+            <Tooltip
+              label={`${t('common.zoom')}: ${Math.round(gridScale * 100)}%`}
+              placement="bottom"
+            >
+              <button
+                type="button"
+                onClick={() => onGridScaleChange(1)}
+                className="min-w-[38px] cursor-pointer text-center font-mono text-[10px] font-bold tabular-nums text-primary/80 hover:text-primary"
+              >
+                {Math.round(gridScale * 100)}%
+              </button>
+            </Tooltip>
+            <Tooltip label={t('common.zoomIn')} placement="bottom">
+              <button
+                type="button"
+                onClick={() =>
+                  onGridScaleChange(Math.min(1.75, Number((gridScale + 0.25).toFixed(2))))
+                }
+                disabled={gridScale >= 1.75}
+                className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:text-primary disabled:opacity-20"
+              >
+                <ZoomIn size={12} />
+              </button>
+            </Tooltip>
+          </div>
+        )}
+
+        {onToggleDetailPanel && (
+          <Tooltip
+            label={detailPanelOpen ? t('detailPanel.collapse') : t('detailPanel.expand')}
+            placement="bottom"
+          >
             <button
               type="button"
-              onClick={() =>
-                onGridScaleChange(Math.min(1.75, Number((gridScale + 0.25).toFixed(2))))
-              }
-              disabled={gridScale >= 1.75}
-              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:text-primary disabled:opacity-20"
+              onClick={onToggleDetailPanel}
+              aria-label={detailPanelOpen ? t('detailPanel.collapse') : t('detailPanel.expand')}
+              className={clsx(
+                'flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition-colors',
+                detailPanelOpen
+                  ? 'border-primary/40 bg-primary/15 text-primary'
+                  : 'border-border bg-secondary/40 text-muted-foreground hover:bg-secondary/70 hover:text-primary'
+              )}
             >
-              <ZoomIn size={12} />
+              {detailPanelOpen ? <PanelRightClose size={13} /> : <PanelRightOpen size={13} />}
             </button>
           </Tooltip>
-        </div>
-      )}
-
-      {onToggleDetailPanel && (
-        <Tooltip
-          label={detailPanelOpen ? t('detailPanel.collapse') : t('detailPanel.expand')}
-          placement="bottom"
-        >
-          <button
-            type="button"
-            onClick={onToggleDetailPanel}
-            aria-label={detailPanelOpen ? t('detailPanel.collapse') : t('detailPanel.expand')}
-            className={clsx(
-              'flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition-colors',
-              detailPanelOpen
-                ? 'border-primary/40 bg-primary/15 text-primary'
-                : 'border-border bg-secondary/40 text-muted-foreground hover:bg-secondary/70 hover:text-primary'
-            )}
-          >
-            {detailPanelOpen ? <PanelRightClose size={13} /> : <PanelRightOpen size={13} />}
-          </button>
-        </Tooltip>
-      )}
+        )}
+      </div>
     </div>
   );
 };

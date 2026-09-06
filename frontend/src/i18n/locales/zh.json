@@ -9,6 +9,7 @@
     "create": "创建",
     "save": "保存",
     "search": "搜索",
+    "clearFilter": "清除筛选",
     "loading": "加载中...",
     "copied": "已复制到剪贴板",
     "pasteSuccess": "粘贴成功",

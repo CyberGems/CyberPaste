@@ -185,12 +185,12 @@ const FolderTabButton: React.FC<FolderTabButtonProps> = ({
       onMouseEnter={() => onMouseEnter(folder.id)}
       data-selected={isSelected}
       className={clsx(
-        'flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 text-[12px] font-medium transition-all',
+        'flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2.5 text-[12px] font-medium transition-all focus:outline-none focus-visible:ring-0',
         isFlashing && 'folder-double-flash',
         isSelected && dragTargetFolderId === undefined
-          ? 'border-primary/30 bg-primary/15 font-semibold text-foreground shadow-[0_0_8px_rgba(var(--primary-rgb),0.12)]'
+          ? 'border-transparent bg-primary/15 font-semibold text-foreground'
           : isDragTarget
-            ? 'border-primary bg-primary/30 text-foreground'
+            ? 'border-transparent bg-primary/30 text-foreground'
             : isMenuHighlighted
               ? 'border-transparent bg-accent text-foreground'
               : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground',
@@ -691,12 +691,12 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                   data-folder-id="clipboard"
                   data-selected={highlightedFolderId === null}
                   className={clsx(
-                    'flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 text-[12px] font-medium transition-all',
+                    'flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2.5 text-[12px] font-medium transition-all focus:outline-none focus-visible:ring-0',
                     isClipboardFlashing && 'folder-double-flash',
                     highlightedFolderId === null && dragTargetFolderId === undefined
-                      ? 'border-primary/30 bg-primary/15 font-semibold text-foreground shadow-[0_0_8px_rgba(var(--primary-rgb),0.12)]'
+                      ? 'border-transparent bg-primary/15 font-semibold text-foreground'
                       : dragTargetFolderId === null && isDragging
-                        ? 'border-primary bg-primary/30 text-foreground'
+                        ? 'border-transparent bg-primary/30 text-foreground'
                         : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
                   )}
                 >

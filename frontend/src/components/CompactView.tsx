@@ -462,12 +462,12 @@ const CompactSidebarFolderItem: React.FC<CompactSidebarFolderItemProps> = ({
         data-selected={isSelected}
         onContextMenu={(e) => onContextMenu?.(e, folder.id)}
         className={cn(
-          'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-md border px-2 py-1.5 text-[11px] font-medium transition-all',
+          'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2 py-1.5 text-[11px] font-medium transition-all focus:outline-none focus-visible:ring-0',
           isFlashing && 'folder-double-flash',
           isSelected && dragTargetFolderId === undefined
-            ? 'border-primary/30 bg-primary/15 font-semibold text-foreground shadow-[0_0_8px_rgba(var(--primary-rgb),0.12)]'
+            ? 'border-transparent bg-primary/15 font-semibold text-foreground'
             : isDragTarget
-              ? 'border-primary bg-primary/30 text-foreground'
+              ? 'border-transparent bg-primary/30 text-foreground'
               : contextMenuFolderId === folder.id
                 ? 'border-transparent bg-accent text-foreground'
                 : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground',
@@ -1135,12 +1135,12 @@ export const CompactView: React.FC<CompactViewProps> = ({
     isFlashing = false
   ) =>
     cn(
-      'flex items-center gap-1.5 whitespace-nowrap rounded-md border px-2 py-1.5 text-[11px] font-medium transition-all',
+      'flex items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2 py-1.5 text-[11px] font-medium transition-all focus:outline-none focus-visible:ring-0',
       isFlashing && 'folder-double-flash',
       isSelected && dragTargetFolderId === undefined
-        ? 'border-primary/30 bg-primary/15 font-semibold text-foreground shadow-[0_0_8px_rgba(var(--primary-rgb),0.12)]'
+        ? 'border-transparent bg-primary/15 font-semibold text-foreground'
         : isDragTarget && isDragging
-          ? 'border-primary bg-primary/30 text-foreground'
+          ? 'border-transparent bg-primary/30 text-foreground'
           : isMenuHighlighted
             ? 'border-transparent bg-accent text-foreground'
             : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
@@ -1350,12 +1350,12 @@ export const CompactView: React.FC<CompactViewProps> = ({
                       data-folder-id="clipboard"
                       data-selected={highlightedFolderId === null}
                       className={cn(
-                        'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-md border px-2 py-1.5 text-[11px] font-medium transition-all',
+                        'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2 py-1.5 text-[11px] font-medium transition-all focus:outline-none focus-visible:ring-0',
                         isClipboardFlashing && 'folder-double-flash',
                         highlightedFolderId === null && dragTargetFolderId === undefined
-                          ? 'border-primary/30 bg-primary/15 font-semibold text-foreground shadow-[0_0_8px_rgba(var(--primary-rgb),0.12)]'
+                          ? 'border-transparent bg-primary/15 font-semibold text-foreground'
                           : dragTargetFolderId === null && isDragging
-                            ? 'border-primary bg-primary/30 text-foreground'
+                            ? 'border-transparent bg-primary/30 text-foreground'
                             : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
                       )}
                       onMouseEnter={() => handleFolderHover(null)}

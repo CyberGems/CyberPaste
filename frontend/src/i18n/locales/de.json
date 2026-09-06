@@ -9,6 +9,7 @@
     "create": "Erstellen",
     "save": "Speichern",
     "search": "Suchen",
+    "clearFilter": "Filter zurücksetzen",
     "loading": "Wird geladen...",
     "copied": "In die Zwischenablage kopiert",
     "pasteSuccess": "Erfolgreich eingefügt",

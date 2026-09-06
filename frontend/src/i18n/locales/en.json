@@ -23,6 +23,7 @@
     "closeWindow": "Close Window",
     "searchPlaceholder": "Search clips... (Ctrl+F)",
     "clearSearch": "Clear search",
+    "clearFilter": "Clear filter",
     "esc": "ESC",
     "pinWindowShort": "Pin Window",
     "unpinWindowShort": "Unpin Window",
