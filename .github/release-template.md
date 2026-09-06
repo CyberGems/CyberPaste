@@ -42,12 +42,9 @@ Welcome to the official **CyberPaste {{VERSION}}** release! CyberPaste is a ligh
 
 ---
 
-### 🔍 VirusTotal Scan Results (70+ Antivirus Engines)
+### 🔐 Checksums
 
-VirusTotal may display an internal NSIS filename; the SHA256 below is `CyberPaste_{{VERSION_NUM}}_x64-setup.exe`.
-
-- 🛡️ **Setup Installer**: [View VirusTotal Inspection Report](https://www.virustotal.com/gui/file/{{INSTALLER_HASH}})  
-  *(SHA256: `{{INSTALLER_HASH}}`)*
+- **`CyberPaste_{{VERSION_NUM}}_x64-setup.exe`** — SHA256: `{{INSTALLER_HASH}}`
 {{MSI_BLOCK}}
 ---
 

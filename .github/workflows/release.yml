@@ -77,10 +77,9 @@ jobs:
           prerelease: false
           args: ${{ matrix.settings.args }}
 
-      - name: Scan Built Installers with VirusTotal & Update Release Body
+      - name: Publish checksums in release notes
         shell: pwsh
         env:
-          VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
         run: |
           $tag = "${{ github.ref_name }}"
@@ -103,40 +102,10 @@ jobs:
             Write-Host "MSI Package: not built (bundle targets do not include msi)"
           }
 
-          if ($env:VIRUSTOTAL_API_KEY) {
-            function Upload-VirusTotal($filePath, $apiKey) {
-              $item = Get-Item $filePath
-              $sizeMb = [Math]::Round($item.Length / 1MB, 2)
-              Write-Host "Uploading $($item.Name) ($sizeMb MB) to VirusTotal..."
-              $headers = @{ "x-apikey" = $apiKey }
-              $url = "https://www.virustotal.com/api/v3/files"
-
-              if ($item.Length -gt 30MB) {
-                Write-Host "File exceeds 30MB ($sizeMb MB), requesting dedicated large-file upload endpoint from VirusTotal..."
-                $urlResp = Invoke-RestMethod -Uri "https://www.virustotal.com/api/v3/files/upload_url" -Method Get -Headers $headers -TimeoutSec 60
-                $url = $urlResp.data
-                Write-Host "Using dedicated endpoint: $url"
-              }
-
-              $formFile = "$($item.FullName);filename=$($item.Name)"
-              $resp = & curl.exe -s -S --fail -X POST -H "x-apikey: $apiKey" -F "file=@$formFile" "$url"
-              Write-Host "Upload successful. Response: $resp"
-            }
-
-            if ($installer) {
-              try { Upload-VirusTotal $installer.FullName $env:VIRUSTOTAL_API_KEY } catch { Write-Warning "VirusTotal installer upload warning: $_" }
-            }
-            if ($msi) {
-              try { Upload-VirusTotal $msi.FullName $env:VIRUSTOTAL_API_KEY } catch { Write-Warning "VirusTotal MSI upload warning: $_" }
-            }
-          } else {
-            Write-Host "VIRUSTOTAL_API_KEY secret not found; skipping direct upload and using computed SHA256 hashes."
-          }
-
           if (Test-Path ".github/release-template.md") {
             $msiBlock = ""
             if ($msiHash) {
-              $msiBlock = "- 💼 **MSI Installer**: [View VirusTotal Inspection Report](https://www.virustotal.com/gui/file/$msiHash)`r`n  *(SHA256: ``$msiHash``)*`r`n`r`n"
+              $msiBlock = "- **CyberPaste_${versionNum}_x64_en-US.msi** — SHA256: ``$msiHash```r`n"
             }
 
             $template = [System.IO.File]::ReadAllText(".github/release-template.md", [System.Text.Encoding]::UTF8)
@@ -149,7 +118,7 @@ jobs:
 
             try {
               gh release edit $tag --notes-file "FINAL_RELEASE_NOTES.md"
-              Write-Host "Successfully updated release body with VirusTotal inspection hashes!"
+              Write-Host "Successfully updated release body with installer checksums."
             } catch {
               Write-Warning "Could not update release body via gh cli: $_"
             }
