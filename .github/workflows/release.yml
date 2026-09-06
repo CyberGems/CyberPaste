@@ -83,21 +83,31 @@ jobs:
           VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
         run: |
-          $bundles = Get-ChildItem -Path "src-tauri/target" -Recurse -Include "*.exe", "*.msi" | Where-Object { $_.FullName -like "*\bundle\*" }
-          $installer = $bundles | Where-Object { $_.Extension -eq ".exe" } | Select-Object -First 1
-          $msi = $bundles | Where-Object { $_.Extension -eq ".msi" } | Select-Object -First 1
+          $tag = "${{ github.ref_name }}"
+          $versionNum = $tag.TrimStart("v")
+
+          $installer = Get-ChildItem -Path "src-tauri/target" -Recurse -Filter "*-setup.exe" |
+            Where-Object { $_.FullName -match '\\bundle\\nsis\\' } |
+            Select-Object -First 1
+          $msi = Get-ChildItem -Path "src-tauri/target" -Recurse -Filter "*.msi" |
+            Where-Object { $_.FullName -match '\\bundle\\msi\\' -and $_.Name -notlike "*.zip*" } |
+            Select-Object -First 1
 
           $installerHash = if ($installer) { (Get-FileHash $installer.FullName -Algorithm SHA256).Hash.ToLower() } else { "pending" }
-          $msiHash = if ($msi) { (Get-FileHash $msi.FullName -Algorithm SHA256).Hash.ToLower() } else { "pending" }
+          $msiHash = if ($msi) { (Get-FileHash $msi.FullName -Algorithm SHA256).Hash.ToLower() } else { $null }
 
           Write-Host "Setup Installer: $($installer.FullName) [SHA256: $installerHash]"
-          Write-Host "MSI Package: $($msi.FullName) [SHA256: $msiHash]"
+          if ($msi) {
+            Write-Host "MSI Package: $($msi.FullName) [SHA256: $msiHash]"
+          } else {
+            Write-Host "MSI Package: not built (bundle targets do not include msi)"
+          }
 
           if ($env:VIRUSTOTAL_API_KEY) {
             function Upload-VirusTotal($filePath, $apiKey) {
               $item = Get-Item $filePath
               $sizeMb = [Math]::Round($item.Length / 1MB, 2)
-              Write-Host "Uploading $filePath ($sizeMb MB) to VirusTotal..."
+              Write-Host "Uploading $($item.Name) ($sizeMb MB) to VirusTotal..."
               $headers = @{ "x-apikey" = $apiKey }
               $url = "https://www.virustotal.com/api/v3/files"
 
@@ -108,7 +118,8 @@ jobs:
                 Write-Host "Using dedicated endpoint: $url"
               }
 
-              $resp = & curl.exe -s -S --fail -X POST -H "x-apikey: $apiKey" -F "file=@$filePath" "$url"
+              $formFile = "$($item.FullName);filename=$($item.Name)"
+              $resp = & curl.exe -s -S --fail -X POST -H "x-apikey: $apiKey" -F "file=@$formFile" "$url"
               Write-Host "Upload successful. Response: $resp"
             }
 
@@ -123,14 +134,24 @@ jobs:
           }
 
           if (Test-Path ".github/release-template.md") {
+            $msiBlock = ""
+            if ($msiHash) {
+              $msiBlock = "- 💼 **MSI Installer**: [View VirusTotal Inspection Report](https://www.virustotal.com/gui/file/$msiHash)`r`n  *(SHA256: ``$msiHash``)*`r`n`r`n"
+            }
+
             $template = [System.IO.File]::ReadAllText(".github/release-template.md", [System.Text.Encoding]::UTF8)
-            $notes = $template.Replace("{{VERSION}}", "${{ github.ref_name }}").Replace("{{INSTALLER_HASH}}", $installerHash).Replace("{{MSI_HASH}}", $msiHash)
+            $notes = $template.
+              Replace("{{VERSION_NUM}}", $versionNum).
+              Replace("{{VERSION}}", $tag).
+              Replace("{{INSTALLER_HASH}}", $installerHash).
+              Replace("{{MSI_BLOCK}}", $msiBlock)
             [System.IO.File]::WriteAllText("FINAL_RELEASE_NOTES.md", $notes, [System.Text.Encoding]::UTF8)
 
             try {
-              gh release edit "${{ github.ref_name }}" --notes-file "FINAL_RELEASE_NOTES.md"
+              gh release edit $tag --notes-file "FINAL_RELEASE_NOTES.md"
               Write-Host "Successfully updated release body with VirusTotal inspection hashes!"
             } catch {
               Write-Warning "Could not update release body via gh cli: $_"
             }
           }
+

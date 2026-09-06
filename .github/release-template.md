@@ -1,6 +1,6 @@
 ## 📋 CyberPaste {{VERSION}} — Release Notes
 
-Welcome to the official **CyberPaste {{VERSION}}** release! CyberPaste is a lightning-fast, privacy-first, cyberpunk-themed clipboard history manager with smart AI actions, folders, and native Windows acrylic desktop integration.
+Welcome to the official **CyberPaste {{VERSION}}** release! CyberPaste is a lightning-fast, privacy-first clipboard history manager with smart AI actions, folders, and native Windows acrylic desktop integration.
 
 ---
 
@@ -38,18 +38,17 @@ Welcome to the official **CyberPaste {{VERSION}}** release! CyberPaste is a ligh
 
 | File | Description | Platform |
 | :--- | :--- | :--- |
-| **`CyberPaste_{{VERSION}}_x64-setup.exe`** | 🚀 **Recommended Installer** (NSIS Setup with Start Menu, Desktop & Startup options) | Windows 10 / 11 (x64) |
-| **`CyberPaste_{{VERSION}}_x64_en-US.msi`** | 💼 **Enterprise MSI Package** (Standard Windows Installer package) | Windows 10 / 11 (x64) |
+| **`CyberPaste_{{VERSION_NUM}}_x64-setup.exe`** | 🚀 **Recommended Installer** (NSIS Setup with Start Menu, Desktop & Startup options) | Windows 10 / 11 (x64) |
 
 ---
 
 ### 🔍 VirusTotal Scan Results (70+ Antivirus Engines)
 
+VirusTotal may display an internal NSIS filename; the SHA256 below is `CyberPaste_{{VERSION_NUM}}_x64-setup.exe`.
+
 - 🛡️ **Setup Installer**: [View VirusTotal Inspection Report](https://www.virustotal.com/gui/file/{{INSTALLER_HASH}})  
   *(SHA256: `{{INSTALLER_HASH}}`)*
-- 💼 **MSI Installer**: [View VirusTotal Inspection Report](https://www.virustotal.com/gui/file/{{MSI_HASH}})  
-  *(SHA256: `{{MSI_HASH}}`)*
-
+{{MSI_BLOCK}}
 ---
 
 *Crafted with precision by [CyberGems](https://cybergems.org)*
