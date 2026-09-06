@@ -47,7 +47,7 @@ function BugIcon({ size = 15 }: { size?: number }) {
       stroke="currentColor"
       strokeWidth="1.5"
       strokeLinecap="round"
-      strokeLineJoin="round"
+      strokeLinejoin="round"
       aria-hidden
     >
       <path d="m8 2 1.88 1.88" />
