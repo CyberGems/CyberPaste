@@ -137,17 +137,17 @@ Or download from [GitHub Releases](https://github.com/CyberGems/CyberPaste/relea
 
 ### Development
 
-**Prerequisites:** Node.js 18+, Rust 1.77+, pnpm
+**Prerequisites:** Node.js 18+, Rust 1.77+, npm
 
 ```bash
-pnpm install
-pnpm tauri dev
+npm install
+npm run tauri dev
 ```
 
 ### Build
 
 ```bash
-pnpm tauri build
+npm run tauri build
 ```
 
 ---
@@ -159,28 +159,35 @@ pnpm tauri build
 | Key | Action |
 |---|---|
 | `Ctrl+Shift+V` | Toggle clipboard window (customizable) |
+| `Ctrl+M` | Toggle Full / Compact view mode (customizable) |
 
 ### Navigation
 
 | Key | Action |
 |---|---|
-| `↑` `↓` `←` `→` | 2D grid and list navigation |
+| `↑` `↓` | Navigate clips (list direction) |
+| `←` `→` | Move between cards (Full mode) or switch folders (Compact mode) |
+| `Ctrl+←` / `Ctrl+→` | Switch folders (Full mode) |
 | `Enter` | Paste selected clip (with auto-paste injection) |
-| `Space` | Open full preview / detail panel |
+| `Ctrl+Enter` | Copy selected clip as plain text (no paste) |
+| `Shift+Enter` | Open full-screen preview of selected clip |
 | `PageUp` / `PageDown` / `Home` / `End` | Extended navigation with auto-scroll |
 
 ### Actions
 
 | Key | Action |
 |---|---|
-| `Ctrl+C` | Copy selected clip to clipboard |
+| `Space` | Open the selected clip's action menu (arrows + Enter to choose) |
+| `I` | Toggle the clip detail panel |
+| `Ctrl+P` | Pin / unpin selected item |
+| `Ctrl+Z` | Undo delete |
 | `Ctrl+F` | Focus search input |
 | `Ctrl+A` | Select all visible clips (bulk mode) |
-| `Ctrl+M` | Toggle Full / Compact view mode |
-| `Ctrl+Wheel` | Adjust grid zoom in Full mode (0.6x – 1.75x) |
-| `P` | Pin / unpin selected item |
+| `Ctrl+1` … `Ctrl+9` | Paste clip #N directly (Compact mode) |
+| `Shift+F10` / Context Menu key | Open the selected clip's context menu |
 | `Delete` | Delete selected item |
 | `Escape` | Clear search / close modal or window |
+| `Ctrl+Wheel` | Adjust grid zoom in Full mode (0.6x – 1.75x) |
 
 ### Editor
 
