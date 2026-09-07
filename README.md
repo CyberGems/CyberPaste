@@ -129,11 +129,9 @@ CyberPaste/
 
 ### Install
 
-```bash
-winget install CyberGems.CyberPaste
-```
+Download the latest installer or portable build from [GitHub Releases](https://github.com/CyberGems/CyberPaste/releases).
 
-Or download from [GitHub Releases](https://github.com/CyberGems/CyberPaste/releases).
+> **WinGet:** Support is planned, but `CyberGems.CyberPaste` has not yet been published in the official WinGet community source. The `winget install CyberGems.CyberPaste` command is not available yet.
 
 ### Development
 
@@ -222,9 +220,9 @@ Right-click any clip or use the detail panel to access AI actions (Summarize, Tr
 - **Full Mode** — Responsive multi-column grid with live zoom scaling, 2D keyboard navigation, and vertical or horizontal layout options.
 - **Compact Mode** — High-density list with quick-access tabs, sidebar or horizontal folder bar, and hover peek preview.
 
-### Can I install CyberPaste via Winget?
+### Can I install CyberPaste via WinGet?
 
-Yes. Run `winget install CyberGems.CyberPaste` in your terminal.
+Not yet. A WinGet package is planned, but `CyberGems.CyberPaste` has not been published in the official WinGet community source. Until then, install CyberPaste from [GitHub Releases](https://github.com/CyberGems/CyberPaste/releases).
 
 ---
 
