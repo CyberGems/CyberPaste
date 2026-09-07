@@ -30,6 +30,12 @@ import {
   Languages,
   Palette,
   Pin,
+  Sparkles,
+  AlignLeft,
+  Code2,
+  CheckSquare,
+  ChevronDown,
+  type LucideIcon,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useTheme } from '../hooks/useTheme';
@@ -68,6 +74,7 @@ function PromptEditor({
   placeholder,
   onSave,
   onSaveTitle,
+  icon: Icon,
 }: {
   label: string;
   value: string;
@@ -75,6 +82,7 @@ function PromptEditor({
   placeholder: string;
   onSave: (val: string) => void;
   onSaveTitle?: (val: string) => void;
+  icon: LucideIcon;
 }) {
   const { t } = useTranslation();
   const isDefaultTitle = (v?: string) =>
@@ -82,6 +90,7 @@ function PromptEditor({
   const resolvedTitle = isDefaultTitle(titleValue) ? label : titleValue!;
   const [localValue, setLocalValue] = useState(value);
   const [localTitle, setLocalTitle] = useState(resolvedTitle);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     setLocalValue(value);
@@ -91,36 +100,101 @@ function PromptEditor({
     setLocalTitle(isDefaultTitle(titleValue) ? label : titleValue!);
   }, [titleValue, label]);
 
+  const isCustom = localValue.trim().length > 0;
+  const preview = (localValue.trim() || placeholder).replace(/\s+/g, ' ');
+
+  const commitTitle = () => {
+    const next = localTitle.trim() || label;
+    setLocalTitle(next);
+    if (onSaveTitle && next !== resolvedTitle) {
+      onSaveTitle(next);
+    }
+  };
+
   return (
-    <div className="space-y-2 rounded-[4px] border border-border bg-secondary p-3">
-      <div className="flex items-center justify-between gap-4">
-        <input
-          type="text"
-          value={localTitle}
-          onChange={(e) => setLocalTitle(e.target.value)}
-          onBlur={() => {
-            if (onSaveTitle && localTitle !== (titleValue || label)) {
-              onSaveTitle(localTitle);
-            }
-          }}
-          className="bg-transparent text-xs font-semibold text-foreground/70 outline-none transition-colors focus:text-primary"
-          title={t('settings.clickToRename')}
-        />
-        <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-          {t('settings.actionName')}
-        </span>
-      </div>
-      <textarea
-        value={localValue}
-        onChange={(e) => setLocalValue(e.target.value)}
-        onBlur={() => {
-          if (localValue !== value) {
-            onSave(localValue);
+    <div className={clsx('transition-colors', open && 'bg-primary/[0.04]')}>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => setOpen((v) => !v)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setOpen((v) => !v);
           }
         }}
-        placeholder={placeholder}
-        className="min-h-[60px] w-full resize-none rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] text-foreground transition-all placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
-      />
+        className="flex w-full cursor-pointer items-start gap-3 px-4 py-3 text-left outline-none focus-visible:bg-accent/40"
+      >
+        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-primary/25 bg-primary/10 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.12)]">
+          <Icon size={14} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={localTitle}
+              onChange={(e) => setLocalTitle(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+              onBlur={commitTitle}
+              className="min-w-0 flex-1 bg-transparent text-sm font-medium text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:text-primary"
+              title={t('settings.clickToRename')}
+              aria-label={t('settings.clickToRename')}
+            />
+            <span
+              className={clsx(
+                'shrink-0 rounded-full px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide',
+                isCustom
+                  ? 'bg-primary/15 text-primary'
+                  : 'bg-muted/60 text-muted-foreground'
+              )}
+            >
+              {isCustom ? t('settings.promptCustom') : t('settings.promptDefault')}
+            </span>
+          </div>
+          {!open && (
+            <p className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground/80">
+              {preview}
+            </p>
+          )}
+        </div>
+        <ChevronDown
+          size={14}
+          className={clsx(
+            'mt-1.5 shrink-0 text-muted-foreground transition-transform duration-200',
+            open && 'rotate-180 text-primary'
+          )}
+        />
+      </div>
+      {open && (
+        <div className="space-y-2 px-4 pb-4 pl-[3.75rem]">
+          <textarea
+            value={localValue}
+            onChange={(e) => setLocalValue(e.target.value)}
+            onBlur={() => {
+              if (localValue !== value) {
+                onSave(localValue);
+              }
+            }}
+            placeholder={placeholder}
+            rows={3}
+            className="min-h-[72px] w-full resize-y rounded-lg border border-border bg-input px-2.5 py-2 font-mono text-[12px] leading-relaxed text-foreground transition-all placeholder:text-muted-foreground/70 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+          />
+          {isCustom && (
+            <button
+              type="button"
+              onClick={() => {
+                setLocalValue('');
+                onSave('');
+              }}
+              className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-primary"
+            >
+              <RotateCcw size={11} />
+              {t('settings.resetPrompt')}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -151,6 +225,11 @@ const PROVIDER_MODELS: Record<string, { value: string; label: string }[]> = {
     { value: 'grok-4.6', label: 'Grok 4.6' },
     { value: 'grok-4.5', label: 'Grok 4.5' },
     { value: 'grok-4.3', label: 'Grok 4.3' },
+  ],
+  meta: [
+    { value: 'muse-spark-1.3', label: 'Muse Spark 1.3 (Latest)' },
+    { value: 'muse-spark-1.2', label: 'Muse Spark 1.2' },
+    { value: 'muse-spark-1.1', label: 'Muse Spark 1.1' },
   ],
   custom: [],
 };
@@ -1926,9 +2005,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   return (
                     <>
                       <section className="space-y-4">
-                        <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
-                          <BrainCircuit size={14} /> {t('settings.aiConfiguration')}
-                        </h3>
+                        <div>
+                          <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
+                            <BrainCircuit size={14} /> {t('settings.aiConfiguration')}
+                          </h3>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {t('settings.aiConfigurationDesc')}
+                          </p>
+                        </div>
 
                         <div className="space-y-3">
                           <label className="block">
@@ -1973,6 +2057,12 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                 setLocalBaseUrl('https://api.x.ai/v1');
                                 setLocalModel('grok-4.6');
                                 setIsCustomModel(false);
+                              } else if (newProvider === 'meta') {
+                                updates.ai_base_url = 'https://api.meta.ai/v1';
+                                updates.ai_model = 'muse-spark-1.3';
+                                setLocalBaseUrl('https://api.meta.ai/v1');
+                                setLocalModel('muse-spark-1.3');
+                                setIsCustomModel(false);
                               } else {
                                 setIsCustomModel(true);
                               }
@@ -1985,6 +2075,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               { value: 'kimi', label: t('settings.providerKimi') },
                               { value: 'gemini', label: t('settings.providerGemini') },
                               { value: 'grok', label: t('settings.providerGrok') },
+                              { value: 'meta', label: t('settings.providerMeta') },
                               { value: 'custom', label: t('settings.providerCustom') },
                             ]}
                           />
@@ -2062,15 +2153,18 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </section>
 
                       <section className="space-y-4 border-t border-border pt-4">
-                        <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
-                          <SettingsIcon size={14} /> {t('settings.customPrompts')}
-                        </h3>
-                        <p className="text-xs italic text-muted-foreground">
-                          {t('settings.customPromptsDesc')}
-                        </p>
+                        <div>
+                          <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
+                            <Sparkles size={14} /> {t('settings.customPrompts')}
+                          </h3>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {t('settings.customPromptsDesc')}
+                          </p>
+                        </div>
 
-                        <div className="space-y-4">
+                        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
                           <PromptEditor
+                            icon={AlignLeft}
                             label={t('settings.aiSummarize')}
                             value={settings.ai_prompt_summarize || ''}
                             titleValue={settings.ai_title_summarize}
@@ -2080,6 +2174,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           />
 
                           <PromptEditor
+                            icon={Languages}
                             label={t('settings.aiTranslate')}
                             value={settings.ai_prompt_translate || ''}
                             titleValue={settings.ai_title_translate}
@@ -2089,6 +2184,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           />
 
                           <PromptEditor
+                            icon={Code2}
                             label={t('settings.aiExplainCode')}
                             value={settings.ai_prompt_explain_code || ''}
                             titleValue={settings.ai_title_explain_code}
@@ -2098,6 +2194,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           />
 
                           <PromptEditor
+                            icon={CheckSquare}
                             label={t('settings.aiFixGrammar')}
                             value={settings.ai_prompt_fix_grammar || ''}
                             titleValue={settings.ai_title_fix_grammar}

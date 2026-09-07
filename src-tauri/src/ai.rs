@@ -5,7 +5,7 @@ use std::error::Error;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AiConfig {
-    pub provider: String, // "openai", "deepseek", "kimi", "gemini", "grok", "custom"
+    pub provider: String, // "openai", "deepseek", "kimi", "gemini", "grok", "meta", "custom"
     pub api_key: String,
     pub model: String,
     pub base_url: Option<String>,
