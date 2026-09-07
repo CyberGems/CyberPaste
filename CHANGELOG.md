@@ -2,6 +2,24 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.20.0] — 2026-09-07
+
+### 🤖 AI Settings & Providers
+- **Meta (Muse Spark)**: Added Meta's Muse Spark provider to the AI provider list.
+- **Prompt Editor UX**: Added prompt rename/reset controls, descriptions, truthful default placeholders, and Enter-to-confirm field editing.
+- **Translation Defaults**: Improved bidirectional translation defaults and refreshed default AI models, including Grok.
+
+### 🧭 Navigation & Clipboard Workflow
+- **Keyboard Navigation**: Added Space-to-open the selected clip's action menu and improved keyboard navigation so it does not fight hover state.
+- **Move to Top/Bottom**: Clips can now be promoted directly to either end of the live clipboard list.
+- **Clear History**: Added Clear History to the title-bar menu.
+- **History Limit**: The history cap now correctly counts pinned items.
+
+### 🪟 Window & About Experience
+- **Window Menus**: Added more menus across the main and image viewer windows, with corrected image viewer title-bar behavior.
+- **About Window**: Window branding can open About directly; the dialog remembers its monitor and shows Check Now status.
+- **Grid Measurement**: The full clipboard grid is remeasured after the window is shown for more reliable layout.
+
 ## [1.19.1] — 2026-09-06
 
 ### 🐛 Windows Autostart Fix 💥→✅

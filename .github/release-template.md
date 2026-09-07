@@ -6,17 +6,21 @@ Welcome to the official **CyberPaste {{VERSION}}** release! CyberPaste is a ligh
 
 ### ✨ Key Features & Highlights
 
-- 🐛 **Windows Autostart Fix**:
-  - The “Start with Windows” toggle now actually launches CyberPaste at logon.
-  - The Run command is quoted so Explorer can start `C:\Program Files\CyberPaste\CyberPaste.exe`.
-  - Removed leftover `--flag1 --flag2` example args from the Tauri autostart plugin.
+- 🤖 **AI Settings & Providers**:
+  - Added the Meta (Muse Spark) provider.
+  - Added prompt rename/reset controls, descriptions, truthful default placeholders, and Enter-to-confirm field editing.
+  - Improved bidirectional translation defaults and refreshed default AI models, including Grok.
 
-- ⬆️ **Title-Bar Update Button** (from 1.19.0):
-  - Dynamic CyberWall-style pill appears to the left of the window controls when a newer version is available.
-  - Collapsed arrow in rest; hover expands to **Update** / **Actualizar**.
+- 🧭 **Keyboard & Clipboard Workflow**:
+  - Space opens the selected clip's action menu for keyboard-driven actions.
+  - Improved keyboard navigation so it does not fight hover state.
+  - Added move-to-top/bottom actions and Clear History to the title-bar menu.
+  - The history cap now correctly counts pinned items.
 
-- 📚 **Title-Bar & Tray Help Menus** (from 1.19.0):
-  - CyberFeeds-style overflow menu with Documentation & Wiki, website, changelog, GitHub, and About.
+- 🪟 **Window & About Experience**:
+  - Added more menus across the main and image viewer windows and corrected image viewer title-bar behavior.
+  - Window branding can open About directly; About remembers its monitor and shows Check Now status.
+  - The full clipboard grid is remeasured after the window is shown for more reliable layout.
 
 ---
 
