@@ -113,6 +113,7 @@ jobs:
               Replace("{{VERSION_NUM}}", $versionNum).
               Replace("{{VERSION}}", $tag).
               Replace("{{INSTALLER_HASH}}", $installerHash).
+              Replace("{{PORTABLE_HASH}}", "pending").
               Replace("{{MSI_BLOCK}}", $msiBlock)
             [System.IO.File]::WriteAllText("FINAL_RELEASE_NOTES.md", $notes, [System.Text.Encoding]::UTF8)
 
@@ -124,3 +125,50 @@ jobs:
             }
           }
 
+      - name: Build and publish portable package
+        shell: pwsh
+        env:
+          VITE_CYBERPASTE_PORTABLE: "true"
+          GH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $versionNum = $tag.TrimStart("v")
+          $portableRoot = Join-Path $env:RUNNER_TEMP "CyberPaste-portable"
+          $portableZip = Join-Path $env:RUNNER_TEMP "CyberPaste_${versionNum}_x64-portable.zip"
+
+          if (Test-Path $portableRoot) { Remove-Item -LiteralPath $portableRoot -Recurse -Force }
+          New-Item -ItemType Directory -Path $portableRoot | Out-Null
+
+          npm run build
+          cargo build --manifest-path src-tauri/Cargo.toml --release --features portable
+
+          Copy-Item -LiteralPath "src-tauri/target/release/CyberPaste.exe" -Destination (Join-Path $portableRoot "CyberPaste.exe")
+          Copy-Item -LiteralPath "LICENSE" -Destination (Join-Path $portableRoot "LICENSE")
+          Copy-Item -LiteralPath "docs/PORTABLE.md" -Destination (Join-Path $portableRoot "PORTABLE.md")
+          Compress-Archive -Path (Join-Path $portableRoot "*") -DestinationPath $portableZip -CompressionLevel Optimal
+
+          $portableHash = (Get-FileHash $portableZip -Algorithm SHA256).Hash.ToLower()
+          Write-Host "Portable package: $portableZip [SHA256: $portableHash]"
+          gh release upload $tag $portableZip --clobber
+
+          $installer = Get-ChildItem -Path "src-tauri/target" -Recurse -Filter "*-setup.exe" |
+            Where-Object { $_.FullName -match '\\bundle\\nsis\\' } |
+            Select-Object -First 1
+          $msi = Get-ChildItem -Path "src-tauri/target" -Recurse -Filter "*.msi" |
+            Where-Object { $_.FullName -match '\\bundle\\msi\\' -and $_.Name -notlike "*.zip*" } |
+            Select-Object -First 1
+          $installerHash = if ($installer) { (Get-FileHash $installer.FullName -Algorithm SHA256).Hash.ToLower() } else { "pending" }
+          $msiHash = if ($msi) { (Get-FileHash $msi.FullName -Algorithm SHA256).Hash.ToLower() } else { $null }
+          $msiBlock = ""
+          if ($msiHash) {
+            $msiBlock = "- **CyberPaste_${versionNum}_x64_en-US.msi** — SHA256: ``$msiHash```r`n"
+          }
+          $template = [System.IO.File]::ReadAllText(".github/release-template.md", [System.Text.Encoding]::UTF8)
+          $notes = $template.
+            Replace("{{VERSION_NUM}}", $versionNum).
+            Replace("{{VERSION}}", $tag).
+            Replace("{{INSTALLER_HASH}}", $installerHash).
+            Replace("{{PORTABLE_HASH}}", $portableHash).
+            Replace("{{MSI_BLOCK}}", $msiBlock)
+          [System.IO.File]::WriteAllText("FINAL_RELEASE_NOTES.md", $notes, [System.Text.Encoding]::UTF8)
+          gh release edit $tag --notes-file "FINAL_RELEASE_NOTES.md"

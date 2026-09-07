@@ -36,6 +36,7 @@ import { triggerFolderFlash } from './hooks/useFolderFlash';
 import { triggerDeleteFlash, cancelDeleteFlash } from './hooks/useDeleteFlash';
 import { useTranslation } from 'react-i18next';
 import { systemToast as toast } from './utils/toast';
+import { IS_PORTABLE_BUILD } from './utils/build';
 import { LAYOUT } from './constants';
 import { generateDemoClips } from './debug/demoData';
 import {
@@ -332,7 +333,7 @@ function App() {
         setIsLoading(false);
 
         // Check for updates after the welcome banner completes if auto_check_updates is enabled
-        if (s.auto_check_updates) {
+        if (!IS_PORTABLE_BUILD && s.auto_check_updates) {
           const welcomeWillShow = (s.toast_enabled ?? true) && (s.show_action_messages ?? true);
           const welcomeDelay = welcomeWillShow ? 1500 + (s.toast_duration || 3000) + 600 : 2000;
 
@@ -484,6 +485,7 @@ function App() {
   }, []);
 
   const handleShowUpdate = useCallback(async () => {
+    if (IS_PORTABLE_BUILD) return;
     if (updateAvailableRef.current) {
       setShowUpdateModal(true);
       return;
@@ -502,6 +504,7 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (IS_PORTABLE_BUILD) return;
     const unlisten = listen<boolean>('update-available', (event) => {
       if (event.payload) {
         if (updateAvailableRef.current) return;

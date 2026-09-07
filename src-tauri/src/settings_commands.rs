@@ -9,7 +9,7 @@ pub async fn get_settings(app: AppHandle) -> Result<serde_json::Value, String> {
     let settings = manager.get();
     let mut value = serde_json::to_value(&settings).map_err(|e| e.to_string())?;
 
-    #[cfg(not(feature = "app-store"))]
+    #[cfg(not(any(feature = "app-store", feature = "portable")))]
     {
         use tauri_plugin_autostart::ManagerExt;
         if let Ok(is_enabled) = app.autolaunch().is_enabled() {
@@ -20,6 +20,11 @@ pub async fn get_settings(app: AppHandle) -> Result<serde_json::Value, String> {
                 );
             }
         }
+    }
+
+    #[cfg(feature = "portable")]
+    if let Some(obj) = value.as_object_mut() {
+        obj.insert("startup_with_windows".to_string(), serde_json::json!(false));
     }
 
     Ok(value)
@@ -37,6 +42,12 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
     // Preserve ignored_apps from current state (as frontend doesn't send it in this call)
     let current = manager.get();
     new_settings.ignored_apps = current.ignored_apps;
+    #[cfg(feature = "portable")]
+    {
+        // Portable builds share the profile with the installed build, but must
+        // never change the installed build's Windows autostart preference.
+        new_settings.startup_with_windows = current.startup_with_windows;
+    }
     if !incoming_has_tray_pin_tip {
         new_settings.has_seen_tray_pin_tip = current.has_seen_tray_pin_tip;
     }
@@ -82,7 +93,7 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
         }
     }
 
-    #[cfg(not(feature = "app-store"))]
+    #[cfg(not(any(feature = "app-store", feature = "portable")))]
     {
         use tauri_plugin_autostart::ManagerExt;
         let startup = new_settings.startup_with_windows;

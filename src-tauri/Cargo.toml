@@ -55,6 +55,7 @@ windows = { version = "0.62.2", features = ["Win32_UI_WindowsAndMessaging", "Win
 default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]
 app-store = []
+portable = []
 
 [profile.release]
 panic = "abort"

@@ -8,7 +8,7 @@ use tauri::{
     tray::{TrayIcon, TrayIconBuilder},
     Emitter, Manager,
 };
-#[cfg(not(feature = "app-store"))]
+#[cfg(not(any(feature = "app-store", feature = "portable")))]
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
@@ -127,7 +127,7 @@ pub fn run_app() {
     #[allow(unused_mut)]
     let mut builder = tauri::Builder::default();
 
-    #[cfg(not(feature = "app-store"))]
+    #[cfg(not(any(feature = "app-store", feature = "portable")))]
     {
         builder = builder
             .plugin(tauri_plugin_autostart::init(
@@ -334,7 +334,7 @@ pub fn run_app() {
             let settings_manager = get_runtime().unwrap().block_on(async {
                 SettingsManager::new(app.handle(), &db_for_settings).await
             });
-            #[cfg(not(feature = "app-store"))]
+            #[cfg(not(any(feature = "app-store", feature = "portable")))]
             {
                 if settings_manager.get().startup_with_windows {
                     apply_autostart(app.handle(), true);
@@ -1252,7 +1252,7 @@ pub fn animate_window_hide(
 /// Enable or disable OS autostart. On Windows the auto-launch crate writes an
 /// unquoted `Program Files` path plus any plugin args, which Explorer cannot
 /// launch from HKCU\...\Run. After enable() we rewrite a quoted command.
-#[cfg(not(feature = "app-store"))]
+#[cfg(not(any(feature = "app-store", feature = "portable")))]
 pub(crate) fn apply_autostart(app: &tauri::AppHandle, enable: bool) {
     use tauri_plugin_autostart::ManagerExt;
     if enable {
@@ -1267,7 +1267,7 @@ pub(crate) fn apply_autostart(app: &tauri::AppHandle, enable: bool) {
 }
 
 /// Rewrite HKCU Run so the path is quoted (required when it contains spaces).
-#[cfg(all(windows, not(feature = "app-store")))]
+#[cfg(all(windows, not(any(feature = "app-store", feature = "portable"))))]
 fn quote_windows_run_command() {
     use windows::core::{w, HSTRING};
     use windows::Win32::Foundation::WIN32_ERROR;

@@ -27,6 +27,7 @@ import { Settings } from '../types';
 import { useLanguage } from '../hooks/useLanguage';
 import { useTheme } from '../hooks/useTheme';
 import { systemToast as toast } from '../utils/toast';
+import { IS_PORTABLE_BUILD } from '../utils/build';
 import { formatUpdaterError, isUpdaterNetworkError } from '../utils/updater';
 import { UpdateModal } from '../components/UpdateModal';
 import Tooltip from '../components/Tooltip';
@@ -99,6 +100,7 @@ export function AboutWindow() {
   }, []);
 
   useEffect(() => {
+    if (IS_PORTABLE_BUILD) return;
     let cancelled = false;
     invoke<any>('get_tray_menu_state')
       .then((state: any) => {
@@ -178,6 +180,7 @@ export function AboutWindow() {
   };
 
   const updateAutoCheck = async () => {
+    if (IS_PORTABLE_BUILD) return;
     if (!settings) return;
     const next = { ...settings, auto_check_updates: !(settings.auto_check_updates ?? false) };
     setSettings(next);
@@ -197,6 +200,7 @@ export function AboutWindow() {
   };
 
   const checkForUpdates = useCallback(async () => {
+    if (IS_PORTABLE_BUILD) return;
     setCheckStatus('checking');
     setUpdateCheckError(null);
     setShowTechnicalDetails(false);
@@ -292,7 +296,8 @@ export function AboutWindow() {
               </div>
             </section>
 
-            <section className="mt-5 space-y-2">
+            {!IS_PORTABLE_BUILD && (
+              <section className="mt-5 space-y-2">
               <h3 className="px-0 text-[13px] font-semibold text-primary select-none cursor-default">
                 {t('settings.aboutUpdatesSection')}
               </h3>
@@ -455,7 +460,8 @@ export function AboutWindow() {
                   </div>
                 )}
               </div>
-            </section>
+              </section>
+            )}
           </div>
         </main>
 

@@ -29,12 +29,14 @@ Welcome to the official **CyberPaste {{VERSION}}** release! CyberPaste is a ligh
 | File | Description | Platform |
 | :--- | :--- | :--- |
 | **`CyberPaste_{{VERSION_NUM}}_x64-setup.exe`** | 🚀 **Recommended Installer** (NSIS Setup with Start Menu, Desktop & Startup options) | Windows 10 / 11 (x64) |
+| **`CyberPaste_{{VERSION_NUM}}_x64-portable.zip`** | 📦 **Portable Build** (no installation; shares the user profile with the installed version) | Windows 10 / 11 (x64) |
 
 ---
 
 ### 🔐 Checksums
 
 - **`CyberPaste_{{VERSION_NUM}}_x64-setup.exe`** — SHA256: `{{INSTALLER_HASH}}`
+- **`CyberPaste_{{VERSION_NUM}}_x64-portable.zip`** — SHA256: `{{PORTABLE_HASH}}`
 {{MSI_BLOCK}}
 ---
 
