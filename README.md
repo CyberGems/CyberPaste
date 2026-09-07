@@ -59,7 +59,7 @@ Most clipboard managers either send your data to the cloud or are too basic to b
 - **Bulk Management** — `Ctrl+Click` / `Shift+Click` for multi-select, `Ctrl+A` to select all visible clips
 - **Dual View Modes** — Full Mode (multi-column grid with zoom) or Compact Mode (high-density list with hover peek)
 
-### 🤖 AI Assistant
+### 🤖 AI Actions
 - **Smart Actions** — Summarize, translate, explain code, or fix grammar
 - **Provider Support** — OpenAI, DeepSeek, Ollama, Groq, OpenRouter, or any OpenAI-compatible API
 - **Fully Customizable** — Custom prompts and action names for each AI operation
