@@ -148,7 +148,7 @@ impl Default for AppSettings {
             ai_base_url: "https://api.openai.com/v1".to_string(),
 
             ai_prompt_summarize: "Summarize this content concisely.".to_string(),
-            ai_prompt_translate: "Translate this to English (or user language).".to_string(),
+            ai_prompt_translate: "Detect the language of the following text. If it is Spanish, translate it to English. If it is English, translate it to Spanish. For any other language, translate it to English.".to_string(),
             ai_prompt_explain_code: "Explain this code snippet.".to_string(),
             ai_prompt_fix_grammar: "Fix grammar and spelling.".to_string(),
 

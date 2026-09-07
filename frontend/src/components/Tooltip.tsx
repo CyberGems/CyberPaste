@@ -24,14 +24,17 @@ function clamp(value: number, min: number, max: number) {
 // de modo que no altera los layouts flex existentes. Se reposiciona para no
 // salirse de la pantalla y la flecha se re-ancla al centro del elemento.
 export default function Tooltip({ label, placement = 'bottom', children, disabled = false }: TooltipProps) {
-  const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  // Se guarda el ELEMENTO ancla (no un rect congelado): la posición se mide
+  // en vivo al mostrar, así un scroll durante el retardo no deja el tooltip
+  // flotando lejos del ancla.
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ left: number; top: number; arrow: CSSProperties } | null>(null);
   const delayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (disabled) {
-      setAnchor(null);
+      setAnchorEl(null);
       if (delayTimer.current) {
         clearTimeout(delayTimer.current);
         delayTimer.current = null;
@@ -39,12 +42,14 @@ export default function Tooltip({ label, placement = 'bottom', children, disable
     }
   }, [disabled]);
 
-  // Medimos el tooltip ya renderizado y calculamos la posición con clamping.
+  // Medimos el tooltip ya renderizado y el ancla EN VIVO (el layout puede
+  // haber cambiado durante el retardo de aparición) y calculamos la posición.
   useLayoutEffect(() => {
-    if (!anchor || !cardRef.current) {
+    if (!anchorEl || !cardRef.current) {
       setPos(null);
       return;
     }
+    const anchor = anchorEl.getBoundingClientRect();
     const card = cardRef.current.getBoundingClientRect();
     const vw = window.innerWidth;
     const vh = window.innerHeight;
@@ -100,19 +105,38 @@ export default function Tooltip({ label, placement = 'bottom', children, disable
     setPos({ left, top, arrow });
     // Nota: no dependemos de `label` para evitar recálculos en bucle.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [anchor, placement]);
+  }, [anchorEl, placement]);
 
-  // Ocultar al hacer scroll para que el tooltip no quede "flotando".
+  // Ocultar al hacer scroll o redimensionar para que el tooltip no quede "flotando".
   useEffect(() => {
-    if (!anchor) return;
-    const hide = () => setAnchor(null);
+    if (!anchorEl) return;
+    const hide = () => setAnchorEl(null);
     window.addEventListener('scroll', hide, true);
     window.addEventListener('wheel', hide, true);
+    window.addEventListener('resize', hide);
     return () => {
       window.removeEventListener('scroll', hide, true);
       window.removeEventListener('wheel', hide, true);
+      window.removeEventListener('resize', hide);
     };
-  }, [anchor]);
+  }, [anchorEl]);
+
+  // Cancelar un show pendiente si hay scroll durante el retardo: sin esto el
+  // tooltip aparecería con la posición del layout anterior, despegado del ancla.
+  useEffect(() => {
+    const cancelPending = () => {
+      if (delayTimer.current) {
+        clearTimeout(delayTimer.current);
+        delayTimer.current = null;
+      }
+    };
+    window.addEventListener('scroll', cancelPending, true);
+    window.addEventListener('wheel', cancelPending, true);
+    return () => {
+      window.removeEventListener('scroll', cancelPending, true);
+      window.removeEventListener('wheel', cancelPending, true);
+    };
+  }, []);
 
   // Limpiar temporizadores de retardo al desmontar
   useEffect(() => {
@@ -136,15 +160,21 @@ export default function Tooltip({ label, placement = 'bottom', children, disable
     const currentTarget = e.currentTarget as HTMLElement;
     const closestTooltipEl = target.closest('[data-has-tooltip="true"]');
     const closestInteractive = target.closest('button, a, [role="button"]');
+    // Solo se suprime si el ancestro interactivo tiene su propio tooltip
+    // (evita apilar dos tooltips). Un input con tooltip dentro de una fila
+    // clicable sin tooltip debe mostrar el suyo.
+    const ancestorHasOwnTooltip =
+      !!closestInteractive &&
+      closestInteractive !== currentTarget &&
+      closestInteractive.hasAttribute('data-has-tooltip');
     if (
       (closestTooltipEl && closestTooltipEl !== currentTarget) ||
-      (closestInteractive && closestInteractive !== currentTarget)
+      ancestorHasOwnTooltip
     ) {
-      setAnchor(null);
+      setAnchorEl(null);
     } else if (label) {
-      const rect = currentTarget.getBoundingClientRect();
       delayTimer.current = setTimeout(() => {
-        setAnchor(rect);
+        setAnchorEl(currentTarget);
       }, 300);
     }
   };
@@ -154,7 +184,7 @@ export default function Tooltip({ label, placement = 'bottom', children, disable
       clearTimeout(delayTimer.current);
       delayTimer.current = null;
     }
-    setAnchor(null);
+    setAnchorEl(null);
   };
   const clickHide = (e: ReactMouseEvent<HTMLElement>): void => {
     child.props.onClick?.(e);
@@ -162,7 +192,7 @@ export default function Tooltip({ label, placement = 'bottom', children, disable
       clearTimeout(delayTimer.current);
       delayTimer.current = null;
     }
-    setAnchor(null);
+    setAnchorEl(null);
   };
   const handleMouseMove = (e: ReactMouseEvent<HTMLElement>): void => {
     child.props.onMouseMove?.(e);
@@ -170,20 +200,23 @@ export default function Tooltip({ label, placement = 'bottom', children, disable
     const currentTarget = e.currentTarget as HTMLElement;
     const closestTooltipEl = target.closest('[data-has-tooltip="true"]');
     const closestInteractive = target.closest('button, a, [role="button"]');
+    const ancestorHasOwnTooltip =
+      !!closestInteractive &&
+      closestInteractive !== currentTarget &&
+      closestInteractive.hasAttribute('data-has-tooltip');
     if (
       (closestTooltipEl && closestTooltipEl !== currentTarget) ||
-      (closestInteractive && closestInteractive !== currentTarget)
+      ancestorHasOwnTooltip
     ) {
       if (delayTimer.current) {
         clearTimeout(delayTimer.current);
         delayTimer.current = null;
       }
-      setAnchor(null);
+      setAnchorEl(null);
     } else if (label) {
-      if (!anchor && !delayTimer.current) {
-        const rect = currentTarget.getBoundingClientRect();
+      if (!anchorEl && !delayTimer.current) {
         delayTimer.current = setTimeout(() => {
-          setAnchor(rect);
+          setAnchorEl(currentTarget);
         }, 300);
       }
     }
@@ -201,7 +234,7 @@ export default function Tooltip({ label, placement = 'bottom', children, disable
   return (
     <>
       {cloned}
-      {anchor &&
+      {anchorEl &&
         label &&
         createPortal(
           <div
@@ -221,8 +254,9 @@ export default function Tooltip({ label, placement = 'bottom', children, disable
                 position: 'relative',
                 background: 'rgba(15, 15, 20, 0.97)',
                 backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4), 0 0 4px rgba(139, 92, 246, 0.4)',
+                border: '1px solid rgba(var(--primary-rgb, 0, 120, 215), 0.35)',
+                boxShadow:
+                  '0 4px 16px rgba(0, 0, 0, 0.4), 0 0 6px rgba(var(--primary-rgb, 0, 120, 215), 0.45)',
                 borderRadius: 8,
                 padding: '6px 10px',
                 color: 'rgba(255, 255, 255, 0.95)',

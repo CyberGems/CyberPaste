@@ -100,7 +100,7 @@ function PromptEditor({
     setLocalTitle(isDefaultTitle(titleValue) ? label : titleValue!);
   }, [titleValue, label]);
 
-  const isCustom = localValue.trim().length > 0;
+  const isCustom = localValue.trim().length > 0 || localTitle !== label;
   const preview = (localValue.trim() || placeholder).replace(/\s+/g, ' ');
 
   const commitTitle = () => {
@@ -130,17 +130,18 @@ function PromptEditor({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={localTitle}
-              onChange={(e) => setLocalTitle(e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-              onKeyDown={(e) => e.stopPropagation()}
-              onBlur={commitTitle}
-              className="min-w-0 flex-1 bg-transparent text-sm font-medium text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:text-primary"
-              title={t('settings.clickToRename')}
-              aria-label={t('settings.clickToRename')}
-            />
+            <Tooltip label={t('settings.clickToRename')} placement="top">
+              <input
+                type="text"
+                value={localTitle}
+                onChange={(e) => setLocalTitle(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+                onBlur={commitTitle}
+                className="min-w-0 flex-1 bg-transparent text-sm font-medium text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:text-primary"
+                aria-label={t('settings.clickToRename')}
+              />
+            </Tooltip>
             <span
               className={clsx(
                 'shrink-0 rounded-full px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide',
@@ -186,6 +187,10 @@ function PromptEditor({
               onClick={() => {
                 setLocalValue('');
                 onSave('');
+                if (onSaveTitle && localTitle !== label) {
+                  setLocalTitle(label);
+                  onSaveTitle('');
+                }
               }}
               className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-primary"
             >
@@ -952,14 +957,15 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         </p>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => invoke('open_tray_icon_settings').catch(console.error)}
-                      title={t('settings.keepVisibleInTrayTooltip')}
-                      className="btn btn-primary shrink-0 rounded-[4px] px-3 py-1.5 text-xs"
-                    >
-                      {t('settings.openWindowsSettings')}
-                    </button>
+                    <Tooltip label={t('settings.keepVisibleInTrayTooltip')} placement="top">
+                      <button
+                        type="button"
+                        onClick={() => invoke('open_tray_icon_settings').catch(console.error)}
+                        className="btn btn-primary shrink-0 rounded-[4px] px-3 py-1.5 text-xs"
+                      >
+                        {t('settings.openWindowsSettings')}
+                      </button>
+                    </Tooltip>
                   </div>
 
                   {/* Clipboard & Capture */}
@@ -2095,6 +2101,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                 setLocalApiKey(trimmed);
                                 updateSetting('ai_api_key', trimmed);
                               }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                              }}
                               placeholder={t('settings.apiKeyPlaceholder')}
                               className="w-full rounded-[4px] border border-border bg-input py-1.5 pl-2.5 pr-10 text-[12px] text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
                             />
@@ -2131,6 +2140,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               value={localModel}
                               onChange={(e) => setLocalModel(e.target.value)}
                               onBlur={() => updateSetting('ai_model', localModel)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                              }}
                               placeholder={t('settings.modelPlaceholder')}
                               className="mt-2 w-full rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
                             />
@@ -2146,6 +2158,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             value={localBaseUrl}
                             onChange={(e) => setLocalBaseUrl(e.target.value)}
                             onBlur={() => updateSetting('ai_base_url', localBaseUrl)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                            }}
                             placeholder={t('settings.baseUrlPlaceholder')}
                             className="w-full rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
                           />
@@ -2648,15 +2663,16 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
             </button>
             <span>•</span>
             <span>© 2026 </span>
-            <button
-              type="button"
-              onClick={() => openUrl('https://cybergems.org').catch(console.error)}
-              title={t('settings.aboutWebsiteTooltip')}
-              aria-label={t('settings.aboutWebsiteTooltip')}
-              className="transition-colors hover:text-foreground"
-            >
-              CyberGems
-            </button>
+            <Tooltip label={t('settings.aboutWebsiteTooltip')} placement="top">
+              <button
+                type="button"
+                onClick={() => openUrl('https://cybergems.org').catch(console.error)}
+                aria-label={t('settings.aboutWebsiteTooltip')}
+                className="transition-colors hover:text-foreground"
+              >
+                CyberGems
+              </button>
+            </Tooltip>
           </div>
         </div>
       </div>
