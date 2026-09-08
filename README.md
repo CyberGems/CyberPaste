@@ -14,7 +14,6 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.20.0-0047B3.svg" alt="Version" height="24" />&nbsp;
   <img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License" height="24" />&nbsp;
   <img src="https://img.shields.io/badge/platform-Windows%2010%2B-0078D4.svg?logo=windows&logoColor=white" alt="Platform" height="24" />&nbsp;
   <img src="https://img.shields.io/badge/Tauri-2.x-512BD4.svg?logo=tauri&logoColor=white" alt="Tauri" height="24" />&nbsp;
