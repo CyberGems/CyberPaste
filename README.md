@@ -133,6 +133,15 @@ Download the latest installer or portable build from [GitHub Releases](https://g
 
 > **WinGet:** Support is planned, but `CyberGems.CyberPaste` has not yet been published in the official WinGet community source. The `winget install CyberGems.CyberPaste` command is not available yet.
 
+### 🛡️ Windows SmartScreen
+
+Windows may show a SmartScreen warning the first time you run the CyberPaste installer — this is expected until Windows builds enough reputation for the file. The same can appear when launching the portable build.
+
+To continue:
+
+1. Click **More info**.
+2. Click **Run anyway**.
+
 ### Development
 
 **Prerequisites:** Node.js 18+, Rust 1.77+, npm
