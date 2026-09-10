@@ -28,7 +28,7 @@ A beautiful, privacy-focused **clipboard history manager** for Windows. CyberPas
 
 ## 📋 Why CyberPaste?
 
-Most clipboard managers either send your data to the cloud or are too basic to be useful. CyberPaste gives you **the best of both worlds**: rich content support, AI-powered assistance, and rock-solid privacy — all in a lightweight Tauri app with a stunning cyberpunk aesthetic.
+Most clipboard managers either send your data to the cloud or are too basic to be useful. CyberPaste gives you **the best of both worlds**: rich content support, AI-powered assistance, and rock-solid privacy — all in a lightweight Tauri app with a stunning modern neon aesthetic.
 
 | Need | Solution |
 |---|---|
