@@ -201,35 +201,6 @@ npm run tauri build
 
 ---
 
-## ❓ Frequently Asked Questions
-
-### Is my clipboard data synced to the cloud?
-
-No. CyberPaste stores everything locally in a SQLite database. No data is sent externally except to the AI provider you explicitly configure.
-
-### How do I ignore sensitive applications?
-
-Go to **Settings → Ignored Applications**. You can browse for an executable (`.exe`) or type its process name. CyberPaste checks against both executable name and full file path, case-insensitively.
-
-### What content types does CyberPaste support?
-
-Formatted text, code (with syntax highlighting), HTML, RTF, images (with high-res viewer and OCR text extraction), URLs, and file paths.
-
-### How does the AI integration work?
-
-Right-click any clip or use the detail panel to access AI actions (Summarize, Translate, Explain Code, Fix Grammar). You need an API key from a supported provider (OpenAI, DeepSeek, Ollama, Groq, OpenRouter, or any OpenAI-compatible API). Prompts and action names are fully customizable in Settings.
-
-### What are the two view modes?
-
-- **Full Mode** — Responsive multi-column grid with live zoom scaling, 2D keyboard navigation, and vertical or horizontal layout options.
-- **Compact Mode** — High-density list with quick-access tabs, sidebar or horizontal folder bar, and hover peek preview.
-
-### Can I install CyberPaste via WinGet?
-
-Not yet. A WinGet package is planned, but `CyberGems.CyberPaste` has not been published in the official WinGet community source. Until then, install CyberPaste from [GitHub Releases](https://github.com/CyberGems/CyberPaste/releases).
-
----
-
 ## 🤝 Contributing
 
 Contributions are welcome. Please open an issue describing the change before starting large work, and submit pull requests against the main branch.
@@ -284,6 +255,10 @@ If you're enjoying CyberPaste, I'd be truly grateful for your support! You can s
 ## 📄 License
 
 CyberPaste is distributed under the terms of the GNU General Public License v3.0. See [`LICENSE`](LICENSE) for the full license text.
+
+## ❓ FAQ
+
+For frequently asked questions, troubleshooting guides, and detailed configuration instructions, visit the [FAQ](https://github.com/CyberGems/CyberPaste/wiki/FAQ) or the [online documentation](https://cybergems.org/docs/cyberpaste/FAQ).
 
 ---
 
