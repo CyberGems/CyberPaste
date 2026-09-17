@@ -1,6 +1,6 @@
 ## 📋 CyberPaste {{VERSION}} — Release Notes
 
-Welcome to the official **CyberPaste {{VERSION}}** release! CyberPaste is a lightning-fast, privacy-first clipboard history manager with smart AI actions, folders, and native Windows acrylic desktop integration.
+Welcome to the official **CyberPaste {{VERSION}}** release! CyberPaste is a lightning-fast, privacy-first clipboard history manager with smart AI actions, folders, and a native Windows look and feel.
 
 ---
 
@@ -26,10 +26,12 @@ Welcome to the official **CyberPaste {{VERSION}}** release! CyberPaste is a ligh
 
 ### 📦 Downloads & Packages
 
+> ⬇️ **Direct download:** click a file name to download it now. Same files as in **Assets** at the bottom of this page.
+
 | File | Description | Platform |
 | :--- | :--- | :--- |
-| **`CyberPaste_{{VERSION_NUM}}_x64-setup.exe`** | 🚀 **Recommended Installer** (NSIS Setup with Start Menu, Desktop & Startup options) | Windows 10 / 11 (x64) |
-| **`CyberPaste_{{VERSION_NUM}}_x64-portable.zip`** | 📦 **Portable Build** (no installation; shares the user profile with the installed version) | Windows 10 / 11 (x64) |
+| **[`CyberPaste_{{VERSION_NUM}}_x64-setup.exe`](https://github.com/CyberGems/CyberPaste/releases/download/{{VERSION}}/CyberPaste_{{VERSION_NUM}}_x64-setup.exe)** | 🚀 **Recommended Installer** (NSIS Setup with Start Menu, Desktop & Startup options) | Windows 10 / 11 (x64) |
+| **[`CyberPaste_{{VERSION_NUM}}_x64-portable.zip`](https://github.com/CyberGems/CyberPaste/releases/download/{{VERSION}}/CyberPaste_{{VERSION_NUM}}_x64-portable.zip)** | 📦 **Portable Build** (no installation; shares the user profile with the installed version) | Windows 10 / 11 (x64) |
 
 ---
 
