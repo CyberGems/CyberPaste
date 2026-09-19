@@ -150,12 +150,16 @@ export function useKeyboard(options: KeyboardOptions) {
       if (options.onToggleMode && options.toggleModeHotkey) {
         if (matchesHotkey(options.toggleModeHotkey)) {
           e.preventDefault();
+          e.stopPropagation();
           options.onToggleMode();
+          return;
         }
       } else if ((e.metaKey || e.ctrlKey) && e.key === 'm' && options.onToggleMode) {
         // Fallback to Ctrl+M
         e.preventDefault();
+        e.stopPropagation();
         options.onToggleMode();
+        return;
       }
 
       if (options.onTogglePeek && options.peekHotkey && matchesHotkey(options.peekHotkey)) {
