@@ -60,6 +60,7 @@ interface SettingsPanelProps {
 }
 
 type Tab = 'general' | 'folders' | 'full' | 'compact' | 'ai' | 'notifications' | 'maintenance';
+type AutoBackupStatus = 'idle' | 'working' | 'success' | 'error';
 
 function formatDbSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -261,6 +262,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
   const [appVersion, setAppVersion] = useState('');
   const [monitorList, setMonitorList] = useState<{ name: string; index: number }[]>([]);
   const [dataDirectory, setDataDirectory] = useState<string | null>(null);
+  const [autoBackupStatus, setAutoBackupStatus] = useState<{
+    state: AutoBackupStatus;
+    message: string;
+    fileName?: string;
+  }>({ state: 'idle', message: '' });
 
   useEffect(() => {
     getVersion().then(setAppVersion);
@@ -478,6 +484,45 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
   const updateSetting = (key: keyof Settings, value: any) => {
     updateSettings({ [key]: value });
+  };
+
+  const handleRunAutomaticBackup = async () => {
+    if (autoBackupStatus.state === 'working') {
+      return;
+    }
+
+    setAutoBackupStatus({
+      state: 'working',
+      message: t('settings.autoBackupInProgress'),
+    });
+
+    try {
+      const path = await invoke<string>('run_automatic_backup_now');
+      const fileName = path.split(/[\\/]/).pop();
+      setAutoBackupStatus({
+        state: 'success',
+        message: t('settings.autoBackupSaved'),
+        fileName,
+      });
+    } catch (error) {
+      console.error('Automatic backup failed:', error);
+      const isAlreadyRunning = String(error).toLowerCase().includes('already in progress');
+      setAutoBackupStatus({
+        state: 'error',
+        message: isAlreadyRunning
+          ? t('settings.autoBackupInProgress')
+          : t('settings.autoBackupFailed'),
+      });
+    }
+  };
+
+  const openAutomaticBackupFolder = async () => {
+    try {
+      await invoke('open_automatic_backup_folder');
+    } catch (error) {
+      console.error('Could not open automatic backup folder:', error);
+      toast.error(t('settings.autoBackupFolderOpenFailed'));
+    }
   };
 
   const handleThemeChange = (newTheme: string) => {
@@ -2702,13 +2747,21 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               {settings.auto_backup_folder || defaultAutoBackupFolder}
                             </p>
                           </div>
-                          <button
-                            onClick={selectAutoBackupFolder}
-                            className="btn flex-shrink-0 rounded-[4px] border border-border bg-input px-3 py-1.5 text-xs font-medium hover:bg-white/10"
-                          >
-                            <FolderOpen size={14} className="mr-1.5 inline-block" />
-                            {t('settings.chooseAutoBackupFolder')}
-                          </button>
+                          <div className="flex flex-shrink-0 gap-2">
+                            <button
+                              onClick={openAutomaticBackupFolder}
+                              className="btn rounded-[4px] border border-border bg-input px-3 py-1.5 text-xs font-medium hover:bg-white/10"
+                            >
+                              <FolderOpen size={14} className="mr-1.5 inline-block" />
+                              {t('settings.openAutoBackupFolder')}
+                            </button>
+                            <button
+                              onClick={selectAutoBackupFolder}
+                              className="btn rounded-[4px] border border-border bg-input px-3 py-1.5 text-xs font-medium hover:bg-white/10"
+                            >
+                              {t('settings.chooseAutoBackupFolder')}
+                            </button>
+                          </div>
                         </div>
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                           <div>
@@ -2740,20 +2793,35 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             {t('settings.autoBackupNowDesc')}
                           </p>
                           <button
-                            onClick={async () => {
-                              const id = toast.loading(t('settings.generatingBackup'));
-                              try {
-                                await invoke('run_automatic_backup_now');
-                                toast.success(t('settings.autoBackupSaved'), { id });
-                              } catch (error) {
-                                toast.error(t('settings.autoBackupFailed', { error }), { id });
-                              }
-                            }}
-                            className="btn flex-shrink-0 rounded-[4px] border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20"
+                            onClick={handleRunAutomaticBackup}
+                            disabled={autoBackupStatus.state === 'working'}
+                            aria-busy={autoBackupStatus.state === 'working'}
+                            className="btn flex-shrink-0 rounded-[4px] border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 disabled:cursor-wait disabled:opacity-60"
                           >
-                            {t('settings.autoBackupNow')}
+                            {autoBackupStatus.state === 'working'
+                              ? t('settings.autoBackupInProgress')
+                              : t('settings.autoBackupNow')}
                           </button>
                         </div>
+                        {autoBackupStatus.state !== 'idle' && (
+                          <div
+                            role="status"
+                            className={`rounded-md border px-3 py-2 text-xs ${
+                              autoBackupStatus.state === 'success'
+                                ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300'
+                                : autoBackupStatus.state === 'error'
+                                  ? 'border-red-500/25 bg-red-500/10 text-red-300'
+                                  : 'border-primary/20 bg-primary/10 text-primary'
+                            }`}
+                          >
+                            <span>{autoBackupStatus.message}</span>
+                            {autoBackupStatus.fileName && (
+                              <span className="mt-1 block truncate font-mono text-[10px] opacity-80">
+                                {autoBackupStatus.fileName}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </section>

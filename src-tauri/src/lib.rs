@@ -642,6 +642,7 @@ pub fn run_app() {
             commands::toggle_view_mode,
             commands::export_backup,
             commands::run_automatic_backup_now,
+            commands::open_automatic_backup_folder,
             commands::import_backup,
             commands::export_backup_to_file,
             commands::import_backup_from_file,

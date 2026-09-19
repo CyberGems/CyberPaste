@@ -3013,6 +3013,29 @@ pub async fn run_automatic_backup_now(
 }
 
 #[tauri::command]
+pub fn open_automatic_backup_folder(app: AppHandle) -> Result<String, String> {
+    let manager = app.state::<Arc<SettingsManager>>();
+    let settings = manager.get();
+    let directory = crate::backup::resolve_backup_dir(&settings);
+    std::fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
+
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .arg(&directory)
+            .spawn()
+            .map_err(|error| error.to_string())?;
+        Ok(directory.to_string_lossy().to_string())
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = directory;
+        Err("Opening backup folders is not supported on this operating system".to_string())
+    }
+}
+
+#[tauri::command]
 pub async fn import_backup(
     data: crate::models::BackupData,
     db: tauri::State<'_, Arc<Database>>,
