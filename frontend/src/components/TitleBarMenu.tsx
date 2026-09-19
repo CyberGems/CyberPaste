@@ -14,7 +14,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { invoke } from '@tauri-apps/api/core';
-import { emit } from '@tauri-apps/api/event';
+import { emit, listen } from '@tauri-apps/api/event';
 import { clsx } from 'clsx';
 import Tooltip from './Tooltip';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -26,6 +26,7 @@ const WEBSITE_URL = 'https://cybergems.org';
 const CHANGELOG_URL = 'https://github.com/CyberGems/CyberPaste/releases';
 const GITHUB_URL = 'https://github.com/CyberGems/CyberPaste';
 export const TITLE_BAR_MENU_TOGGLE_EVENT = 'cyberpaste:toggle-titlebar-menu';
+export const TITLE_BAR_MENU_OPEN_EVENT = 'cyberpaste:titlebar-menu-open';
 
 export type TitleBarMenuVariant = 'main' | 'settings' | 'viewer';
 
@@ -40,6 +41,7 @@ export function TitleBarMenu({
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [menuPointerActive, setMenuPointerActive] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
   const [pos, setPos] = useState({ top: 0, right: 0 });
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -58,12 +60,40 @@ export function TitleBarMenu({
   }, []);
 
   useEffect(() => {
-    if (!open) return;
+    setMenuPointerActive(false);
+    if (!open) {
+      if (document.body.dataset.titlebarMenuOpen === 'true') {
+        delete document.body.dataset.titlebarMenuOpen;
+      }
+      return;
+    }
+
+    document.body.dataset.titlebarMenuOpen = 'true';
+    window.dispatchEvent(new Event(TITLE_BAR_MENU_OPEN_EVENT));
     const frame = requestAnimationFrame(() => {
       menuRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
     });
     return () => cancelAnimationFrame(frame);
   }, [open]);
+
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    listen<boolean>('window-visibility', (event) => {
+      if (!event.payload) {
+        setOpen(false);
+      }
+    }).then((cleanup) => {
+      unlisten = cleanup;
+    }).catch((error) => {
+      console.error('Failed to listen for window visibility:', error);
+    });
+    return () => {
+      unlisten?.();
+      if (document.body.dataset.titlebarMenuOpen === 'true') {
+        delete document.body.dataset.titlebarMenuOpen;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -134,9 +164,14 @@ export function TitleBarMenu({
     }
   };
 
-  const itemClass =
-    'group flex w-full items-center gap-2.5 rounded-md px-2.5 py-[7px] text-left text-[13px] font-medium text-foreground/90 transition-colors hover:bg-accent hover:text-foreground';
-  const iconClass = 'shrink-0 text-muted-foreground transition-colors group-hover:text-primary';
+  const itemClass = clsx(
+    'group flex w-full items-center gap-2.5 rounded-md px-2.5 py-[7px] text-left text-[13px] font-medium text-foreground/90 transition-colors focus:outline-none focus-visible:bg-accent focus-visible:text-foreground focus-visible:ring-1 focus-visible:ring-primary/50',
+    menuPointerActive && 'hover:bg-accent hover:text-foreground'
+  );
+  const iconClass = clsx(
+    'shrink-0 text-muted-foreground transition-colors',
+    menuPointerActive && 'group-hover:text-primary'
+  );
   const moreLabel = hotkey
     ? t('common.tooltipWithHotkey', { label: t('common.moreActions'), hotkey })
     : t('common.moreActions');
@@ -171,6 +206,7 @@ export function TitleBarMenu({
           <div
             ref={menuRef}
             role="menu"
+            onPointerMove={() => setMenuPointerActive(true)}
             onKeyDown={(event) => {
               const items = Array.from(
                 menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []

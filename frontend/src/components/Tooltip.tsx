@@ -121,6 +121,22 @@ export default function Tooltip({ label, placement = 'bottom', children, disable
     };
   }, [anchorEl]);
 
+  // A titlebar menu is rendered in a portal and must suppress every tooltip
+  // behind it, not only the tooltip attached to the menu button.
+  useEffect(() => {
+    const hideForTitleBarMenu = () => {
+      if (delayTimer.current) {
+        clearTimeout(delayTimer.current);
+        delayTimer.current = null;
+      }
+      setAnchorEl(null);
+    };
+    window.addEventListener('cyberpaste:titlebar-menu-open', hideForTitleBarMenu);
+    return () => {
+      window.removeEventListener('cyberpaste:titlebar-menu-open', hideForTitleBarMenu);
+    };
+  }, []);
+
   // Cancelar un show pendiente si hay scroll durante el retardo: sin esto el
   // tooltip aparecería con la posición del layout anterior, despegado del ancla.
   useEffect(() => {
@@ -151,6 +167,9 @@ export default function Tooltip({ label, placement = 'bottom', children, disable
 
   const show = (e: ReactMouseEvent<HTMLElement>): void => {
     child.props.onMouseEnter?.(e);
+    if (document.body.dataset.titlebarMenuOpen === 'true') {
+      return;
+    }
     if (delayTimer.current) {
       clearTimeout(delayTimer.current);
       delayTimer.current = null;
@@ -196,6 +215,14 @@ export default function Tooltip({ label, placement = 'bottom', children, disable
   };
   const handleMouseMove = (e: ReactMouseEvent<HTMLElement>): void => {
     child.props.onMouseMove?.(e);
+    if (document.body.dataset.titlebarMenuOpen === 'true') {
+      if (delayTimer.current) {
+        clearTimeout(delayTimer.current);
+        delayTimer.current = null;
+      }
+      setAnchorEl(null);
+      return;
+    }
     const target = e.target as HTMLElement;
     const currentTarget = e.currentTarget as HTMLElement;
     const closestTooltipEl = target.closest('[data-has-tooltip="true"]');
