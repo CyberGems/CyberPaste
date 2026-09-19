@@ -54,6 +54,13 @@ interface ToastPayload {
   source_app?: string | null;
   source_icon?: string | null;
   limit_bytes?: number | null;
+  content_bytes?: number | null;
+  limit_reason?: string | null;
+  removed_count?: number | null;
+  quota_bytes?: number | null;
+  quota_over?: boolean | null;
+  image_width?: number | null;
+  image_height?: number | null;
 }
 
 function formatLimitBytes(bytes: number | null | undefined): string {
@@ -116,6 +123,10 @@ function getClipTitle(clipType: string | null | undefined, toastType: string | u
   switch (clipType) {
     case 'content_limit':
       return t('toasts.titles.contentLimitExceeded');
+    case 'image_limit':
+      return t('toasts.titles.imageLimitExceeded');
+    case 'storage_quota':
+      return t('toasts.titles.storageQuotaPruned');
     case 'welcome':
       return t('toasts.titles.welcome');
     case 'image':
@@ -158,7 +169,10 @@ function getHeaderClipIcon(
   }
   switch (clipType) {
     case 'content_limit':
+    case 'image_limit':
       return <AlertIcon className={cls} style={{ color: pink }} />;
+    case 'storage_quota':
+      return <InfoIcon className={cls} style={{ color }} />;
     case 'welcome':
       return <CheckIcon className={cls} style={{ color }} />;
     case 'image':
@@ -315,10 +329,29 @@ export function ToastWindow() {
   }, [toast]);
 
   const { t } = useLanguage(settings?.language);
-  const displayMessage =
-    toast?.clip_type === 'content_limit'
-      ? t('toasts.contentLimitExceeded', { limit: formatLimitBytes(toast.limit_bytes) })
-      : toast?.message ?? '';
+  const displayMessage = (() => {
+    if (!toast) return '';
+    if (toast.clip_type === 'content_limit') {
+      return t('toasts.contentLimitExceeded', { limit: formatLimitBytes(toast.limit_bytes) });
+    }
+    if (toast.clip_type === 'image_limit') {
+      return toast.limit_reason === 'pixel_count'
+        ? t('toasts.imagePixelLimitExceeded', {
+            width: toast.image_width ?? 0,
+            height: toast.image_height ?? 0,
+          })
+        : t('toasts.imageLimitExceeded', {
+            size: formatLimitBytes(toast.content_bytes),
+            limit: formatLimitBytes(toast.limit_bytes),
+          });
+    }
+    if (toast.clip_type === 'storage_quota') {
+      return toast.quota_over
+        ? t('toasts.storageQuotaUnmet')
+        : t('toasts.storageQuotaPruned', { count: toast.removed_count ?? 0 });
+    }
+    return toast.message;
+  })();
 
   const closeToast = () => {
     setIsClosing(true);

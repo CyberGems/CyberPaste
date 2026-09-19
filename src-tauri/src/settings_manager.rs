@@ -34,6 +34,20 @@ impl SettingsManager {
             settings.max_clipboard_text_bytes = normalized_text_limit;
             needs_save = true;
         }
+        let normalized_image_limit =
+            crate::content_limits::normalize_max_clipboard_image_bytes(
+                settings.max_clipboard_image_bytes,
+            );
+        if normalized_image_limit != settings.max_clipboard_image_bytes {
+            settings.max_clipboard_image_bytes = normalized_image_limit;
+            needs_save = true;
+        }
+        let normalized_storage_quota =
+            crate::content_limits::normalize_storage_quota_bytes(settings.storage_quota_bytes);
+        if normalized_storage_quota != settings.storage_quota_bytes {
+            settings.storage_quota_bytes = normalized_storage_quota;
+            needs_save = true;
+        }
         // Auto-migrate Kimi legacy base URL from .cn to .ai if currently set
         if settings.ai_provider == "kimi" && settings.ai_base_url == "https://api.moonshot.cn/v1" {
             settings.ai_base_url = "https://api.moonshot.ai/v1".to_string();

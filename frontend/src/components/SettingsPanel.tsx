@@ -62,14 +62,27 @@ interface SettingsPanelProps {
 type Tab = 'general' | 'folders' | 'full' | 'compact' | 'ai' | 'notifications' | 'maintenance';
 type AutoBackupStatus = 'idle' | 'working' | 'success' | 'error';
 
+interface StorageUsage {
+  database_bytes: number;
+  image_bytes: number;
+  total_bytes: number;
+}
+
 function formatDbSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes >= 1024 * 1024 * 1024) {
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+  }
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 const CLIPBOARD_TEXT_LIMIT_OPTIONS_MB = [1, 5, 10, 25, 50, 100];
 const DEFAULT_CLIPBOARD_TEXT_LIMIT_BYTES = 5 * 1024 * 1024;
+const CLIPBOARD_IMAGE_LIMIT_OPTIONS_MB = [10, 25, 50, 100];
+const DEFAULT_CLIPBOARD_IMAGE_LIMIT_BYTES = 25 * 1024 * 1024;
+const STORAGE_QUOTA_OPTIONS_GB = [1, 2, 5, 10, 25, 50, 100];
+const DEFAULT_STORAGE_QUOTA_BYTES = 10 * 1024 * 1024 * 1024;
 
 function PromptEditor({
   label,
@@ -257,6 +270,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
   const [settings, setSettings] = useState<Settings>(initialSettings);
   const [_historySize, setHistorySize] = useState<number>(0);
   const [dbSizeBytes, setDbSizeBytes] = useState<number | null>(null);
+  const [storageUsage, setStorageUsage] = useState<StorageUsage | null>(null);
   const [recordingTarget, setRecordingTarget] = useState<'hotkey' | 'view_mode_hotkey' | null>(
     null
   );
@@ -430,6 +444,8 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         round_corners: 'settings.roundCorners',
         max_items: 'settings.historyLimit',
         max_clipboard_text_bytes: 'settings.clipboardTextLimit',
+        max_clipboard_image_bytes: 'settings.clipboardImageLimit',
+        storage_quota_bytes: 'settings.storageQuota',
         scroll_direction: 'settings.scrollDirection',
         compact_folder_layout: 'settings.compactFolderLayout',
         compact_view_position_mode: 'settings.compactViewPosition',
@@ -595,9 +611,22 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
   useEffect(() => {
     if (activeTab !== 'maintenance') return;
-    invoke<number>('get_db_size')
-      .then(setDbSizeBytes)
-      .catch(() => setDbSizeBytes(null));
+    const refreshStorageUsage = () => {
+      invoke<StorageUsage>('get_storage_usage')
+        .then((usage) => {
+          setStorageUsage(usage);
+          setDbSizeBytes(usage.database_bytes);
+        })
+        .catch(() => {
+          setStorageUsage(null);
+          setDbSizeBytes(null);
+        });
+    };
+    refreshStorageUsage();
+    const unlisten = listen('clipboard-change', refreshStorageUsage);
+    return () => {
+      unlisten.then((cleanup) => cleanup());
+    };
   }, [activeTab]);
 
   const addAppToIgnored = async (appName: string) => {
@@ -658,9 +687,15 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
           await invoke('clear_all_clips');
           await emit('clipboard-change');
           setHistorySize(0);
-          invoke<number>('get_db_size')
-            .then(setDbSizeBytes)
-            .catch(() => setDbSizeBytes(null));
+          invoke<StorageUsage>('get_storage_usage')
+            .then((usage) => {
+              setStorageUsage(usage);
+              setDbSizeBytes(usage.database_bytes);
+            })
+            .catch(() => {
+              setStorageUsage(null);
+              setDbSizeBytes(null);
+            });
           toast.success(t('settings.clearHistorySuccess'));
         } catch (error) {
           console.error('Failed to clear history:', error);
@@ -1093,6 +1128,65 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           options={CLIPBOARD_TEXT_LIMIT_OPTIONS_MB.map((size) => ({
                             value: String(size),
                             label: t('settings.clipboardTextLimitOption', { size }),
+                          }))}
+                          className="sm:max-w-[180px]"
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-sm font-medium">
+                            {t('settings.clipboardImageLimit')}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.clipboardImageLimitDesc')}
+                          </p>
+                        </label>
+                        <Select
+                          value={String(
+                            Math.round(
+                              (settings.max_clipboard_image_bytes ??
+                                DEFAULT_CLIPBOARD_IMAGE_LIMIT_BYTES) /
+                                (1024 * 1024)
+                            )
+                          )}
+                          onChange={(value) =>
+                            updateSetting(
+                              'max_clipboard_image_bytes',
+                              parseInt(value, 10) * 1024 * 1024
+                            )
+                          }
+                          options={CLIPBOARD_IMAGE_LIMIT_OPTIONS_MB.map((size) => ({
+                            value: String(size),
+                            label: t('settings.clipboardImageLimitOption', { size }),
+                          }))}
+                          className="sm:max-w-[180px]"
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-sm font-medium">
+                            {t('settings.storageQuota')}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.storageQuotaDesc')}
+                          </p>
+                        </label>
+                        <Select
+                          value={String(
+                            Math.round(
+                              (settings.storage_quota_bytes ?? DEFAULT_STORAGE_QUOTA_BYTES) /
+                                (1024 * 1024 * 1024)
+                            )
+                          )}
+                          onChange={(value) =>
+                            updateSetting(
+                              'storage_quota_bytes',
+                              parseInt(value, 10) * 1024 * 1024 * 1024
+                            )
+                          }
+                          options={STORAGE_QUOTA_OPTIONS_GB.map((size) => ({
+                            value: String(size),
+                            label: t('settings.storageQuotaOption', { size }),
                           }))}
                           className="sm:max-w-[180px]"
                         />
@@ -2609,6 +2703,27 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <div className="flex flex-col gap-4">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                           <div className="flex gap-3">
+                            <HardDrive className="h-5 w-5 flex-shrink-0 text-primary/80" />
+                            <div>
+                              <span className="block text-sm font-medium text-foreground">
+                                {t('settings.storageUsage')}
+                              </span>
+                              <span className="mt-0.5 block text-xs text-muted-foreground">
+                                {t('settings.storageUsageDesc')}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="font-mono text-sm font-semibold tabular-nums text-primary sm:text-right">
+                            {storageUsage == null
+                              ? '—'
+                              : `${formatDbSize(storageUsage.total_bytes)} / ${formatDbSize(
+                                  settings.storage_quota_bytes ?? DEFAULT_STORAGE_QUOTA_BYTES
+                                )}`}
+                          </span>
+                        </div>
+                        <div className="h-px bg-border" />
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex gap-3">
                             <HardDrive className="h-5 w-5 flex-shrink-0 text-amber-500/80" />
                             <div>
                               <span className="block text-sm font-medium text-foreground">
@@ -2621,6 +2736,22 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           </div>
                           <span className="font-mono text-sm font-semibold tabular-nums text-amber-600/90 dark:text-amber-400/90 sm:text-right">
                             {dbSizeBytes == null ? '—' : formatDbSize(dbSizeBytes)}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex gap-3">
+                            <HardDrive className="h-5 w-5 flex-shrink-0 text-cyan-500/80" />
+                            <div>
+                              <span className="block text-sm font-medium text-foreground">
+                                {t('settings.storageImages')}
+                              </span>
+                              <span className="mt-0.5 block text-xs text-muted-foreground">
+                                {t('settings.storageImagesDesc')}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="font-mono text-sm font-semibold tabular-nums text-cyan-600/90 dark:text-cyan-400/90 sm:text-right">
+                            {storageUsage == null ? '—' : formatDbSize(storageUsage.image_bytes)}
                           </span>
                         </div>
                         <div className="h-px bg-border" />

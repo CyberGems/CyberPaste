@@ -1,8 +1,10 @@
 use sqlx::SqlitePool;
+use std::path::PathBuf;
 
 #[derive(Clone)]
 pub struct Database {
     pub pool: SqlitePool,
+    pub path: PathBuf,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -144,7 +146,10 @@ impl Database {
 
         let pool = SqlitePool::connect_with(options).await.unwrap();
 
-        Self { pool }
+        Self {
+            pool,
+            path: PathBuf::from(db_path),
+        }
     }
 
     pub async fn get_and_prepare_first_unpinned_slot(

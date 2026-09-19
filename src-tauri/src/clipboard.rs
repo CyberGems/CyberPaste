@@ -251,6 +251,11 @@ struct ClipboardImageRead {
     source_type: &'static str,
 }
 
+enum ClipboardImageReadError {
+    Limit(crate::content_limits::ImageLimitExceeded),
+    Other(String),
+}
+
 fn clipboard_has_files() -> bool {
     ClipboardContext::new()
         .ok()
@@ -285,20 +290,36 @@ fn calculate_image_hash(width: u32, height: u32, rgba: &[u8]) -> String {
 
 fn read_clipboard_image_with_clipboard_rs(
     source_type: &'static str,
-) -> Result<ClipboardImageRead, String> {
-    let ctx = ClipboardContext::new().map_err(|e| e.to_string())?;
-    let image = ctx.get_image().map_err(|e| e.to_string())?;
-
-    let rgba_image = image.to_rgba8().map_err(|e| e.to_string())?;
-    let (width, height, rgba) =
-        validated_rgba8(rgba_image.width(), rgba_image.height(), rgba_image.into_raw())?;
-    let raw_hash = calculate_image_hash(width, height, &rgba);
+    max_image_bytes: i64,
+) -> Result<ClipboardImageRead, ClipboardImageReadError> {
+    let ctx = ClipboardContext::new().map_err(|e| ClipboardImageReadError::Other(e.to_string()))?;
+    let image = ctx
+        .get_image()
+        .map_err(|e| ClipboardImageReadError::Other(e.to_string()))?;
+    let (width, height) = image.get_size();
+    crate::content_limits::validate_image_dimensions(width, height)
+        .map_err(ClipboardImageReadError::Limit)?;
 
     let png_bytes = image
         .to_png()
-        .map_err(|e| e.to_string())?
+        .map_err(|e| ClipboardImageReadError::Other(e.to_string()))?
         .get_bytes()
         .to_vec();
+
+    crate::content_limits::validate_image_bytes(
+        width,
+        height,
+        &png_bytes,
+        max_image_bytes,
+    )
+    .map_err(ClipboardImageReadError::Limit)?;
+
+    let rgba_image = image
+        .to_rgba8()
+        .map_err(|e| ClipboardImageReadError::Other(e.to_string()))?;
+    let (width, height, rgba) = validated_rgba8(width, height, rgba_image.into_raw())
+        .map_err(ClipboardImageReadError::Other)?;
+    let raw_hash = calculate_image_hash(width, height, &rgba);
 
     Ok(ClipboardImageRead {
         png_bytes,
@@ -310,8 +331,10 @@ fn read_clipboard_image_with_clipboard_rs(
     })
 }
 
-fn read_clipboard_image_fast() -> Result<ClipboardImageRead, String> {
-    read_clipboard_image_with_clipboard_rs("clipboard-rs-image")
+fn read_clipboard_image_fast(
+    max_image_bytes: i64,
+) -> Result<ClipboardImageRead, ClipboardImageReadError> {
+    read_clipboard_image_with_clipboard_rs("clipboard-rs-image", max_image_bytes)
 }
 
 async fn process_clipboard_change(
@@ -334,6 +357,10 @@ async fn process_clipboard_change(
     let mut clip_hash = String::new();
     let mut metadata = String::new();
     let mut found_content = false;
+    let max_image_bytes = app
+        .try_state::<Arc<crate::settings_manager::SettingsManager>>()
+        .map(|manager| manager.get().max_clipboard_image_bytes)
+        .unwrap_or_else(crate::content_limits::default_max_clipboard_image_bytes);
 
     // Files (CF_HDROP) before image: Explorer/Office often attach a CF_DIB
     // thumbnail or file-type icon that would otherwise collapse distinct copies
@@ -341,39 +368,52 @@ async fn process_clipboard_change(
     log::debug!("CLIPBOARD: Attempting to read image from clipboard");
     let image_read_started = std::time::Instant::now();
     if !clipboard_has_files() {
-        if let Ok(read_image_result) = read_clipboard_image_fast() {
-            image_read_ms = image_read_started.elapsed().as_millis();
-            log::debug!(
-                "CLIPBOARD: Image read successfully, source_type={}, takes {} ms",
-                read_image_result.source_type,
-                image_read_ms
-            );
+        match read_clipboard_image_fast(max_image_bytes) {
+            Ok(read_image_result) => {
+                image_read_ms = image_read_started.elapsed().as_millis();
+                log::debug!(
+                    "CLIPBOARD: Image read successfully, source_type={}, takes {} ms",
+                    read_image_result.source_type,
+                    image_read_ms
+                );
 
-            let bytes = read_image_result.png_bytes;
-            let width = read_image_result.width;
-            let height = read_image_result.height;
-            image_decode_ms = read_image_result.decode_ms;
-            let size_bytes = bytes.len();
-            clip_hash = read_image_result.raw_hash;
-            clip_content = Vec::new();
-            full_image_content = Some(bytes);
-            clip_type = "image";
-            clip_preview = "[Image]".to_string();
-            metadata = serde_json::json!({
-                "width": width,
-                "height": height,
-                "format": "png",
-                "size_bytes": size_bytes
-            })
-            .to_string();
-            found_content = true;
-            log::debug!(
-                "CLIPBOARD: Found image: {}x{}, source_type={}, png_bytes={}",
-                width,
-                height,
-                read_image_result.source_type,
-                size_bytes
-            );
+                let bytes = read_image_result.png_bytes;
+                let width = read_image_result.width;
+                let height = read_image_result.height;
+                image_decode_ms = read_image_result.decode_ms;
+                let size_bytes = bytes.len();
+                clip_hash = read_image_result.raw_hash;
+                clip_content = Vec::new();
+                full_image_content = Some(bytes);
+                clip_type = "image";
+                clip_preview = "[Image]".to_string();
+                metadata = serde_json::json!({
+                    "width": width,
+                    "height": height,
+                    "format": "png",
+                    "size_bytes": size_bytes
+                })
+                .to_string();
+                found_content = true;
+                log::debug!(
+                    "CLIPBOARD: Found image: {}x{}, source_type={}, png_bytes={}",
+                    width,
+                    height,
+                    read_image_result.source_type,
+                    size_bytes
+                );
+            }
+            Err(ClipboardImageReadError::Limit(limit_error)) => {
+                log::warn!(
+                    "CLIPBOARD: Skipping image because it exceeded the {} limit",
+                    limit_error.reason
+                );
+                let _ = crate::commands::show_image_limit_toast(app.clone(), limit_error).await;
+                return;
+            }
+            Err(ClipboardImageReadError::Other(error)) => {
+                log::debug!("CLIPBOARD: Image format unavailable: {}", error);
+            }
         }
     }
 
@@ -866,10 +906,16 @@ async fn process_clipboard_change(
     }
 
     // Prune history in background to avoid blocking the clipboard loop
-    let pool_clone = pool.clone();
-    let max_items = settings.max_items;
+    let app_for_policy = app.clone();
+    let database_for_policy = db.clone();
+    let settings_for_policy = settings.clone();
     let _ = crate::models::get_runtime().unwrap().spawn(async move {
-        let _ = crate::commands::prune_history(&pool_clone, max_items).await;
+        let _ = crate::commands::enforce_storage_policy(
+            app_for_policy,
+            database_for_policy,
+            settings_for_policy,
+        )
+        .await;
     });
 
     let db_write_ms = db_write_started.elapsed().as_millis();

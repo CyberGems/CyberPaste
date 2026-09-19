@@ -349,15 +349,11 @@ pub fn run_app() {
                 let h = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
                     tokio::time::sleep(std::time::Duration::from_millis(1800)).await;
-                    let max = h
+                    let settings = h
                         .try_state::<Arc<SettingsManager>>()
-                        .map(|m| m.get().max_items)
-                        .unwrap_or(400);
-                    if let Ok(deleted) = crate::commands::prune_history(&db_prune.pool, max).await {
-                        if deleted > 0 {
-                            let _ = h.emit("clipboard-change", ());
-                        }
-                    }
+                        .map(|m| m.get())
+                        .unwrap_or_default();
+                    let _ = crate::commands::enforce_storage_policy(h, db_prune, settings).await;
                 });
             }
 
@@ -625,6 +621,7 @@ pub fn run_app() {
             commands::get_clipboard_history_size,
             commands::get_clip_stats,
             commands::get_db_size,
+            commands::get_storage_usage,
             commands::clear_clipboard_history,
             commands::clear_all_clips,
             commands::remove_duplicate_clips,

@@ -42,6 +42,12 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
         crate::content_limits::normalize_max_clipboard_text_bytes(
             new_settings.max_clipboard_text_bytes,
         );
+    new_settings.max_clipboard_image_bytes =
+        crate::content_limits::normalize_max_clipboard_image_bytes(
+            new_settings.max_clipboard_image_bytes,
+        );
+    new_settings.storage_quota_bytes =
+        crate::content_limits::normalize_storage_quota_bytes(new_settings.storage_quota_bytes);
 
     // Preserve ignored_apps from current state (as frontend doesn't send it in this call)
     let current = manager.get();
@@ -114,20 +120,18 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
         new_settings.max_items,
         new_settings.compact_sidebar_collapsed
     );
-    let max_items = new_settings.max_items;
     manager.save(new_settings)?;
     let _ = crate::rebuild_tray_menu(&app);
     // Broadcast so every window (main, settings, toast, tray_menu, image_viewer)
     // re-applies theme/colors live.
     let _ = app.emit("settings-changed", crate::models::AppSettings::clone(&manager.get()));
-    if max_items > 0 {
-        if let Some(db) = app.try_state::<std::sync::Arc<crate::database::Database>>() {
-            if let Ok(deleted) = crate::commands::prune_history(&db.pool, max_items).await {
-                if deleted > 0 {
-                    let _ = app.emit("clipboard-change", ());
-                }
-            }
-        }
+    if let Some(db) = app.try_state::<std::sync::Arc<crate::database::Database>>() {
+        let _ = crate::commands::enforce_storage_policy(
+            app.clone(),
+            db.inner().clone(),
+            manager.get(),
+        )
+        .await;
     }
     Ok(())
 }

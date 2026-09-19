@@ -5,11 +5,13 @@ use tauri_plugin_clipboard_x::{
 
 use crate::ai::{self, AiAction, AiConfig};
 use crate::database::Database;
-use crate::models::{Clip, ClipboardItem, Folder, FolderItem};
+use crate::models::{AppSettings, Clip, ClipboardItem, Folder, FolderItem};
 use crate::settings_manager::SettingsManager;
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use sqlx::{Row, SqlitePool};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::fs;
+use std::path::Path;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Instant;
@@ -268,6 +270,56 @@ fn clip_to_detail_item(
     }
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct StorageUsage {
+    pub database_bytes: u64,
+    pub image_bytes: u64,
+    pub total_bytes: u64,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct StorageQuotaResult {
+    pub deleted_count: usize,
+    pub over_quota: bool,
+}
+
+fn file_size(path: &Path) -> u64 {
+    fs::metadata(path).map(|metadata| metadata.len()).unwrap_or(0)
+}
+
+pub async fn measure_storage_usage(
+    pool: &SqlitePool,
+    database_path: &Path,
+) -> Result<StorageUsage, String> {
+    let mut database_bytes = file_size(database_path);
+    if let Some(file_name) = database_path.file_name().and_then(|name| name.to_str()) {
+        if let Some(parent) = database_path.parent() {
+            database_bytes = database_bytes
+                .saturating_add(file_size(&parent.join(format!("{file_name}-wal"))))
+                .saturating_add(file_size(&parent.join(format!("{file_name}-shm"))));
+        }
+    }
+
+    let paths: Vec<String> = sqlx::query_scalar(
+        "SELECT DISTINCT file_path FROM clip_images WHERE file_path IS NOT NULL AND file_path != ''",
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(|error| error.to_string())?;
+    let image_bytes = paths
+        .into_iter()
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .map(|path| file_size(Path::new(&path)))
+        .sum();
+
+    Ok(StorageUsage {
+        database_bytes,
+        image_bytes,
+        total_bytes: database_bytes.saturating_add(image_bytes),
+    })
+}
+
 async fn delete_clip_image_file_by_uuid(pool: &SqlitePool, clip_uuid: &str) -> Result<(), String> {
     let file_path: Option<String> =
         sqlx::query_scalar(r#"SELECT file_path FROM clip_images WHERE clip_uuid = ?"#)
@@ -278,7 +330,17 @@ async fn delete_clip_image_file_by_uuid(pool: &SqlitePool, clip_uuid: &str) -> R
 
     if let Some(path) = file_path {
         if !path.is_empty() {
-            crate::clipboard::remove_full_image_file(&path);
+            let references: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM clip_images WHERE file_path = ? AND clip_uuid != ?",
+            )
+            .bind(&path)
+            .bind(clip_uuid)
+            .fetch_one(pool)
+            .await
+            .map_err(|error| error.to_string())?;
+            if references == 0 {
+                crate::clipboard::remove_full_image_file(&path);
+            }
         }
     }
 
@@ -299,7 +361,21 @@ async fn cleanup_orphan_clip_image_files(pool: &SqlitePool) -> Result<(), String
 
     for path in orphan_paths.into_iter().flatten() {
         if !path.is_empty() {
-            crate::clipboard::remove_full_image_file(&path);
+            let active_references: i64 = sqlx::query_scalar(
+                r#"
+                SELECT COUNT(*)
+                FROM clip_images ci
+                JOIN clips c ON c.uuid = ci.clip_uuid
+                WHERE ci.file_path = ? AND c.is_deleted = 0
+                "#,
+            )
+            .bind(&path)
+            .fetch_one(pool)
+            .await
+            .unwrap_or(0);
+            if active_references == 0 {
+                crate::clipboard::remove_full_image_file(&path);
+            }
         }
     }
 
@@ -330,6 +406,32 @@ async fn cleanup_orphan_clip_image_files(pool: &SqlitePool) -> Result<(), String
         }
     }
 
+    Ok(())
+}
+
+async fn hard_delete_clip(pool: &SqlitePool, clip_uuid: &str) -> Result<(), String> {
+    delete_clip_image_file_by_uuid(pool, clip_uuid).await?;
+    sqlx::query("DELETE FROM clip_images WHERE clip_uuid = ?")
+        .bind(clip_uuid)
+        .execute(pool)
+        .await
+        .map_err(|error| error.to_string())?;
+    sqlx::query("DELETE FROM clips WHERE uuid = ?")
+        .bind(clip_uuid)
+        .execute(pool)
+        .await
+        .map_err(|error| error.to_string())?;
+    Ok(())
+}
+
+async fn compact_database(pool: &SqlitePool) -> Result<(), String> {
+    let _ = sqlx::query("PRAGMA wal_checkpoint(TRUNCATE)")
+        .execute(pool)
+        .await;
+    sqlx::query("VACUUM")
+        .execute(pool)
+        .await
+        .map_err(|error| error.to_string())?;
     Ok(())
 }
 
@@ -384,6 +486,116 @@ pub async fn prune_history(pool: &SqlitePool, max_items: i64) -> Result<usize, S
     }
     let _ = cleanup_orphan_clip_image_files(pool).await;
     Ok(deleted)
+}
+
+pub async fn enforce_storage_quota(
+    pool: &SqlitePool,
+    database_path: &Path,
+    configured_quota: i64,
+) -> Result<StorageQuotaResult, String> {
+    let quota_bytes =
+        crate::content_limits::normalize_storage_quota_bytes(configured_quota) as u64;
+    enforce_storage_quota_at(pool, database_path, quota_bytes).await
+}
+
+async fn enforce_storage_quota_at(
+    pool: &SqlitePool,
+    database_path: &Path,
+    quota_bytes: u64,
+) -> Result<StorageQuotaResult, String> {
+    let mut usage = measure_storage_usage(pool, database_path).await?;
+    let mut deleted_count = 0usize;
+
+    let soft_deleted: Vec<String> = sqlx::query_scalar(
+        "SELECT uuid FROM clips WHERE is_deleted = 1 ORDER BY created_at ASC",
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(|error| error.to_string())?;
+
+    for uuid in soft_deleted {
+        if usage.total_bytes <= quota_bytes {
+            break;
+        }
+        let before = usage.clone();
+        hard_delete_clip(pool, &uuid).await?;
+        deleted_count += 1;
+        let _ = cleanup_orphan_clip_image_files(pool).await;
+        usage = measure_storage_usage(pool, database_path).await?;
+        if usage.total_bytes >= before.total_bytes {
+            let _ = compact_database(pool).await;
+            usage = measure_storage_usage(pool, database_path).await?;
+        }
+    }
+
+    if usage.total_bytes > quota_bytes {
+        let candidates: Vec<String> = sqlx::query_scalar(
+            r#"
+            SELECT uuid
+            FROM clips
+            WHERE folder_id IS NULL AND is_deleted = 0 AND is_pinned = 0
+            ORDER BY created_at ASC
+            "#,
+        )
+        .fetch_all(pool)
+        .await
+        .map_err(|error| error.to_string())?;
+
+        for uuid in candidates {
+            if usage.total_bytes <= quota_bytes {
+                break;
+            }
+            let before = usage.clone();
+            hard_delete_clip(pool, &uuid).await?;
+            deleted_count += 1;
+            let _ = cleanup_orphan_clip_image_files(pool).await;
+            usage = measure_storage_usage(pool, database_path).await?;
+            if usage.total_bytes >= before.total_bytes {
+                let _ = compact_database(pool).await;
+                usage = measure_storage_usage(pool, database_path).await?;
+            }
+        }
+    }
+
+    Ok(StorageQuotaResult {
+        deleted_count,
+        over_quota: usage.total_bytes > quota_bytes,
+    })
+}
+
+pub async fn enforce_storage_policy(
+    app: AppHandle,
+    database: Arc<Database>,
+    settings: AppSettings,
+) -> Result<usize, String> {
+    let mut deleted_count = 0usize;
+    if settings.max_items > 0 {
+        deleted_count += prune_history(&database.pool, settings.max_items).await?;
+    }
+
+    let quota_result = enforce_storage_quota(
+        &database.pool,
+        &database.path,
+        settings.storage_quota_bytes,
+    )
+    .await?;
+    deleted_count += quota_result.deleted_count;
+
+    if quota_result.deleted_count > 0 || quota_result.over_quota {
+        let _ = app.emit("clipboard-change", ());
+        let quota_bytes =
+            crate::content_limits::normalize_storage_quota_bytes(settings.storage_quota_bytes)
+                as usize;
+        let _ = show_storage_quota_toast(
+            app,
+            quota_result.deleted_count,
+            quota_bytes,
+            quota_result.over_quota,
+        )
+        .await;
+    }
+
+    Ok(deleted_count)
 }
 
 pub async fn migrate_images_to_files(pool: &SqlitePool) -> Result<(), String> {
@@ -2436,6 +2648,13 @@ pub async fn get_db_size(db: tauri::State<'_, Arc<Database>>) -> Result<i64, Str
 }
 
 #[tauri::command]
+pub async fn get_storage_usage(
+    db: tauri::State<'_, Arc<Database>>,
+) -> Result<StorageUsage, String> {
+    measure_storage_usage(&db.pool, &db.path).await
+}
+
+#[tauri::command]
 pub async fn get_clip_stats(
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<serde_json::Value, String> {
@@ -3136,6 +3355,7 @@ pub async fn import_backup(
     }
 
     tx.commit().await.map_err(|e| e.to_string())?;
+    let _ = cleanup_orphan_clip_image_files(pool).await;
 
     // 5. Restore Settings
     let mut restored_settings = data.settings;
@@ -3145,6 +3365,7 @@ pub async fn import_backup(
     manager
         .save(restored_settings)
         .map_err(|e| e.to_string())?;
+    let _ = enforce_storage_policy(app.clone(), db.inner().clone(), manager.get()).await;
 
     // 6. Notify main window to refresh
     let _ = app.emit("clipboard-change", ());
@@ -3499,6 +3720,20 @@ pub struct ToastPayload {
     source_icon: Option<String>,
     #[serde(default)]
     limit_bytes: Option<usize>,
+    #[serde(default)]
+    content_bytes: Option<usize>,
+    #[serde(default)]
+    limit_reason: Option<String>,
+    #[serde(default)]
+    removed_count: Option<usize>,
+    #[serde(default)]
+    quota_bytes: Option<usize>,
+    #[serde(default)]
+    quota_over: Option<bool>,
+    #[serde(default)]
+    image_width: Option<u32>,
+    #[serde(default)]
+    image_height: Option<u32>,
 }
 
 static PENDING_TOAST: Lazy<Mutex<Option<ToastPayload>>> =
@@ -3561,6 +3796,13 @@ pub async fn show_toast(
             source_app,
             source_icon,
             limit_bytes: None,
+            content_bytes: None,
+            limit_reason: None,
+            removed_count: None,
+            quota_bytes: None,
+            quota_over: None,
+            image_width: None,
+            image_height: None,
         },
     )
     .await
@@ -3581,6 +3823,69 @@ pub async fn show_content_limit_toast(
             source_app: None,
             source_icon: None,
             limit_bytes: Some(limit_error.limit_bytes),
+            content_bytes: Some(limit_error.content_bytes),
+            limit_reason: None,
+            removed_count: None,
+            quota_bytes: None,
+            quota_over: None,
+            image_width: None,
+            image_height: None,
+        },
+    )
+    .await
+}
+
+pub async fn show_image_limit_toast(
+    app: AppHandle,
+    limit_error: crate::content_limits::ImageLimitExceeded,
+) -> Result<(), String> {
+    dispatch_toast(
+        app,
+        ToastPayload {
+            message: String::new(),
+            toast_type: "error".to_string(),
+            clip_type: Some("image_limit".to_string()),
+            image_preview: None,
+            clip_uuid: None,
+            source_app: None,
+            source_icon: None,
+            limit_bytes: (limit_error.limit_bytes > 0).then_some(limit_error.limit_bytes),
+            content_bytes: (limit_error.image_bytes > 0).then_some(limit_error.image_bytes),
+            limit_reason: Some(limit_error.reason.to_string()),
+            removed_count: None,
+            quota_bytes: None,
+            quota_over: None,
+            image_width: Some(limit_error.width),
+            image_height: Some(limit_error.height),
+        },
+    )
+    .await
+}
+
+pub async fn show_storage_quota_toast(
+    app: AppHandle,
+    removed_count: usize,
+    quota_bytes: usize,
+    quota_over: bool,
+) -> Result<(), String> {
+    dispatch_toast(
+        app,
+        ToastPayload {
+            message: String::new(),
+            toast_type: "info".to_string(),
+            clip_type: Some("storage_quota".to_string()),
+            image_preview: None,
+            clip_uuid: None,
+            source_app: None,
+            source_icon: None,
+            limit_bytes: None,
+            content_bytes: None,
+            limit_reason: None,
+            removed_count: Some(removed_count),
+            quota_bytes: Some(quota_bytes),
+            quota_over: Some(quota_over),
+            image_width: None,
+            image_height: None,
         },
     )
     .await
@@ -3597,7 +3902,9 @@ async fn dispatch_toast(app: AppHandle, payload: ToastPayload) -> Result<(), Str
     let is_action_message = payload.toast_type != "update"
         && (payload.clip_type.is_none()
             || payload.clip_type.as_deref() == Some("welcome")
-            || payload.clip_type.as_deref() == Some("content_limit"));
+            || payload.clip_type.as_deref() == Some("content_limit")
+            || payload.clip_type.as_deref() == Some("image_limit")
+            || payload.clip_type.as_deref() == Some("storage_quota"));
     if is_action_message && !manager.get().show_action_messages {
         return Ok(());
     }
@@ -4577,6 +4884,182 @@ pub fn open_text_in_system_viewer(text: String) -> Result<(), String> {
     #[cfg(not(target_os = "windows"))]
     {
         Err("Not supported on this OS".to_string())
+    }
+}
+
+#[cfg(test)]
+mod storage_tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    fn test_path(label: &str) -> PathBuf {
+        std::env::temp_dir().join(format!(
+            "cyberpaste-storage-{label}-{}-{}",
+            std::process::id(),
+            uuid::Uuid::new_v4()
+        ))
+    }
+
+    async fn create_storage_schema(pool: &SqlitePool) {
+        sqlx::query(
+            r#"
+            CREATE TABLE clips (
+                uuid TEXT PRIMARY KEY,
+                folder_id INTEGER,
+                is_deleted INTEGER NOT NULL DEFAULT 0,
+                is_pinned INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL
+            )
+            "#,
+        )
+        .execute(pool)
+        .await
+        .unwrap();
+        sqlx::query(
+            r#"
+            CREATE TABLE clip_images (
+                clip_uuid TEXT NOT NULL,
+                file_path TEXT,
+                file_size INTEGER
+            )
+            "#,
+        )
+        .execute(pool)
+        .await
+        .unwrap();
+    }
+
+    #[tokio::test]
+    async fn storage_usage_counts_database_sidecars_and_unique_image_paths() {
+        let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
+        create_storage_schema(&pool).await;
+        let database_path = test_path("database");
+        let image_path = test_path("image");
+        std::fs::write(&database_path, [0u8; 10]).unwrap();
+        std::fs::write(
+            PathBuf::from(format!("{}-wal", database_path.to_string_lossy())),
+            [0u8; 3],
+        )
+        .unwrap();
+        std::fs::write(
+            PathBuf::from(format!("{}-shm", database_path.to_string_lossy())),
+            [0u8; 4],
+        )
+        .unwrap();
+        std::fs::write(&image_path, [0u8; 5]).unwrap();
+        for uuid in ["one", "two"] {
+            sqlx::query("INSERT INTO clips (uuid, created_at) VALUES (?, ?)")
+                .bind(uuid)
+                .bind("2026-01-01")
+                .execute(&pool)
+                .await
+                .unwrap();
+            sqlx::query("INSERT INTO clip_images (clip_uuid, file_path) VALUES (?, ?)")
+                .bind(uuid)
+                .bind(image_path.to_string_lossy().as_ref())
+                .execute(&pool)
+                .await
+                .unwrap();
+        }
+
+        let usage = measure_storage_usage(&pool, &database_path).await.unwrap();
+        assert_eq!(usage.database_bytes, 17);
+        assert_eq!(usage.image_bytes, 5);
+        assert_eq!(usage.total_bytes, 22);
+
+        let _ = std::fs::remove_file(&database_path);
+        let _ = std::fs::remove_file(PathBuf::from(format!("{}-wal", database_path.to_string_lossy())));
+        let _ = std::fs::remove_file(PathBuf::from(format!("{}-shm", database_path.to_string_lossy())));
+        let _ = std::fs::remove_file(&image_path);
+    }
+
+    #[tokio::test]
+    async fn quota_prunes_old_main_history_but_preserves_folders_pinned_and_shared_files() {
+        let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
+        create_storage_schema(&pool).await;
+        let database_path = test_path("quota-database");
+        let shared_path = test_path("shared-image");
+        let removable_path = test_path("removable-image");
+        let pinned_path = test_path("pinned-image");
+        std::fs::write(&shared_path, [0u8; 10]).unwrap();
+        std::fs::write(&removable_path, [0u8; 10]).unwrap();
+        std::fs::write(&pinned_path, [0u8; 10]).unwrap();
+
+        for (uuid, folder_id, is_pinned, created_at, path) in [
+            ("old", None, 0, "2026-01-01", &shared_path),
+            ("folder", Some(1), 0, "2026-01-02", &shared_path),
+            ("removable", None, 0, "2026-01-03", &removable_path),
+            ("pinned", None, 1, "2026-01-04", &pinned_path),
+        ] {
+            sqlx::query(
+                "INSERT INTO clips (uuid, folder_id, is_pinned, created_at) VALUES (?, ?, ?, ?)",
+            )
+            .bind(uuid)
+            .bind(folder_id)
+            .bind(is_pinned)
+            .bind(created_at)
+            .execute(&pool)
+            .await
+            .unwrap();
+            sqlx::query("INSERT INTO clip_images (clip_uuid, file_path) VALUES (?, ?)")
+                .bind(uuid)
+                .bind(path.to_string_lossy().as_ref())
+                .execute(&pool)
+                .await
+                .unwrap();
+        }
+
+        let result = enforce_storage_quota_at(&pool, &database_path, 20)
+            .await
+            .unwrap();
+        assert_eq!(result.deleted_count, 2);
+        assert!(!result.over_quota);
+
+        let remaining: Vec<String> = sqlx::query_scalar(
+            "SELECT uuid FROM clips ORDER BY uuid",
+        )
+        .fetch_all(&pool)
+        .await
+        .unwrap();
+        assert_eq!(remaining, vec!["folder", "pinned"]);
+        assert!(shared_path.exists());
+        assert!(pinned_path.exists());
+        assert!(!removable_path.exists());
+
+        let _ = std::fs::remove_file(&database_path);
+        let _ = std::fs::remove_file(&shared_path);
+        let _ = std::fs::remove_file(&removable_path);
+        let _ = std::fs::remove_file(&pinned_path);
+    }
+
+    #[tokio::test]
+    async fn quota_reports_unmet_when_only_protected_data_remains() {
+        let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
+        create_storage_schema(&pool).await;
+        let database_path = test_path("protected-database");
+        let pinned_path = test_path("protected-image");
+        std::fs::write(&pinned_path, [0u8; 10]).unwrap();
+        sqlx::query(
+            "INSERT INTO clips (uuid, is_pinned, created_at) VALUES ('pinned', 1, '2026-01-01')",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+        sqlx::query("INSERT INTO clip_images (clip_uuid, file_path) VALUES ('pinned', ?)")
+            .bind(pinned_path.to_string_lossy().as_ref())
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        let result = enforce_storage_quota_at(&pool, &database_path, 5)
+            .await
+            .unwrap();
+        assert_eq!(result.deleted_count, 0);
+        assert!(result.over_quota);
+        assert!(pinned_path.exists());
+
+        let _ = std::fs::remove_file(&database_path);
+        let _ = std::fs::remove_file(&pinned_path);
     }
 }
 

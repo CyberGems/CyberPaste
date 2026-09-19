@@ -21,6 +21,10 @@ pub struct AppSettings {
     pub max_items: i64,
     #[serde(default = "crate::content_limits::default_max_clipboard_text_bytes")]
     pub max_clipboard_text_bytes: i64,
+    #[serde(default = "crate::content_limits::default_max_clipboard_image_bytes")]
+    pub max_clipboard_image_bytes: i64,
+    #[serde(default = "crate::content_limits::default_storage_quota_bytes")]
+    pub storage_quota_bytes: i64,
     pub auto_delete_days: i64,
     pub hotkey: String,
     pub view_mode_hotkey: String,
@@ -135,6 +139,8 @@ impl Default for AppSettings {
             language: "auto".to_string(),
             max_items: 300,
             max_clipboard_text_bytes: crate::content_limits::default_max_clipboard_text_bytes(),
+            max_clipboard_image_bytes: crate::content_limits::default_max_clipboard_image_bytes(),
+            storage_quota_bytes: crate::content_limits::default_storage_quota_bytes(),
             auto_delete_days: 30,
             hotkey: "Ctrl+Shift+V".to_string(),
             view_mode_hotkey: "Ctrl+M".to_string(),
