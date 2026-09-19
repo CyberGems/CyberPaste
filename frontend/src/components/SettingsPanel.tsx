@@ -68,6 +68,9 @@ function formatDbSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+const CLIPBOARD_TEXT_LIMIT_OPTIONS_MB = [1, 5, 10, 25, 50, 100];
+const DEFAULT_CLIPBOARD_TEXT_LIMIT_BYTES = 5 * 1024 * 1024;
+
 function PromptEditor({
   label,
   value,
@@ -426,6 +429,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         auto_check_updates: 'settings.autoCheckUpdates',
         round_corners: 'settings.roundCorners',
         max_items: 'settings.historyLimit',
+        max_clipboard_text_bytes: 'settings.clipboardTextLimit',
         scroll_direction: 'settings.scrollDirection',
         compact_folder_layout: 'settings.compactFolderLayout',
         compact_view_position_mode: 'settings.compactViewPosition',
@@ -1062,6 +1066,36 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             {settings.max_items || 300}
                           </span>
                         </div>
+                      </div>
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-sm font-medium">
+                            {t('settings.clipboardTextLimit')}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.clipboardTextLimitDesc')}
+                          </p>
+                        </label>
+                        <Select
+                          value={String(
+                            Math.round(
+                              (settings.max_clipboard_text_bytes ??
+                                DEFAULT_CLIPBOARD_TEXT_LIMIT_BYTES) /
+                                (1024 * 1024)
+                            )
+                          )}
+                          onChange={(value) =>
+                            updateSetting(
+                              'max_clipboard_text_bytes',
+                              parseInt(value, 10) * 1024 * 1024
+                            )
+                          }
+                          options={CLIPBOARD_TEXT_LIMIT_OPTIONS_MB.map((size) => ({
+                            value: String(size),
+                            label: t('settings.clipboardTextLimitOption', { size }),
+                          }))}
+                          className="sm:max-w-[180px]"
+                        />
                       </div>
                       <div className="border-b border-border/60 pb-4">
                         <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">

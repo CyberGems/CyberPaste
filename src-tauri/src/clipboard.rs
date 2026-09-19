@@ -616,6 +616,23 @@ async fn process_clipboard_change(
         return;
     }
 
+    let max_text_bytes = app
+        .try_state::<Arc<crate::settings_manager::SettingsManager>>()
+        .map(|manager| manager.get().max_clipboard_text_bytes)
+        .unwrap_or_else(crate::content_limits::default_max_clipboard_text_bytes);
+    if let Err(limit_error) =
+        crate::content_limits::validate_text_content(clip_type, &clip_content, max_text_bytes)
+    {
+        log::warn!(
+            "CLIPBOARD: Skipping {} payload of {} bytes because it exceeds the {} byte limit",
+            limit_error.clip_type,
+            limit_error.content_bytes,
+            limit_error.limit_bytes
+        );
+        let _ = crate::commands::show_content_limit_toast(app.clone(), limit_error).await;
+        return;
+    }
+
     // Stable Hash Check
     {
         let mut lock = LAST_STABLE_HASH.lock();

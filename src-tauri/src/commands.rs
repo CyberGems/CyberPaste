@@ -3274,11 +3274,22 @@ pub fn show_item_in_folder(path: String) -> Result<(), String> {
 
 #[tauri::command]
 pub async fn update_clip_content(
+    app: AppHandle,
     db: tauri::State<'_, Arc<Database>>,
     clip_id: String,
     new_content: String,
 ) -> Result<(), String> {
     let pool = &db.pool;
+    let manager = app.state::<Arc<SettingsManager>>();
+    if let Err(limit_error) = crate::content_limits::validate_text_content(
+        "text",
+        new_content.as_bytes(),
+        manager.get().max_clipboard_text_bytes,
+    ) {
+        return Err(
+            serde_json::to_string(&limit_error).unwrap_or_else(|_| "content_limit_exceeded".to_string())
+        );
+    }
 
     // Update both content and text_preview (strip RTF if the saved blob is still RTF)
     let preview = if new_content.trim_start().starts_with("{\\rtf") {
@@ -3486,6 +3497,8 @@ pub struct ToastPayload {
     clip_uuid: Option<String>,
     source_app: Option<String>,
     source_icon: Option<String>,
+    #[serde(default)]
+    limit_bytes: Option<usize>,
 }
 
 static PENDING_TOAST: Lazy<Mutex<Option<ToastPayload>>> =
@@ -3537,6 +3550,43 @@ pub async fn show_toast(
     source_app: Option<String>,
     source_icon: Option<String>,
 ) -> Result<(), String> {
+    dispatch_toast(
+        app,
+        ToastPayload {
+            message,
+            toast_type,
+            clip_type,
+            image_preview,
+            clip_uuid,
+            source_app,
+            source_icon,
+            limit_bytes: None,
+        },
+    )
+    .await
+}
+
+pub async fn show_content_limit_toast(
+    app: AppHandle,
+    limit_error: crate::content_limits::ContentLimitExceeded,
+) -> Result<(), String> {
+    dispatch_toast(
+        app,
+        ToastPayload {
+            message: String::new(),
+            toast_type: "error".to_string(),
+            clip_type: Some("content_limit".to_string()),
+            image_preview: None,
+            clip_uuid: None,
+            source_app: None,
+            source_icon: None,
+            limit_bytes: Some(limit_error.limit_bytes),
+        },
+    )
+    .await
+}
+
+async fn dispatch_toast(app: AppHandle, payload: ToastPayload) -> Result<(), String> {
     use crate::settings_manager::SettingsManager;
     use std::sync::Arc;
     let manager = app.state::<Arc<SettingsManager>>();
@@ -3544,22 +3594,15 @@ pub async fn show_toast(
         return Ok(());
     }
 
-    let is_action_message =
-        toast_type != "update" && (clip_type.is_none() || clip_type.as_deref() == Some("welcome"));
+    let is_action_message = payload.toast_type != "update"
+        && (payload.clip_type.is_none()
+            || payload.clip_type.as_deref() == Some("welcome")
+            || payload.clip_type.as_deref() == Some("content_limit"));
     if is_action_message && !manager.get().show_action_messages {
         return Ok(());
     }
 
     let window_label = "toast";
-    let payload = ToastPayload {
-        message,
-        toast_type,
-        clip_type: clip_type.clone(),
-        image_preview,
-        clip_uuid,
-        source_app,
-        source_icon,
-    };
 
     {
         let mut lock = PENDING_TOAST.lock();
@@ -3568,10 +3611,11 @@ pub async fn show_toast(
 
     if let Some(win) = app.get_webview_window(window_label) {
         let _ = win.set_focusable(false);
-        win.emit("update-toast", payload).map_err(|e| e.to_string())?;
+        let is_welcome = payload.clip_type.as_deref() == Some("welcome");
+        win.emit("update-toast", &payload).map_err(|e| e.to_string())?;
 
         // If this is the welcome toast and the window already exists, play the sound immediately
-        if clip_type == Some("welcome".to_string()) {
+        if is_welcome {
             if manager.get().startup_sound_enabled {
                 let path_to_play = if manager.get().startup_sound_path.is_empty() {
                     let data_dir = crate::get_data_dir();

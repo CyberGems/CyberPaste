@@ -19,6 +19,8 @@ pub struct AppSettings {
     pub mica_effect: String,
     pub language: String,
     pub max_items: i64,
+    #[serde(default = "crate::content_limits::default_max_clipboard_text_bytes")]
+    pub max_clipboard_text_bytes: i64,
     pub auto_delete_days: i64,
     pub hotkey: String,
     pub view_mode_hotkey: String,
@@ -132,6 +134,7 @@ impl Default for AppSettings {
             mica_effect: "mica".to_string(),
             language: "auto".to_string(),
             max_items: 300,
+            max_clipboard_text_bytes: crate::content_limits::default_max_clipboard_text_bytes(),
             auto_delete_days: 30,
             hotkey: "Ctrl+Shift+V".to_string(),
             view_mode_hotkey: "Ctrl+M".to_string(),

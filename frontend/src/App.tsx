@@ -2639,7 +2639,20 @@ function App() {
       toast.success(t('toasts.clipContentUpdated'));
     } catch (e) {
       console.error('Failed to update clip content:', e);
-      toast.error(t('toasts.clipUpdateFailed'));
+      let message = t('toasts.clipUpdateFailed');
+      if (typeof e === 'string') {
+        try {
+          const error = JSON.parse(e) as { code?: string; limit_bytes?: number };
+          if (error.code === 'content_limit_exceeded' && error.limit_bytes) {
+            const megabytes = error.limit_bytes / (1024 * 1024);
+            const limit = `${Number.isInteger(megabytes) ? megabytes : megabytes.toFixed(1)} MB`;
+            message = t('toasts.contentLimitExceeded', { limit });
+          }
+        } catch {
+          // Keep the generic update error for non-structured failures.
+        }
+      }
+      toast.error(message);
     }
   };
 

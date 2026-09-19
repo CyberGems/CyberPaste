@@ -22,6 +22,7 @@ mod backup;
 mod clipboard;
 mod commands;
 mod constants;
+mod content_limits;
 mod database;
 mod highlight;
 mod models;

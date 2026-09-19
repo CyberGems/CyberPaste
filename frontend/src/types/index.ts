@@ -25,6 +25,7 @@ export interface FolderItem {
 
 export interface Settings {
   max_items: number;
+  max_clipboard_text_bytes?: number;
   auto_delete_days: number;
   startup_with_windows: boolean;
   show_in_taskbar: boolean;

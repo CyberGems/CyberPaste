@@ -26,6 +26,14 @@ impl SettingsManager {
         };
 
         let mut needs_save = !path.exists();
+        let normalized_text_limit =
+            crate::content_limits::normalize_max_clipboard_text_bytes(
+                settings.max_clipboard_text_bytes,
+            );
+        if normalized_text_limit != settings.max_clipboard_text_bytes {
+            settings.max_clipboard_text_bytes = normalized_text_limit;
+            needs_save = true;
+        }
         // Auto-migrate Kimi legacy base URL from .cn to .ai if currently set
         if settings.ai_provider == "kimi" && settings.ai_base_url == "https://api.moonshot.cn/v1" {
             settings.ai_base_url = "https://api.moonshot.ai/v1".to_string();

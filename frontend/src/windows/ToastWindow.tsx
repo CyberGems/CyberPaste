@@ -53,6 +53,13 @@ interface ToastPayload {
   clip_uuid?: string | null;
   source_app?: string | null;
   source_icon?: string | null;
+  limit_bytes?: number | null;
+}
+
+function formatLimitBytes(bytes: number | null | undefined): string {
+  if (!bytes) return '';
+  const megabytes = bytes / (1024 * 1024);
+  return `${Number.isInteger(megabytes) ? megabytes : megabytes.toFixed(1)} MB`;
 }
 
 function getClipTitle(clipType: string | null | undefined, toastType: string | undefined, t: any): string {
@@ -107,6 +114,8 @@ function getClipTitle(clipType: string | null | undefined, toastType: string | u
     }
   }
   switch (clipType) {
+    case 'content_limit':
+      return t('toasts.titles.contentLimitExceeded');
     case 'welcome':
       return t('toasts.titles.welcome');
     case 'image':
@@ -148,6 +157,8 @@ function getHeaderClipIcon(
     return <InfoIcon className={cls} style={{ color }} />;
   }
   switch (clipType) {
+    case 'content_limit':
+      return <AlertIcon className={cls} style={{ color: pink }} />;
     case 'welcome':
       return <CheckIcon className={cls} style={{ color }} />;
     case 'image':
@@ -304,6 +315,10 @@ export function ToastWindow() {
   }, [toast]);
 
   const { t } = useLanguage(settings?.language);
+  const displayMessage =
+    toast?.clip_type === 'content_limit'
+      ? t('toasts.contentLimitExceeded', { limit: formatLimitBytes(toast.limit_bytes) })
+      : toast?.message ?? '';
 
   const closeToast = () => {
     setIsClosing(true);
@@ -858,7 +873,7 @@ export function ToastWindow() {
                       opacity: 0.72
                     }}
                   >
-                    {toast.message}
+                    {displayMessage}
                   </p>
                 </div>
 
@@ -939,18 +954,18 @@ export function ToastWindow() {
                     {toast.source_app ? (
                       // When we have a source app, the message is the actual copied content.
                       // We style it as a preview card to separate it clearly from the header info.
-                      toast.message && (
+                      displayMessage && (
                         <div className={`rounded-lg border px-2.5 py-1.5 text-xs line-clamp-2 break-all font-mono whitespace-pre-wrap ${tv.previewBg} ${tv.previewBorder} ${tv.body}`}>
-                          {toast.message}
+                          {displayMessage}
                         </div>
                       )
                     ) : (
                       // When there is no source app, just render the message normally (e.g. system notification)
-                      toast.message && (
+                      displayMessage && (
                         <p
                           className={`mt-0.5 break-words text-sm font-medium leading-snug ${tv.body}`}
                         >
-                          {toast.message}
+                          {displayMessage}
                         </p>
                       )
                     )}

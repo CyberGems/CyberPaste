@@ -38,6 +38,10 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
     let incoming_has_tray_pin_tip = settings.get("has_seen_tray_pin_tip").is_some();
     let mut new_settings: crate::models::AppSettings =
         serde_json::from_value(settings).map_err(|e| e.to_string())?;
+    new_settings.max_clipboard_text_bytes =
+        crate::content_limits::normalize_max_clipboard_text_bytes(
+            new_settings.max_clipboard_text_bytes,
+        );
 
     // Preserve ignored_apps from current state (as frontend doesn't send it in this call)
     let current = manager.get();
