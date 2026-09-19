@@ -825,17 +825,17 @@ export function ToastWindow() {
   return (
     <>
       <div
-        onClick={handleToastClick}
-        onContextMenu={handleContextMenu}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        className={`flex h-full w-full p-6 ${alignmentClass} ${isClickable ? 'cursor-pointer' : 'cursor-default'}`}
-        data-tauri-drag-region
+        className={`pointer-events-none flex h-full w-full p-6 ${alignmentClass}`}
       >
         <Tooltip label={getTooltip()} placement={tooltipPlacement}>
           <div
             ref={toastCardRef}
-            className={`relative w-full overflow-hidden rounded-xl transition-all duration-300 ${containerClasses} ${isClosing ? 'translate-y-2 scale-95 opacity-0' : 'translate-y-0 scale-100 opacity-100'}`}
+            onClick={handleToastClick}
+            onContextMenu={handleContextMenu}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            className={`pointer-events-auto relative w-full overflow-hidden rounded-xl transition-all duration-300 ${containerClasses} ${isClickable ? 'cursor-pointer' : 'cursor-default'} ${isClosing ? 'translate-y-2 scale-95 opacity-0' : 'translate-y-0 scale-100 opacity-100'}`}
+            data-tauri-drag-region
           >
             {isWelcome ? (
               <div className="flex items-center px-3.5 py-2.5 h-full w-full select-none">

@@ -260,9 +260,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
   const [isPaused, setIsPaused] = useState(false);
   const [appVersion, setAppVersion] = useState('');
   const [monitorList, setMonitorList] = useState<{ name: string; index: number }[]>([]);
+  const [dataDirectory, setDataDirectory] = useState<string | null>(null);
 
   useEffect(() => {
     getVersion().then(setAppVersion);
+    invoke<string>('get_data_dir_path').then(setDataDirectory).catch(console.error);
     availableMonitors()
       .then((monitors: any[]) => {
         setMonitorList(
@@ -307,6 +309,20 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
       toast.error(t('settings.failedToOpenDataDir'));
     }
   };
+
+  const selectAutoBackupFolder = async () => {
+    try {
+      const folder = await invoke<string>('pick_folder');
+      if (folder) {
+        updateSetting('auto_backup_folder', folder);
+      }
+    } catch (error) {
+      if (error !== 'No folder selected') {
+        toast.error(t('settings.autoBackupFolderSelectFailed', { error }));
+      }
+    }
+  };
+
   const [localApiKey, setLocalApiKey] = useState(initialSettings.ai_api_key || '');
   const [localBaseUrl, setLocalBaseUrl] = useState(initialSettings.ai_base_url || '');
   const [localModel, setLocalModel] = useState(initialSettings.ai_model || 'gpt-5.6-luna');
@@ -339,6 +355,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
   // i18n hook
   const { i18n, t } = useTranslation();
+  const defaultAutoBackupFolder = dataDirectory
+    ? `${dataDirectory.replace(/[\\/]+$/, '')}\\Backups`
+    : t('settings.autoBackupDefaultFolder');
 
   const handleTogglePause = () => {
     invoke('toggle_clipboard_monitoring').catch(console.error);
@@ -414,6 +433,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         toast_position: 'settings.toastPosition',
         toast_duration: 'settings.toastDuration',
         toast_click_action: 'settings.toastClickAction',
+        auto_backup_enabled: 'settings.autoBackupEnabled',
+        auto_backup_folder: 'settings.autoBackupFolder',
+        auto_backup_retention: 'settings.autoBackupRetention',
         wheel_folder_navigation: 'settings.wheelFolderNavigation',
         ai_provider: 'settings.provider',
         ai_api_key: 'settings.apiKey',
@@ -2637,6 +2659,102 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <p className="mt-3 text-[10px] text-muted-foreground">
                         {t('settings.backupDesc')}
                       </p>
+                      <div className="mt-4 space-y-3 rounded-lg border border-primary/15 bg-primary/[0.04] p-3">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0">
+                            <span className="block text-sm font-medium text-foreground">
+                              {t('settings.autoBackupTitle')}
+                            </span>
+                            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                              {t('settings.autoBackupDesc')}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() =>
+                              updateSetting(
+                                'auto_backup_enabled',
+                                !(settings.auto_backup_enabled ?? true)
+                              )
+                            }
+                            className={`h-6 w-11 flex-shrink-0 rounded-full transition-colors ${
+                              (settings.auto_backup_enabled ?? true)
+                                ? 'bg-primary'
+                                : 'bg-white/10'
+                            }`}
+                            aria-label={t('settings.autoBackupTitle')}
+                          >
+                            <div
+                              className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                                (settings.auto_backup_enabled ?? true)
+                                  ? 'translate-x-5'
+                                  : 'translate-x-0.5'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                        <div className="h-px bg-border/60" />
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="min-w-0">
+                            <span className="block text-sm font-medium text-foreground">
+                              {t('settings.autoBackupFolder')}
+                            </span>
+                            <p className="mt-1 truncate text-xs text-muted-foreground" title={settings.auto_backup_folder || defaultAutoBackupFolder}>
+                              {settings.auto_backup_folder || defaultAutoBackupFolder}
+                            </p>
+                          </div>
+                          <button
+                            onClick={selectAutoBackupFolder}
+                            className="btn flex-shrink-0 rounded-[4px] border border-border bg-input px-3 py-1.5 text-xs font-medium hover:bg-white/10"
+                          >
+                            <FolderOpen size={14} className="mr-1.5 inline-block" />
+                            {t('settings.chooseAutoBackupFolder')}
+                          </button>
+                        </div>
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <span className="block text-sm font-medium text-foreground">
+                              {t('settings.autoBackupRetention')}
+                            </span>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {t('settings.autoBackupRetentionDesc')}
+                            </p>
+                          </div>
+                          <div className="w-full flex-shrink-0 sm:w-[170px]">
+                            <Select
+                              value={String(settings.auto_backup_retention ?? 3)}
+                              onChange={(value) =>
+                                updateSetting(
+                                  'auto_backup_retention',
+                                  Math.max(1, Math.min(20, parseInt(value, 10) || 3))
+                                )
+                              }
+                              options={[1, 2, 3, 5, 10, 20].map((count) => ({
+                                value: String(count),
+                                label: t('settings.autoBackupRetentionOption', { count }),
+                              }))}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-3">
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.autoBackupNowDesc')}
+                          </p>
+                          <button
+                            onClick={async () => {
+                              const id = toast.loading(t('settings.generatingBackup'));
+                              try {
+                                await invoke('run_automatic_backup_now');
+                                toast.success(t('settings.autoBackupSaved'), { id });
+                              } catch (error) {
+                                toast.error(t('settings.autoBackupFailed', { error }), { id });
+                              }
+                            }}
+                            className="btn flex-shrink-0 rounded-[4px] border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20"
+                          >
+                            {t('settings.autoBackupNow')}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </section>
                 </div>

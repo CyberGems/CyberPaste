@@ -2671,6 +2671,16 @@ pub async fn pick_file(
 }
 
 #[tauri::command]
+pub async fn pick_folder(app: AppHandle) -> Result<String, String> {
+    use tauri_plugin_dialog::DialogExt;
+
+    match app.dialog().file().blocking_pick_folder() {
+        Some(path) => Ok(path.to_string()),
+        None => Err("No folder selected".to_string()),
+    }
+}
+
+#[tauri::command]
 pub fn get_layout_config() -> serde_json::Value {
     serde_json::json!({
         "window_height": crate::constants::WINDOW_HEIGHT,
@@ -2986,45 +2996,20 @@ pub async fn export_backup(
     db: tauri::State<'_, Arc<Database>>,
     app: AppHandle,
 ) -> Result<crate::models::BackupData, String> {
-    let pool = &db.pool;
-
-    let clips: Vec<crate::models::Clip> = sqlx::query_as("SELECT * FROM clips")
-        .fetch_all(pool)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let folders: Vec<crate::models::Folder> = sqlx::query_as("SELECT * FROM folders")
-        .fetch_all(pool)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let mut clip_images: Vec<crate::models::ClipImage> =
-        sqlx::query_as("SELECT * FROM clip_images")
-            .fetch_all(pool)
-            .await
-            .map_err(|e| e.to_string())?;
-
-    // Physically read image files to make the backup portable
-    for img in &mut clip_images {
-        if img.storage_kind == "file" {
-            if let Some(path) = &img.file_path {
-                if let Ok(bytes) = crate::clipboard::read_full_image_file(path) {
-                    img.full_content = bytes;
-                }
-            }
-        }
-    }
-
     let manager = app.state::<Arc<SettingsManager>>();
     let settings = manager.get();
+    crate::backup::collect_backup_data(&db.pool, &settings).await
+}
 
-    Ok(crate::models::BackupData {
-        version: "1.0.1".to_string(),
-        clips,
-        folders,
-        clip_images,
-        settings,
-    })
+#[tauri::command]
+pub async fn run_automatic_backup_now(
+    db: tauri::State<'_, Arc<Database>>,
+    app: AppHandle,
+) -> Result<String, String> {
+    let manager = app.state::<Arc<SettingsManager>>();
+    let settings = manager.get();
+    let path = crate::backup::run_automatic_backup(&db.pool, &settings).await?;
+    Ok(path.to_string_lossy().to_string())
 }
 
 #[tauri::command]
@@ -3034,6 +3019,15 @@ pub async fn import_backup(
     app: AppHandle,
 ) -> Result<(), String> {
     let pool = &db.pool;
+    let manager = app.state::<Arc<SettingsManager>>();
+    let local_backup_settings = {
+        let settings = manager.get();
+        (
+            settings.auto_backup_enabled,
+            settings.auto_backup_folder,
+            settings.auto_backup_retention,
+        )
+    };
 
     // Use a transaction for maximum safety
     let mut tx = pool.begin().await.map_err(|e| e.to_string())?;
@@ -3054,12 +3048,13 @@ pub async fn import_backup(
 
     // 2. Restore Folders
     for folder in data.folders {
-        sqlx::query("INSERT INTO folders (id, name, icon, color, is_system, created_at) VALUES (?, ?, ?, ?, ?, ?)")
+        sqlx::query("INSERT INTO folders (id, name, icon, color, is_system, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
             .bind(folder.id)
             .bind(folder.name)
             .bind(folder.icon)
             .bind(folder.color)
             .bind(folder.is_system)
+            .bind(folder.sort_order)
             .bind(folder.created_at)
             .execute(&mut *tx)
             .await
@@ -3068,7 +3063,7 @@ pub async fn import_backup(
 
     // 3. Restore Clips
     for clip in data.clips {
-        sqlx::query("INSERT INTO clips (uuid, clip_type, content, text_preview, content_hash, folder_id, is_deleted, is_thumbnail, source_app, source_icon, metadata, sort_order, created_at, last_accessed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        sqlx::query("INSERT INTO clips (uuid, clip_type, content, text_preview, content_hash, folder_id, is_deleted, is_thumbnail, source_app, source_icon, metadata, sort_order, is_pinned, pinned_at, created_at, last_accessed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
             .bind(clip.uuid)
             .bind(clip.clip_type)
             .bind(clip.content)
@@ -3081,6 +3076,8 @@ pub async fn import_backup(
             .bind(clip.source_icon)
             .bind(clip.metadata)
             .bind(clip.sort_order)
+            .bind(clip.is_pinned)
+            .bind(clip.pinned_at)
             .bind(clip.created_at)
             .bind(clip.last_accessed)
             .execute(&mut *tx)
@@ -3118,8 +3115,13 @@ pub async fn import_backup(
     tx.commit().await.map_err(|e| e.to_string())?;
 
     // 5. Restore Settings
-    let manager = app.state::<Arc<SettingsManager>>();
-    manager.save(data.settings).map_err(|e| e.to_string())?;
+    let mut restored_settings = data.settings;
+    restored_settings.auto_backup_enabled = local_backup_settings.0;
+    restored_settings.auto_backup_folder = local_backup_settings.1;
+    restored_settings.auto_backup_retention = local_backup_settings.2;
+    manager
+        .save(restored_settings)
+        .map_err(|e| e.to_string())?;
 
     // 6. Notify main window to refresh
     let _ = app.emit("clipboard-change", ());
@@ -3640,8 +3642,8 @@ pub async fn set_toast_position(app: AppHandle, width: f64, height: f64) -> Resu
                 height: h_px,
             }));
 
-            let margin_x = (16.0 * scale_factor) as i32;
-            let margin_y = (12.0 * scale_factor) as i32;
+            let margin_x = (8.0 * scale_factor) as i32;
+            let margin_y = (6.0 * scale_factor) as i32;
 
             let (target_x, target_y) = match position_setting.as_str() {
                 "top-right" => (

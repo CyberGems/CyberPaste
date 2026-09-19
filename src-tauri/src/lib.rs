@@ -18,6 +18,7 @@ static TARGET_FOREGROUND_HND: std::sync::atomic::AtomicPtr<()> =
     std::sync::atomic::AtomicPtr::new(std::ptr::null_mut());
 
 mod ai;
+mod backup;
 mod clipboard;
 mod commands;
 mod constants;
@@ -533,11 +534,13 @@ pub fn run_app() {
             let db_for_clip = db_for_clipboard.clone();
             clipboard::init(&handle_for_clip, db_for_clip);
 
+            let handle_for_backup = app_handle.clone();
             let db_for_migration = db_for_clipboard.clone();
             tauri::async_runtime::spawn(async move {
                 if let Err(e) = commands::migrate_images_to_files(&db_for_migration.pool).await {
                     log::error!("Background image migration failed: {}", e);
                 }
+                backup::run_scheduler(handle_for_backup, db_for_migration).await;
             });
 
             let handle_for_toast = app_handle.clone();
@@ -630,6 +633,7 @@ pub fn run_app() {
             settings_commands::remove_ignored_app,
             settings_commands::get_ignored_apps,
             commands::pick_file,
+            commands::pick_folder,
             commands::get_layout_config,
             commands::test_log,
             commands::ai_process_clip,
@@ -637,6 +641,7 @@ pub fn run_app() {
             commands::refresh_window,
             commands::toggle_view_mode,
             commands::export_backup,
+            commands::run_automatic_backup_now,
             commands::import_backup,
             commands::export_backup_to_file,
             commands::import_backup_from_file,

@@ -68,6 +68,9 @@ export interface Settings {
   duplicate_toast_enabled?: boolean;
   toast_monitor?: string;
   toast_click_action?: 'none' | 'close' | 'open' | 'system_viewer' | 'toggle_pin';
+  auto_backup_enabled?: boolean;
+  auto_backup_folder?: string;
+  auto_backup_retention?: number;
   compact_view_position_mode?: 'cursor' | 'caret' | 'auto';
   viewer_window_width?: number;
   viewer_window_height?: number;

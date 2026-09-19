@@ -8,6 +8,10 @@ fn default_true() -> bool {
     true
 }
 
+fn default_backup_retention() -> i64 {
+    3
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct AppSettings {
@@ -63,6 +67,12 @@ pub struct AppSettings {
     pub duplicate_toast_enabled: bool,
     pub toast_monitor: String,
     pub toast_click_action: String,
+    #[serde(default = "default_true")]
+    pub auto_backup_enabled: bool,
+    #[serde(default)]
+    pub auto_backup_folder: String,
+    #[serde(default = "default_backup_retention")]
+    pub auto_backup_retention: i64,
     pub compact_view_position_mode: String, // "cursor" or "caret"
     pub viewer_window_width: f64,
     pub viewer_window_height: f64,
@@ -170,6 +180,9 @@ impl Default for AppSettings {
             duplicate_toast_enabled: true,
             toast_monitor: "primary".to_string(),
             toast_click_action: "close".to_string(),
+            auto_backup_enabled: true,
+            auto_backup_folder: "".to_string(),
+            auto_backup_retention: 3,
             compact_view_position_mode: "auto".to_string(),
             viewer_window_width: 800.0,
             viewer_window_height: 600.0,

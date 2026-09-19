@@ -1388,13 +1388,6 @@ function App() {
     refreshTotalCount();
   }, [refreshTotalCount]);
 
-  // Auto-select first clip when clip list resets (folder change, clipboard change, window reopen)
-  useEffect(() => {
-    if (clipsRef.current.length > 0) {
-      setSelectedClipId(clipsRef.current[0].id);
-    }
-  }, [clipListResetToken]);
-
   // Auto-select first clip and reset view (if enabled) when window is reopened (visibility becomes true)
   useEffect(() => {
     const unlisten = listen<boolean>('window-visibility', (event) => {
@@ -1404,10 +1397,10 @@ function App() {
         setSelectedFolder(null);
         setCompactTypeFilter('all');
         setFullTypeFilter('all');
+        // Let the refreshed data choose the first clip instead of using the
+        // ordering from before the window was reopened.
+        setSelectedClipId(null);
         setClipListResetToken((prev) => prev + 1);
-        if (clipsRef.current.length > 0) {
-          setSelectedClipId(clipsRef.current[0].id);
-        }
       }
     });
     return () => {
@@ -2795,6 +2788,7 @@ function App() {
               onOpenSettings={openSettings}
               isLoading={isLoading}
               theme={effectiveTheme}
+              resetToken={clipListResetToken}
               isPinned={settings?.pinned}
               onTogglePin={handleTogglePin}
               compactPeekEnabled={settings?.compact_peek_enabled ?? true}

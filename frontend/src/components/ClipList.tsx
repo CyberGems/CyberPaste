@@ -296,12 +296,14 @@ export const ClipList: React.FC<ClipListProps> = ({
           rowIndex,
           columnIndex: selectedClipIndex % columnCount,
           rowAlign: 'smart',
+          behavior: 'smooth',
         });
       } else {
         gridRef.current.scrollToCell({
           columnIndex: selectedClipIndex,
           rowIndex: 0,
           columnAlign: 'smart',
+          behavior: 'smooth',
         });
       }
     }
@@ -310,15 +312,13 @@ export const ClipList: React.FC<ClipListProps> = ({
   // Reset scroll position on view change or data refresh
   useEffect(() => {
     if (containerRef.current) {
-      const scrollable = containerRef.current.querySelector('.no-scrollbar');
+      const scrollable = containerRef.current.querySelector<HTMLElement>('.no-scrollbar');
       if (scrollable) {
-        scrollable.scrollTop = 0;
-        scrollable.scrollLeft = 0;
+        scrollable.scrollTo({ top: 0, left: 0, behavior: 'auto' });
       }
     }
     if (gridRef.current?.element) {
-      gridRef.current.element.scrollTop = 0;
-      gridRef.current.element.scrollLeft = 0;
+      gridRef.current.element.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     }
   }, [resetToken, isVertical]);
 
@@ -428,7 +428,6 @@ export const ClipList: React.FC<ClipListProps> = ({
           style={{
             height: gridHeight,
             width: containerWidth,
-            scrollBehavior: 'smooth',
             position: 'relative',
             overflowX: isVertical ? 'hidden' : 'auto',
           }}

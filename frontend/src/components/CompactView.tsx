@@ -394,6 +394,7 @@ interface CompactViewProps {
   typeFilter?: CompactTypeFilter;
   onTypeFilterChange?: (v: CompactTypeFilter) => void;
   searchFocusToken?: number;
+  resetToken?: number;
   clipNumbering?: 'positional' | 'countdown';
   isWindowActive?: boolean;
   // NUEVO: densidad de fila
@@ -612,6 +613,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   typeFilter = 'all',
   onTypeFilterChange,
   searchFocusToken,
+  resetToken = 0,
   clipNumbering = 'positional',
   // NUEVO
   rowHeight = 44,
@@ -1521,6 +1523,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
               <CompactClipList
                 clips={filteredClips}
                 listRef={clipListApiRef}
+                resetToken={resetToken}
                 peekClipId={peekClipId}
                 selectedClipId={selectedClipId}
                 selectedFolder={selectedFolder}
@@ -1726,6 +1729,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
             <CompactClipList
               clips={filteredClips}
               listRef={clipListApiRef}
+              resetToken={resetToken}
               peekClipId={peekClipId}
               selectedClipId={selectedClipId}
               selectedFolder={selectedFolder}
@@ -2345,6 +2349,7 @@ function CompactListRow({
 function CompactClipList({
   clips,
   listRef,
+  resetToken,
   selectedClipId,
   selectedFolder,
   onPaste,
@@ -2376,7 +2381,8 @@ function CompactClipList({
   showScrollbar = true,
 }: {
   clips: AppClip[];
-  listRef: React.Ref<import('react-window').ListImperativeAPI>;
+  listRef: React.RefObject<import('react-window').ListImperativeAPI>;
+  resetToken: number;
   selectedClipId: string | null;
   selectedFolder: string | null;
   onPaste: (id: string) => void;
@@ -2452,6 +2458,16 @@ function CompactClipList({
       window.removeEventListener('resize', update);
     };
   }, [clips.length]);
+
+  // Resetting the view must be immediate. Keep it separate from the
+  // selection-following effect, which intentionally animates keyboard moves.
+  useEffect(() => {
+    listRef.current?.scrollToRow({
+      index: 0,
+      align: 'start',
+      behavior: 'instant',
+    });
+  }, [listRef, resetToken]);
 
   const rowProps = useMemo(
     () => ({
