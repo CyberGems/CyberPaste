@@ -159,7 +159,8 @@
   "full": {
     "actionCopy": "Mover al portapapeles",
     "actionPaste": "Mover al portapapeles y pegar",
-    "actionAutoInject": "Mover al portapapeles y simular Ctrl+V"
+    "actionAutoInject": "Mover al portapapeles y simular Ctrl+V",
+    "actionSelect": "Clic para seleccionar, pulsa Enter o haz doble clic para pegar"
   },
   "clipList": {
     "empty": "No hay clips aún",
@@ -291,6 +292,8 @@
     "roundCornersDesc": "Redondea las esquinas (Windows 11). No aplica en modo Clear.",
     "autoPaste": "Pegado Automático",
     "autoPasteDesc": "Pega en la aplicación anterior tras seleccionarlo y cierra CyberPaste (excepto si está fijado)",
+    "singleClickPaste": "Pegar con un clic",
+    "singleClickPasteDesc": "Activo: un clic pega inmediatamente. Desactivado: el clic selecciona; pulsa Enter o haz doble clic para pegar.",
     "autoInjectPaste": "Pegado por Inyección Automática",
     "autoInjectPasteDesc": "Con Pegado Automático activo, usa Ctrl+V en lugar de Mayús+Insert",
     "resetViewOnPaste": "Restablecer búsqueda y vista al abrir / pegar",

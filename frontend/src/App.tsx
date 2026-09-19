@@ -285,7 +285,9 @@ function App() {
   useLanguage(settings?.language);
   const { t } = useTranslation();
   const fullActionTooltip =
-    settings?.auto_paste && settings?.auto_inject_paste
+    settings?.single_click_paste === false
+      ? t('full.actionSelect')
+      : settings?.auto_paste && settings?.auto_inject_paste
       ? t('full.actionAutoInject')
       : settings?.auto_paste
         ? t('full.actionPaste')
@@ -2851,6 +2853,8 @@ function App() {
               searchQuery={searchQuery}
               onSearchChange={handleSearch}
               onPaste={handlePaste}
+              onSelectClip={handleClipClick}
+              singleClickPaste={settings?.single_click_paste ?? true}
               onDelete={handleDelete}
               onToggleMode={toggleViewMode}
               toggleModeHotkey={settings?.view_mode_hotkey}
@@ -3037,6 +3041,7 @@ function App() {
                   showScrollbar={settings?.full_show_scrollbar ?? true}
                   fullPeekEnabled={settings?.full_peek_enabled ?? true}
                   actionTooltip={fullActionTooltip}
+                  singleClickPaste={settings?.single_click_paste ?? true}
                   onRequestPreview={handleOpenPreview}
                   bulkSelectedIds={selectedClipIds}
                   onClipClick={handleClipClick}

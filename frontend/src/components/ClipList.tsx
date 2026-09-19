@@ -38,6 +38,7 @@ interface ClipListProps {
   showScrollbar?: boolean;
   fullPeekEnabled?: boolean;
   actionTooltip?: string;
+  singleClickPaste?: boolean;
   onRequestPreview?: (id: string) => void;
   bulkSelectedIds?: Set<string>;
   onClipClick?: (id: string, e: React.MouseEvent) => void;
@@ -75,6 +76,7 @@ export const ClipList: React.FC<ClipListProps> = ({
   showScrollbar = true,
   fullPeekEnabled = true,
   actionTooltip,
+  singleClickPaste = true,
   onRequestPreview,
   bulkSelectedIds,
   onClipClick,
@@ -375,6 +377,7 @@ export const ClipList: React.FC<ClipListProps> = ({
           showTypeIcon={showTypeIcon}
           showNumber={showNumber}
           actionTooltip={peekClip ? undefined : actionTooltip}
+          singleClickPaste={singleClickPaste}
           onCardMouseEnter={handleCardMouseEnter}
           onCardMouseLeave={handleCardMouseLeave}
         />

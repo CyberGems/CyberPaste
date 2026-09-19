@@ -71,6 +71,7 @@ interface ClipCardProps {
   showTypeIcon?: boolean;
   showNumber?: boolean;
   actionTooltip?: string;
+  singleClickPaste?: boolean;
   onCardMouseEnter?: (e: React.MouseEvent, clip: ClipboardItem) => void;
   onCardMouseLeave?: () => void;
 }
@@ -96,6 +97,7 @@ export const ClipCard = memo(
       showTypeIcon = true,
       showNumber = true,
       actionTooltip,
+      singleClickPaste = true,
       onCardMouseEnter,
       onCardMouseLeave,
     }: ClipCardProps,
@@ -357,8 +359,13 @@ export const ClipCard = memo(
                 onCardClick(e);
                 return;
               }
-              onPaste();
+              if (!singleClickPaste && onCardClick) {
+                onCardClick(e);
+              } else {
+                onPaste();
+              }
             }}
+            onDoubleClick={!singleClickPaste ? () => onPaste() : undefined}
             onContextMenu={handleContextMenu}
             style={
               {

@@ -48,6 +48,7 @@ export interface Settings {
   auto_inject_paste?: boolean;
   pinned?: boolean;
   auto_paste: boolean;
+  single_click_paste?: boolean;
   ignore_ghost_clips: boolean;
   reset_view_on_paste?: boolean;
   image_editor_path?: string;

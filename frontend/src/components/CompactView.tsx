@@ -366,6 +366,8 @@ interface CompactViewProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onPaste: (id: string) => void;
+  onSelectClip?: (id: string, event: React.MouseEvent) => void;
+  singleClickPaste?: boolean;
   onDelete: (id: string) => void;
   onToggleMode: () => void;
   isMaximized: boolean;
@@ -589,6 +591,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
   searchQuery,
   onSearchChange,
   onPaste,
+  onSelectClip,
+  singleClickPaste = true,
   onDelete,
   onToggleMode,
   isMaximized,
@@ -1596,6 +1600,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 selectedClipId={selectedClipId}
                 selectedFolder={selectedFolder}
                 onPaste={onPaste}
+                onSelectClip={onSelectClip}
+                singleClickPaste={singleClickPaste}
                 onDelete={onDelete}
                 onContextMenu={onContextMenu}
                 onDragStart={onDragStart}
@@ -1802,6 +1808,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
               selectedClipId={selectedClipId}
               selectedFolder={selectedFolder}
               onPaste={onPaste}
+              onSelectClip={onSelectClip}
+              singleClickPaste={singleClickPaste}
               onDelete={onDelete}
               onContextMenu={(e, id) => {
                 closePeek();
@@ -1904,6 +1912,8 @@ const ClipRow = memo(function ClipRow({
   selectedClipId,
   selectedFolder,
   onPaste,
+  onSelectClip,
+  singleClickPaste = true,
   onContextMenu,
   onDragStart,
   reorderEnabled,
@@ -1932,6 +1942,8 @@ const ClipRow = memo(function ClipRow({
   selectedClipId: string | null;
   selectedFolder: string | null;
   onPaste: (id: string) => void;
+  onSelectClip?: (id: string, event: React.MouseEvent) => void;
+  singleClickPaste?: boolean;
   onDelete: (id: string) => void;
   onContextMenu?: (e: React.MouseEvent, id: string) => void;
   onDragStart: (clipId: string, startX: number, startY: number) => void;
@@ -2046,10 +2058,13 @@ const ClipRow = memo(function ClipRow({
           if ((e.ctrlKey || e.metaKey) && onToggleSelect) {
             e.stopPropagation();
             onToggleSelect(clip.id, true);
+          } else if (!singleClickPaste && onSelectClip) {
+            onSelectClip(clip.id, e);
           } else {
             onPaste(clip.id);
           }
         }}
+        onDoubleClick={!singleClickPaste ? () => onPaste(clip.id) : undefined}
         onContextMenu={(e) => {
           setMenuHighlight(true);
           setHovered(true);
@@ -2316,6 +2331,8 @@ type CompactListRowProps = {
   selectedClipId: string | null;
   selectedFolder: string | null;
   onPaste: (id: string) => void;
+  onSelectClip?: (id: string, event: React.MouseEvent) => void;
+  singleClickPaste?: boolean;
   onDelete: (id: string) => void;
   onContextMenu?: (e: React.MouseEvent, id: string) => void;
   onDragStart: (clipId: string, startX: number, startY: number) => void;
@@ -2348,6 +2365,8 @@ function CompactListRow({
   selectedClipId,
   selectedFolder,
   onPaste,
+  onSelectClip,
+  singleClickPaste,
   onDelete,
   onContextMenu,
   onDragStart,
@@ -2387,6 +2406,8 @@ function CompactListRow({
         selectedClipId={selectedClipId}
         selectedFolder={selectedFolder}
         onPaste={onPaste}
+        onSelectClip={onSelectClip}
+        singleClickPaste={singleClickPaste}
         onDelete={onDelete}
         onContextMenu={onContextMenu}
         onDragStart={onDragStart}
@@ -2421,6 +2442,8 @@ function CompactClipList({
   selectedClipId,
   selectedFolder,
   onPaste,
+  onSelectClip,
+  singleClickPaste = true,
   onDelete,
   onContextMenu,
   onDragStart,
@@ -2454,6 +2477,8 @@ function CompactClipList({
   selectedClipId: string | null;
   selectedFolder: string | null;
   onPaste: (id: string) => void;
+  onSelectClip?: (id: string, event: React.MouseEvent) => void;
+  singleClickPaste?: boolean;
   onDelete: (id: string) => void;
   onContextMenu?: (e: React.MouseEvent, id: string) => void;
   onDragStart: (clipId: string, startX: number, startY: number) => void;
@@ -2543,6 +2568,8 @@ function CompactClipList({
       selectedClipId,
       selectedFolder,
       onPaste,
+      onSelectClip,
+      singleClickPaste,
       onDelete,
       onContextMenu,
       onDragStart,
@@ -2571,6 +2598,8 @@ function CompactClipList({
       selectedClipId,
       selectedFolder,
       onPaste,
+      onSelectClip,
+      singleClickPaste,
       onDelete,
       onContextMenu,
       onDragStart,

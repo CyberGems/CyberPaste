@@ -417,6 +417,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         ignore_ghost_clips: 'settings.ignoreGhostClips',
         clipboard_sound_enabled: 'settings.clipboardSound',
         auto_paste: 'settings.autoPaste',
+        single_click_paste: 'settings.singleClickPaste',
         auto_inject_paste: 'settings.autoInjectPaste',
         reset_view_on_paste: 'settings.resetViewOnPaste',
         compact_sidebar_collapsed: 'settings.compactSidebarCollapsed',
@@ -1210,6 +1211,36 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             />
                           </button>
                         </div>
+                      </div>
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div className="min-w-0 pr-4">
+                          <span className="text-sm font-medium">
+                            {t('settings.singleClickPaste')}
+                          </span>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {t('settings.singleClickPasteDesc')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() =>
+                            updateSetting(
+                              'single_click_paste',
+                              !(settings.single_click_paste ?? true)
+                            )
+                          }
+                          aria-pressed={settings.single_click_paste ?? true}
+                          className={`h-6 w-11 shrink-0 rounded-full transition-colors ${
+                            settings.single_click_paste ?? true ? 'bg-primary' : 'bg-white/10'
+                          }`}
+                        >
+                          <div
+                            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                              settings.single_click_paste ?? true
+                                ? 'translate-x-5'
+                                : 'translate-x-0.5'
+                            }`}
+                          />
+                        </button>
                       </div>
                       <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                         <div>

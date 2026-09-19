@@ -29,6 +29,8 @@ pub struct AppSettings {
     pub hotkey: String,
     pub view_mode_hotkey: String,
     pub auto_paste: bool,
+    #[serde(default = "default_true")]
+    pub single_click_paste: bool,
     pub ignore_ghost_clips: bool,
     pub startup_with_windows: bool,
     pub round_corners: bool,
@@ -145,6 +147,7 @@ impl Default for AppSettings {
             hotkey: "Ctrl+Shift+V".to_string(),
             view_mode_hotkey: "Ctrl+M".to_string(),
             auto_paste: true,
+            single_click_paste: true,
             ignore_ghost_clips: false,
             startup_with_windows: true,
             round_corners: true,

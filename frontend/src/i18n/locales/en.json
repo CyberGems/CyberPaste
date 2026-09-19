@@ -159,7 +159,8 @@
   "full": {
     "actionCopy": "Copy to clipboard",
     "actionPaste": "Copy to clipboard and paste",
-    "actionAutoInject": "Copy to clipboard and simulate Ctrl+V"
+    "actionAutoInject": "Copy to clipboard and simulate Ctrl+V",
+    "actionSelect": "Click to select, press Enter or double-click to paste"
   },
   "clipList": {
     "empty": "No clips yet",
@@ -294,6 +295,8 @@
     "roundCornersDesc": "Round window corners via DWM (Windows 11). No effect on Clear mode.",
     "autoPaste": "Auto Paste",
     "autoPasteDesc": "Paste into the previous app after selection, then close CyberPaste (unless pinned)",
+    "singleClickPaste": "Paste on Single Click",
+    "singleClickPasteDesc": "When enabled, clicking a clip pastes immediately. When disabled, click selects; press Enter or double-click to paste.",
     "autoInjectPaste": "Auto-Inject Paste",
     "autoInjectPasteDesc": "When Auto Paste is enabled, use Ctrl+V instead of Shift+Insert",
     "resetViewOnPaste": "Reset search and view on show / paste",
