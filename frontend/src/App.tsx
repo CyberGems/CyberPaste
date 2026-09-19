@@ -7,7 +7,7 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
+import { emit, listen } from '@tauri-apps/api/event';
 import { EditClipModal } from './components/EditClipModal';
 import { MoveToFolderModal } from './components/MoveToFolderModal';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -64,6 +64,8 @@ import {
   ChevronsUp,
   ChevronsDown,
 } from 'lucide-react';
+
+const PEEK_HOTKEY = 'Ctrl+Shift+P';
 
 const base64ToBlob = (base64: string, mimeType: string = 'image/png'): Blob => {
   const byteCharacters = atob(base64);
@@ -2680,6 +2682,26 @@ function App() {
     }
   };
 
+  const handleTogglePeek = useCallback(async () => {
+    if (!settings) return;
+
+    const settingKey =
+      settings.view_mode === 'compact' ? 'compact_peek_enabled' : 'full_peek_enabled';
+    const newSettings = {
+      ...settings,
+      [settingKey]: !settings[settingKey],
+    };
+
+    try {
+      await invoke('save_settings', { settings: newSettings });
+      setSettings(newSettings);
+      await emit('settings-changed', newSettings);
+    } catch (error) {
+      console.error('Failed to toggle peek:', error);
+      toast.error(t('settings.failedToSave'));
+    }
+  }, [settings, t]);
+
   useKeyboard({
     onClose: () => {
       appWindow.hide().catch((err) => {
@@ -2719,6 +2741,8 @@ function App() {
     onClearSearch: () => handleSearch(''),
     onToggleMode: toggleViewMode,
     toggleModeHotkey: settings?.view_mode_hotkey,
+    onTogglePeek: handleTogglePeek,
+    peekHotkey: PEEK_HOTKEY,
     onStartTypingSearch: handleStartTypingSearch,
     onUndo: handleUndoDelete,
   });
@@ -2792,6 +2816,8 @@ function App() {
               isPinned={settings?.pinned}
               onTogglePin={handleTogglePin}
               compactPeekEnabled={settings?.compact_peek_enabled ?? true}
+              onTogglePeek={handleTogglePeek}
+              peekHotkey={PEEK_HOTKEY}
               compactShowSourceIcon={settings?.compact_show_source_icon ?? true}
               compactShowTime={settings?.compact_show_time ?? true}
               compactShowTypeIcon={settings?.compact_show_type_icon ?? true}
@@ -2908,6 +2934,9 @@ function App() {
                 onTogglePin={handleTogglePin}
                 onResetSize={handleResetSize}
                 hotkey={settings?.hotkey}
+                fullPeekEnabled={settings?.full_peek_enabled ?? true}
+                onTogglePeek={handleTogglePeek}
+                peekHotkey={PEEK_HOTKEY}
                 onReorderFolder={handleReorderFolder}
                 showHud={settings?.full_show_hud ?? true}
                 titleBarAnimationEnabled={settings?.title_bar_animation_enabled ?? true}

@@ -35,6 +35,8 @@ interface KeyboardOptions {
   toggleModeHotkey?: string; // e.g. "Ctrl+M"
   onStartTypingSearch?: (char: string) => void;
   onUndo?: () => void;
+  onTogglePeek?: () => void;
+  peekHotkey?: string;
 }
 
 export function useKeyboard(options: KeyboardOptions) {
@@ -130,6 +132,13 @@ export function useKeyboard(options: KeyboardOptions) {
         options.onToggleMode();
       }
 
+      if (options.onTogglePeek && options.peekHotkey && matchesHotkey(options.peekHotkey)) {
+        e.preventDefault();
+        e.stopPropagation();
+        options.onTogglePeek();
+        return;
+      }
+
       if (e.key === 'Delete' && options.onDelete) {
         if (isTyping) {
           return;
@@ -186,7 +195,13 @@ export function useKeyboard(options: KeyboardOptions) {
         options.onStartTypingSearch(e.key);
       }
 
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'p' && options.onPin) {
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        e.key.toLowerCase() === 'p' &&
+        !e.shiftKey &&
+        !e.altKey &&
+        options.onPin
+      ) {
         e.preventDefault();
         options.onPin();
       }

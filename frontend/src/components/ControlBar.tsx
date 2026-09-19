@@ -52,6 +52,8 @@ import {
   Pin,
   RotateCcw,
   Keyboard,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { FolderItem } from '../types';
 import { CONTEXT_MENU_EVENT, type ContextMenuEventDetail } from '../utils/contextMenuEvents';
@@ -133,6 +135,9 @@ interface ControlBarProps {
   onResetSize?: () => void;
   style?: React.CSSProperties;
   hotkey?: string;
+  fullPeekEnabled?: boolean;
+  onTogglePeek?: () => void;
+  peekHotkey?: string;
   showHud?: boolean;
   onReorderFolder?: (folderId: string, targetId: string, position: 'before' | 'after') => void;
   isWindowActive?: boolean;
@@ -239,6 +244,9 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   isDragging,
   style,
   hotkey,
+  fullPeekEnabled = true,
+  onTogglePeek,
+  peekHotkey = 'Ctrl+Shift+P',
   showHud = true,
   onReorderFolder,
   isWindowActive = true,
@@ -586,6 +594,30 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                     isPinned ? 'fill-primary text-primary' : 'rotate-45'
                   )}
                 />
+              </button>
+            </Tooltip>
+          )}
+
+          {onTogglePeek && (
+            <Tooltip
+              label={t(fullPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek', {
+                hotkey: peekHotkey,
+              })}
+              placement="bottom"
+            >
+              <button
+                onClick={onTogglePeek}
+                aria-label={t(fullPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek', {
+                  hotkey: peekHotkey,
+                })}
+                aria-pressed={fullPeekEnabled}
+                className={clsx(
+                  headerBtnClass,
+                  fullPeekEnabled &&
+                    'border-primary/30 bg-primary/20 text-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.35)]'
+                )}
+              >
+                {fullPeekEnabled ? <Eye size={15} /> : <EyeOff size={15} />}
               </button>
             </Tooltip>
           )}

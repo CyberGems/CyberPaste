@@ -65,6 +65,8 @@ import {
   File as LucideFile,
   Image as ImageIcon,
   Trash2,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
@@ -411,6 +413,8 @@ interface CompactViewProps {
   // NUEVO: micro-animación de entrada
   entranceAnim?: boolean;
   compactPeekEnabled?: boolean;
+  onTogglePeek?: () => void;
+  peekHotkey?: string;
   canUndo?: boolean;
   onUndo?: () => void;
   compactShowSourceIcon?: boolean;
@@ -626,6 +630,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
   onPinClip: _onPinClip,
   entranceAnim = true,
   compactPeekEnabled = true,
+  onTogglePeek,
+  peekHotkey = 'Ctrl+Shift+P',
   canUndo = false,
   onUndo,
   compactShowSourceIcon = true,
@@ -1253,6 +1259,30 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     isPinned ? 'fill-primary text-primary' : 'rotate-45'
                   )}
                 />
+              </button>
+            </Tooltip>
+          )}
+          {onTogglePeek && (
+            <Tooltip
+              label={t(compactPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek', {
+                hotkey: peekHotkey,
+              })}
+              placement="bottom"
+            >
+              <button
+                onClick={onTogglePeek}
+                aria-label={t(compactPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek', {
+                  hotkey: peekHotkey,
+                })}
+                aria-pressed={compactPeekEnabled}
+                className={cn(
+                  'flex h-8 w-8 items-center justify-center rounded-lg border transition-all focus:outline-none',
+                  compactPeekEnabled
+                    ? 'border-primary/30 bg-primary/20 text-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.35)]'
+                    : 'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
+                )}
+              >
+                {compactPeekEnabled ? <Eye size={14} /> : <EyeOff size={14} />}
               </button>
             </Tooltip>
           )}
