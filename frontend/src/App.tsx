@@ -27,7 +27,8 @@ import { OcrResultModal } from './components/OcrResultModal';
 import { check } from '@tauri-apps/plugin-updater';
 import { UpdateModal } from './components/UpdateModal';
 import { ConfirmDialog } from './components/ConfirmDialog';
-import { useKeyboard } from './hooks/useKeyboard';
+import { TITLEBAR_HOTKEYS, useKeyboard } from './hooks/useKeyboard';
+import { TITLE_BAR_MENU_TOGGLE_EVENT } from './components/TitleBarMenu';
 import { lockListHover } from './hooks/useListHoverLock';
 import { useTheme } from './hooks/useTheme';
 import { useLanguage } from './hooks/useLanguage';
@@ -64,8 +65,6 @@ import {
   ChevronsUp,
   ChevronsDown,
 } from 'lucide-react';
-
-const PEEK_HOTKEY = 'Ctrl+Shift+P';
 
 const base64ToBlob = (base64: string, mimeType: string = 'image/png'): Blob => {
   const byteCharacters = atob(base64);
@@ -2702,6 +2701,23 @@ function App() {
     }
   }, [settings, t]);
 
+  const handleToggleCompactLayout = useCallback(async () => {
+    if (!settings || settings.view_mode !== 'compact') return;
+
+    const newLayout: 'horizontal' | 'vertical' =
+      settings.compact_folder_layout === 'vertical' ? 'horizontal' : 'vertical';
+    const newSettings = { ...settings, compact_folder_layout: newLayout };
+
+    try {
+      await invoke('save_settings', { settings: newSettings });
+      setSettings(newSettings);
+      await emit('settings-changed', newSettings);
+    } catch (error) {
+      console.error('Failed to toggle compact layout:', error);
+      toast.error(t('settings.failedToSave'));
+    }
+  }, [settings, t]);
+
   useKeyboard({
     onClose: () => {
       appWindow.hide().catch((err) => {
@@ -2742,7 +2758,24 @@ function App() {
     onToggleMode: toggleViewMode,
     toggleModeHotkey: settings?.view_mode_hotkey,
     onTogglePeek: handleTogglePeek,
-    peekHotkey: PEEK_HOTKEY,
+    peekHotkey: TITLEBAR_HOTKEYS.peek,
+    onOpenSettings: () => {
+      void openSettings();
+    },
+    settingsHotkey: TITLEBAR_HOTKEYS.settings,
+    onToggleMore: () => window.dispatchEvent(new Event(TITLE_BAR_MENU_TOGGLE_EVENT)),
+    moreHotkey: TITLEBAR_HOTKEYS.more,
+    onResetSize: () => {
+      void handleResetSize();
+    },
+    resetSizeHotkey: TITLEBAR_HOTKEYS.resetSize,
+    onToggleMaximize: () => {
+      void handleToggleMaximize();
+    },
+    maximizeHotkey: TITLEBAR_HOTKEYS.maximize,
+    onToggleLayout:
+      settings?.view_mode === 'compact' ? handleToggleCompactLayout : undefined,
+    layoutHotkey: TITLEBAR_HOTKEYS.compactLayout,
     onStartTypingSearch: handleStartTypingSearch,
     onUndo: handleUndoDelete,
   });
@@ -2807,6 +2840,7 @@ function App() {
               onPaste={handlePaste}
               onDelete={handleDelete}
               onToggleMode={toggleViewMode}
+              toggleModeHotkey={settings?.view_mode_hotkey}
               isMaximized={isMaximized}
               onToggleMaximize={handleToggleMaximize}
               onOpenSettings={openSettings}
@@ -2817,7 +2851,8 @@ function App() {
               onTogglePin={handleTogglePin}
               compactPeekEnabled={settings?.compact_peek_enabled ?? true}
               onTogglePeek={handleTogglePeek}
-              peekHotkey={PEEK_HOTKEY}
+              peekHotkey={TITLEBAR_HOTKEYS.peek}
+              compactLayoutHotkey={TITLEBAR_HOTKEYS.compactLayout}
               compactShowSourceIcon={settings?.compact_show_source_icon ?? true}
               compactShowTime={settings?.compact_show_time ?? true}
               compactShowTypeIcon={settings?.compact_show_type_icon ?? true}
@@ -2852,14 +2887,7 @@ function App() {
                 await invoke('save_settings', { settings: newSettings });
                 setSettings(newSettings);
               }}
-              onToggleLayout={async () => {
-                if (!settings) return;
-                const newLayout: 'horizontal' | 'vertical' =
-                  settings.compact_folder_layout === 'vertical' ? 'horizontal' : 'vertical';
-                const newSettings = { ...settings, compact_folder_layout: newLayout };
-                await invoke('save_settings', { settings: newSettings });
-                setSettings(newSettings);
-              }}
+              onToggleLayout={handleToggleCompactLayout}
               onAddFolder={() => {
                 setShowAddFolderModal(true);
               }}
@@ -2927,6 +2955,7 @@ function App() {
                 theme={effectiveTheme}
                 // Add toggle button to ControlBar
                 onToggleMode={toggleViewMode}
+                toggleModeHotkey={settings?.view_mode_hotkey}
                 viewMode={settings?.view_mode || 'compact'}
                 isMaximized={isMaximized}
                 onToggleMaximize={handleToggleMaximize}
@@ -2936,7 +2965,7 @@ function App() {
                 hotkey={settings?.hotkey}
                 fullPeekEnabled={settings?.full_peek_enabled ?? true}
                 onTogglePeek={handleTogglePeek}
-                peekHotkey={PEEK_HOTKEY}
+                peekHotkey={TITLEBAR_HOTKEYS.peek}
                 onReorderFolder={handleReorderFolder}
                 showHud={settings?.full_show_hud ?? true}
                 titleBarAnimationEnabled={settings?.title_bar_animation_enabled ?? true}

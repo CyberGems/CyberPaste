@@ -63,6 +63,7 @@ import Tooltip from './Tooltip';
 import { TitleBarMenu } from './TitleBarMenu';
 import { TitleBarUpdateButton } from './TitleBarUpdateButton';
 import { useFolderFlash } from '../hooks/useFolderFlash';
+import { TITLEBAR_HOTKEYS } from '../hooks/useKeyboard';
 import { invoke } from '@tauri-apps/api/core';
 
 const IconMap: Record<string, any> = {
@@ -138,6 +139,7 @@ interface ControlBarProps {
   fullPeekEnabled?: boolean;
   onTogglePeek?: () => void;
   peekHotkey?: string;
+  toggleModeHotkey?: string;
   showHud?: boolean;
   onReorderFolder?: (folderId: string, targetId: string, position: 'before' | 'after') => void;
   isWindowActive?: boolean;
@@ -247,6 +249,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   fullPeekEnabled = true,
   onTogglePeek,
   peekHotkey = 'Ctrl+Shift+P',
+  toggleModeHotkey = TITLEBAR_HOTKEYS.mode,
   showHud = true,
   onReorderFolder,
   isWindowActive = true,
@@ -575,7 +578,10 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           />
           {onTogglePin && (
             <Tooltip
-              label={isPinned ? t('common.unpinWindow') : t('common.pinWindow')}
+              label={t('common.tooltipWithHotkey', {
+                label: isPinned ? t('common.unpinWindow') : t('common.pinWindow'),
+                hotkey: TITLEBAR_HOTKEYS.pin,
+              })}
               placement="bottom"
             >
               <button
@@ -623,23 +629,38 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           )}
 
           {onResetSize && (
-            <Tooltip label={t('common.resetWindowSize')} placement="bottom">
+            <Tooltip
+              label={t('common.tooltipWithHotkey', {
+                label: t('common.resetWindowSize'),
+                hotkey: TITLEBAR_HOTKEYS.resetSize,
+              })}
+              placement="bottom"
+            >
               <button onClick={onResetSize} className={headerBtnClass}>
                 <RotateCcw size={15} />
               </button>
             </Tooltip>
           )}
 
-          <Tooltip label={t('settings.title')} placement="bottom">
+          <Tooltip
+            label={t('common.tooltipWithHotkey', {
+              label: t('settings.title'),
+              hotkey: TITLEBAR_HOTKEYS.settings,
+            })}
+            placement="bottom"
+          >
             <button onClick={onMoreClick} className={headerBtnClass}>
               <Settings size={15} />
             </button>
           </Tooltip>
 
-          <TitleBarMenu iconSize={15} />
+          <TitleBarMenu iconSize={15} hotkey={TITLEBAR_HOTKEYS.more} />
 
           <Tooltip
-            label={isMaximized ? t('common.restore') : t('common.maximize')}
+            label={t('common.tooltipWithHotkey', {
+              label: isMaximized ? t('common.restore') : t('common.maximize'),
+              hotkey: TITLEBAR_HOTKEYS.maximize,
+            })}
             placement="bottom"
           >
             <button
@@ -652,7 +673,10 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           </Tooltip>
 
           <Tooltip
-            label={viewMode === 'full' ? t('common.switchToCompact') : t('common.switchToFull')}
+            label={t('common.tooltipWithHotkey', {
+              label: viewMode === 'full' ? t('common.switchToCompact') : t('common.switchToFull'),
+              hotkey: toggleModeHotkey,
+            })}
             placement="bottom"
           >
             <button
@@ -668,7 +692,13 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             </button>
           </Tooltip>
 
-          <Tooltip label={t('common.closeWindow')} placement="bottom">
+          <Tooltip
+            label={t('common.tooltipWithHotkey', {
+              label: t('common.closeWindow'),
+              hotkey: 'Esc',
+            })}
+            placement="bottom"
+          >
             <button
               onClick={() => (window as any).__TAURI_INTERNALS__.invoke('hide_window')}
               className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-rose-500/20 hover:bg-rose-500/15 hover:text-rose-400 active:bg-rose-500/25"

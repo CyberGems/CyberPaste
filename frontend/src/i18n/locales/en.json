@@ -22,6 +22,7 @@
     "switchToFull": "Switch to Full Mode",
     "closeWindow": "Close Window",
     "searchPlaceholder": "Search clips... (Ctrl+F)",
+    "tooltipWithHotkey": "{{label}} ({{hotkey}})",
     "clearSearch": "Clear search",
     "clearFilter": "Clear filter",
     "esc": "ESC",

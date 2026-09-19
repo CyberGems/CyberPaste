@@ -78,6 +78,7 @@ import { convertFileSrc } from '@tauri-apps/api/core';
 import Tooltip from './Tooltip';
 import { TitleBarMenu } from './TitleBarMenu';
 import { TitleBarUpdateButton } from './TitleBarUpdateButton';
+import { TITLEBAR_HOTKEYS } from '../hooks/useKeyboard';
 import { de, enUS, es, fr, ja, zhCN } from 'date-fns/locale';
 import { List, useListRef, type RowComponentProps } from 'react-window';
 import { CONTEXT_MENU_EVENT, type ContextMenuEventDetail } from '../utils/contextMenuEvents';
@@ -415,6 +416,8 @@ interface CompactViewProps {
   compactPeekEnabled?: boolean;
   onTogglePeek?: () => void;
   peekHotkey?: string;
+  toggleModeHotkey?: string;
+  compactLayoutHotkey?: string;
   canUndo?: boolean;
   onUndo?: () => void;
   compactShowSourceIcon?: boolean;
@@ -632,6 +635,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
   compactPeekEnabled = true,
   onTogglePeek,
   peekHotkey = 'Ctrl+Shift+P',
+  toggleModeHotkey = TITLEBAR_HOTKEYS.mode,
+  compactLayoutHotkey = TITLEBAR_HOTKEYS.compactLayout,
   canUndo = false,
   onUndo,
   compactShowSourceIcon = true,
@@ -1240,7 +1245,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
           />
           {onTogglePin && (
             <Tooltip
-              label={isPinned ? t('common.unpinWindowShort') : t('common.pinWindowShort')}
+              label={t('common.tooltipWithHotkey', {
+                label: isPinned ? t('common.unpinWindowShort') : t('common.pinWindowShort'),
+                hotkey: TITLEBAR_HOTKEYS.pin,
+              })}
               placement="bottom"
             >
               <button
@@ -1288,7 +1296,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
           )}
           {onToggleLayout && (
             <Tooltip
-              label={isVertical ? t('compact.switchHorizontal') : t('compact.switchVertical')}
+              label={t('common.tooltipWithHotkey', {
+                label: isVertical ? t('compact.switchHorizontal') : t('compact.switchVertical'),
+                hotkey: compactLayoutHotkey,
+              })}
               placement="bottom"
             >
               <button
@@ -1299,7 +1310,13 @@ export const CompactView: React.FC<CompactViewProps> = ({
               </button>
             </Tooltip>
           )}
-          <Tooltip label={t('common.resetDefaultSize')} placement="bottom">
+          <Tooltip
+            label={t('common.tooltipWithHotkey', {
+              label: t('common.resetDefaultSize'),
+              hotkey: TITLEBAR_HOTKEYS.resetSize,
+            })}
+            placement="bottom"
+          >
             <button
               onClick={handleResetSize}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80"
@@ -1307,7 +1324,13 @@ export const CompactView: React.FC<CompactViewProps> = ({
               <RotateCcw size={14} />
             </button>
           </Tooltip>
-          <Tooltip label={t('common.settings')} placement="bottom">
+          <Tooltip
+            label={t('common.tooltipWithHotkey', {
+              label: t('common.settings'),
+              hotkey: TITLEBAR_HOTKEYS.settings,
+            })}
+            placement="bottom"
+          >
             <button
               onClick={onOpenSettings}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80"
@@ -1316,10 +1339,13 @@ export const CompactView: React.FC<CompactViewProps> = ({
             </button>
           </Tooltip>
 
-          <TitleBarMenu iconSize={14} />
+          <TitleBarMenu iconSize={14} hotkey={TITLEBAR_HOTKEYS.more} />
 
           <Tooltip
-            label={isMaximized ? t('common.restore') : t('common.maximize')}
+            label={t('common.tooltipWithHotkey', {
+              label: isMaximized ? t('common.restore') : t('common.maximize'),
+              hotkey: TITLEBAR_HOTKEYS.maximize,
+            })}
             placement="bottom"
           >
             <button
@@ -1332,7 +1358,13 @@ export const CompactView: React.FC<CompactViewProps> = ({
           </Tooltip>
 
           {/* View-toggle — primary action pill */}
-          <Tooltip label={t('common.switchToFull')} placement="bottom">
+          <Tooltip
+            label={t('common.tooltipWithHotkey', {
+              label: t('common.switchToFull'),
+              hotkey: toggleModeHotkey,
+            })}
+            placement="bottom"
+          >
             <button
               onClick={onToggleMode}
               className="group relative ml-1 flex h-8 items-center gap-1.5 overflow-hidden rounded-lg border border-primary/40 bg-gradient-to-r from-primary/20 to-primary/10 px-2.5 text-[10px] font-bold uppercase tracking-widest text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.2)] transition-all duration-200 hover:border-primary/70 hover:from-primary/30 hover:to-primary/20 hover:shadow-[0_0_18px_rgba(var(--primary-rgb),0.45)] active:scale-[0.98]"
@@ -1343,7 +1375,13 @@ export const CompactView: React.FC<CompactViewProps> = ({
             </button>
           </Tooltip>
 
-          <Tooltip label={t('common.closeCompact')} placement="bottom">
+          <Tooltip
+            label={t('common.tooltipWithHotkey', {
+              label: t('common.closeCompact'),
+              hotkey: 'Esc',
+            })}
+            placement="bottom"
+          >
             <button
               onClick={() =>
                 invoke('hide_window').catch(() =>

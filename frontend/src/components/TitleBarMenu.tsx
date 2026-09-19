@@ -1,6 +1,16 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { MoreVertical, Heart, Globe, Tag, Github, Info, Book, Trash2, Settings } from 'lucide-react';
+import {
+  MoreHorizontal,
+  Heart,
+  Globe,
+  Tag,
+  Github,
+  Info,
+  Book,
+  Trash2,
+  Settings,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { invoke } from '@tauri-apps/api/core';
@@ -15,15 +25,18 @@ const WIKI_URL = 'https://github.com/CyberGems/CyberPaste/wiki';
 const WEBSITE_URL = 'https://cybergems.org';
 const CHANGELOG_URL = 'https://github.com/CyberGems/CyberPaste/releases';
 const GITHUB_URL = 'https://github.com/CyberGems/CyberPaste';
+export const TITLE_BAR_MENU_TOGGLE_EVENT = 'cyberpaste:toggle-titlebar-menu';
 
 export type TitleBarMenuVariant = 'main' | 'settings' | 'viewer';
 
 export function TitleBarMenu({
   iconSize = 14,
   variant = 'main',
+  hotkey,
 }: {
   iconSize?: number;
   variant?: TitleBarMenuVariant;
+  hotkey?: string;
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -36,6 +49,20 @@ export function TitleBarMenu({
     if (!open || !wrapRef.current) return;
     const r = wrapRef.current.getBoundingClientRect();
     setPos({ top: r.bottom + 6, right: Math.max(8, window.innerWidth - r.right) });
+  }, [open]);
+
+  useEffect(() => {
+    const onToggleMenu = () => setOpen((value) => !value);
+    window.addEventListener(TITLE_BAR_MENU_TOGGLE_EVENT, onToggleMenu);
+    return () => window.removeEventListener(TITLE_BAR_MENU_TOGGLE_EVENT, onToggleMenu);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const frame = requestAnimationFrame(() => {
+      menuRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
   }, [open]);
 
   useEffect(() => {
@@ -70,7 +97,11 @@ export function TitleBarMenu({
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        setOpen(false);
+      }
     };
 
     window.addEventListener('pointerdown', onPointerDown, true);
@@ -106,18 +137,22 @@ export function TitleBarMenu({
   const itemClass =
     'group flex w-full items-center gap-2.5 rounded-md px-2.5 py-[7px] text-left text-[13px] font-medium text-foreground/90 transition-colors hover:bg-accent hover:text-foreground';
   const iconClass = 'shrink-0 text-muted-foreground transition-colors group-hover:text-primary';
+  const moreLabel = hotkey
+    ? t('common.tooltipWithHotkey', { label: t('common.moreActions'), hotkey })
+    : t('common.moreActions');
 
   const showClearHistory = variant === 'main';
   const showOpenSettings = variant === 'viewer';
 
   return (
     <div ref={wrapRef} className="no-drag relative flex items-center">
-      <Tooltip label={t('common.moreActions')} placement="bottom" disabled={open}>
+      <Tooltip label={moreLabel} placement="bottom" disabled={open}>
         <button
           type="button"
           aria-haspopup="true"
           aria-expanded={open}
-          aria-label={t('common.moreActions')}
+          aria-label={moreLabel}
+          aria-keyshortcuts={hotkey}
           onClick={() => setOpen((v) => !v)}
           onMouseDown={(e) => e.stopPropagation()}
           className={clsx(
@@ -127,7 +162,7 @@ export function TitleBarMenu({
               : 'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
           )}
         >
-          <MoreVertical size={iconSize} className="pointer-events-none" />
+          <MoreHorizontal size={iconSize} className="pointer-events-none" />
         </button>
       </Tooltip>
 
@@ -136,6 +171,31 @@ export function TitleBarMenu({
           <div
             ref={menuRef}
             role="menu"
+            onKeyDown={(event) => {
+              const items = Array.from(
+                menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []
+              );
+              if (items.length === 0) return;
+
+              if (event.key === 'Escape') {
+                event.preventDefault();
+                setOpen(false);
+                return;
+              }
+
+              if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+              event.preventDefault();
+              event.stopPropagation();
+              const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement);
+              const nextIndex =
+                event.key === 'Home'
+                  ? 0
+                  : event.key === 'End'
+                    ? items.length - 1
+                    : (currentIndex + (event.key === 'ArrowDown' ? 1 : -1) + items.length) %
+                      items.length;
+              items[nextIndex]?.focus();
+            }}
             className="fixed z-[300] flex w-56 flex-col gap-0.5 rounded-lg border border-border bg-popover p-[5px] shadow-[0_10px_30px_rgba(0,0,0,0.5),0_1px_3px_rgba(0,0,0,0.3)]"
             style={{
               top: pos.top,

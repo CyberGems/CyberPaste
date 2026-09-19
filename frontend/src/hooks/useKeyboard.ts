@@ -1,6 +1,17 @@
 import { useEffect } from 'react';
 import { lockListHover } from './useListHoverLock';
 
+export const TITLEBAR_HOTKEYS = {
+  pin: 'Ctrl+P',
+  peek: 'Ctrl+Shift+P',
+  resetSize: 'Ctrl+Shift+R',
+  settings: 'Ctrl+,',
+  more: 'Ctrl+Shift+M',
+  maximize: 'Alt+Enter',
+  mode: 'Ctrl+M',
+  compactLayout: 'Ctrl+Shift+L',
+} as const;
+
 interface KeyboardOptions {
   onClose?: () => void;
   onSearch?: () => void;
@@ -37,6 +48,16 @@ interface KeyboardOptions {
   onUndo?: () => void;
   onTogglePeek?: () => void;
   peekHotkey?: string;
+  onOpenSettings?: () => void;
+  settingsHotkey?: string;
+  onToggleMore?: () => void;
+  moreHotkey?: string;
+  onResetSize?: () => void;
+  resetSizeHotkey?: string;
+  onToggleMaximize?: () => void;
+  maximizeHotkey?: string;
+  onToggleLayout?: () => void;
+  layoutHotkey?: string;
 }
 
 export function useKeyboard(options: KeyboardOptions) {
@@ -53,6 +74,11 @@ export function useKeyboard(options: KeyboardOptions) {
         (e.target instanceof HTMLElement && e.target.isContentEditable);
 
       const isSearchInput = e.target instanceof HTMLInputElement && e.target.id === 'search-input';
+      const isMenuItem =
+        e.target instanceof HTMLElement && Boolean(e.target.closest('[role="menu"]'));
+      if (isMenuItem) {
+        return;
+      }
 
       // Helper to check if event matches a hotkey string like "Ctrl+Shift+V"
       const matchesHotkey = (hotkey: string) => {
@@ -136,6 +162,49 @@ export function useKeyboard(options: KeyboardOptions) {
         e.preventDefault();
         e.stopPropagation();
         options.onTogglePeek();
+        return;
+      }
+
+      if (
+        options.onOpenSettings &&
+        options.settingsHotkey &&
+        matchesHotkey(options.settingsHotkey)
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        options.onOpenSettings();
+        return;
+      }
+
+      if (options.onToggleMore && options.moreHotkey && matchesHotkey(options.moreHotkey)) {
+        e.preventDefault();
+        e.stopPropagation();
+        options.onToggleMore();
+        return;
+      }
+
+      if (options.onResetSize && options.resetSizeHotkey && matchesHotkey(options.resetSizeHotkey)) {
+        e.preventDefault();
+        e.stopPropagation();
+        options.onResetSize();
+        return;
+      }
+
+      if (
+        options.onToggleMaximize &&
+        options.maximizeHotkey &&
+        matchesHotkey(options.maximizeHotkey)
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        options.onToggleMaximize();
+        return;
+      }
+
+      if (options.onToggleLayout && options.layoutHotkey && matchesHotkey(options.layoutHotkey)) {
+        e.preventDefault();
+        e.stopPropagation();
+        options.onToggleLayout();
         return;
       }
 

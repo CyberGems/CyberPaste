@@ -22,6 +22,7 @@
     "switchToFull": "Cambiar a Vista Completa",
     "closeWindow": "Cerrar ventana",
     "searchPlaceholder": "Buscar clips... (Ctrl+F)",
+    "tooltipWithHotkey": "{{label}} ({{hotkey}})",
     "clearSearch": "Limpiar búsqueda",
     "clearFilter": "Limpiar filtro",
     "esc": "ESC",
