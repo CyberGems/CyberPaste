@@ -384,28 +384,6 @@ async fn cleanup_orphan_clip_image_files(pool: &SqlitePool) -> Result<(), String
         .await
         .map_err(|e| e.to_string())?;
 
-    let data_dir = crate::get_data_dir();
-    let images_dir = data_dir.join("images");
-    if images_dir.exists() {
-        if let Ok(entries) = std::fs::read_dir(&images_dir) {
-            let valid_paths: std::collections::HashSet<String> = sqlx::query_scalar::<_, String>("SELECT file_path FROM clip_images WHERE file_path IS NOT NULL AND file_path != ''")
-                .fetch_all(pool)
-                .await
-                .unwrap_or_default()
-                .into_iter()
-                .collect();
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.is_file() {
-                    let path_str = path.to_string_lossy().to_string();
-                    if !valid_paths.contains(&path_str) {
-                        let _ = std::fs::remove_file(&path);
-                    }
-                }
-            }
-        }
-    }
-
     Ok(())
 }
 
