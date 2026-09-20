@@ -250,7 +250,12 @@
     "website": "ウェブサイト",
     "donate": "寄付する",
     "about": "情報...",
-    "checkUpdates": "アップデートを確認..."
+    "checkUpdates": "アップデートを確認...",
+    "suite": "CyberGems のアプリ",
+    "suiteTitle": "CyberGems",
+    "suiteAll": "cybergems.org ですべて見る",
+    "back": "戻る",
+    "pinTrayIcon": "タスクバーにアイコンを固定..."
   },
   "trayPinTip": {
     "title": "トレイに CyberPaste を表示する",

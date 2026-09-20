@@ -110,7 +110,11 @@
     "checkUpdates": "Buscar actualizaciones...",
     "lock": "Bloquear ahora",
     "suite": "Más de CyberGems",
-    "suiteMore": "Más detalles online"
+    "suiteTitle": "CyberGems",
+    "suiteMore": "Más detalles online",
+    "suiteAll": "Ver todas en cybergems.org",
+    "back": "Atrás",
+    "pinTrayIcon": "Fijar icono en la bandeja..."
   },
   "trayPinTip": {
     "title": "Mantén CyberPaste visible en la bandeja",

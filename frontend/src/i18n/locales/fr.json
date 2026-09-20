@@ -250,7 +250,12 @@
     "website": "Site web",
     "donate": "Faire un don",
     "about": "À propos...",
-    "checkUpdates": "Rechercher des mises à jour..."
+    "checkUpdates": "Rechercher des mises à jour...",
+    "suite": "Plus de CyberGems",
+    "suiteTitle": "CyberGems",
+    "suiteAll": "Tout voir sur cybergems.org",
+    "back": "Retour",
+    "pinTrayIcon": "Épingler l'icône à la barre des tâches..."
   },
   "trayPinTip": {
     "title": "Garder CyberPaste visible dans la barre des tâches",

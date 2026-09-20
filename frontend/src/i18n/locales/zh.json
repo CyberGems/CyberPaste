@@ -252,7 +252,12 @@
     "website": "网站",
     "donate": "捐赠",
     "about": "关于...",
-    "checkUpdates": "检查更新..."
+    "checkUpdates": "检查更新...",
+    "suite": "更多 CyberGems",
+    "suiteTitle": "CyberGems",
+    "suiteAll": "在 cybergems.org 查看全部",
+    "back": "返回",
+    "pinTrayIcon": "将图标固定到任务栏..."
   },
   "trayPinTip": {
     "title": "让 CyberPaste 显示在托盘中",

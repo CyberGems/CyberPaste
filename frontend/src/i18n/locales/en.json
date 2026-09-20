@@ -110,7 +110,11 @@
     "checkUpdates": "Check for Update...",
     "lock": "Lock now",
     "suite": "More from CyberGems",
-    "suiteMore": "More details online"
+    "suiteTitle": "CyberGems",
+    "suiteMore": "More details online",
+    "suiteAll": "View all at cybergems.org",
+    "back": "Back",
+    "pinTrayIcon": "Pin icon to taskbar..."
   },
   "trayPinTip": {
     "title": "Keep CyberPaste visible in the tray",

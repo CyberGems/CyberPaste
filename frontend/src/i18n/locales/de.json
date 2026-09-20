@@ -243,7 +243,12 @@
     "website": "Webseite",
     "donate": "Spenden",
     "about": "Über...",
-    "checkUpdates": "Nach Updates suchen..."
+    "checkUpdates": "Nach Updates suchen...",
+    "suite": "Mehr von CyberGems",
+    "suiteTitle": "CyberGems",
+    "suiteAll": "Alle auf cybergems.org ansehen",
+    "back": "Zurück",
+    "pinTrayIcon": "Symbol an die Taskleiste heften..."
   },
   "trayPinTip": {
     "title": "CyberPaste im Infobereich sichtbar halten",
