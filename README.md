@@ -1,26 +1,22 @@
 <p align="center">
-  <img src="frontend/public/logo.png" alt="CyberPaste" width="128" height="128" />
-</p>
-
-<h1 align="center">CyberPaste - The Ultimate Clipboard Manager</h1>
-
-<p align="center">
-  <strong>A beautiful, privacy-focused clipboard history manager</strong>: stores everything you copy locally, so you can recall any clip at any time.
+  <a href="https://cybergems.org/apps/cyberpaste/">
+    <img src="https://cybergems.org/banners/cyberpaste.png" alt="CyberPaste — recall text, code, images and files with a private local clipboard history" />
+  </a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/CyberGems/CyberPaste/releases/latest"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FCyberGems%2FCyberPaste%2Fmain%2Fpackage.json&query=%24.version&prefix=%20Download%20CyberPaste%20v&suffix=%20&style=for-the-badge&label=&labelColor=B45309&color=B45309" alt="Download Latest Release" /><img src="https://img.shields.io/badge/Windows_64--bit-0078D4?style=for-the-badge" alt="Windows 64-bit" /></a>
-  &nbsp;<a href="https://github.com/CyberGems/CyberPaste/releases"><img src="https://img.shields.io/badge/All_releases-2B3137?style=for-the-badge&logo=github&logoColor=white" alt="All Releases" /><img src="https://img.shields.io/badge/Changelog-3B444B?style=for-the-badge" alt="Changelog" /></a>
+  <a href="https://github.com/CyberGems/CyberPaste/releases/latest"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FCyberGems%2FCyberPaste%2Fmain%2Fpackage.json&query=%24.version&prefix=%20Download%20CyberPaste%20v&suffix=%20&style=for-the-badge&label=&labelColor=0891B2&color=0891B2" alt="Download Latest Release" /><img src="https://img.shields.io/badge/Windows_10%2F11_(64--bit)-2563EB?style=for-the-badge" alt="Windows 10/11 (64-bit)" /></a>
+  &nbsp;<a href="https://github.com/CyberGems/CyberPaste/releases"><img src="https://img.shields.io/badge/All_releases-30363D?style=for-the-badge&logo=github&logoColor=white" alt="All Releases" /><img src="https://img.shields.io/badge/Changelog-475569?style=for-the-badge" alt="Changelog" /></a>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/License-GPL--3.0-1F2428.svg?style=flat-square&color=B45309" alt="License" />&nbsp;
-  <img src="https://img.shields.io/badge/Platform-Windows_10+-1F2428.svg?style=flat-square&color=0078D4" alt="Platform" />&nbsp;
-  <img src="https://img.shields.io/badge/Tauri-2.x-1F2428.svg?style=flat-square&logo=tauri&logoColor=white&color=47848F" alt="Tauri" />&nbsp;
-  <a href="https://github.com/CyberGems/CyberPaste/wiki"><img src="https://img.shields.io/badge/Wiki-Documentation-1F2428?style=flat-square&logo=gitbook&logoColor=white&color=B45309" alt="Wiki" /></a>
+  <img src="https://img.shields.io/badge/License-GPL--3.0-1F2428.svg?style=flat-square&color=334155" alt="License" />&nbsp;
+  <img src="https://img.shields.io/badge/Platform-Windows_10%2F11-1F2428.svg?style=flat-square&color=334155" alt="Platform" />&nbsp;
+  <img src="https://img.shields.io/badge/Tauri-2.x-1F2428.svg?style=flat-square&logo=tauri&logoColor=white&color=334155" alt="Tauri" />&nbsp;
+  <a href="https://github.com/CyberGems/CyberPaste/wiki"><img src="https://img.shields.io/badge/Wiki-Documentation-1F2428?style=flat-square&logo=gitbook&logoColor=white&color=334155" alt="Wiki" /></a>
 </p>
 
-A beautiful, privacy-focused **clipboard history manager** for Windows. CyberPaste stores everything you copy (text, code, images, files, URLs) in a local SQLite database, so you can recall any specific clip at any time. Search, organize, pin, edit, and paste instantly. Built with **Tauri 2** and **React**.
+A sleek, privacy-focused **clipboard history manager** for Windows. CyberPaste stores text, code, images, files and URLs in a local SQLite database, so you can recall any clip at any time. Search, organize, pin, edit and paste instantly, and protect the interface with an optional PIN or password. Built with **Tauri 2** and **React**.
 
 *Free and open source (GPLv3): no ads, no tracking, and no data collection. Just enjoy it.*
 
@@ -65,6 +61,7 @@ Most clipboard managers either send your data to the cloud or are too basic to b
 
 ### 🔒 Privacy & Security
 - **100% Local-First** — SQLite storage in WAL mode with fast indexes. Zero analytics, zero telemetry
+- **Optional App Lock:** Protect the interface with a PIN or password, recovery key, lock-on-hide and Windows session lock
 - **Privacy Exceptions** — Ignore sensitive apps (password managers, banking tools) by process name or full executable path
 - **Ghost Clip Filtering** — Option to ignore clips from unknown sources
 
