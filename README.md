@@ -16,7 +16,11 @@
   <a href="https://github.com/CyberGems/CyberPaste/wiki"><img src="https://img.shields.io/badge/Wiki-Documentation-1F2428?style=flat-square&logo=gitbook&logoColor=white&color=334155" alt="Wiki" /></a>
 </p>
 
-A sleek, privacy-focused **clipboard history manager** for Windows. CyberPaste stores text, code, images, files and URLs in a local SQLite database, so you can recall any clip at any time. Search, organize, pin, edit and paste instantly, and protect the interface with an optional PIN or password. Built with **Tauri 2** and **React**.
+---
+
+## What is CyberPaste?
+
+CyberPaste is a sleek, privacy-focused **clipboard history manager** for Windows that makes everything you copy easy to find and reuse. It stores text, code, images, files, links, HTML, and RTF in a local SQLite database, with instant search, folders, favorites, pinning, editing, OCR, and direct paste actions. Optional AI tools can summarize or transform selected content, while automatic backups, configurable retention, and a PIN or password lock keep the experience practical and personal. Built with **Tauri 2** and **React**.
 
 *Free and open source (GPLv3): no ads, no tracking, and no data collection. Just enjoy it.*
 
