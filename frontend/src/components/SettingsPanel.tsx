@@ -180,9 +180,7 @@ function PromptEditor({
             <span
               className={clsx(
                 'shrink-0 rounded-full px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide',
-                isCustom
-                  ? 'bg-primary/15 text-primary'
-                  : 'bg-muted/60 text-muted-foreground'
+                isCustom ? 'bg-primary/15 text-primary' : 'bg-muted/60 text-muted-foreground'
               )}
             >
               {isCustom ? t('settings.promptCustom') : t('settings.promptDefault')}
@@ -329,10 +327,12 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
     // Initial pause state
     invoke<boolean>('is_clipboard_monitoring_paused').then(setIsPaused).catch(console.error);
-    invoke<AppLockStatus>('get_app_lock_status').then((s) => {
-      setLockStatus(s);
-      setLockMode(s.mode === 'password' ? 'password' : 'pin');
-    }).catch(console.error);
+    invoke<AppLockStatus>('get_app_lock_status')
+      .then((s) => {
+        setLockStatus(s);
+        setLockMode(s.mode === 'password' ? 'password' : 'pin');
+      })
+      .catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -566,6 +566,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         duplicate_toast_enabled: 'settings.duplicateToasts',
         show_action_messages: 'settings.showActionMessages',
         auto_check_updates: 'settings.autoCheckUpdates',
+        show_app_recommendations: 'settings.showAppRecommendations',
         round_corners: 'settings.roundCorners',
         max_items: 'settings.historyLimit',
         max_clipboard_text_bytes: 'settings.clipboardTextLimit',
@@ -933,7 +934,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
             <Tooltip label={t('common.openAbout')} placement="bottom">
               <button
                 type="button"
-                className="no-drag flex min-w-0 items-center gap-3 rounded-md px-1.5 py-1 -ml-1.5 transition-colors hover:bg-accent/60"
+                className="no-drag -ml-1.5 flex min-w-0 items-center gap-3 rounded-md px-1.5 py-1 transition-colors hover:bg-accent/60"
                 aria-label={t('common.openAbout')}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -985,14 +986,17 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 )}
               </button>
             </Tooltip>
-            <button
-              type="button"
-              onClick={onClose}
-              className="icon-button flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-destructive/20 hover:text-destructive"
-              onMouseDown={(e) => e.stopPropagation()}
-            >
-              <X size={20} />
-            </button>
+            <Tooltip label={t('common.close')} placement="bottom">
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label={t('common.close')}
+                className="icon-button flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-destructive/20 hover:text-destructive"
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                <X size={20} />
+              </button>
+            </Tooltip>
           </div>
         </div>
 
@@ -1129,7 +1133,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             value={settings.language || 'auto'}
                             onChange={handleLanguageChange}
                             options={[
-                              { value: 'auto', label: `${t('settings.languageAuto')} (${t('settings.languageAutoDesc')})` },
+                              {
+                                value: 'auto',
+                                label: `${t('settings.languageAuto')} (${t('settings.languageAutoDesc')})`,
+                              },
                               { value: 'de', label: 'Deutsch' },
                               { value: 'en', label: 'English' },
                               { value: 'es', label: 'Español' },
@@ -1219,6 +1226,42 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         {t('settings.openWindowsSettings')}
                       </button>
                     </Tooltip>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">
+                    <div className="flex min-w-0 gap-3">
+                      <Sparkles className="mt-0.5 h-5 w-5 flex-shrink-0 text-muted-foreground/80" />
+                      <div>
+                        <span className="text-sm font-medium">
+                          {t('settings.showAppRecommendations')}
+                        </span>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {t('settings.showAppRecommendationsDesc')}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateSetting(
+                          'show_app_recommendations',
+                          !(settings.show_app_recommendations ?? true)
+                        )
+                      }
+                      aria-pressed={settings.show_app_recommendations ?? true}
+                      aria-label={t('settings.showAppRecommendations')}
+                      className={`h-6 w-11 flex-shrink-0 rounded-full transition-colors ${
+                        (settings.show_app_recommendations ?? true) ? 'bg-primary' : 'bg-white/10'
+                      }`}
+                    >
+                      <div
+                        className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                          (settings.show_app_recommendations ?? true)
+                            ? 'translate-x-5'
+                            : 'translate-x-0.5'
+                        }`}
+                      />
+                    </button>
                   </div>
 
                   {/* Clipboard & Capture */}
@@ -1311,9 +1354,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
                       <div className="space-y-3">
                         <label className="block">
-                          <span className="text-sm font-medium">
-                            {t('settings.storageQuota')}
-                          </span>
+                          <span className="text-sm font-medium">{t('settings.storageQuota')}</span>
                           <p className="text-xs text-muted-foreground">
                             {t('settings.storageQuotaDesc')}
                           </p>
@@ -1376,12 +1417,12 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           }
                           aria-pressed={settings.single_click_paste ?? true}
                           className={`h-6 w-11 shrink-0 rounded-full transition-colors ${
-                            settings.single_click_paste ?? true ? 'bg-primary' : 'bg-white/10'
+                            (settings.single_click_paste ?? true) ? 'bg-primary' : 'bg-white/10'
                           }`}
                         >
                           <div
                             className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                              settings.single_click_paste ?? true
+                              (settings.single_click_paste ?? true)
                                 ? 'translate-x-5'
                                 : 'translate-x-0.5'
                             }`}
@@ -1920,6 +1961,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           </label>
                           <label className="block">
                             <span className="text-sm">{t('settings.appLockIdle')}</span>
+                            <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                              {t('settings.appLockIdleDesc')}
+                            </span>
                             <div className="mt-1">
                               <Select
                                 value={String(settings.app_lock_idle_seconds ?? 0)}
@@ -2083,21 +2127,23 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         {t('settings.ignoredAppsDesc')}
                       </p>
 
-                      <div className="flex gap-2">
+                      <div className="flex items-stretch gap-2">
                         <input
                           type="text"
                           value={newIgnoredApp}
                           onChange={(e) => setNewIgnoredApp(e.target.value)}
                           placeholder={t('settings.ignoredAppPlaceholder')}
-                          className="flex-1 rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
+                          className="h-8 flex-1 rounded-[4px] border border-border bg-input px-2.5 text-[12px] text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
                           onKeyDown={(e) => e.key === 'Enter' && handleAddIgnoredApp()}
                         />
                         <Tooltip label={t('settings.browseExecutable')} placement="top">
                           <button
+                            type="button"
                             onClick={handleBrowseFile}
-                            className="btn btn-secondary rounded-[4px] px-3"
+                            aria-label={t('settings.browseExecutable')}
+                            className="flex w-8 shrink-0 items-center justify-center rounded-[4px] border border-border bg-input text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground"
                           >
-                            <FolderOpen size={16} />
+                            <FolderOpen size={14} />
                           </button>
                         </Tooltip>
                       </div>
@@ -3241,7 +3287,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           onClick={() => {
                             setConfirmDialog({
                               isOpen: true,
-                              title: t('settings.loadDemoClipsTitle', { defaultValue: t('settings.loadDemoClips') }),
+                              title: t('settings.loadDemoClipsTitle', {
+                                defaultValue: t('settings.loadDemoClips'),
+                              }),
                               message: t('settings.loadDemoClipsMessage'),
                               action: async () => {
                                 await emit('load-demo-data');
@@ -3337,9 +3385,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               )
                             }
                             className={`h-6 w-11 flex-shrink-0 rounded-full transition-colors ${
-                              (settings.auto_backup_enabled ?? true)
-                                ? 'bg-primary'
-                                : 'bg-white/10'
+                              (settings.auto_backup_enabled ?? true) ? 'bg-primary' : 'bg-white/10'
                             }`}
                             aria-label={t('settings.autoBackupTitle')}
                           >
@@ -3358,7 +3404,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             <span className="block text-sm font-medium text-foreground">
                               {t('settings.autoBackupFolder')}
                             </span>
-                            <p className="mt-1 truncate text-xs text-muted-foreground" title={settings.auto_backup_folder || defaultAutoBackupFolder}>
+                            <p
+                              className="mt-1 truncate text-xs text-muted-foreground"
+                              title={settings.auto_backup_folder || defaultAutoBackupFolder}
+                            >
                               {settings.auto_backup_folder || defaultAutoBackupFolder}
                             </p>
                           </div>

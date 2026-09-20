@@ -64,7 +64,12 @@
     "folderCreated": "文件夹 \"{{name}}\" 已创建",
     "folderRenamed": "已重命名为 \"{{name}}\"",
     "folderDeleted": "文件夹已删除",
-    "folderNamePlaceholder": "文件夹名称"
+    "folderNamePlaceholder": "文件夹名称",
+    "copyToFolder": "复制到文件夹",
+    "mainClipboard": "主剪贴板",
+    "filterFolders": "筛选文件夹",
+    "noMatchingFolders": "没有匹配的文件夹",
+    "copyToFolderHint": "方向键选择，Enter 复制，Esc 关闭"
   },
   "contextMenu": {
     "editType": "编辑{{type}}",
@@ -150,8 +155,8 @@
     "hotkeyPlaceholder": "点击以录制...",
     "hotkeyRecording": "按下按键...",
     "ignoredApps": "忽略的应用",
-    "ignoredAppsDesc": "不从这些应用捕获剪贴板",
-    "noIgnoredApps": "没有忽略的应用",
+    "ignoredAppsDesc": "不从这些应用捕获剪贴板（浏览可执行文件，或输入名称后按 Enter）",
+    "noIgnoredApps": "没有排除的应用",
     "addApp": "添加应用",
     "add": "添加",
     "clearHistory": "清空历史",

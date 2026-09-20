@@ -3,10 +3,28 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useTranslation } from 'react-i18next';
-import { AppWindow, Book, ChevronRight, Globe, Heart, HelpCircle, Info, Lock, Pause, Play, Power, RefreshCw, Settings, Tag } from 'lucide-react';
+import {
+  ArrowRight,
+  AppWindow,
+  Book,
+  ChevronRight,
+  Globe,
+  Heart,
+  HelpCircle,
+  Info,
+  Gem,
+  Lock,
+  Pause,
+  Play,
+  Power,
+  RefreshCw,
+  Settings,
+  Tag,
+} from 'lucide-react';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { resolveLanguage, useLanguage } from '../hooks/useLanguage';
 import type { Settings as AppSettings } from '../types';
+import { RECOMMENDED_SUITE_APPS, suiteLanguage } from '../data/suiteApps';
 
 /** Resolve the effective palette class for the tray menu (mirrors useTheme). */
 function trayThemeClass(theme: string | undefined): 'cyberpaste' | 'dark' | 'light' {
@@ -32,11 +50,19 @@ export interface TrayMenuState {
   is_paused: boolean;
   update_available: boolean;
   language: string;
+  show_app_recommendations?: boolean;
   lock_enabled?: boolean;
   locked?: boolean;
 }
 
-type TrayAction = 'show' | 'toggle_pause' | 'settings' | 'about' | 'check_updates' | 'quit' | 'lock';
+type TrayAction =
+  | 'show'
+  | 'toggle_pause'
+  | 'settings'
+  | 'about'
+  | 'check_updates'
+  | 'quit'
+  | 'lock';
 
 const DONATE_URL = 'https://github.com/CyberGems/CyberPaste#%EF%B8%8F-donate';
 const WIKI_URL = 'https://github.com/CyberGems/CyberPaste/wiki';
@@ -56,6 +82,7 @@ export function TrayMenuWindow() {
   const rootRef = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<TrayMenuState | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [suiteOpen, setSuiteOpen] = useState(false);
   const closingRef = useRef(false);
   const openRef = useRef(false);
 
@@ -110,6 +137,7 @@ export function TrayMenuWindow() {
   const runAction = useCallback(async (action: TrayAction) => {
     openRef.current = false;
     setHelpOpen(false);
+    setSuiteOpen(false);
     try {
       await invoke('tray_menu_action', { action });
     } catch (e) {
@@ -120,6 +148,7 @@ export function TrayMenuWindow() {
   const hideThenOpen = useCallback(async (url: string) => {
     openRef.current = false;
     setHelpOpen(false);
+    setSuiteOpen(false);
     try {
       await invoke('hide_tray_menu');
     } catch (e) {
@@ -132,7 +161,7 @@ export function TrayMenuWindow() {
     requestAnimationFrame(() => {
       requestAnimationFrame(reportSize);
     });
-  }, [helpOpen, reportSize]);
+  }, [helpOpen, suiteOpen, reportSize]);
 
   useEffect(() => {
     const unlistenState = listen<TrayMenuState>('tray-menu-state', (event) => {
@@ -149,6 +178,7 @@ export function TrayMenuWindow() {
       openRef.current = true;
       closingRef.current = false;
       setHelpOpen(false);
+      setSuiteOpen(false);
       // Double rAF: wait for React to paint updated labels, then measure outer shell
       requestAnimationFrame(() => {
         requestAnimationFrame(reportSize);
@@ -158,6 +188,7 @@ export function TrayMenuWindow() {
     const unlistenHide = listen('tray-menu-hide', () => {
       openRef.current = false;
       setHelpOpen(false);
+      setSuiteOpen(false);
     });
 
     // Re-theme live when settings change elsewhere
@@ -165,7 +196,16 @@ export function TrayMenuWindow() {
       applyTrayTheme(event.payload.theme);
       const target = resolveLanguage(event.payload.language);
       if (target && target !== i18n.language) i18n.changeLanguage(target);
-      setState((prev) => (prev ? { ...prev, language: event.payload.language ?? prev.language } : prev));
+      setState((prev) =>
+        prev
+          ? {
+              ...prev,
+              language: event.payload.language ?? prev.language,
+              show_app_recommendations:
+                event.payload.show_app_recommendations ?? prev.show_app_recommendations,
+            }
+          : prev
+      );
     });
 
     // First open: window is created after the tray-menu-show emit, so that event
@@ -217,6 +257,8 @@ export function TrayMenuWindow() {
   const pauseLabel = state?.is_paused
     ? t('tray.resumeMonitoring', { defaultValue: 'Resume Monitoring' })
     : t('tray.pauseMonitoring', { defaultValue: 'Pause Monitoring' });
+  const suiteEnabled = state?.show_app_recommendations ?? true;
+  const suiteLang = suiteLanguage(state?.language);
 
   return (
     // Outer shell includes shadow bleed — THIS is what we measure for window size
@@ -286,58 +328,117 @@ export function TrayMenuWindow() {
             label={t('tray.settings', { defaultValue: 'Settings...' })}
             onClick={() => runAction('settings')}
           />
-          <TrayItem
-            icon={<HelpCircle size={15} strokeWidth={1.75} />}
-            label={t('tray.help', { defaultValue: 'Help' })}
-            trailing={
-              <ChevronRight
-                size={14}
-                strokeWidth={2}
-                className={`text-muted-foreground transition-transform duration-150 ${helpOpen ? 'rotate-90' : ''}`}
-              />
-            }
-            onClick={() => setHelpOpen((v) => !v)}
-          />
-          {helpOpen && (
-            <div className="ml-2 flex flex-col gap-0.5 border-l border-border/70 pl-1.5">
+          <div
+            className="flex flex-col"
+            onPointerEnter={() => {
+              setSuiteOpen(false);
+              setHelpOpen(true);
+            }}
+            onPointerLeave={() => setHelpOpen(false)}
+          >
+            <TrayItem
+              icon={<HelpCircle size={15} strokeWidth={1.75} />}
+              label={t('tray.help', { defaultValue: 'Help' })}
+              trailing={
+                <ChevronRight
+                  size={14}
+                  strokeWidth={2}
+                  className={`text-muted-foreground transition-transform duration-150 ${helpOpen ? 'rotate-90' : ''}`}
+                />
+              }
+              onClick={() => {
+                setSuiteOpen(false);
+                setHelpOpen(true);
+              }}
+            />
+            {helpOpen && (
+              <div className="ml-2 flex flex-col gap-0.5 border-l border-border/70 pl-1.5">
+                <TrayItem
+                  icon={<Book size={15} strokeWidth={1.75} />}
+                  label={t('tray.docs', { defaultValue: 'Documentation & Wiki' })}
+                  onClick={() => hideThenOpen(WIKI_URL)}
+                />
+                <TrayItem
+                  icon={<HelpCircle size={15} strokeWidth={1.75} />}
+                  label={t('tray.faq', { defaultValue: 'Frequently Asked Questions' })}
+                  onClick={() => hideThenOpen(FAQ_URL)}
+                />
+                <TrayItem
+                  icon={<Tag size={15} strokeWidth={1.75} />}
+                  label={t('tray.changelog', { defaultValue: 'Changelog' })}
+                  onClick={() => hideThenOpen(CHANGELOG_URL)}
+                />
+                <TrayItem
+                  icon={<Globe size={15} strokeWidth={1.75} />}
+                  label={t('tray.website', { defaultValue: 'Website' })}
+                  onClick={() => hideThenOpen(WEBSITE_URL)}
+                />
+                <TrayItem
+                  icon={<Heart size={15} strokeWidth={1.75} className="text-[#00D8F1]" />}
+                  label={t('tray.donate', { defaultValue: 'Donate' })}
+                  onClick={() => hideThenOpen(DONATE_URL)}
+                />
+                <div className="mx-1 my-0.5 h-px bg-accent" />
+                <TrayItem
+                  icon={<Info size={15} strokeWidth={1.75} />}
+                  label={t('tray.about', { defaultValue: 'About...' })}
+                  onClick={() => runAction('about')}
+                />
+                <TrayItem
+                  icon={<RefreshCw size={15} strokeWidth={1.75} />}
+                  label={t('tray.checkUpdates', { defaultValue: 'Check for Update...' })}
+                  onClick={() => runAction('check_updates')}
+                />
+              </div>
+            )}
+          </div>
+          {suiteEnabled ? (
+            <div
+              className="flex flex-col"
+              onPointerEnter={() => {
+                setHelpOpen(false);
+                setSuiteOpen(true);
+              }}
+              onPointerLeave={() => setSuiteOpen(false)}
+            >
               <TrayItem
-                icon={<Book size={15} strokeWidth={1.75} />}
-                label={t('tray.docs', { defaultValue: 'Documentation & Wiki' })}
-                onClick={() => hideThenOpen(WIKI_URL)}
+                icon={<Gem size={15} strokeWidth={1.75} />}
+                label={t('tray.suite', { defaultValue: 'More from CyberGems' })}
+                trailing={
+                  <ChevronRight
+                    size={14}
+                    strokeWidth={2}
+                    className={`text-muted-foreground transition-transform duration-150 ${suiteOpen ? 'rotate-90' : ''}`}
+                  />
+                }
+                onClick={() => {
+                  setHelpOpen(false);
+                  setSuiteOpen(true);
+                }}
               />
-              <TrayItem
-                icon={<HelpCircle size={15} strokeWidth={1.75} />}
-                label={t('tray.faq', { defaultValue: 'Frequently Asked Questions' })}
-                onClick={() => hideThenOpen(FAQ_URL)}
-              />
-              <TrayItem
-                icon={<Tag size={15} strokeWidth={1.75} />}
-                label={t('tray.changelog', { defaultValue: 'Changelog' })}
-                onClick={() => hideThenOpen(CHANGELOG_URL)}
-              />
-              <TrayItem
-                icon={<Globe size={15} strokeWidth={1.75} />}
-                label={t('tray.website', { defaultValue: 'Website' })}
-                onClick={() => hideThenOpen(WEBSITE_URL)}
-              />
-              <TrayItem
-                icon={<Heart size={15} strokeWidth={1.75} className="text-[#00D8F1]" />}
-                label={t('tray.donate', { defaultValue: 'Donate' })}
-                onClick={() => hideThenOpen(DONATE_URL)}
-              />
-              <div className="mx-1 my-0.5 h-px bg-accent" />
-              <TrayItem
-                icon={<Info size={15} strokeWidth={1.75} />}
-                label={t('tray.about', { defaultValue: 'About...' })}
-                onClick={() => runAction('about')}
-              />
-              <TrayItem
-                icon={<RefreshCw size={15} strokeWidth={1.75} />}
-                label={t('tray.checkUpdates', { defaultValue: 'Check for Update...' })}
-                onClick={() => runAction('check_updates')}
-              />
+              {suiteOpen ? (
+                <div className="ml-2 flex flex-col gap-0.5 border-l border-border/70 pl-1.5">
+                  {RECOMMENDED_SUITE_APPS.map((app) => (
+                    <TrayItem
+                      key={app.slug}
+                      icon={
+                        <img src={app.icon} alt="" className="h-4 w-4 rounded object-contain" />
+                      }
+                      label={app.name}
+                      description={app.short[suiteLang]}
+                      onClick={() => hideThenOpen(app.site)}
+                    />
+                  ))}
+                  <div className="mx-1 my-0.5 h-px bg-accent" />
+                  <TrayItem
+                    icon={<ArrowRight size={15} strokeWidth={1.75} />}
+                    label={t('tray.suiteMore', { defaultValue: 'More details online' })}
+                    onClick={() => hideThenOpen('https://cybergems.org/#apps')}
+                  />
+                </div>
+              ) : null}
             </div>
-          )}
+          ) : null}
         </div>
 
         <div className="mx-2.5 h-px bg-accent" />
@@ -358,12 +459,14 @@ function TrayItem({
   icon,
   label,
   shortcut,
+  description,
   trailing,
   onClick,
 }: {
   icon: ReactNode;
   label: string;
   shortcut?: string;
+  description?: string;
   trailing?: ReactNode;
   onClick: () => void;
 }) {
@@ -385,7 +488,11 @@ function TrayItem({
         {label}
       </span>
       {trailing ??
-        (shortcut ? (
+        (description ? (
+          <span className="max-w-[82px] flex-shrink-0 truncate pl-2 text-[10px] text-muted-foreground">
+            {description}
+          </span>
+        ) : shortcut ? (
           <span className="flex-shrink-0 pl-3 text-[11px] font-medium tabular-nums text-muted-foreground">
             {shortcut}
           </span>

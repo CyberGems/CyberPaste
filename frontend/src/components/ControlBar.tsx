@@ -858,12 +858,16 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                   <input
                     autoFocus
                     type="text"
+                    id="search-input"
                     placeholder="..."
                     className="min-w-0 flex-1 bg-transparent py-1 text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Escape') onSearchClick();
+                      if (e.key === 'Escape') {
+                        e.stopPropagation();
+                        onSearchClick();
+                      }
                     }}
                   />
                 </div>

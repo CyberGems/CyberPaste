@@ -64,7 +64,12 @@
     "folderCreated": "フォルダー \"{{name}}\" を作成しました",
     "folderRenamed": "\"{{name}}\" に名前を変更しました",
     "folderDeleted": "フォルダーを削除しました",
-    "folderNamePlaceholder": "フォルダー名"
+    "folderNamePlaceholder": "フォルダー名",
+    "copyToFolder": "フォルダーにコピー",
+    "mainClipboard": "メインのクリップボード",
+    "filterFolders": "フォルダーを絞り込み",
+    "noMatchingFolders": "一致するフォルダーはありません",
+    "copyToFolderHint": "矢印で選択、Enter でコピー、Esc で閉じる"
   },
   "contextMenu": {
     "editType": "{{type}}を編集",
@@ -150,7 +155,7 @@
     "hotkeyPlaceholder": "クリックして記録...",
     "hotkeyRecording": "キーを押してください...",
     "ignoredApps": "除外するアプリ",
-    "ignoredAppsDesc": "これらのアプリからはクリップボードを取得しません",
+    "ignoredAppsDesc": "これらのアプリからはクリップボードを取得しません（実行ファイルを探すか、名前を入力して Enter）",
     "noIgnoredApps": "除外するアプリはありません",
     "addApp": "アプリを追加",
     "add": "追加",

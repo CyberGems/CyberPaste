@@ -64,7 +64,12 @@
     "folderCreated": "Ordner \"{{name}}\" erstellt",
     "folderRenamed": "Umbenannt in \"{{name}}\"",
     "folderDeleted": "Ordner gelöscht",
-    "folderNamePlaceholder": "Ordnername"
+    "folderNamePlaceholder": "Ordnername",
+    "copyToFolder": "In Ordner kopieren",
+    "mainClipboard": "Hauptzwischenablage",
+    "filterFolders": "Ordner filtern",
+    "noMatchingFolders": "Keine passenden Ordner",
+    "copyToFolderHint": "Pfeile zum Auswählen, Enter zum Kopieren, Esc zum Schließen"
   },
   "contextMenu": {
     "editType": "{{type}} bearbeiten",
@@ -150,8 +155,8 @@
     "hotkeyPlaceholder": "Klicken, um aufzuzeichnen...",
     "hotkeyRecording": "Tasten drücken...",
     "ignoredApps": "Ignorierte Anwendungen",
-    "ignoredAppsDesc": "Zwischenablage dieser Anwendungen nicht erfassen",
-    "noIgnoredApps": "Keine ignorierten Anwendungen",
+    "ignoredAppsDesc": "Zwischenablage dieser Apps nicht erfassen (Executable suchen oder Namen eingeben und Enter drücken)",
+    "noIgnoredApps": "Keine ausgeschlossenen Apps",
     "addApp": "Anwendung hinzufügen",
     "add": "Hinzufügen",
     "clearHistory": "Verlauf löschen",

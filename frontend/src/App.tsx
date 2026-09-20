@@ -1771,21 +1771,22 @@ function App() {
     }
 
     const currentIndex = clips.findIndex((c) => c.id === selectedClipId);
+    if (currentIndex < 0) {
+      setSelectedClipId(clips[0].id);
+      return;
+    }
+
     if (settings?.view_mode === 'full') {
       const cols = gridColumns || 1;
       if (currentIndex >= cols) {
         setSelectedClipId(clips[currentIndex - cols].id);
       } else {
-        // Wrap around to bottom
-        const target = clips.length - 1;
-        setSelectedClipId(clips[target].id);
-      }
-    } else {
-      if (currentIndex > 0) {
-        setSelectedClipId(clips[currentIndex - 1].id);
-      } else {
         setSelectedClipId(clips[clips.length - 1].id);
       }
+    } else if (currentIndex > 0) {
+      setSelectedClipId(clips[currentIndex - 1].id);
+    } else {
+      setSelectedClipId(clips[clips.length - 1].id);
     }
   }, [clips, selectedClipId, settings?.view_mode, gridColumns]);
 
@@ -1798,20 +1799,22 @@ function App() {
     }
 
     const currentIndex = clips.findIndex((c) => c.id === selectedClipId);
+    if (currentIndex < 0) {
+      setSelectedClipId(clips[0].id);
+      return;
+    }
+
     if (settings?.view_mode === 'full') {
       const cols = gridColumns || 1;
       if (currentIndex + cols < clips.length) {
         setSelectedClipId(clips[currentIndex + cols].id);
       } else {
-        // Wrap around to top
         setSelectedClipId(clips[0].id);
       }
+    } else if (currentIndex < clips.length - 1) {
+      setSelectedClipId(clips[currentIndex + 1].id);
     } else {
-      if (currentIndex < clips.length - 1) {
-        setSelectedClipId(clips[currentIndex + 1].id);
-      } else {
-        setSelectedClipId(clips[0].id);
-      }
+      setSelectedClipId(clips[0].id);
     }
   }, [clips, selectedClipId, settings?.view_mode, gridColumns]);
 
@@ -2851,7 +2854,11 @@ function App() {
     onOpenContextMenu: handleOpenSelectedContextMenu,
     onSelectAll: handleSelectAllClips,
     onPasteByIndex: handlePasteByIndex,
-    onClearSearch: () => handleSearch(''),
+    onClearSearch: () => {
+      handleSearch('');
+      setShowSearch(false);
+    },
+    searchActive: Boolean(showSearch || searchQuery.trim()),
     onToggleMode: toggleViewMode,
     toggleModeHotkey: settings?.view_mode_hotkey,
     onTogglePeek: handleTogglePeek,

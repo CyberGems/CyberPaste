@@ -42,6 +42,8 @@ interface KeyboardOptions {
   onPasteByIndex?: (n: number) => void;
   /** Esc pressed while search input is focused and has text */
   onClearSearch?: () => void;
+  /** True while the full-mode search overlay is open or a query is active. */
+  searchActive?: boolean;
   onToggleMode?: () => void;
   toggleModeHotkey?: string; // e.g. "Ctrl+M"
   onStartTypingSearch?: (char: string) => void;
@@ -107,14 +109,14 @@ export function useKeyboard(options: KeyboardOptions) {
         if (isTyping && !isSearchInput) {
           return;
         }
-        // Si el search input está enfocado y tiene texto, limpiar primero
-        if (isSearchInput && options.onClearSearch) {
-          const input = e.target as HTMLInputElement;
-          if (input.value.length > 0) {
-            e.preventDefault();
-            options.onClearSearch();
-            return;
-          }
+        // First Escape dismisses search (even after leaving the field with arrows).
+        // A second Escape hides the window.
+        const searchFieldHasText =
+          isSearchInput && (e.target as HTMLInputElement).value.length > 0;
+        if (options.onClearSearch && (options.searchActive || searchFieldHasText)) {
+          e.preventDefault();
+          options.onClearSearch();
+          return;
         }
         e.preventDefault();
         options.onClose();
@@ -296,12 +298,21 @@ export function useKeyboard(options: KeyboardOptions) {
         }
       }
 
+      // In full mode, the first arrow from search should land in the clip grid
+      // (blur the field) so left/right work like the unfiltered view.
+      const leaveSearchForGrid = () => {
+        if (isSearchInput && options.onNavigateLeft && e.target instanceof HTMLElement) {
+          e.target.blur();
+        }
+      };
+
       if (e.key === 'ArrowUp' && options.onNavigatePrev) {
         if (isTyping && !isSearchInput) {
           return;
         }
         e.preventDefault();
         e.stopPropagation();
+        leaveSearchForGrid();
         lockListHover();
         options.onNavigatePrev();
       }
@@ -312,26 +323,29 @@ export function useKeyboard(options: KeyboardOptions) {
         }
         e.preventDefault();
         e.stopPropagation();
+        leaveSearchForGrid();
         lockListHover();
         options.onNavigateNext();
       }
 
       if ((e.key === 'Home' || e.key === 'Start') && options.onNavigateFirst) {
-        if (isTyping) {
+        if (isTyping && !isSearchInput) {
           return;
         }
         e.preventDefault();
         e.stopPropagation();
+        leaveSearchForGrid();
         lockListHover();
         options.onNavigateFirst();
       }
 
       if (e.key === 'End' && options.onNavigateLast) {
-        if (isTyping) {
+        if (isTyping && !isSearchInput) {
           return;
         }
         e.preventDefault();
         e.stopPropagation();
+        leaveSearchForGrid();
         lockListHover();
         options.onNavigateLast();
       }
@@ -342,6 +356,7 @@ export function useKeyboard(options: KeyboardOptions) {
         }
         e.preventDefault();
         e.stopPropagation();
+        leaveSearchForGrid();
         lockListHover();
         options.onNavigatePageUp();
       }
@@ -352,6 +367,7 @@ export function useKeyboard(options: KeyboardOptions) {
         }
         e.preventDefault();
         e.stopPropagation();
+        leaveSearchForGrid();
         lockListHover();
         options.onNavigatePageDown();
       }
@@ -359,20 +375,22 @@ export function useKeyboard(options: KeyboardOptions) {
       // Left/Right: with Ctrl (or Cmd) → switch folders; plain → move between cards.
       // Full mode passes onNavigateLeft/Right (grid navigation) and uses Ctrl for folders.
       // Compact mode passes onFolderPrev/Next directly (single-row strip).
-      if (e.key === 'ArrowLeft' && !isTyping) {
+      if (e.key === 'ArrowLeft' && (!isTyping || isSearchInput)) {
         if (e.ctrlKey || e.metaKey) {
           if (options.onFolderPrev) {
             e.preventDefault();
             e.stopPropagation();
+            leaveSearchForGrid();
             lockListHover();
             options.onFolderPrev();
           }
         } else if (options.onNavigateLeft) {
           e.preventDefault();
           e.stopPropagation();
+          leaveSearchForGrid();
           lockListHover();
           options.onNavigateLeft();
-        } else if (options.onFolderPrev) {
+        } else if (options.onFolderPrev && !isSearchInput) {
           e.preventDefault();
           e.stopPropagation();
           lockListHover();
@@ -380,20 +398,22 @@ export function useKeyboard(options: KeyboardOptions) {
         }
       }
 
-      if (e.key === 'ArrowRight' && !isTyping) {
+      if (e.key === 'ArrowRight' && (!isTyping || isSearchInput)) {
         if (e.ctrlKey || e.metaKey) {
           if (options.onFolderNext) {
             e.preventDefault();
             e.stopPropagation();
+            leaveSearchForGrid();
             lockListHover();
             options.onFolderNext();
           }
         } else if (options.onNavigateRight) {
           e.preventDefault();
           e.stopPropagation();
+          leaveSearchForGrid();
           lockListHover();
           options.onNavigateRight();
-        } else if (options.onFolderNext) {
+        } else if (options.onFolderNext && !isSearchInput) {
           e.preventDefault();
           e.stopPropagation();
           lockListHover();

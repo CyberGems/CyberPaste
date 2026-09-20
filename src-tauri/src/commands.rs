@@ -3956,6 +3956,7 @@ async fn dispatch_toast(app: AppHandle, payload: ToastPayload) -> Result<(), Str
 
     if let Some(win) = app.get_webview_window(window_label) {
         let _ = win.set_focusable(false);
+        raise_toast_topmost(&win);
         let is_welcome = payload.clip_type.as_deref() == Some("welcome");
         win.emit("update-toast", &payload).map_err(|e| e.to_string())?;
 
@@ -4105,9 +4106,46 @@ pub async fn set_toast_position(app: AppHandle, width: f64, height: f64) -> Resu
                 y: target_y,
             }));
             let _ = win.show();
+            raise_toast_topmost(&win);
         }
     }
     Ok(())
+}
+
+/// Hidden toast windows lose WS_EX_TOPMOST after lock screen, fullscreen apps,
+/// or hours of sitting idle. Re-assert it on every show so the toast stays above
+/// other windows without stealing focus.
+fn raise_toast_topmost(win: &tauri::WebviewWindow) {
+    let _ = win.set_always_on_top(true);
+    #[cfg(windows)]
+    if let Ok(handle) = win.hwnd() {
+        use windows::Win32::Foundation::HWND;
+        use windows::Win32::UI::WindowsAndMessaging::{
+            SetWindowPos, HWND_NOTOPMOST, HWND_TOPMOST, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE,
+            SWP_SHOWWINDOW,
+        };
+        let hwnd = HWND(handle.0 as _);
+        unsafe {
+            let _ = SetWindowPos(
+                hwnd,
+                Some(HWND_NOTOPMOST),
+                0,
+                0,
+                0,
+                0,
+                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
+            );
+            let _ = SetWindowPos(
+                hwnd,
+                Some(HWND_TOPMOST),
+                0,
+                0,
+                0,
+                0,
+                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW,
+            );
+        }
+    }
 }
 
 /// Present the image viewer above the main clipboard UI.
@@ -4377,6 +4415,7 @@ pub struct TrayMenuState {
     pub is_paused: bool,
     pub update_available: bool,
     pub language: String,
+    pub show_app_recommendations: bool,
     pub lock_enabled: bool,
     pub locked: bool,
 }
@@ -4481,6 +4520,7 @@ pub fn collect_tray_menu_state(app: &AppHandle) -> TrayMenuState {
         is_paused,
         update_available: UPDATE_AVAILABLE.load(Ordering::SeqCst),
         language: settings.language.clone(),
+        show_app_recommendations: settings.show_app_recommendations,
         lock_enabled: crate::app_lock::is_enabled(),
         locked: crate::app_lock::is_locked(),
     }

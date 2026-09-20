@@ -64,7 +64,12 @@
     "folderCreated": "Dossier \"{{name}}\" créé",
     "folderRenamed": "Renommé en \"{{name}}\"",
     "folderDeleted": "Dossier supprimé",
-    "folderNamePlaceholder": "Nom du dossier"
+    "folderNamePlaceholder": "Nom du dossier",
+    "copyToFolder": "Copier vers le dossier",
+    "mainClipboard": "Presse-papiers principal",
+    "filterFolders": "Filtrer les dossiers",
+    "noMatchingFolders": "Aucun dossier correspondant",
+    "copyToFolderHint": "Flèches pour choisir, Entrée pour copier, Échap pour fermer"
   },
   "contextMenu": {
     "editType": "Modifier {{type}}",
@@ -150,8 +155,8 @@
     "hotkeyPlaceholder": "Cliquez pour enregistrer...",
     "hotkeyRecording": "Appuyez sur les touches...",
     "ignoredApps": "Applications ignorées",
-    "ignoredAppsDesc": "Ne pas capturer le presse-papiers de ces applications",
-    "noIgnoredApps": "Aucune application ignorée",
+    "ignoredAppsDesc": "Ne pas capturer le presse-papiers de ces apps (cherchez l'exécutable, ou saisissez le nom et appuyez sur Entrée)",
+    "noIgnoredApps": "Aucune application exclue",
     "addApp": "Ajouter une application",
     "add": "Ajouter",
     "clearHistory": "Effacer l'historique",

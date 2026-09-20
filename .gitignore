@@ -19,6 +19,8 @@ src-tauri/gen/
 
 # Local data
 data/
+!frontend/src/data/
+!frontend/src/data/suiteApps.ts
 
 # Logs
 *.log
