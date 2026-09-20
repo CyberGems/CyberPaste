@@ -21,6 +21,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Validate release summary
+        run: node .github/scripts/validate-release-summary.mjs
+
       - name: setup node
         uses: actions/setup-node@v4
         with:

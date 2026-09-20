@@ -1,6 +1,13 @@
-## 📋 CyberPaste {{VERSION}} — Release Notes
+## 📋 CyberPaste {{VERSION}}: Release Notes
 
-Welcome to the official **CyberPaste {{VERSION}}** release! CyberPaste is a lightning-fast, privacy-first clipboard history manager with smart AI actions, folders, and a native Windows look and feel.
+### 🚀 What's new in this release
+
+<!-- Maintainer: Rewrite the marked paragraph for every release. Use 25-45 words, lead with user-facing changes, and do not repeat the app name or version. -->
+<!-- changelog-summary:start -->
+AI configuration is more capable and transparent, keyboard navigation is faster, history controls are more precise, and window behavior has been refined across the main app, image viewer, About experience, and clipboard grid.
+<!-- changelog-summary:end -->
+
+> **New to CyberPaste?** A fast, privacy-first Windows clipboard manager with history, folders, OCR, and configurable AI actions.
 
 ---
 
