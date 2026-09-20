@@ -41,7 +41,7 @@ Most clipboard managers either send your data to the cloud or are too basic to b
 
 ### 📋 Clipboard Engine
 - **Rich Content Support** — Automatically captures formatted Text, Code (with syntax highlighting and language badges), HTML, RTF, Images (with high-res viewer & OCR text extraction), URLs, and Files
-- **Smart Monitoring** — Detects cut operations (Ctrl+X, Shift+Delete) via global keyboard hooks, duplicate detection, ghost clip filtering
+- **Smart Monitoring** — Detects cut operations (Ctrl+X, Shift+Delete) via global keyboard hooks and suppresses duplicate events
 - **Instant Search** — Real-time full-text search with quick filter chips (Text, Code, Images, Links, Files) and live database counters
 
 ### 🗂️ Organization
@@ -63,7 +63,6 @@ Most clipboard managers either send your data to the cloud or are too basic to b
 - **100% Local-First** — SQLite storage in WAL mode with fast indexes. Zero analytics, zero telemetry
 - **Optional App Lock:** Protect the interface with a PIN or password, recovery key, lock-on-hide and Windows session lock
 - **Privacy Exceptions** — Ignore sensitive apps (password managers, banking tools) by process name or full executable path
-- **Ghost Clip Filtering** — Option to ignore clips from unknown sources
 
 ### 🖥️ Desktop Integration
 - **Global Hotkey** — Toggle the clipboard window (default: `Ctrl+Shift+V`)
