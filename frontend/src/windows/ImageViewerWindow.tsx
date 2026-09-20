@@ -355,6 +355,12 @@ export function ImageViewerWindow() {
       applyTheme(event.payload.theme);
     });
 
+    const unlistenLock = listen<{ locked: boolean }>('app-lock-changed', (event) => {
+      if (event.payload.locked) {
+        appWindow.close().catch(console.error);
+      }
+    });
+
     const unlistenUpdate = listen<string>('update-viewer-clip', (event) => {
       loadClip(event.payload);
     });
@@ -409,6 +415,7 @@ export function ImageViewerWindow() {
 
     return () => {
       unlistenSettings.then((f) => f());
+      unlistenLock.then((f) => f());
       unlistenUpdate.then((f) => f());
       unlistenResize.then((f) => f());
       unlistenMoved.then((f) => f());

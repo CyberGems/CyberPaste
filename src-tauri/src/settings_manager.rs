@@ -1,10 +1,12 @@
 use crate::database::Database;
 use crate::models::AppSettings;
+use crate::secrets;
 use parking_lot::RwLock;
 use std::fs;
 use std::path::PathBuf;
+use std::sync::Arc;
 use tauri::AppHandle;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 pub struct SettingsManager {
     file_path: PathBuf,
@@ -64,6 +66,10 @@ impl SettingsManager {
         let derived_effect = crate::effect_for_theme(&settings.theme).to_string();
         if settings.mica_effect != derived_effect {
             settings.mica_effect = derived_effect;
+            needs_save = true;
+        }
+
+        if secrets::migrate_plain_api_key(&mut settings) {
             needs_save = true;
         }
 
@@ -211,6 +217,19 @@ impl SettingsManager {
         self.settings.read().clone()
     }
 
+    pub fn frontend_value(&self) -> serde_json::Value {
+        secrets::settings_for_frontend(&self.get())
+    }
+
+    pub fn update_sync<F>(&self, f: F) -> Result<(), String>
+    where
+        F: FnOnce(&mut AppSettings),
+    {
+        let mut settings = self.get();
+        f(&mut settings);
+        self.save(settings)
+    }
+
     pub fn save(&self, new_settings: AppSettings) -> Result<(), String> {
         {
             let mut lock = self.settings.write();
@@ -233,4 +252,10 @@ impl SettingsManager {
         f(&mut settings);
         self.save(settings)
     }
+}
+
+pub fn emit_changed(app: &AppHandle) {
+    let manager = app.state::<Arc<SettingsManager>>();
+    crate::app_lock::sync_options(&manager.get());
+    let _ = app.emit("settings-changed", manager.frontend_value());
 }

@@ -14,10 +14,12 @@ use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 static IS_ANIMATING: AtomicBool = AtomicBool::new(false);
 static LAST_SHOW_TIME: AtomicI64 = AtomicI64::new(0);
+static SKIP_LOCK_ON_NEXT_HIDE: AtomicBool = AtomicBool::new(false);
 static TARGET_FOREGROUND_HND: std::sync::atomic::AtomicPtr<()> =
     std::sync::atomic::AtomicPtr::new(std::ptr::null_mut());
 
 mod ai;
+mod app_lock;
 mod backup;
 mod clipboard;
 mod commands;
@@ -27,6 +29,7 @@ mod database;
 mod highlight;
 mod models;
 mod ocr;
+mod secrets;
 mod settings_commands;
 mod settings_manager;
 #[cfg(target_os = "windows")]
@@ -343,6 +346,24 @@ pub fn run_app() {
                 }
             }
             app.manage(Arc::new(settings_manager));
+
+            {
+                let manager = app.state::<Arc<SettingsManager>>();
+                if std::env::args().any(|a| a.eq_ignore_ascii_case("--reset-lock")) {
+                    crate::app_lock::reset_lock_from_cli(manager.inner().as_ref());
+                }
+                crate::app_lock::init(&manager.get());
+            }
+            crate::app_lock::start_session_lock_watcher(app.handle().clone());
+            {
+                let idle_handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    loop {
+                        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                        crate::app_lock::check_idle_timeout(&idle_handle);
+                    }
+                });
+            }
 
             {
                 let db_prune = db_arc.clone();
@@ -679,7 +700,16 @@ pub fn run_app() {
             tray_pin_tip::open_tray_icon_settings,
             tray_pin_tip::get_tray_pin_tip_edge,
             tray_pin_tip::tray_pin_tip_ready,
-            tray_pin_tip::dismiss_tray_pin_tip
+            tray_pin_tip::dismiss_tray_pin_tip,
+            app_lock::get_app_lock_status,
+            app_lock::app_lock_ping,
+            app_lock::lock_app,
+            app_lock::unlock_app,
+            app_lock::enable_app_lock,
+            app_lock::disable_app_lock,
+            app_lock::change_app_lock_secret,
+            app_lock::recover_app_lock,
+            app_lock::rotate_app_lock_recovery_key,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -687,6 +717,53 @@ pub fn run_app() {
 
 pub fn position_window_at_bottom(window: &tauri::WebviewWindow) {
     animate_window_show(window);
+}
+
+/// Place a compact window inside the monitor work area (taskbar on any edge)
+/// with a visible inset. When the cursor is near an edge, push a bit farther
+/// inward instead of slamming flush against the clamp.
+pub(crate) fn clamp_compact_to_work_area(
+    preferred_x: i32,
+    preferred_y: i32,
+    window_w: u32,
+    window_h: u32,
+    work_pos: tauri::PhysicalPosition<i32>,
+    work_size: tauri::PhysicalSize<u32>,
+    scale_factor: f64,
+) -> (i32, i32) {
+    let inset = (constants::COMPACT_EDGE_INSET * scale_factor).round() as i32;
+    let wa_left = work_pos.x;
+    let wa_top = work_pos.y;
+    let wa_right = work_pos.x + work_size.width as i32;
+    let wa_bottom = work_pos.y + work_size.height as i32;
+
+    let avail_w = (wa_right - wa_left).max(1);
+    let avail_h = (wa_bottom - wa_top).max(1);
+    let inset_x = inset.min(((avail_w - window_w as i32) / 2).max(0));
+    let inset_y = inset.min(((avail_h - window_h as i32) / 2).max(0));
+
+    let min_x = wa_left + inset_x;
+    let min_y = wa_top + inset_y;
+    let max_x = (wa_right - window_w as i32 - inset_x).max(min_x);
+    let max_y = (wa_bottom - window_h as i32 - inset_y).max(min_y);
+    let extra_cap = (24.0 * scale_factor).round();
+
+    let axis = |preferred: i32, min: i32, max: i32| -> i32 {
+        if preferred < min {
+            let overflow = (min - preferred) as f64;
+            let extra = (overflow * 0.14).min(extra_cap);
+            ((min as f64) + extra).round() as i32
+        } else if preferred > max {
+            let overflow = (preferred - max) as f64;
+            let extra = (overflow * 0.14).min(extra_cap);
+            ((max as f64) - extra).round() as i32
+        } else {
+            preferred
+        }
+        .clamp(min, max)
+    };
+
+    (axis(preferred_x, min_x, max_x), axis(preferred_y, min_y, max_y))
 }
 
 /// Smooth morph between compact ↔ full while the window stays visible.
@@ -774,13 +851,14 @@ pub fn animate_view_mode_transition(window: &tauri::WebviewWindow) {
         // Shrink toward the center of the current window — avoid jumping to cursor.
         let center_x = start_pos.x + (start_size.width as i32) / 2;
         let center_y = start_pos.y + (start_size.height as i32) / 2;
-        let tx = (center_x - (tw as i32) / 2).clamp(
-            monitor_pos.x,
-            monitor_pos.x + monitor_size.width as i32 - tw as i32,
-        );
-        let ty = (center_y - (th as i32) / 2).clamp(
-            monitor_pos.y,
-            monitor_pos.y + monitor_size.height as i32 - th as i32,
+        let (tx, ty) = clamp_compact_to_work_area(
+            center_x - (tw as i32) / 2,
+            center_y - (th as i32) / 2,
+            tw,
+            th,
+            work_area.position,
+            work_area.size,
+            scale_factor,
         );
         (tw, th, tx, ty)
     } else {
@@ -1048,13 +1126,16 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                     height: window_height_px,
                 }));
 
-                let target_x = (target_pos.x - (window_width_px / 2) as i32).clamp(
-                    monitor_pos.x,
-                    monitor_pos.x + monitor_size.width as i32 - window_width_px as i32,
-                );
-                let target_y = (target_pos.y - (window_height_px / 4) as i32).clamp(
-                    monitor_pos.y,
-                    monitor_pos.y + monitor_size.height as i32 - window_height_px as i32,
+                let preferred_x = target_pos.x - (window_width_px / 2) as i32;
+                let preferred_y = target_pos.y - (window_height_px / 4) as i32;
+                let (target_x, target_y) = clamp_compact_to_work_area(
+                    preferred_x,
+                    preferred_y,
+                    window_width_px,
+                    window_height_px,
+                    work_area.position,
+                    work_area.size,
+                    scale_factor,
                 );
 
                 let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
@@ -1185,6 +1266,9 @@ pub fn animate_window_hide(
         // Emit visibility AFTER acquiring the lock so that a concurrent
         // show animation's "window-visibility: true" is not overridden.
         let _ = window.emit("window-visibility", false);
+        if !SKIP_LOCK_ON_NEXT_HIDE.swap(false, Ordering::SeqCst) {
+            crate::app_lock::lock_on_hide(window.app_handle());
+        }
         let _ = rebuild_tray_menu(window.app_handle());
 
         let _guard = AnimationGuard;
@@ -1251,6 +1335,10 @@ pub fn animate_window_hide(
             callback();
         }
     });
+}
+
+pub fn skip_lock_on_next_hide() {
+    SKIP_LOCK_ON_NEXT_HIDE.store(true, Ordering::SeqCst);
 }
 
 /// Enable or disable OS autostart. On Windows the auto-launch crate writes an

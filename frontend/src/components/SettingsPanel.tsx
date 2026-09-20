@@ -1,4 +1,5 @@
-import { Settings, FolderItem } from '../types';
+import { Settings, FolderItem, AppLockStatus, AppLockKeyResult } from '../types';
+import { AppLockRecoveryKeyDialog } from './AppLockRecoveryKeyDialog';
 import {
   X,
   Trash2,
@@ -13,13 +14,14 @@ import {
   Maximize2,
   Minus,
   Square,
-  Info,
   RotateCcw,
   Volume2,
   Clipboard,
   Layout,
   Command,
   Lock,
+  Shield,
+  ShieldAlert,
   Database,
   HardDrive,
   Bell,
@@ -44,7 +46,6 @@ import { invoke } from '@tauri-apps/api/core';
 import { emit, listen } from '@tauri-apps/api/event';
 import { getCurrentWindow, availableMonitors } from '@tauri-apps/api/window';
 import { getVersion } from '@tauri-apps/api/app';
-import { openUrl } from '@tauri-apps/plugin-opener';
 import { systemToast as toast } from '../utils/toast';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Select } from './ui/Select';
@@ -59,8 +60,25 @@ interface SettingsPanelProps {
   onClose: () => void;
 }
 
-type Tab = 'general' | 'folders' | 'full' | 'compact' | 'ai' | 'notifications' | 'maintenance';
+const SETTINGS_TABS = [
+  'general',
+  'security',
+  'folders',
+  'full',
+  'compact',
+  'ai',
+  'notifications',
+  'maintenance',
+] as const;
+type Tab = (typeof SETTINGS_TABS)[number];
 type AutoBackupStatus = 'idle' | 'working' | 'success' | 'error';
+
+function resolveSettingsTab(value: string | null | undefined): Tab | null {
+  if (!value) return null;
+  if (value === 'privacy') return 'security';
+  if ((SETTINGS_TABS as readonly string[]).includes(value)) return value as Tab;
+  return null;
+}
 
 interface StorageUsage {
   database_bytes: number;
@@ -260,9 +278,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const tabParam = params.get('tab') as Tab;
-      if (['general', 'full', 'compact', 'ai', 'notifications', 'maintenance'].includes(tabParam)) {
-        return tabParam;
+      const tabParam = params.get('tab');
+      const resolved = resolveSettingsTab(tabParam);
+      if (resolved) {
+        return resolved;
       }
     }
     return 'general';
@@ -275,6 +294,15 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     null
   );
   const [showApiKey, setShowApiKey] = useState(false);
+  const [apiKeyDirty, setApiKeyDirty] = useState(false);
+  const [lockStatus, setLockStatus] = useState<AppLockStatus | null>(null);
+  const [lockMode, setLockMode] = useState<'pin' | 'password'>('pin');
+  const [lockSecret, setLockSecret] = useState('');
+  const [lockConfirm, setLockConfirm] = useState('');
+  const [lockCurrent, setLockCurrent] = useState('');
+  const [lockBusy, setLockBusy] = useState(false);
+  const [showChangeSecret, setShowChangeSecret] = useState(false);
+  const [recoveryKeyModal, setRecoveryKeyModal] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [appVersion, setAppVersion] = useState('');
   const [monitorList, setMonitorList] = useState<{ name: string; index: number }[]>([]);
@@ -301,25 +329,30 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
     // Initial pause state
     invoke<boolean>('is_clipboard_monitoring_paused').then(setIsPaused).catch(console.error);
+    invoke<AppLockStatus>('get_app_lock_status').then((s) => {
+      setLockStatus(s);
+      setLockMode(s.mode === 'password' ? 'password' : 'pin');
+    }).catch(console.error);
   }, []);
 
   useEffect(() => {
     const unlisten = listen<string>('open-tab', (event) => {
-      const tab = event.payload as Tab;
-      if (
-        ['general', 'folders', 'full', 'compact', 'ai', 'notifications', 'maintenance'].includes(
-          tab
-        )
-      ) {
-        setActiveTab(tab);
+      const resolved = resolveSettingsTab(event.payload);
+      if (resolved) {
+        setActiveTab(resolved);
       }
     });
     const unlistenPause = listen<boolean>('clipboard-pause-changed', (event) => {
       setIsPaused(event.payload);
     });
+    const unlistenLock = listen<AppLockStatus>('app-lock-changed', (event) => {
+      setLockStatus(event.payload);
+      setLockMode(event.payload.mode === 'password' ? 'password' : 'pin');
+    });
     return () => {
       unlisten.then((f) => f());
       unlistenPause.then((f) => f());
+      unlistenLock.then((f) => f());
     };
   }, []);
 
@@ -346,7 +379,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     }
   };
 
-  const [localApiKey, setLocalApiKey] = useState(initialSettings.ai_api_key || '');
+  const [localApiKey, setLocalApiKey] = useState('');
   const [localBaseUrl, setLocalBaseUrl] = useState(initialSettings.ai_base_url || '');
   const [localModel, setLocalModel] = useState(initialSettings.ai_model || 'gpt-5.6-luna');
   const [isCustomModel, setIsCustomModel] = useState(() => {
@@ -384,6 +417,97 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
   const handleTogglePause = () => {
     invoke('toggle_clipboard_monitoring').catch(console.error);
+  };
+
+  const lockErrorText = (err: unknown) => {
+    const text = String(err);
+    if (text.includes('APP_LOCK_WEAK_SECRET')) return t('appLock.errors.weak');
+    if (text.includes('APP_LOCK_INVALID_SECRET')) return t('appLock.errors.invalid');
+    if (text.includes('APP_LOCK_CONFIRM_MISMATCH') || text.includes('APP_LOCK_MISMATCH')) {
+      return t('appLock.errors.mismatch');
+    }
+    if (text.includes('APP_LOCK_RATE_LIMITED')) return t('appLock.errors.rateLimited');
+    if (text.includes('APP_LOCK_ALREADY_ENABLED')) return t('settings.appLockEnabledToast');
+    if (text.includes('APP_LOCK_NO_RECOVERY_KEY')) return t('appLock.errors.noRecoveryKey');
+    return t('appLock.errors.generic');
+  };
+
+  const handleEnableLock = async () => {
+    setLockBusy(true);
+    try {
+      const result = await invoke<AppLockKeyResult>('enable_app_lock', {
+        mode: lockMode,
+        secret: lockSecret,
+        confirm: lockConfirm,
+      });
+      setLockStatus(result.status);
+      setLockSecret('');
+      setLockConfirm('');
+      setRecoveryKeyModal(result.recovery_key);
+      toast.success(t('settings.appLockEnabledToast'));
+    } catch (err) {
+      toast.error(lockErrorText(err));
+    } finally {
+      setLockBusy(false);
+    }
+  };
+
+  const handleRotateRecoveryKey = async () => {
+    if (!lockCurrent.trim()) {
+      toast.error(t('settings.appLockRecoveryKeyNeedSecret'));
+      return;
+    }
+    setLockBusy(true);
+    try {
+      const result = await invoke<AppLockKeyResult>('rotate_app_lock_recovery_key', {
+        secret: lockCurrent,
+      });
+      setLockStatus(result.status);
+      setRecoveryKeyModal(result.recovery_key);
+      toast.success(t('settings.appLockRecoveryKeyCreatedToast'));
+    } catch (err) {
+      toast.error(lockErrorText(err));
+    } finally {
+      setLockBusy(false);
+    }
+  };
+
+  const handleDisableLock = async () => {
+    setLockBusy(true);
+    try {
+      const next = await invoke<AppLockStatus>('disable_app_lock', { secret: lockCurrent });
+      setLockStatus(next);
+      setLockCurrent('');
+      setLockSecret('');
+      setLockConfirm('');
+      toast.success(t('settings.appLockDisabledToast'));
+    } catch (err) {
+      toast.error(lockErrorText(err));
+    } finally {
+      setLockBusy(false);
+    }
+  };
+
+  const handleChangeLockSecret = async () => {
+    setLockBusy(true);
+    try {
+      const next = await invoke<AppLockStatus>('change_app_lock_secret', {
+        currentSecret: lockCurrent,
+        newSecret: lockSecret,
+        confirm: lockConfirm,
+        mode: lockMode,
+      });
+      setLockStatus(next);
+      setLockCurrent('');
+      setLockSecret('');
+      setLockConfirm('');
+      setShowChangeSecret(false);
+      toast.success(t('settings.appLockChangedToast'));
+    } catch (err) {
+      toast.error(lockErrorText(err));
+    } finally {
+      setLockBusy(false);
+    }
   };
 
   // Generic handler for immediate settings updates
@@ -476,6 +600,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         ai_title_translate: 'settings.aiTranslate',
         ai_title_explain_code: 'settings.aiExplainCode',
         ai_title_fix_grammar: 'settings.aiFixGrammar',
+        app_lock_on_hide: 'settings.appLockOnHide',
+        app_lock_on_windows_lock: 'settings.appLockOnWindowsLock',
+        app_lock_idle_seconds: 'settings.appLockIdle',
+        app_lock_pause_capture: 'settings.appLockPauseCapture',
       };
 
       const keys = Object.keys(updates);
@@ -789,6 +917,12 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         }}
         onCancel={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
       />
+      {recoveryKeyModal && (
+        <AppLockRecoveryKeyDialog
+          recoveryKey={recoveryKeyModal}
+          onClose={() => setRecoveryKeyModal(null)}
+        />
+      )}
       <div className="flex h-full select-none flex-col bg-background text-foreground">
         {/* Header */}
         <div
@@ -864,7 +998,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
         <div className="flex flex-1 overflow-hidden">
           {/* Sidebar */}
-          <div className="w-[170px] flex-shrink-0 border-r border-border bg-transparent px-2.5 py-3.5">
+          <div className="custom-scrollbar w-[170px] flex-shrink-0 overflow-y-auto border-r border-border bg-transparent px-2.5 py-3.5">
             <div className="flex flex-col gap-1">
               <button
                 onClick={() => setActiveTab('general')}
@@ -877,6 +1011,18 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               >
                 <SettingsIcon size={14} />
                 {t('settings.general')}
+              </button>
+              <button
+                onClick={() => setActiveTab('security')}
+                className={clsx(
+                  'flex items-center gap-2 whitespace-nowrap rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
+                  activeTab === 'security'
+                    ? 'border-l-[3px] border-primary bg-primary/10 text-primary shadow-none'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                )}
+              >
+                <Shield size={14} />
+                {t('settings.security')}
               </button>
               <button
                 onClick={() => setActiveTab('folders')}
@@ -1675,19 +1821,267 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
                     </div>
                   </section>
+                </>
+              )}
 
-                  {/* Privacy */}
+              {activeTab === 'security' && (
+                <>
                   <section className="space-y-4">
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
-                      <Lock size={14} /> {t('settings.privacy')}
+                      <Lock size={14} /> {t('settings.appLock')}
                     </h3>
                     <div className="space-y-4 rounded-xl border border-border bg-card p-4">
-                      <label className="block">
-                        <span className="text-sm font-medium">{t('settings.ignoredApps')}</span>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {t('settings.ignoredAppsDesc')}
-                        </p>
-                      </label>
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <span className="text-sm font-medium">{t('settings.appLock')}</span>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {t('settings.appLockDesc')}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
+                        <ShieldAlert size={14} className="mt-0.5 shrink-0 text-amber-500" />
+                        <span>{t('settings.appLockWarning')}</span>
+                      </div>
+                      <p className="rounded-lg border border-border bg-background/50 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
+                        {t('settings.appLockRecovery')}
+                      </p>
+                      <p className="px-1 text-[11px] leading-relaxed text-muted-foreground/80">
+                        {t('settings.appLockRecoveryLastResort')}
+                      </p>
+
+                      {lockStatus?.enabled ? (
+                        <div className="space-y-3">
+                          <label className="block">
+                            <span className="text-xs font-medium">
+                              {t('settings.appLockDisableNeedSecret')}
+                            </span>
+                            <input
+                              type="password"
+                              value={lockCurrent}
+                              onChange={(e) => setLockCurrent(e.target.value)}
+                              className="mt-1 w-full rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] text-foreground focus:border-ring focus:outline-none"
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            disabled={lockBusy || !lockCurrent.trim()}
+                            onClick={() => void handleDisableLock()}
+                            className="rounded-[4px] bg-destructive px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                          >
+                            {t('settings.appLockDisable')}
+                          </button>
+
+                          <label className="flex items-center justify-between gap-3 pt-1">
+                            <span>
+                              <span className="block text-sm">{t('settings.appLockOnHide')}</span>
+                              <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                                {t('settings.appLockOnHideDesc')}
+                              </span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateSetting(
+                                  'app_lock_on_hide',
+                                  !(settings.app_lock_on_hide ?? true)
+                                )
+                              }
+                              className={`h-6 w-11 shrink-0 rounded-full transition-colors ${(settings.app_lock_on_hide ?? true) ? 'bg-primary' : 'bg-white/10'}`}
+                            >
+                              <div
+                                className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.app_lock_on_hide ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                              />
+                            </button>
+                          </label>
+                          <label className="flex items-center justify-between gap-3">
+                            <span>
+                              <span className="block text-sm">
+                                {t('settings.appLockOnWindowsLock')}
+                              </span>
+                              <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                                {t('settings.appLockOnWindowsLockDesc')}
+                              </span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateSetting(
+                                  'app_lock_on_windows_lock',
+                                  !(settings.app_lock_on_windows_lock ?? true)
+                                )
+                              }
+                              className={`h-6 w-11 shrink-0 rounded-full transition-colors ${(settings.app_lock_on_windows_lock ?? true) ? 'bg-primary' : 'bg-white/10'}`}
+                            >
+                              <div
+                                className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.app_lock_on_windows_lock ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
+                              />
+                            </button>
+                          </label>
+                          <label className="block">
+                            <span className="text-sm">{t('settings.appLockIdle')}</span>
+                            <div className="mt-1">
+                              <Select
+                                value={String(settings.app_lock_idle_seconds ?? 0)}
+                                onChange={(val) =>
+                                  updateSetting('app_lock_idle_seconds', parseInt(val, 10))
+                                }
+                                options={[
+                                  { value: '0', label: t('settings.appLockIdleOff') },
+                                  { value: '60', label: t('settings.appLockIdle1m') },
+                                  { value: '300', label: t('settings.appLockIdle5m') },
+                                  { value: '900', label: t('settings.appLockIdle15m') },
+                                ]}
+                              />
+                            </div>
+                          </label>
+                          <label className="flex items-center justify-between gap-3">
+                            <span>
+                              <span className="block text-sm">
+                                {t('settings.appLockPauseCapture')}
+                              </span>
+                              <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                                {t('settings.appLockPauseCaptureDesc')}
+                              </span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateSetting(
+                                  'app_lock_pause_capture',
+                                  !settings.app_lock_pause_capture
+                                )
+                              }
+                              className={`h-6 w-11 shrink-0 rounded-full transition-colors ${settings.app_lock_pause_capture ? 'bg-primary' : 'bg-white/10'}`}
+                            >
+                              <div
+                                className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.app_lock_pause_capture ? 'translate-x-5' : 'translate-x-0.5'}`}
+                              />
+                            </button>
+                          </label>
+
+                          <button
+                            type="button"
+                            className="text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                            onClick={() => setShowChangeSecret((v) => !v)}
+                          >
+                            {t('settings.appLockChangeSecret')}
+                          </button>
+                          {!lockStatus.has_recovery_key && (
+                            <p className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
+                              {t('settings.appLockRecoveryKeyMissing')}
+                            </p>
+                          )}
+                          <button
+                            type="button"
+                            disabled={lockBusy}
+                            className="text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50"
+                            onClick={() => void handleRotateRecoveryKey()}
+                          >
+                            {lockStatus.has_recovery_key
+                              ? t('settings.appLockRecoveryKeyRotate')
+                              : t('settings.appLockRecoveryKeyCreate')}
+                          </button>
+                          {showChangeSecret && (
+                            <div className="space-y-2 rounded-lg border border-border/70 p-3">
+                              <Select
+                                value={lockMode}
+                                onChange={(val) =>
+                                  setLockMode(val === 'password' ? 'password' : 'pin')
+                                }
+                                options={[
+                                  { value: 'pin', label: t('settings.appLockModePin') },
+                                  { value: 'password', label: t('settings.appLockModePassword') },
+                                ]}
+                              />
+                              <input
+                                type="password"
+                                value={lockSecret}
+                                onChange={(e) =>
+                                  setLockSecret(
+                                    lockMode === 'pin'
+                                      ? e.target.value.replace(/\D/g, '').slice(0, 8)
+                                      : e.target.value
+                                  )
+                                }
+                                placeholder={t('settings.appLockNewSecret')}
+                                className="w-full rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] focus:border-ring focus:outline-none"
+                              />
+                              <input
+                                type="password"
+                                value={lockConfirm}
+                                onChange={(e) => setLockConfirm(e.target.value)}
+                                placeholder={t('settings.appLockConfirmSecret')}
+                                className="w-full rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] focus:border-ring focus:outline-none"
+                              />
+                              <button
+                                type="button"
+                                disabled={lockBusy || !lockCurrent.trim() || !lockSecret.trim()}
+                                onClick={() => void handleChangeLockSecret()}
+                                className="rounded-[4px] bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+                              >
+                                {t('common.save')}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <span className="text-xs font-medium">{t('settings.appLockMode')}</span>
+                          <Select
+                            value={lockMode}
+                            onChange={(val) => setLockMode(val === 'password' ? 'password' : 'pin')}
+                            options={[
+                              { value: 'pin', label: t('settings.appLockModePin') },
+                              { value: 'password', label: t('settings.appLockModePassword') },
+                            ]}
+                          />
+                          <input
+                            type="password"
+                            inputMode={lockMode === 'pin' ? 'numeric' : 'text'}
+                            value={lockSecret}
+                            onChange={(e) =>
+                              setLockSecret(
+                                lockMode === 'pin'
+                                  ? e.target.value.replace(/\D/g, '').slice(0, 8)
+                                  : e.target.value
+                              )
+                            }
+                            placeholder={
+                              lockMode === 'pin'
+                                ? t('appLock.pinPlaceholder')
+                                : t('appLock.passwordPlaceholder')
+                            }
+                            className="w-full rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] focus:border-ring focus:outline-none"
+                          />
+                          <input
+                            type="password"
+                            value={lockConfirm}
+                            onChange={(e) => setLockConfirm(e.target.value)}
+                            placeholder={t('settings.appLockConfirmSecret')}
+                            className="w-full rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] focus:border-ring focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            disabled={lockBusy || !lockSecret.trim() || lockSecret !== lockConfirm}
+                            onClick={() => void handleEnableLock()}
+                            className="rounded-[4px] bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+                          >
+                            {t('settings.appLockEnable')}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+
+                  <section className="space-y-4">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
+                      <EyeOff size={14} /> {t('settings.excludedApps')}
+                    </h3>
+                    <div className="space-y-4 rounded-xl border border-border bg-card p-4">
+                      <p className="text-xs text-muted-foreground">
+                        {t('settings.ignoredAppsDesc')}
+                      </p>
 
                       <div className="flex gap-2">
                         <input
@@ -2321,16 +2715,27 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             <input
                               type={showApiKey ? 'text' : 'password'}
                               value={localApiKey}
-                              onChange={(e) => setLocalApiKey(e.target.value)}
+                              onChange={(e) => {
+                                setApiKeyDirty(true);
+                                setLocalApiKey(e.target.value);
+                              }}
                               onBlur={() => {
+                                if (!apiKeyDirty) return;
                                 const trimmed = localApiKey.trim();
                                 setLocalApiKey(trimmed);
-                                updateSetting('ai_api_key', trimmed);
+                                updateSetting(
+                                  'ai_api_key',
+                                  trimmed ? trimmed : '__CYBERPASTE_API_KEY_CLEAR__'
+                                );
                               }}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
                               }}
-                              placeholder={t('settings.apiKeyPlaceholder')}
+                              placeholder={
+                                settings.ai_api_key_configured && !apiKeyDirty
+                                  ? t('settings.apiKeySaved')
+                                  : t('settings.apiKeyPlaceholder')
+                              }
                               className="w-full rounded-[4px] border border-border bg-input py-1.5 pl-2.5 pr-10 text-[12px] text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
                             />
                             <button
@@ -2341,6 +2746,20 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
                             </button>
                           </div>
+                          {settings.ai_api_key_configured && (
+                            <button
+                              type="button"
+                              className="text-[11px] text-muted-foreground underline-offset-2 hover:text-destructive hover:underline"
+                              onClick={() => {
+                                setLocalApiKey('');
+                                setApiKeyDirty(false);
+                                updateSetting('ai_api_key', '__CYBERPASTE_API_KEY_CLEAR__');
+                                toast.success(t('settings.apiKeyCleared'));
+                              }}
+                            >
+                              {t('settings.apiKeyClear')}
+                            </button>
+                          )}
                         </div>
 
                         <div className="space-y-3">
@@ -3027,36 +3446,32 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex flex-col items-center gap-1 border-t border-border bg-background px-4 py-3 text-center">
-          <button
-            onClick={() => openUrl('https://github.com/CyberGems/CyberPaste').catch(console.error)}
-            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-          >
-            CyberPaste {appVersion || '...'}
-          </button>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <footer className="flex min-h-[58px] shrink-0 items-center justify-center border-t border-border bg-black/[0.08] px-4">
+          <Tooltip label={t('common.openAbout')} placement="top">
             <button
+              type="button"
+              aria-label={t('common.openAbout')}
               onClick={() => invoke('open_about').catch(console.error)}
-              className="inline-flex items-center gap-1 transition-colors hover:text-foreground"
+              className="group flex flex-col items-center gap-1 rounded-md px-2 py-1 text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <Info size={12} />
-              {t('settings.about')}
+              <span className="flex items-center gap-1.5 text-[11px] leading-none text-foreground/70 transition-colors duration-200 group-hover:text-foreground">
+                <img
+                  src="/logo.png"
+                  alt=""
+                  aria-hidden="true"
+                  draggable={false}
+                  className="h-4 w-4 object-contain opacity-80 transition duration-200 group-hover:scale-[1.08] group-hover:opacity-100 group-focus-visible:scale-[1.08] group-focus-visible:opacity-100"
+                />
+                <span>
+                  CyberPaste <span className="opacity-80">v{appVersion || '...'}</span>
+                </span>
+              </span>
+              <span className="text-[10.5px] font-medium text-muted-foreground transition-colors duration-200 group-hover:text-foreground/75">
+                © 2026 CyberGems
+              </span>
             </button>
-            <span>•</span>
-            <span>© 2026 </span>
-            <Tooltip label={t('settings.aboutWebsiteTooltip')} placement="top">
-              <button
-                type="button"
-                onClick={() => openUrl('https://cybergems.org').catch(console.error)}
-                aria-label={t('settings.aboutWebsiteTooltip')}
-                className="transition-colors hover:text-foreground"
-              >
-                CyberGems
-              </button>
-            </Tooltip>
-          </div>
-        </div>
+          </Tooltip>
+        </footer>
       </div>
     </>
   );

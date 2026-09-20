@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useTranslation } from 'react-i18next';
-import { AppWindow, Book, ChevronRight, Globe, Heart, HelpCircle, Info, Pause, Play, Power, RefreshCw, Settings, Tag } from 'lucide-react';
+import { AppWindow, Book, ChevronRight, Globe, Heart, HelpCircle, Info, Lock, Pause, Play, Power, RefreshCw, Settings, Tag } from 'lucide-react';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { resolveLanguage, useLanguage } from '../hooks/useLanguage';
 import type { Settings as AppSettings } from '../types';
@@ -32,9 +32,11 @@ export interface TrayMenuState {
   is_paused: boolean;
   update_available: boolean;
   language: string;
+  lock_enabled?: boolean;
+  locked?: boolean;
 }
 
-type TrayAction = 'show' | 'toggle_pause' | 'settings' | 'about' | 'check_updates' | 'quit';
+type TrayAction = 'show' | 'toggle_pause' | 'settings' | 'about' | 'check_updates' | 'quit' | 'lock';
 
 const DONATE_URL = 'https://github.com/CyberGems/CyberPaste#%EF%B8%8F-donate';
 const WIKI_URL = 'https://github.com/CyberGems/CyberPaste/wiki';
@@ -272,6 +274,13 @@ export function TrayMenuWindow() {
             label={pauseLabel}
             onClick={() => runAction('toggle_pause')}
           />
+          {state?.lock_enabled && !state?.locked ? (
+            <TrayItem
+              icon={<Lock size={15} strokeWidth={1.75} />}
+              label={t('tray.lock', { defaultValue: 'Lock now' })}
+              onClick={() => runAction('lock')}
+            />
+          ) : null}
           <TrayItem
             icon={<Settings size={15} strokeWidth={1.75} />}
             label={t('tray.settings', { defaultValue: 'Settings...' })}

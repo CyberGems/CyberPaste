@@ -133,6 +133,8 @@ interface ControlBarProps {
   onToggleMaximize: () => void;
   isPinned: boolean;
   onTogglePin?: () => void;
+  lockEnabled?: boolean;
+  onLockNow?: () => void;
   onResetSize?: () => void;
   style?: React.CSSProperties;
   hotkey?: string;
@@ -242,6 +244,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   onToggleMaximize,
   isPinned,
   onTogglePin,
+  lockEnabled = false,
+  onLockNow,
   onResetSize,
   isDragging,
   style,
@@ -600,6 +604,18 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                     isPinned ? 'fill-primary text-primary' : 'rotate-45'
                   )}
                 />
+              </button>
+            </Tooltip>
+          )}
+
+          {lockEnabled && onLockNow && (
+            <Tooltip label={t('common.lockNow')} placement="bottom">
+              <button
+                type="button"
+                onClick={onLockNow}
+                className={clsx(headerBtnClass, 'focus:outline-none')}
+              >
+                <Lock size={15} />
               </button>
             </Tooltip>
           )}

@@ -89,6 +89,7 @@
   "settings": {
     "title": "設定",
     "general": "一般",
+    "security": "セキュリティ",
     "ai": "AI",
     "folders": "フォルダー",
     "appearance": "外観",
@@ -97,7 +98,7 @@
     "aboutDocsTooltip": "オンラインドキュメント",
     "appearanceBehavior": "外観と動作",
     "shortcuts": "ショートカット",
-    "privacyExceptions": "プライバシー例外",
+    "excludedApps": "除外するアプリ",
     "dataManagement": "データ管理",
     "aiConfiguration": "AI 設定",
     "customPrompts": "カスタムプロンプト",

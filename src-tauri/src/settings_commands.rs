@@ -1,13 +1,12 @@
 use crate::settings_manager::SettingsManager;
 use dark_light::Mode;
 use std::sync::Arc;
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Manager};
 
 #[tauri::command]
 pub async fn get_settings(app: AppHandle) -> Result<serde_json::Value, String> {
     let manager = app.state::<Arc<SettingsManager>>();
-    let settings = manager.get();
-    let mut value = serde_json::to_value(&settings).map_err(|e| e.to_string())?;
+    let mut value = manager.frontend_value();
 
     #[cfg(not(any(feature = "app-store", feature = "portable")))]
     {
@@ -32,10 +31,15 @@ pub async fn get_settings(app: AppHandle) -> Result<serde_json::Value, String> {
 
 #[tauri::command]
 pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
     let manager = app.state::<Arc<SettingsManager>>();
 
     // Deserialize incoming settings (Frontend sends full object except ignored_apps)
     let incoming_has_tray_pin_tip = settings.get("has_seen_tray_pin_tip").is_some();
+    let incoming_api_key = settings
+        .get("ai_api_key")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     let mut new_settings: crate::models::AppSettings =
         serde_json::from_value(settings).map_err(|e| e.to_string())?;
     new_settings.max_clipboard_text_bytes =
@@ -61,6 +65,18 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
     if !incoming_has_tray_pin_tip {
         new_settings.has_seen_tray_pin_tip = current.has_seen_tray_pin_tip;
     }
+
+    // Lock core is only changed via dedicated commands.
+    new_settings.app_lock_enabled = current.app_lock_enabled;
+    new_settings.app_lock_mode = current.app_lock_mode.clone();
+    new_settings.app_lock_hash = current.app_lock_hash.clone();
+    new_settings.app_lock_recovery_hash = current.app_lock_recovery_hash.clone();
+
+    crate::secrets::apply_incoming_api_key(
+        &mut new_settings,
+        &current.ai_api_key,
+        incoming_api_key.as_deref(),
+    )?;
 
     // Window effect: only re-apply DWM vibrancy if theme or round_corners actually changed
     let theme_str = crate::normalize_theme(&new_settings.theme).to_string();
@@ -122,9 +138,7 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
     );
     manager.save(new_settings)?;
     let _ = crate::rebuild_tray_menu(&app);
-    // Broadcast so every window (main, settings, toast, tray_menu, image_viewer)
-    // re-applies theme/colors live.
-    let _ = app.emit("settings-changed", crate::models::AppSettings::clone(&manager.get()));
+    crate::settings_manager::emit_changed(&app);
     if let Some(db) = app.try_state::<std::sync::Arc<crate::database::Database>>() {
         let _ = crate::commands::enforce_storage_policy(
             app.clone(),

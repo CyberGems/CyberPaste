@@ -251,5 +251,5 @@ fn mark_tray_pin_tip_seen(app: &AppHandle) {
         log::warn!("tray.pin-tip.save: {e}");
         return;
     }
-    let _ = app.emit("settings-changed", manager.get());
+    crate::settings_manager::emit_changed(app);
 }

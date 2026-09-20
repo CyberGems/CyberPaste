@@ -118,6 +118,31 @@ export interface Settings {
   wheel_folder_navigation?: boolean;
   title_bar_animation_enabled?: boolean;
   has_seen_tray_pin_tip?: boolean;
+  app_lock_enabled?: boolean;
+  app_lock_mode?: 'pin' | 'password' | string;
+  app_lock_on_hide?: boolean;
+  app_lock_on_windows_lock?: boolean;
+  app_lock_idle_seconds?: number;
+  app_lock_pause_capture?: boolean;
+  ai_api_key_configured?: boolean;
+}
+
+export interface AppLockStatus {
+  enabled: boolean;
+  locked: boolean;
+  mode: string;
+  lockout_remaining_ms: number;
+  failed_attempts: number;
+  on_hide: boolean;
+  on_windows_lock: boolean;
+  idle_seconds: number;
+  pause_capture: boolean;
+  has_recovery_key?: boolean;
+}
+
+export interface AppLockKeyResult {
+  status: AppLockStatus;
+  recovery_key: string;
 }
 
 export type ClipType = 'text' | 'image' | 'html' | 'rtf' | 'file' | 'url' | 'code';

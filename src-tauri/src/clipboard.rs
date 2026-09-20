@@ -204,6 +204,10 @@ pub fn init(app: &AppHandle, db: Arc<Database>) {
             log::info!("CLIPBOARD: Monitoring is paused, ignoring event.");
             return;
         }
+        if crate::app_lock::should_skip_capture() {
+            log::info!("CLIPBOARD: App lock is pausing capture, ignoring event.");
+            return;
+        }
         let app = app_clone.clone();
         let db = db_clone.clone();
         let is_cut = detect_if_cut_key_pressed();

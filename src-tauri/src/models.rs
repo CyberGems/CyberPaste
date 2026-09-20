@@ -131,6 +131,28 @@ pub struct AppSettings {
     /// First-run balloon pointing at the tray overflow. Once true, never shown again.
     #[serde(default)]
     pub has_seen_tray_pin_tip: bool,
+
+    /// UI lock (PIN/password). Does not encrypt clip data on disk.
+    #[serde(default)]
+    pub app_lock_enabled: bool,
+    #[serde(default = "default_lock_mode")]
+    pub app_lock_mode: String,
+    #[serde(default)]
+    pub app_lock_hash: String,
+    #[serde(default)]
+    pub app_lock_recovery_hash: String,
+    #[serde(default = "default_true")]
+    pub app_lock_on_hide: bool,
+    #[serde(default = "default_true")]
+    pub app_lock_on_windows_lock: bool,
+    #[serde(default)]
+    pub app_lock_idle_seconds: i64,
+    #[serde(default)]
+    pub app_lock_pause_capture: bool,
+}
+
+fn default_lock_mode() -> String {
+    "pin".to_string()
 }
 
 impl Default for AppSettings {
@@ -238,6 +260,14 @@ impl Default for AppSettings {
             wheel_folder_navigation: false,
             title_bar_animation_enabled: true,
             has_seen_tray_pin_tip: false,
+            app_lock_enabled: false,
+            app_lock_mode: default_lock_mode(),
+            app_lock_hash: String::new(),
+            app_lock_recovery_hash: String::new(),
+            app_lock_on_hide: true,
+            app_lock_on_windows_lock: true,
+            app_lock_idle_seconds: 0,
+            app_lock_pause_capture: false,
         }
     }
 }

@@ -294,6 +294,12 @@
   ::selection {
     @apply bg-primary/30;
   }
+
+  /* Edge/WebView2 native reveal sits on top of our own eye control. */
+  input[type='password']::-ms-reveal,
+  input[type='password']::-ms-clear {
+    display: none;
+  }
 }
 
 @layer components {

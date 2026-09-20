@@ -10,6 +10,7 @@ import {
   Book,
   Trash2,
   Settings,
+  Lock,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { openUrl } from '@tauri-apps/plugin-opener';
@@ -43,9 +44,22 @@ export function TitleBarMenu({
   const [open, setOpen] = useState(false);
   const [menuPointerActive, setMenuPointerActive] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [lockEnabled, setLockEnabled] = useState(false);
   const [pos, setPos] = useState({ top: 0, right: 0 });
   const wrapRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    invoke<{ enabled: boolean; locked: boolean }>('get_app_lock_status')
+      .then((s) => setLockEnabled(s.enabled && !s.locked))
+      .catch(() => undefined);
+    const unlisten = listen<{ enabled: boolean; locked: boolean }>('app-lock-changed', (event) => {
+      setLockEnabled(event.payload.enabled && !event.payload.locked);
+    });
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, []);
 
   useLayoutEffect(() => {
     if (!open || !wrapRef.current) return;
@@ -316,6 +330,25 @@ export function TitleBarMenu({
               <Github size={14} className={iconClass} />
               <span>{t('titleBar.moreMenu.github')}</span>
             </button>
+
+            {variant === 'main' && lockEnabled && (
+              <>
+                <div className="mx-1.5 my-1 h-px bg-border" />
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={itemClass}
+                  onClick={() =>
+                    closeAnd(() => {
+                      invoke('lock_app').catch(console.error);
+                    })
+                  }
+                >
+                  <Lock size={14} className={iconClass} />
+                  <span>{t('titleBar.moreMenu.lock')}</span>
+                </button>
+              </>
+            )}
 
             {showClearHistory && (
               <>

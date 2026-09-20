@@ -378,6 +378,8 @@ interface CompactViewProps {
   totalClipCount: number;
   isPinned?: boolean;
   onTogglePin?: () => void;
+  lockEnabled?: boolean;
+  onLockNow?: () => void;
   onFolderContextMenu?: (e: React.MouseEvent, id: string) => void;
   onContextMenu?: (e: React.MouseEvent, id: string) => void;
   onDragStart: (clipId: string, startX: number, startY: number) => void;
@@ -603,6 +605,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
   totalClipCount,
   isPinned = false,
   onTogglePin,
+  lockEnabled = false,
+  onLockNow,
   onFolderContextMenu,
   onContextMenu,
   onDragStart,
@@ -1271,6 +1275,17 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     isPinned ? 'fill-primary text-primary' : 'rotate-45'
                   )}
                 />
+              </button>
+            </Tooltip>
+          )}
+          {lockEnabled && onLockNow && (
+            <Tooltip label={t('common.lockNow')} placement="bottom">
+              <button
+                type="button"
+                onClick={onLockNow}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80"
+              >
+                <Lock size={14} />
               </button>
             </Tooltip>
           )}

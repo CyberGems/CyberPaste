@@ -89,6 +89,7 @@
   "settings": {
     "title": "Paramètres",
     "general": "Général",
+    "security": "Sécurité",
     "ai": "IA",
     "folders": "Dossiers",
     "appearance": "Apparence",
@@ -97,7 +98,7 @@
     "aboutDocsTooltip": "Documentation en ligne",
     "appearanceBehavior": "Apparence et comportement",
     "shortcuts": "Raccourcis",
-    "privacyExceptions": "Exceptions de confidentialité",
+    "excludedApps": "Applications exclues",
     "dataManagement": "Gestion des données",
     "aiConfiguration": "Configuration de l'IA",
     "customPrompts": "Prompts personnalisés",

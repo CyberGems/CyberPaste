@@ -11,7 +11,7 @@ import { emit, listen } from '@tauri-apps/api/event';
 import { EditClipModal } from './components/EditClipModal';
 import { MoveToFolderModal } from './components/MoveToFolderModal';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { ClipboardItem as AppClipboardItem, FolderItem, Settings } from './types';
+import { ClipboardItem as AppClipboardItem, FolderItem, Settings, AppLockStatus } from './types';
 import { ClipList } from './components/ClipList';
 import { ControlBar } from './components/ControlBar';
 import { TypeFilterChipRow, type FullTypeFilter } from './components/TypeFilterChips';
@@ -27,6 +27,7 @@ import { OcrResultModal } from './components/OcrResultModal';
 import { check } from '@tauri-apps/plugin-updater';
 import { UpdateModal } from './components/UpdateModal';
 import { ConfirmDialog } from './components/ConfirmDialog';
+import { AppLockScreen } from './components/AppLockScreen';
 import { TITLEBAR_HOTKEYS, useKeyboard } from './hooks/useKeyboard';
 import { TITLE_BAR_MENU_TOGGLE_EVENT } from './components/TitleBarMenu';
 import { lockListHover } from './hooks/useListHoverLock';
@@ -167,6 +168,11 @@ function App() {
   hasMoreRef.current = hasMore;
   const [theme, setTheme] = useState('cyberpaste');
   const [settings, setSettings] = useState<Settings | null>(null);
+  const [lockReady, setLockReady] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+  const [lockEnabled, setLockEnabled] = useState(false);
+  const [lockStatus, setLockStatus] = useState<AppLockStatus | null>(null);
+  const isLockedRef = useRef(false);
   const [updateAvailable, setUpdateAvailable] = useState<any>(null);
   const updateAvailableRef = useRef<any>(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
@@ -191,6 +197,62 @@ function App() {
   useEffect(() => {
     settingsRef.current = settings;
   }, [settings]);
+
+  const applyLockStatus = useCallback((status: AppLockStatus) => {
+    isLockedRef.current = status.locked;
+    setIsLocked(status.locked);
+    setLockEnabled(status.enabled);
+    setLockStatus(status);
+  }, []);
+
+  useEffect(() => {
+    invoke<AppLockStatus>('get_app_lock_status')
+      .then((status) => {
+        applyLockStatus(status);
+        setLockReady(true);
+      })
+      .catch((err) => {
+        console.error('Failed to read app lock status:', err);
+        setLockReady(true);
+      });
+
+    const unlisten = listen<AppLockStatus>('app-lock-changed', (event) => {
+      const wasLocked = isLockedRef.current;
+      applyLockStatus(event.payload);
+      if (event.payload.locked) {
+        setClips([]);
+        setFolders([]);
+        setSelectedClipId(null);
+        setSelectedClipIds(new Set());
+        setPreviewClip(null);
+        setDetailPanelOpen(false);
+        setShowAddFolderModal(false);
+      } else if (wasLocked) {
+        setClipListResetToken((prev) => prev + 1);
+      }
+    });
+
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, [applyLockStatus]);
+
+  useEffect(() => {
+    if (isLocked) return;
+    let last = 0;
+    const ping = () => {
+      const now = Date.now();
+      if (now - last < 8000) return;
+      last = now;
+      invoke('app_lock_ping').catch(() => undefined);
+    };
+    window.addEventListener('pointerdown', ping);
+    window.addEventListener('keydown', ping);
+    return () => {
+      window.removeEventListener('pointerdown', ping);
+      window.removeEventListener('keydown', ping);
+    };
+  }, [isLocked]);
 
   useEffect(() => {
     const updateVisibility = () => {
@@ -531,10 +593,14 @@ function App() {
     };
   }, []);
 
+  const handleLockNow = useCallback(() => {
+    invoke('lock_app').catch(console.error);
+  }, []);
+
   const openSettings = useCallback(async (tab?: any) => {
     // Hide main window (with animation)
     try {
-      await invoke('hide_window');
+      await invoke('hide_window', { skipLock: true });
     } catch (e) {
       console.error('Failed to hide main window:', e);
     }
@@ -565,6 +631,10 @@ function App() {
       const typeFilterParam = effectiveTypeFilter === 'all' ? null : effectiveTypeFilter;
 
       try {
+        if (isLockedRef.current) {
+          setIsLoading(false);
+          return;
+        }
         setIsLoading(true);
 
         const currentOffset = append ? clips.length : 0;
@@ -657,6 +727,10 @@ function App() {
   );
 
   const loadFolders = useCallback(async () => {
+    if (isLockedRef.current) {
+      setFolders([]);
+      return;
+    }
     try {
       const data = await invoke<FolderItem[]>('get_folders');
 
@@ -698,6 +772,9 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (!lockReady || isLocked) {
+      return;
+    }
     loadFolders();
     // Load all clips for compact view, paginate for full view
     const clipLimit = settings?.view_mode === 'compact' ? 9999 : 20;
@@ -707,7 +784,7 @@ function App() {
       loadClips(selectedFolder, false, '', clipLimit, fullTypeFilter);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedFolder, searchQuery, clipListResetToken, settings?.view_mode, fullTypeFilter]);
+  }, [selectedFolder, searchQuery, clipListResetToken, settings?.view_mode, fullTypeFilter, lockReady, isLocked]);
 
   // Handle global mouse events for simulated drag
   useEffect(() => {
@@ -1347,6 +1424,10 @@ function App() {
   const [urlCount, setUrlCount] = useState(0);
 
   const refreshTotalCount = useCallback(async () => {
+    if (isLockedRef.current) {
+      setTotalClipCount(0);
+      return;
+    }
     try {
       const stats = await invoke<{
         total: number;
@@ -1415,6 +1496,7 @@ function App() {
 
   useEffect(() => {
     const unlistenClipboard = listen('clipboard-change', () => {
+      if (isLockedRef.current) return;
       console.log('[App] Clipboard change detected, refreshing...');
       loadFolders();
       refreshCurrentFolder();
@@ -2802,6 +2884,9 @@ function App() {
       style={{ border: '1px solid rgba(34, 211, 238, 0.25)' }}
       onContextMenu={(e) => e.preventDefault()}
     >
+      {isLocked && lockStatus && (
+        <AppLockScreen status={lockStatus} onUnlocked={applyLockStatus} />
+      )}
       {/* Content Container */}
       <div
         data-el="app-window"
@@ -2866,6 +2951,8 @@ function App() {
               resetToken={clipListResetToken}
               isPinned={settings?.pinned}
               onTogglePin={handleTogglePin}
+              lockEnabled={lockEnabled}
+              onLockNow={handleLockNow}
               compactPeekEnabled={settings?.compact_peek_enabled ?? true}
               onTogglePeek={handleTogglePeek}
               peekHotkey={TITLEBAR_HOTKEYS.peek}
@@ -2978,6 +3065,8 @@ function App() {
                 onToggleMaximize={handleToggleMaximize}
                 isPinned={settings?.pinned ?? false}
                 onTogglePin={handleTogglePin}
+                lockEnabled={lockEnabled}
+                onLockNow={handleLockNow}
                 onResetSize={handleResetSize}
                 hotkey={settings?.hotkey}
                 fullPeekEnabled={settings?.full_peek_enabled ?? true}

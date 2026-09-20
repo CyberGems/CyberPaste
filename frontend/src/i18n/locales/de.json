@@ -89,6 +89,7 @@
   "settings": {
     "title": "Einstellungen",
     "general": "Allgemein",
+    "security": "Sicherheit",
     "ai": "KI",
     "folders": "Ordner",
     "appearance": "Darstellung",
@@ -97,7 +98,7 @@
     "aboutDocsTooltip": "Online-Dokumentation",
     "appearanceBehavior": "Darstellung und Verhalten",
     "shortcuts": "Tastenkombinationen",
-    "privacyExceptions": "Datenschutz-Ausnahmen",
+    "excludedApps": "Ausgeschlossene Apps",
     "dataManagement": "Datenverwaltung",
     "aiConfiguration": "KI-Konfiguration",
     "customPrompts": "Benutzerdefinierte Prompts",

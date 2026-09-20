@@ -45,6 +45,7 @@ pub async fn copy_clip_text(
     app: AppHandle,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
     let clip: Option<Clip> = sqlx::query_as(r#"SELECT * FROM clips WHERE uuid = ?"#)
@@ -112,6 +113,7 @@ pub async fn ai_process_clip(
     action: String,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<String, String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
     // 1. Get Clip
@@ -136,11 +138,13 @@ pub async fn ai_process_clip(
     let manager = app.state::<Arc<SettingsManager>>();
     let settings = manager.get();
 
-    let key_preview = if settings.ai_api_key.len() > 8 {
+    let stored_key = settings.ai_api_key.clone();
+    let api_key = crate::secrets::resolve_api_key(&stored_key);
+    let key_preview = if api_key.len() > 8 {
         format!(
             "{}...{}",
-            &settings.ai_api_key[..4],
-            &settings.ai_api_key[settings.ai_api_key.len() - 4..]
+            &api_key[..4],
+            &api_key[api_key.len() - 4..]
         )
     } else {
         "too_short".to_string()
@@ -153,13 +157,13 @@ pub async fn ai_process_clip(
         key_preview
     );
 
-    if settings.ai_api_key.is_empty() {
+    if api_key.is_empty() {
         return Err("AI API Key is missing in settings".to_string());
     }
 
     let config = AiConfig {
         provider: settings.ai_provider,
-        api_key: settings.ai_api_key,
+        api_key,
         model: settings.ai_model,
         base_url: if settings.ai_base_url.is_empty() {
             None
@@ -741,6 +745,7 @@ pub async fn get_clips(
     type_filter: Option<ClipTypeFilter>,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<Vec<ClipboardItem>, String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
     let preview_only = preview_only.unwrap_or(false);
     let started = Instant::now();
@@ -899,6 +904,7 @@ pub async fn get_clip(
     clip_id: String,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<ClipboardItem, String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
     let clip: Option<Clip> = sqlx::query_as(r#"SELECT * FROM clips WHERE uuid = ?"#)
@@ -946,6 +952,7 @@ pub async fn get_clip_detail(
     id: String,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<ClipboardItem, String> {
+    crate::app_lock::require_unlocked()?;
     get_clip(id, db).await
 }
 
@@ -956,6 +963,7 @@ pub async fn paste_clip(
     window: tauri::WebviewWindow,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
     let clip: Option<Clip> = sqlx::query_as(r#"SELECT * FROM clips WHERE uuid = ?"#)
@@ -1285,6 +1293,7 @@ pub async fn copy_clip(
     app: AppHandle,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
     let clip: Option<Clip> = sqlx::query_as(r#"SELECT * FROM clips WHERE uuid = ?"#)
@@ -1585,6 +1594,7 @@ pub async fn delete_clip(
     hard_delete: bool,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
     if hard_delete {
@@ -1616,6 +1626,7 @@ pub async fn toggle_clip_pin(
     uuid: String,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<bool, String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
     // Toggle the value of is_pinned in database
@@ -1656,6 +1667,7 @@ pub async fn delete_clips(
     ids: Vec<String>,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<u64, String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
     if ids.is_empty() {
         return Ok(0);
@@ -1679,6 +1691,7 @@ pub async fn restore_clip(
     id: String,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
     sqlx::query(r#"UPDATE clips SET is_deleted = 0 WHERE uuid = ?"#)
         .bind(&id)
@@ -1693,6 +1706,7 @@ pub async fn restore_clips(
     ids: Vec<String>,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<u64, String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
     if ids.is_empty() {
         return Ok(0);
@@ -1718,6 +1732,7 @@ pub async fn copy_to_folder(
     app: tauri::AppHandle,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
     let clip_info: Option<(
@@ -1851,6 +1866,7 @@ pub async fn copy_clips_to_folder(
     folder_id: Option<String>,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<u64, String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
     if ids.is_empty() {
         return Ok(0);
@@ -1986,6 +2002,7 @@ pub async fn move_clips_to_folder(
     folder_id: Option<String>,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<u64, String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
     if ids.is_empty() {
         return Ok(0);
@@ -2062,6 +2079,7 @@ pub async fn move_to_folder(
     app: tauri::AppHandle,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
     // First check if clip exists and what type it is
@@ -2162,6 +2180,7 @@ pub async fn reorder_clip(
     position: String,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
     db.reorder_clip_visual(&clip_uuid, &target_uuid, &position)
         .await
         .map_err(|e| e.to_string())
@@ -2173,6 +2192,7 @@ pub async fn move_clip_to_edge(
     edge: String,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
     if edge != "top" && edge != "bottom" {
         return Err("Invalid edge".to_string());
     }
@@ -2189,6 +2209,7 @@ pub async fn reorder_folder(
     db: tauri::State<'_, Arc<Database>>,
     window: tauri::WebviewWindow,
 ) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
     let folder_id_num = folder_id.parse::<i64>().map_err(|e| format!("Invalid folder ID: {}", e))?;
     let target_id_num = target_id.parse::<i64>().map_err(|e| format!("Invalid target ID: {}", e))?;
@@ -2294,6 +2315,7 @@ pub async fn create_folder(
     db: tauri::State<'_, Arc<Database>>,
     window: tauri::WebviewWindow,
 ) -> Result<FolderItem, String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
     // Check if folder with same name exists (excluding system folders if we wanted, but name uniqueness is good generally)
@@ -2334,6 +2356,7 @@ pub async fn delete_folder(
     db: tauri::State<'_, Arc<Database>>,
     window: tauri::WebviewWindow,
 ) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
     let folder_id: i64 = id.parse().map_err(|_| "Invalid folder ID")?;
@@ -2356,6 +2379,7 @@ pub async fn rename_folder(
     db: tauri::State<'_, Arc<Database>>,
     window: tauri::WebviewWindow,
 ) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
     let folder_id: i64 = id.parse().map_err(|_| "Invalid folder ID")?;
@@ -2396,6 +2420,7 @@ pub async fn search_clips(
     type_filter: Option<ClipTypeFilter>,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<Vec<ClipboardItem>, String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
     let started = Instant::now();
 
@@ -2531,6 +2556,7 @@ pub async fn search_clips(
 
 #[tauri::command]
 pub async fn get_folders(db: tauri::State<'_, Arc<Database>>) -> Result<Vec<FolderItem>, String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
     let folders: Vec<Folder> = sqlx::query_as(r#"SELECT * FROM folders ORDER BY sort_order ASC, created_at ASC"#)
@@ -2572,8 +2598,11 @@ pub async fn get_folders(db: tauri::State<'_, Arc<Database>>) -> Result<Vec<Fold
 }
 
 #[tauri::command]
-pub fn hide_window(window: tauri::WebviewWindow) -> Result<(), String> {
+pub fn hide_window(window: tauri::WebviewWindow, skip_lock: Option<bool>) -> Result<(), String> {
     if window.label() == "main" {
+        if skip_lock.unwrap_or(false) {
+            crate::skip_lock_on_next_hide();
+        }
         crate::animate_window_hide(&window, None);
         Ok(())
     } else {
@@ -2600,6 +2629,7 @@ pub fn test_log() -> Result<String, String> {
 pub async fn get_clipboard_history_size(
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<i64, String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
     let count: i64 = sqlx::query_scalar::<_, i64>(
@@ -2636,6 +2666,7 @@ pub async fn get_storage_usage(
 pub async fn get_clip_stats(
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<serde_json::Value, String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
     let row = sqlx::query(
@@ -2677,6 +2708,7 @@ pub async fn get_clip_stats(
 
 #[tauri::command]
 pub async fn clear_clipboard_history(db: tauri::State<'_, Arc<Database>>) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
     sqlx::query(r#"DELETE FROM clips WHERE is_deleted = 1"#)
@@ -2689,6 +2721,7 @@ pub async fn clear_clipboard_history(db: tauri::State<'_, Arc<Database>>) -> Res
 
 #[tauri::command]
 pub async fn clear_all_clips(db: tauri::State<'_, Arc<Database>>) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
     // Only delete clips NOT in folders - folders are always safe
@@ -2727,6 +2760,7 @@ pub async fn clear_all_clips(db: tauri::State<'_, Arc<Database>>) -> Result<(), 
 
 #[tauri::command]
 pub async fn remove_duplicate_clips(db: tauri::State<'_, Arc<Database>>) -> Result<i64, String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
     let result = sqlx::query(
@@ -2892,6 +2926,7 @@ pub async fn get_highlighted_clip(
     language: Option<String>,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<serde_json::Value, String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
     let clip: Option<Clip> = sqlx::query_as(r#"SELECT * FROM clips WHERE uuid = ?"#)
@@ -3083,7 +3118,7 @@ pub async fn toggle_view_mode(
     .await;
 
     // Swap Compact ↔ Full only after the window has settled
-    let _ = app.emit("settings-changed", manager.get());
+    let _ = app.emit("settings-changed", manager.frontend_value());
 
     Ok(new_mode)
 }
@@ -3168,17 +3203,18 @@ pub async fn reset_window_size(app: AppHandle, window: tauri::WebviewWindow) -> 
             height: new_height_px,
         }));
 
-        // Center on monitor, clamped to monitor borders
-        let target_x = (monitor_pos.x + (monitor_size.width as i32 - new_width_px as i32) / 2)
-            .clamp(
-                monitor_pos.x,
-                monitor_pos.x + monitor_size.width as i32 - new_width_px as i32,
-            );
-        let target_y = (monitor_pos.y + (monitor_size.height as i32 - new_height_px as i32) / 2)
-            .clamp(
-                monitor_pos.y,
-                monitor_pos.y + monitor_size.height as i32 - new_height_px as i32,
-            );
+        // Center in the work area, inset from taskbars and screen edges
+        let preferred_x = work_area.position.x + (work_area.size.width as i32 - new_width_px as i32) / 2;
+        let preferred_y = work_area.position.y + (work_area.size.height as i32 - new_height_px as i32) / 2;
+        let (target_x, target_y) = crate::clamp_compact_to_work_area(
+            preferred_x,
+            preferred_y,
+            new_width_px,
+            new_height_px,
+            work_area.position,
+            work_area.size,
+            scale_factor,
+        );
 
         let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
             x: target_x,
@@ -3193,6 +3229,7 @@ pub async fn export_backup(
     db: tauri::State<'_, Arc<Database>>,
     app: AppHandle,
 ) -> Result<crate::models::BackupData, String> {
+    crate::app_lock::require_unlocked()?;
     let manager = app.state::<Arc<SettingsManager>>();
     let settings = manager.get();
     crate::backup::collect_backup_data(&db.pool, &settings).await
@@ -3203,6 +3240,7 @@ pub async fn run_automatic_backup_now(
     db: tauri::State<'_, Arc<Database>>,
     app: AppHandle,
 ) -> Result<String, String> {
+    crate::app_lock::require_unlocked()?;
     let manager = app.state::<Arc<SettingsManager>>();
     let settings = manager.get();
     let path = crate::backup::run_automatic_backup(&db.pool, &settings).await?;
@@ -3238,6 +3276,7 @@ pub async fn import_backup(
     db: tauri::State<'_, Arc<Database>>,
     app: AppHandle,
 ) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
     let manager = app.state::<Arc<SettingsManager>>();
     let local_backup_settings = {
@@ -3340,14 +3379,19 @@ pub async fn import_backup(
     restored_settings.auto_backup_enabled = local_backup_settings.0;
     restored_settings.auto_backup_folder = local_backup_settings.1;
     restored_settings.auto_backup_retention = local_backup_settings.2;
-    manager
-        .save(restored_settings)
-        .map_err(|e| e.to_string())?;
+    manager.save(restored_settings).map_err(|e| e.to_string())?;
+    {
+        let mut stored = manager.get();
+        if crate::secrets::migrate_plain_api_key(&mut stored) {
+            let _ = manager.save(stored);
+        }
+    }
+    crate::app_lock::apply_from_restored_settings(&app, &manager.get());
     let _ = enforce_storage_policy(app.clone(), db.inner().clone(), manager.get()).await;
 
     // 6. Notify main window to refresh
     let _ = app.emit("clipboard-change", ());
-    let _ = app.emit("settings-changed", manager.get());
+    crate::settings_manager::emit_changed(&app);
 
     Ok(())
 }
@@ -3357,6 +3401,7 @@ pub async fn export_backup_to_file(
     db: tauri::State<'_, Arc<Database>>,
     app: AppHandle,
 ) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
     use tauri_plugin_dialog::DialogExt;
 
     // 1. Get Backup Data
@@ -3385,6 +3430,7 @@ pub async fn import_backup_from_file(
     db: tauri::State<'_, Arc<Database>>,
     app: AppHandle,
 ) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
     use tauri_plugin_dialog::DialogExt;
 
     // 1. Open File Dialog
@@ -3478,6 +3524,7 @@ pub async fn update_clip_content(
     clip_id: String,
     new_content: String,
 ) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
     let manager = app.state::<Arc<SettingsManager>>();
     if let Err(limit_error) = crate::content_limits::validate_text_content(
@@ -3877,6 +3924,19 @@ async fn dispatch_toast(app: AppHandle, payload: ToastPayload) -> Result<(), Str
         return Ok(());
     }
 
+    let payload = payload;
+    if crate::app_lock::is_locked() {
+        let clip_like = payload.clip_uuid.is_some()
+            || payload.image_preview.is_some()
+            || matches!(
+                payload.clip_type.as_deref(),
+                Some("text" | "image" | "html" | "rtf" | "file" | "url" | "code")
+            );
+        if clip_like {
+            return Ok(());
+        }
+    }
+
     let is_action_message = payload.toast_type != "update"
         && (payload.clip_type.is_none()
             || payload.clip_type.as_deref() == Some("welcome")
@@ -3947,6 +4007,13 @@ pub async fn hide_toast(app: AppHandle) -> Result<(), String> {
 pub async fn click_toast(app: AppHandle, clip_uuid: String) -> Result<(), String> {
     if let Some(toast_win) = app.get_webview_window("toast") {
         let _ = toast_win.hide();
+    }
+
+    if crate::app_lock::is_locked() {
+        if let Some(main_win) = app.get_webview_window("main") {
+            crate::position_window_at_bottom(&main_win);
+        }
+        return Ok(());
     }
 
     if let Some(main_win) = app.get_webview_window("main") {
@@ -4051,7 +4118,10 @@ pub async fn set_toast_position(app: AppHandle, width: f64, height: f64) -> Resu
 fn present_image_viewer(app: &AppHandle, win: &tauri::WebviewWindow) {
     if let Some(main) = app.get_webview_window("main") {
         match main.is_visible() {
-            Ok(true) => crate::animate_window_hide(&main, None),
+            Ok(true) => {
+                crate::skip_lock_on_next_hide();
+                crate::animate_window_hide(&main, None);
+            }
             Ok(false) => {}
             Err(e) => log::warn!("Could not read main window visibility: {}", e),
         }
@@ -4064,6 +4134,7 @@ fn present_image_viewer(app: &AppHandle, win: &tauri::WebviewWindow) {
 
 #[tauri::command]
 pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
     log::info!("open_image_viewer called for clip_id: {}", clip_id);
     let window_label = "image_viewer";
     if let Some(win) = app.get_webview_window(window_label) {
@@ -4117,7 +4188,10 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
     // Dismiss main first. The viewer reveals itself from frontend once mounted and themed.
     if let Some(main) = app.get_webview_window("main") {
         match main.is_visible() {
-            Ok(true) => crate::animate_window_hide(&main, None),
+            Ok(true) => {
+                crate::skip_lock_on_next_hide();
+                crate::animate_window_hide(&main, None);
+            }
             Ok(false) => {}
             Err(e) => log::warn!("Could not read main window visibility: {}", e),
         }
@@ -4132,6 +4206,7 @@ pub async fn open_image_in_system_viewer(
     clip_id: String,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
     log::info!("open_image_in_system_viewer called for clip_id: {}", clip_id);
     let pool = &db.pool;
 
@@ -4181,6 +4256,7 @@ pub async fn run_ocr_for_clip(
     clip_id: String,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<String, String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
     // 1. Fetch clip
@@ -4236,6 +4312,7 @@ pub async fn update_ocr_text(
     new_text: String,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
     let clip: Option<Clip> = sqlx::query_as(r#"SELECT * FROM clips WHERE uuid = ?"#)
@@ -4300,6 +4377,8 @@ pub struct TrayMenuState {
     pub is_paused: bool,
     pub update_available: bool,
     pub language: String,
+    pub lock_enabled: bool,
+    pub locked: bool,
 }
 
 static TRAY_MENU_ANCHOR: std::sync::Mutex<Option<(i32, i32)>> = std::sync::Mutex::new(None);
@@ -4319,7 +4398,7 @@ const TRAY_MENU_SHADOW_PAD: f64 = 26.0;
 /// Exact sum from TrayMenuWindow.tsx Tailwind classes:
 ///   header(14+18+10) + divider(1) + group1[p1.5=12 + 3xgap0.5=6 + 4x36] + divider(1)
 ///   + exit-group(6+36+8) + border(2) = 258
-const TRAY_MENU_EST_HEIGHT: f64 = 258.0;
+const TRAY_MENU_EST_HEIGHT: f64 = 295.0;
 
 /// Compute window position + physical size for the tray popup near the anchor point.
 fn tray_menu_geometry(
@@ -4402,6 +4481,8 @@ pub fn collect_tray_menu_state(app: &AppHandle) -> TrayMenuState {
         is_paused,
         update_available: UPDATE_AVAILABLE.load(Ordering::SeqCst),
         language: settings.language.clone(),
+        lock_enabled: crate::app_lock::is_enabled(),
+        locked: crate::app_lock::is_locked(),
     }
 }
 
@@ -4660,6 +4741,12 @@ fn start_tray_menu_outside_click_watcher(app: AppHandle, win: tauri::WebviewWind
 
 #[tauri::command]
 pub async fn open_settings(app: AppHandle, tab: Option<String>) -> Result<(), String> {
+    if crate::app_lock::is_locked() {
+        if let Some(win) = app.get_webview_window("main") {
+            crate::position_window_at_bottom(&win);
+        }
+        return Err(crate::app_lock::ERR_LOCKED.into());
+    }
     open_settings_window(&app, tab.as_deref());
     Ok(())
 }
@@ -4821,7 +4908,15 @@ pub async fn tray_menu_action(app: AppHandle, action: String) -> Result<(), Stri
             let _ = crate::rebuild_tray_menu(&app);
             let _ = app.emit("clipboard-monitoring-state-changed", new_val);
         }
-        "settings" => open_settings_window(&app, None),
+        "settings" => {
+            if crate::app_lock::is_locked() {
+                if let Some(win) = app.get_webview_window("main") {
+                    crate::position_window_at_bottom(&win);
+                }
+            } else {
+                open_settings_window(&app, None);
+            }
+        }
         "about" => open_about_window(&app),
         "check_updates" => {
             open_about_window(&app);
@@ -4830,6 +4925,9 @@ pub async fn tray_menu_action(app: AppHandle, action: String) -> Result<(), Stri
                 tokio::time::sleep(std::time::Duration::from_millis(400)).await;
                 let _ = handle.emit("about-check-updates", ());
             });
+        }
+        "lock" => {
+            crate::app_lock::lock_now(&app);
         }
         "quit" => {
             app.exit(0);
@@ -4842,6 +4940,7 @@ pub async fn tray_menu_action(app: AppHandle, action: String) -> Result<(), Stri
 
 #[tauri::command]
 pub fn open_text_in_system_viewer(text: String) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
     log::info!("open_text_in_system_viewer called");
     let temp_dir = std::env::temp_dir();
     let temp_file_path = temp_dir.join(format!("cyberpaste_clip_{}.txt", uuid::Uuid::new_v4()));
