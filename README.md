@@ -24,7 +24,7 @@ A sleek, privacy-focused **clipboard history manager** for Windows. CyberPaste s
 
 ## 📋 Why CyberPaste?
 
-Most clipboard managers either send your data to the cloud or are too basic to be useful. CyberPaste gives you **the best of both worlds**: rich content support, AI-powered assistance, and rock-solid privacy, all in a lightweight Tauri app with a stunning modern neon aesthetic.
+Most clipboard managers either send your data to the cloud or are too basic to be useful. CyberPaste gives you **the best of both worlds**: rich content support, optional AI assistance, and strong local-first privacy, all in a lightweight Tauri app with a sleek modern neon aesthetic. Your clipboard history stays on your machine unless you choose to send content to an AI provider.
 
 | Need | Solution |
 |---|---|
@@ -52,7 +52,7 @@ Most clipboard managers either send your data to the cloud or are too basic to b
 
 ### 🤖 AI Actions
 - **Smart Actions** — Summarize, translate, explain code, or fix grammar
-- **Provider Support** — OpenAI, DeepSeek, Ollama, Groq, OpenRouter, or any OpenAI-compatible API
+- **Provider Support:** OpenAI, DeepSeek, Kimi, Gemini, Grok and Meta, plus any OpenAI-compatible custom endpoint such as Ollama, Groq or OpenRouter
 - **Fully Customizable** — Custom prompts and action names for each AI operation
 
 ### 🔔 Notifications & Feedback
@@ -61,7 +61,8 @@ Most clipboard managers either send your data to the cloud or are too basic to b
 
 ### 🔒 Privacy & Security
 - **100% Local-First** — SQLite storage in WAL mode with fast indexes. Zero analytics, zero telemetry
-- **Optional App Lock:** Protect the interface with a PIN or password, recovery key, lock-on-hide and Windows session lock
+- **Optional App Lock:** Hide the interface behind a PIN or password, with a recovery key, lock-on-hide and Windows session lock. This protects the UI; it does not encrypt clipboard data on disk
+- **Automatic Backups:** Create one JSON backup per day while CyberPaste is running, choose the folder and retention, or back up on demand
 - **Privacy Exceptions** — Ignore sensitive apps (password managers, banking tools) by process name or full executable path
 
 ### 🖥️ Desktop Integration
@@ -71,9 +72,9 @@ Most clipboard managers either send your data to the cloud or are too basic to b
 - **Auto-Paste Injection** — Paste selected clips directly into the active application
 
 ### 🎨 Customization
-- **4 Themes** — Dark, Light, CyberPaste (signature neon glow), and System
+- **4 Theme Options:** CyberPaste, Dark, Light and System (follows Windows)
 - **Mica Effects** — Native Windows Mica & Mica-Alt vibrancies with custom corner radiuses
-- **Bilingual UI** — Complete native English and Spanish interface across all windows
+- **6 Languages + Auto:** English, Spanish, German, French, Japanese and Chinese, with automatic system-language detection. Translation refreshes are in progress for German, French, Japanese and Chinese
 
 ---
 
@@ -83,7 +84,7 @@ Most clipboard managers either send your data to the cloud or are too basic to b
 - **Backend:** Rust + Tauri 2.x
 - **Frontend:** React 18 + TypeScript + Tailwind CSS
 - **Database:** SQLite (WAL mode)
-- **Package Manager:** pnpm
+- **Package Manager:** npm
 
 ```
 CyberPaste/
@@ -106,7 +107,7 @@ CyberPaste/
 │   │   ├── components/      UI components (ClipCard, ClipList, ControlBar, Modals)
 │   │   ├── windows/         Dedicated window views (Toast, Viewer, About, TrayMenu)
 │   │   ├── hooks/           Custom React hooks (theme, language, keyboard)
-│   │   ├── i18n/            Internationalization (English & Spanish)
+│   │   ├── i18n/            Internationalization (6 languages + automatic detection)
 │   │   ├── types/           TypeScript definitions
 │   │   ├── utils/           Helper utilities
 │   │   └── App.tsx          Main window application
