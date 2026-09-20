@@ -9,18 +9,18 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/CyberGems/CyberPaste/releases/latest"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FCyberGems%2FCyberPaste%2Fmain%2Fpackage.json&query=%24.version&prefix=%E2%9A%A1%20RELEASE%20v&style=for-the-badge&label=&labelColor=555555&color=555555" alt="Download Latest Release" /><img src="https://img.shields.io/badge/-(WINDOWS_64--BIT)-0047B3?style=for-the-badge&logo=windows&logoColor=white" alt="Windows 64-bit" /></a>
-  &nbsp;<a href="https://github.com/CyberGems/CyberPaste/releases"><img src="https://img.shields.io/badge/All_Releases-Changelog-18181B?style=for-the-badge&logo=github&logoColor=white" alt="All Releases" /></a>
+  <a href="https://github.com/CyberGems/CyberPaste/releases/latest"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FCyberGems%2FCyberPaste%2Fmain%2Fpackage.json&query=%24.version&prefix=%20Download%20CyberPaste%20v&suffix=%20&style=for-the-badge&label=&labelColor=B45309&color=B45309" alt="Download Latest Release" /><img src="https://img.shields.io/badge/Windows_64--bit-0078D4?style=for-the-badge" alt="Windows 64-bit" /></a>
+  &nbsp;<a href="https://github.com/CyberGems/CyberPaste/releases"><img src="https://img.shields.io/badge/All_releases-2B3137?style=for-the-badge&logo=github&logoColor=white" alt="All Releases" /><img src="https://img.shields.io/badge/Changelog-3B444B?style=for-the-badge" alt="Changelog" /></a>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License" height="24" />&nbsp;
-  <img src="https://img.shields.io/badge/platform-Windows%2010%2B-0078D4.svg?logo=windows&logoColor=white" alt="Platform" height="24" />&nbsp;
-  <img src="https://img.shields.io/badge/Tauri-2.x-512BD4.svg?logo=tauri&logoColor=white" alt="Tauri" height="24" />&nbsp;
-  <a href="https://github.com/CyberGems/CyberPaste/wiki"><img src="https://img.shields.io/badge/%F0%9F%93%96_Wiki-Documentation-222222?style=flat-square&logo=github&logoColor=white" alt="Wiki" height="24" /></a>
+  <img src="https://img.shields.io/badge/License-GPL--3.0-1F2428.svg?style=flat-square&color=B45309" alt="License" />&nbsp;
+  <img src="https://img.shields.io/badge/Platform-Windows_10+-1F2428.svg?style=flat-square&color=0078D4" alt="Platform" />&nbsp;
+  <img src="https://img.shields.io/badge/Tauri-2.x-1F2428.svg?style=flat-square&logo=tauri&logoColor=white&color=47848F" alt="Tauri" />&nbsp;
+  <a href="https://github.com/CyberGems/CyberPaste/wiki"><img src="https://img.shields.io/badge/Wiki-Documentation-1F2428?style=flat-square&logo=gitbook&logoColor=white&color=B45309" alt="Wiki" /></a>
 </p>
 
-A beautiful, privacy-focused **clipboard history manager** for Windows. CyberPaste stores everything you copy (text, code, images, files, URLs) in a local SQLite database, so you can recall any specific clip at any time. Search, organize, pin, edit, and paste instantly.
+A beautiful, privacy-focused **clipboard history manager** for Windows. CyberPaste stores everything you copy (text, code, images, files, URLs) in a local SQLite database, so you can recall any specific clip at any time. Search, organize, pin, edit, and paste instantly. Built with **Tauri 2** and **React**.
 
 *Free and open source (GPLv3): no ads, no tracking, and no data collection. Just enjoy it.*
 
