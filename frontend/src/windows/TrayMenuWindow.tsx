@@ -457,7 +457,14 @@ export function TrayMenuWindow() {
           <div key="suite" className="animate-in fade-in slide-in-from-right-4 duration-200">
             <SubHeader
               title={t('tray.suiteTitle', { defaultValue: 'CyberGems' })}
-              icon={<img src="/cybergems-logo.svg" alt="" className="h-4 w-4 object-contain" />}
+              icon={
+                <picture className="inline-flex h-4 w-4">
+                  <source srcSet="/cybergems-logo.svg" type="image/svg+xml" />
+                  <img src="/cybergems-logo.png" alt="" className="h-full w-full object-contain" />
+                </picture>
+              }
+              titleAction={() => hideThenOpen(WEBSITE_URL)}
+              titleActionLabel={t('tray.website', { defaultValue: 'Website' })}
               backLabel={t('tray.back', { defaultValue: 'Back' })}
               onBack={() => goView('main')}
             />
@@ -511,11 +518,15 @@ function TrayDivider() {
 function SubHeader({
   title,
   icon,
+  titleAction,
+  titleActionLabel,
   backLabel,
   onBack,
 }: {
   title: string;
   icon?: ReactNode;
+  titleAction?: () => void;
+  titleActionLabel?: string;
   backLabel: string;
   onBack: () => void;
 }) {
@@ -533,14 +544,34 @@ function SubHeader({
         <ChevronLeft size={13} strokeWidth={2.25} />
         {backLabel}
       </button>
-      <span className="flex items-center gap-1.5 pr-1 text-[12px] font-semibold tracking-wide text-muted-foreground">
-        {icon ? (
-          <span className="text-primary drop-shadow-[0_0_5px_rgba(var(--primary-rgb),0.5)]">
-            {icon}
-          </span>
-        ) : null}
-        {title}
-      </span>
+      {titleAction ? (
+        <button
+          type="button"
+          aria-label={titleActionLabel ?? title}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            titleAction();
+          }}
+          className="group flex items-center gap-1.5 rounded-md pr-1 text-[12px] font-semibold tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+        >
+          {icon ? (
+            <span className="text-primary drop-shadow-[0_0_5px_rgba(var(--primary-rgb),0.5)] transition-transform group-hover:scale-105">
+              {icon}
+            </span>
+          ) : null}
+          {title}
+        </button>
+      ) : (
+        <span className="flex items-center gap-1.5 pr-1 text-[12px] font-semibold tracking-wide text-muted-foreground">
+          {icon ? (
+            <span className="text-primary drop-shadow-[0_0_5px_rgba(var(--primary-rgb),0.5)]">
+              {icon}
+            </span>
+          ) : null}
+          {title}
+        </span>
+      )}
     </div>
   );
 }
