@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff, Lock, X } from 'lucide-react';
 import type { AppLockStatus } from '../types';
 import { formatRecoveryKeyInput } from '../utils/appLock';
+import Tooltip from './Tooltip';
 
 function errorMessage(err: unknown, t: (key: string) => string, recovery: boolean): string {
   const text = typeof err === 'string' ? err : err instanceof Error ? err.message : String(err);
@@ -53,10 +54,18 @@ export function AppLockScreen({
     return () => window.clearInterval(timer);
   }, [lockoutMs > 0]);
 
+  const focusInput = useCallback(() => {
+    const input = inputRef.current;
+    if (!input || input.disabled) return;
+    input.focus({ preventScroll: true });
+    const caretPosition = input.value.length;
+    input.setSelectionRange(caretPosition, caretPosition);
+  }, []);
+
   useEffect(() => {
-    const id = window.setTimeout(() => inputRef.current?.focus(), 80);
+    const id = window.setTimeout(focusInput, 80);
     return () => window.clearTimeout(id);
-  }, [showForgot]);
+  }, [focusInput, showForgot]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -130,15 +139,16 @@ export function AppLockScreen({
         e.preventDefault();
       }}
     >
-      <button
-        type="button"
-        onClick={() => invoke('hide_window').catch(console.error)}
-        title={t('appLock.close')}
-        aria-label={t('appLock.close')}
-        className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-      >
-        <X size={17} />
-      </button>
+      <Tooltip label={t('appLock.close')} placement="bottom">
+        <button
+          type="button"
+          onClick={() => invoke('hide_window').catch(console.error)}
+          aria-label={t('appLock.close')}
+          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        >
+          <X size={17} />
+        </button>
+      </Tooltip>
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-8">
         <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/30 bg-primary/10 shadow-[0_0_24px_rgba(var(--primary-rgb),0.28)]">
           <Lock size={22} className="text-primary" />

@@ -1447,6 +1447,13 @@ function App() {
   const refreshTotalCount = useCallback(async () => {
     if (isLockedRef.current) {
       setTotalClipCount(0);
+      setImageCount(0);
+      setTextCount(0);
+      setCodeCount(0);
+      setFileCount(0);
+      setHtmlCount(0);
+      setRtfCount(0);
+      setUrlCount(0);
       return;
     }
     try {
@@ -1490,8 +1497,12 @@ function App() {
   }, [textCount, codeCount, htmlCount, rtfCount, imageCount, fileCount, urlCount]);
 
   useEffect(() => {
+    if (isLocked) {
+      refreshTotalCount();
+      return;
+    }
     refreshTotalCount();
-  }, [refreshTotalCount]);
+  }, [isLocked, refreshTotalCount]);
 
   // Auto-select first clip and reset view (if enabled) when window is reopened (visibility becomes true)
   useEffect(() => {
