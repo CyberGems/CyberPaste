@@ -5,6 +5,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useTranslation } from 'react-i18next';
 import {
   AppWindow,
+  ArrowRight,
   Book,
   ChevronLeft,
   ChevronRight,
@@ -26,7 +27,7 @@ import { clsx } from 'clsx';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { resolveLanguage, useLanguage } from '../hooks/useLanguage';
 import type { Settings as AppSettings } from '../types';
-import { RECOMMENDED_SUITE_APPS } from '../data/suiteApps';
+import { RECOMMENDED_SUITE_APPS, suiteLanguage } from '../data/suiteApps';
 
 /** Resolve the effective palette class for the tray menu (mirrors useTheme). */
 function trayThemeClass(theme: string | undefined): 'cyberpaste' | 'dark' | 'light' {
@@ -272,6 +273,7 @@ export function TrayMenuWindow() {
     ? t('tray.resumeMonitoring', { defaultValue: 'Resume Monitoring' })
     : t('tray.pauseMonitoring', { defaultValue: 'Pause Monitoring' });
   const suiteEnabled = state?.show_app_recommendations ?? true;
+  const suiteLocale = suiteLanguage(i18n.language);
 
   return (
     <div
@@ -455,6 +457,7 @@ export function TrayMenuWindow() {
           <div key="suite" className="animate-in fade-in slide-in-from-right-4 duration-200">
             <SubHeader
               title={t('tray.suiteTitle', { defaultValue: 'CyberGems' })}
+              icon={<Gem size={14} strokeWidth={1.8} />}
               backLabel={t('tray.back', { defaultValue: 'Back' })}
               onBack={() => goView('main')}
             />
@@ -466,6 +469,7 @@ export function TrayMenuWindow() {
                   compact
                   icon={<img src={app.icon} alt="" className="h-4 w-4 rounded-[4px] object-contain" />}
                   label={app.name}
+                  description={app.short[suiteLocale]}
                   onClick={() => hideThenOpen(app.site)}
                 />
               ))}
@@ -482,9 +486,8 @@ export function TrayMenuWindow() {
                 }}
                 className="flex w-full items-center justify-center gap-2 rounded-lg border border-primary/20 bg-primary/[0.04] px-2.5 py-1.5 text-[11px] font-medium text-primary transition-colors hover:border-primary/50 hover:bg-primary/15 hover:text-foreground"
               >
-                <Globe size={13} strokeWidth={1.75} />
-                {t('tray.suiteAll', { defaultValue: 'View all at cybergems.org' })}
-                <span aria-hidden>→</span>
+                <ArrowRight size={13} strokeWidth={1.75} />
+                {t('tray.suiteMore', { defaultValue: 'More details online...' })}
               </button>
             </div>
           </div>
@@ -507,10 +510,12 @@ function TrayDivider() {
 
 function SubHeader({
   title,
+  icon,
   backLabel,
   onBack,
 }: {
   title: string;
+  icon?: ReactNode;
   backLabel: string;
   onBack: () => void;
 }) {
@@ -528,7 +533,12 @@ function SubHeader({
         <ChevronLeft size={13} strokeWidth={2.25} />
         {backLabel}
       </button>
-      <span className="pr-1 text-[12px] font-semibold tracking-wide text-muted-foreground">
+      <span className="flex items-center gap-1.5 pr-1 text-[12px] font-semibold tracking-wide text-muted-foreground">
+        {icon ? (
+          <span className="text-primary drop-shadow-[0_0_5px_rgba(var(--primary-rgb),0.5)]">
+            {icon}
+          </span>
+        ) : null}
         {title}
       </span>
     </div>
@@ -538,6 +548,7 @@ function SubHeader({
 function TrayItem({
   icon,
   label,
+  description,
   shortcut,
   compact,
   nav,
@@ -546,6 +557,7 @@ function TrayItem({
 }: {
   icon: ReactNode;
   label: string;
+  description?: string;
   shortcut?: string;
   compact?: boolean;
   nav?: boolean;
@@ -563,7 +575,11 @@ function TrayItem({
       }}
       className={clsx(
         'group flex w-full items-center gap-2.5 rounded-[10px] text-left transition-all duration-150',
-        compact ? 'min-h-[26px] px-2.5 py-1' : 'min-h-[30px] px-2.5 py-1.5',
+        compact && description
+          ? 'min-h-[42px] px-2.5 py-1.5'
+          : compact
+            ? 'min-h-[26px] px-2.5 py-1'
+            : 'min-h-[30px] px-2.5 py-1.5',
         danger
           ? 'text-foreground/90 hover:bg-rose-500/12 hover:text-foreground'
           : compact
@@ -584,11 +600,16 @@ function TrayItem({
       </span>
       <span
         className={clsx(
-          'min-w-0 flex-1 truncate font-medium',
+          'min-w-0 flex-1 font-medium',
           compact ? 'text-[11.5px]' : 'text-[12.5px]'
         )}
       >
-        {label}
+        <span className={description ? 'block truncate' : undefined}>{label}</span>
+        {description ? (
+          <span className="mt-0.5 block truncate text-[9.5px] font-medium leading-tight text-muted-foreground/75">
+            {description}
+          </span>
+        ) : null}
       </span>
       {nav ? (
         <ChevronRight
