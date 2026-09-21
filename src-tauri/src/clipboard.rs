@@ -909,6 +909,17 @@ async fn process_clipboard_change(
         log::warn!("place_at_live_slot failed for {}: {}", emitted_id, e);
     }
 
+    if !was_existing {
+        crate::progress::record_event_for_app(
+            &app,
+            &db.pool,
+            crate::progress::ProgressEvent::ClipCaptured {
+                clip_type: clip_type.to_string(),
+            },
+        )
+        .await;
+    }
+
     // Prune history in background to avoid blocking the clipboard loop
     let app_for_policy = app.clone();
     let database_for_policy = db.clone();
@@ -942,6 +953,7 @@ async fn process_clipboard_change(
     if let Some(manager) = app.try_state::<Arc<crate::settings_manager::SettingsManager>>() {
         let settings = manager.get();
         if settings.clipboard_sound_enabled
+            && !crate::quiet_hours::is_active(&settings)
             && (!was_existing || settings.duplicate_toast_enabled)
         {
             let sound_path = if was_existing {
@@ -1003,6 +1015,7 @@ async fn process_clipboard_change(
                 Some(emitted_id),
                 source_app,
                 source_icon,
+                None,
             )
             .await;
         }

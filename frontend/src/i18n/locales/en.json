@@ -245,6 +245,7 @@
   "settings": {
     "title": "Configuration",
     "general": "General",
+    "achievements": "Achievements & Progress",
     "security": "Security",
     "fullTab": "Full Mode",
     "compactTab": "Compact Mode",
@@ -456,6 +457,12 @@
     "enableToastsDesc": "Show notifications on desktop.",
     "duplicateToasts": "Duplicate Clip Notifications",
     "duplicateToastsDesc": "Show a toast and play its sound when a copied clip already exists.",
+    "quietHoursTitle": "Quiet hours",
+    "quietHoursDesc": "Only critical alerts appear during this schedule. Status messages, achievements, and other results stay silent.",
+    "quietHoursSchedule": "Schedule",
+    "quietHoursScheduleDesc": "Uses local time. Overnight ranges such as 22:00 to 07:00 are supported.",
+    "quietHoursFrom": "From",
+    "quietHoursTo": "To",
     "toastClickAction": "Click Action",
     "toastClickActionDesc": "What happens when you click the notification toast",
     "toastClickActionNone": "None",
@@ -636,7 +643,111 @@
     "failedToRenameFolder": "Failed to rename folder: {{error}}",
     "failedToOpenDataDir": "Failed to open data directory",
     "failedToOpenConsole": "Failed to open developer console",
-    "failedToRemoveDuplicates": "Failed to remove duplicates: {{error}}"
+    "failedToRemoveDuplicates": "Failed to remove duplicates: {{error}}",
+    "achievementsSection": "Your CyberPaste journey",
+    "achievementsSectionDesc": "Build a personal collection of milestones while keeping your progress completely local.",
+    "achievementsLocalOnly": "Local progress, no telemetry",
+    "achievementsLocalOnlyDesc": "Your achievements and progress stay on this device. CyberPaste does not send analytics, telemetry, clips, or usage data to CyberGems.",
+    "progressClipsCaptured": "Clips captured",
+    "progressPastes": "Pastes",
+    "progressCopies": "Copies",
+    "progressSearches": "Searches",
+    "progressFolders": "Folders created",
+    "progressPins": "Pins",
+    "progressAiActions": "AI actions",
+    "progressTypeBreakdown": "Captured clip types",
+    "progressActiveDays": "Active days",
+    "progressUnlocked": "Achievements unlocked",
+    "progressInstalledOn": "Original profile date",
+    "progressInstalledOnDesc": "For existing profiles, this uses the earliest reliable profile timestamp available.",
+    "progressCurrentStreak": "Current streak",
+    "progressDays": "days",
+    "achievementsList": "Achievements",
+    "achievementsLoading": "Loading your progress...",
+    "achievementsUnavailable": "Progress is not available right now.",
+    "achievementUnlocked": "Unlocked",
+    "achievementUnlockedOn": "Unlocked on {{date}}",
+    "achievementUnlockedToast": "Achievement unlocked: {{achievement}}",
+    "achievementsControls": "Progress controls",
+    "enableAchievements": "Enable local achievements",
+    "enableAchievementsDesc": "Keep track of personal milestones on this device. Disabling this stops new progress without deleting existing data.",
+    "achievementNotifications": "Achievement notifications",
+    "achievementNotificationsDesc": "Show a small notification when a new achievement is unlocked.",
+    "resetProgress": "Reset progress",
+    "resetProgressDesc": "Deletes achievements and progress counters, but does not delete your clips.",
+    "resetProgressConfirm": "Reset all local achievements and progress? Your clipboard history will remain untouched.",
+    "progressReset": "Achievements and progress reset",
+    "progressResetFailed": "Could not reset progress: {{error}}",
+    "achievement": {
+      "first_clip": {
+        "title": "First clip",
+        "desc": "Capture your first clip."
+      },
+      "first_paste": {
+        "title": "First paste",
+        "desc": "Paste a clip from CyberPaste."
+      },
+      "clips_1000": {
+        "title": "The first thousand",
+        "desc": "Capture 1,000 unique clips."
+      },
+      "clips_5000": {
+        "title": "Deep archive",
+        "desc": "Capture 5,000 unique clips."
+      },
+      "clips_10000": {
+        "title": "Power archive",
+        "desc": "Capture 10,000 unique clips."
+      },
+      "clips_25000": {
+        "title": "CyberPaste legend",
+        "desc": "Capture 25,000 unique clips."
+      },
+      "pastes_100": {
+        "title": "Ready at hand",
+        "desc": "Paste 100 clips."
+      },
+      "pastes_1000": {
+        "title": "Instant recall",
+        "desc": "Paste 1,000 clips."
+      },
+      "searches_100": {
+        "title": "Nothing is lost",
+        "desc": "Search your history 100 times."
+      },
+      "folders_5": {
+        "title": "Well organized",
+        "desc": "Create 5 folders."
+      },
+      "pins_25": {
+        "title": "Keep the essentials",
+        "desc": "Pin 25 clips."
+      },
+      "ai_10": {
+        "title": "AI companion",
+        "desc": "Use an AI action 10 times."
+      },
+      "active_days_7": {
+        "title": "First week",
+        "desc": "Use CyberPaste on 7 different days."
+      },
+      "active_days_30": {
+        "title": "Part of the routine",
+        "desc": "Use CyberPaste on 30 different days."
+      },
+      "active_days_100": {
+        "title": "Long-term companion",
+        "desc": "Use CyberPaste on 100 different days."
+      },
+      "active_days_365": {
+        "title": "A year together",
+        "desc": "Use CyberPaste on 365 different days."
+      },
+      "all_types": {
+        "title": "Everything in its place",
+        "desc": "Capture all 7 supported clip types."
+      }
+    }
   },
   "editor": {
     "title": "Text Editor",
@@ -806,6 +917,7 @@
     "passwordPlaceholder": "Password",
     "unlock": "Unlock",
     "unlocking": "Unlocking...",
+    "close": "Close window",
     "hideSecret": "Hide",
     "showSecret": "Show",
     "tryAgainIn": "Too many attempts. Try again in {{seconds}}s.",

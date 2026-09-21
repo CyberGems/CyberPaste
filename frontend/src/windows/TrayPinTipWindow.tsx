@@ -106,7 +106,7 @@ export function TrayPinTipWindow() {
   return (
     <div
       ref={rootRef}
-      className="inline-block bg-transparent"
+      className="inline-block select-none bg-transparent"
       style={{ padding: SHADOW_PAD }}
       onContextMenu={(e) => e.preventDefault()}
     >

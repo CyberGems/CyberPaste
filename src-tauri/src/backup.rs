@@ -10,7 +10,7 @@ use std::sync::Arc;
 use tauri::{AppHandle, Manager};
 use tokio::time::{self, Duration};
 
-pub const BACKUP_VERSION: &str = "1.0.1";
+pub const BACKUP_VERSION: &str = "1.1.0";
 const BACKUP_PREFIX: &str = "CyberPaste Backup ";
 const BACKUP_TIMESTAMP_FORMAT: &str = "%Y-%m-%d_%H-%M-%S";
 const MIN_RETENTION: i64 = 1;
@@ -196,12 +196,17 @@ pub async fn collect_backup_data(
         .await
         .map_err(|error| error.to_string())?;
 
+    let progress = crate::progress::snapshot(pool)
+        .await
+        .map_err(|error| error.to_string())?;
+
     Ok(BackupData {
         version: BACKUP_VERSION.to_string(),
         clips,
         folders,
         clip_images,
         settings: settings.clone(),
+        progress: Some(progress),
     })
 }
 
@@ -380,5 +385,25 @@ mod tests {
         assert!(directory.join("notes.json").exists());
 
         fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn older_backup_without_progress_remains_importable() {
+        let data = BackupData {
+            version: "1.0.1".to_string(),
+            clips: Vec::new(),
+            folders: Vec::new(),
+            clip_images: Vec::new(),
+            settings: AppSettings::default(),
+            progress: Some(crate::progress::ProgressSnapshot::default()),
+        };
+        let mut value = serde_json::to_value(data).unwrap();
+        value
+            .as_object_mut()
+            .expect("backup should serialize as an object")
+            .remove("progress");
+
+        let restored: BackupData = serde_json::from_value(value).unwrap();
+        assert!(restored.progress.is_none());
     }
 }

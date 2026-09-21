@@ -1,5 +1,6 @@
 import { Settings, FolderItem, AppLockStatus, AppLockKeyResult } from '../types';
 import { AppLockRecoveryKeyDialog } from './AppLockRecoveryKeyDialog';
+import { AchievementProgressPanel } from './AchievementProgressPanel';
 import {
   X,
   Trash2,
@@ -36,6 +37,7 @@ import {
   AlignLeft,
   Code2,
   CheckSquare,
+  Trophy,
   ChevronDown,
   type LucideIcon,
 } from 'lucide-react';
@@ -62,6 +64,7 @@ interface SettingsPanelProps {
 
 const SETTINGS_TABS = [
   'general',
+  'achievements',
   'security',
   'folders',
   'full',
@@ -94,6 +97,15 @@ function formatDbSize(bytes: number) {
   }
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
+
+const QUIET_HOURS_TIME_OPTIONS = Array.from({ length: 48 }, (_, index) => {
+  const minutes = index * 30;
+  const value = `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(
+    2,
+    '0'
+  )}`;
+  return { value, label: value };
+});
 
 const CLIPBOARD_TEXT_LIMIT_OPTIONS_MB = [1, 5, 10, 25, 50, 100];
 const DEFAULT_CLIPBOARD_TEXT_LIMIT_BYTES = 5 * 1024 * 1024;
@@ -585,6 +597,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         toast_position: 'settings.toastPosition',
         toast_duration: 'settings.toastDuration',
         toast_click_action: 'settings.toastClickAction',
+        quiet_hours_enabled: 'settings.quietHoursTitle',
+        quiet_hours_start: 'settings.quietHoursSchedule',
+        quiet_hours_end: 'settings.quietHoursSchedule',
         auto_backup_enabled: 'settings.autoBackupEnabled',
         auto_backup_folder: 'settings.autoBackupFolder',
         auto_backup_retention: 'settings.autoBackupRetention',
@@ -605,6 +620,8 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         app_lock_on_windows_lock: 'settings.appLockOnWindowsLock',
         app_lock_idle_seconds: 'settings.appLockIdle',
         app_lock_pause_capture: 'settings.appLockPauseCapture',
+        achievements_enabled: 'settings.enableAchievements',
+        achievement_notifications_enabled: 'settings.achievementNotifications',
       };
 
       const keys = Object.keys(updates);
@@ -805,6 +822,22 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
       toast.error(t('settings.failedToRemoveIgnored', { error: e }));
       console.error(e);
     }
+  };
+
+  const handleResetAchievementProgress = () => {
+    setConfirmDialog({
+      isOpen: true,
+      title: t('settings.resetProgress'),
+      message: t('settings.resetProgressConfirm'),
+      action: async () => {
+        try {
+          await invoke('reset_achievement_progress');
+          toast.success(t('settings.progressReset'));
+        } catch (error) {
+          toast.error(t('settings.progressResetFailed', { error }));
+        }
+      },
+    });
   };
 
   const confirmClearHistory = () => {
@@ -1099,6 +1132,19 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               >
                 <RotateCcw size={14} />
                 {t('settings.maintenance')}
+              </button>
+              <div className="my-2 border-t border-border/70" role="separator" />
+              <button
+                onClick={() => setActiveTab('achievements')}
+                className={clsx(
+                  'flex items-center gap-2 whitespace-nowrap rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
+                  activeTab === 'achievements'
+                    ? 'border-l-[3px] border-primary bg-primary/10 text-primary shadow-none'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                )}
+              >
+                <Trophy size={14} />
+                {t('settings.achievements')}
               </button>
             </div>
           </div>
@@ -2411,6 +2457,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 </>
               )}
 
+              {activeTab === 'achievements' && (
+                <AchievementProgressPanel
+                  settings={settings}
+                  onUpdate={(key, value) => updateSetting(key, value)}
+                  onRequestReset={handleResetAchievementProgress}
+                />
+              )}
+
               {/* --- COMPACT MODE TAB --- */}
               {activeTab === 'compact' && (
                 <>
@@ -2984,6 +3038,93 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     </button>
                   </div>
 
+                  <div className="rounded-[4px] border border-border bg-secondary p-3">
+                    <div
+                      className={`flex items-center justify-between gap-4 ${!(settings.toast_enabled ?? true) ? 'opacity-50' : ''}`}
+                    >
+                      <div className="flex gap-3">
+                        <Clock className="mt-0.5 h-5 w-5 flex-shrink-0 text-muted-foreground/80" />
+                        <div>
+                          <span className="block text-sm font-medium">
+                            {t('settings.quietHoursTitle')}
+                          </span>
+                          <p className="mt-1 max-w-[480px] text-xs text-muted-foreground">
+                            {t('settings.quietHoursDesc')}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={!(settings.toast_enabled ?? true)}
+                        onClick={() =>
+                          updateSetting('quiet_hours_enabled', !settings.quiet_hours_enabled)
+                        }
+                        aria-label={t('settings.quietHoursTitle')}
+                        className={`h-6 w-11 flex-shrink-0 rounded-full transition-colors ${
+                          settings.quiet_hours_enabled && (settings.toast_enabled ?? true)
+                            ? 'bg-primary'
+                            : 'bg-white/10'
+                        }`}
+                      >
+                        <div
+                          className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                            settings.quiet_hours_enabled && (settings.toast_enabled ?? true)
+                              ? 'translate-x-5'
+                              : 'translate-x-0.5'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    <div
+                      className={`mt-3 flex items-center justify-between gap-4 border-t border-border/60 pt-3 ${
+                        !(settings.toast_enabled ?? true) || !settings.quiet_hours_enabled
+                          ? 'opacity-50'
+                          : ''
+                      }`}
+                    >
+                      <div className="flex gap-3">
+                        <Clock className="mt-0.5 h-5 w-5 flex-shrink-0 text-muted-foreground/80" />
+                        <div>
+                          <span className="block text-sm font-medium">
+                            {t('settings.quietHoursSchedule')}
+                          </span>
+                          <p className="mt-1 max-w-[480px] text-xs text-muted-foreground">
+                            {t('settings.quietHoursScheduleDesc')}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-shrink-0 items-center gap-2">
+                        <span className="text-xs text-muted-foreground">
+                          {t('settings.quietHoursFrom')}
+                        </span>
+                        <div className="w-[92px]">
+                          <Select
+                            value={settings.quiet_hours_start || '22:00'}
+                            onChange={(value) => updateSetting('quiet_hours_start', value)}
+                            options={QUIET_HOURS_TIME_OPTIONS}
+                            disabled={
+                              !(settings.toast_enabled ?? true) || !settings.quiet_hours_enabled
+                            }
+                          />
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {t('settings.quietHoursTo')}
+                        </span>
+                        <div className="w-[92px]">
+                          <Select
+                            value={settings.quiet_hours_end || '07:00'}
+                            onChange={(value) => updateSetting('quiet_hours_end', value)}
+                            options={QUIET_HOURS_TIME_OPTIONS}
+                            disabled={
+                              !(settings.toast_enabled ?? true) || !settings.quiet_hours_enabled
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                     <div>
                       <span className="text-sm font-medium">{t('settings.toastClickAction')}</span>
@@ -3175,7 +3316,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <button
                         onClick={() => {
                           import('../utils/toast').then((m) =>
-                            m.systemToast.success(t('settings.testToastMsg'))
+                            m.systemToast.success(t('settings.testToastMsg'), {
+                              bypassQuietHours: true,
+                            })
                           );
                         }}
                         className="btn btn-primary flex-shrink-0 rounded-[4px] border border-border px-5 py-1.5 text-xs font-semibold"

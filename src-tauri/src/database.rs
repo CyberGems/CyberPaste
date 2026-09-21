@@ -610,6 +610,8 @@ impl Database {
         .execute(&self.pool)
         .await?;
 
+        crate::progress::migrate(&self.pool).await?;
+
         // Seed initial sample clips for brand new installations if database is empty
         let clip_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM clips")
             .fetch_one(&self.pool)

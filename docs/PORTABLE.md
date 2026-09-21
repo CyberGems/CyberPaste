@@ -8,6 +8,7 @@ This build intentionally shares the same user data and settings as the regular C
 
 - Do not run the portable and installed builds at the same time. They use the same clipboard monitor, global shortcut, tray integration, and profile.
 - Portable builds do not enable Windows startup and do not install updates automatically.
+- Achievements, progress, and the original profile date follow the shared profile between portable and installed builds.
 - To update, download the next portable ZIP, close CyberPaste, and replace the executable.
 - Windows WebView2 must already be available on the system.
 
@@ -19,5 +20,6 @@ Esta versión comparte intencionalmente los mismos datos y configuraciones que l
 
 - No ejecutes al mismo tiempo la versión portable y la instalada. Ambas utilizan el mismo monitor del portapapeles, atajo global, bandeja del sistema y perfil.
 - La versión portable no activa el inicio con Windows ni instala actualizaciones automáticamente.
+- Los logros, el progreso y la fecha original del perfil siguen al perfil compartido entre las versiones portable e instalada.
 - Para actualizar, descarga el siguiente ZIP portable, cierra CyberPaste y reemplaza el ejecutable.
 - WebView2 de Windows debe estar disponible en el equipo.

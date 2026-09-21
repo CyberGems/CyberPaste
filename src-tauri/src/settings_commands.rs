@@ -36,6 +36,7 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
 
     // Deserialize incoming settings (Frontend sends full object except ignored_apps)
     let incoming_has_tray_pin_tip = settings.get("has_seen_tray_pin_tip").is_some();
+    let incoming_has_first_used_at = settings.get("first_used_at").is_some();
     let incoming_api_key = settings
         .get("ai_api_key")
         .and_then(|v| v.as_str())
@@ -64,6 +65,9 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
     }
     if !incoming_has_tray_pin_tip {
         new_settings.has_seen_tray_pin_tip = current.has_seen_tray_pin_tip;
+    }
+    if !incoming_has_first_used_at {
+        new_settings.first_used_at = current.first_used_at.clone();
     }
 
     // Lock core is only changed via dedicated commands.

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
-import { Eye, EyeOff, Lock } from 'lucide-react';
+import { Eye, EyeOff, Lock, X } from 'lucide-react';
 import type { AppLockStatus } from '../types';
 import { formatRecoveryKeyInput } from '../utils/appLock';
 
@@ -130,6 +130,15 @@ export function AppLockScreen({
         e.preventDefault();
       }}
     >
+      <button
+        type="button"
+        onClick={() => invoke('hide_window').catch(console.error)}
+        title={t('appLock.close')}
+        aria-label={t('appLock.close')}
+        className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      >
+        <X size={17} />
+      </button>
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-8">
         <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/30 bg-primary/10 shadow-[0_0_24px_rgba(var(--primary-rgb),0.28)]">
           <Lock size={22} className="text-primary" />

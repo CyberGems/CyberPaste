@@ -20,20 +20,20 @@
 
 ## What is CyberPaste?
 
-CyberPaste is a sleek, privacy-focused **clipboard history manager** for Windows that makes everything you copy easy to find and reuse. It stores text, code, images, files, links, HTML, and RTF in a local SQLite database, with instant search, folders, favorites, pinning, editing, OCR, and direct paste actions. Optional AI tools can summarize or transform selected content, while automatic backups, configurable retention, and a PIN or password lock keep the experience practical and personal. Built with **Tauri 2** and **React**.
+CyberPaste is a sleek, privacy-focused **clipboard history manager** for Windows that makes everything you copy easy to find and reuse. It stores text, code, images, files, links, HTML, and RTF in a local SQLite database, with instant search, folders, favorites, pinning, editing, OCR, and direct paste actions. Optional AI tools can summarize or transform selected content, while automatic backups, configurable retention, achievements, and a PIN or password lock keep the experience practical and personal. Built with **Tauri 2** and **React**.
 
-*Free and open source (GPLv3): no ads, no tracking, and no data collection. Just enjoy it.*
+*Free and open source (GPLv3): no ads, no network analytics, no telemetry, and no cloud collection. Optional achievements and progress stay on your device.*
 
 ---
 
 ## 📋 Why CyberPaste?
 
-Most clipboard managers either send your data to the cloud or are too basic to be useful. CyberPaste gives you **the best of both worlds**: rich content support, optional AI assistance, and strong local-first privacy, all in a lightweight Tauri app with a sleek modern neon aesthetic. Your clipboard history stays on your machine unless you choose to send content to an AI provider.
+Most clipboard managers either send your data to the cloud or are too basic to be useful. CyberPaste gives you **the best of both worlds**: rich content support, optional AI assistance, and strong local-first privacy, all in a lightweight Tauri app with a sleek modern neon aesthetic. Your clipboard history stays on your machine unless you choose an AI provider or export a backup.
 
 | Need | Solution |
 |---|---|
 | Recall anything you've copied | Full clipboard history with instant search and type filtering |
-| Keep sensitive data private | Local-only SQLite — zero analytics, zero telemetry, no cloud |
+| Keep sensitive data private | Local-only SQLite, zero network analytics, zero telemetry, no cloud sync |
 | Work with rich content | Text, code (syntax highlighting), images (with OCR), HTML, RTF, files, URLs |
 | Process clips with AI | Summarize, translate, explain code, fix grammar — works with any OpenAI-compatible provider |
 | Stay organized | Folders, favorites, bulk management, dual view modes |
@@ -64,9 +64,10 @@ Most clipboard managers either send your data to the cloud or are too basic to b
 - **Sound Effects** — Synthesized or custom sound effects for clipboard capture, duplicates, and activation
 
 ### 🔒 Privacy & Security
-- **100% Local-First** — SQLite storage in WAL mode with fast indexes. Zero analytics, zero telemetry
+- **100% Local-First** — SQLite storage in WAL mode with fast indexes. No network analytics or telemetry. Optional achievements and progress remain local
 - **Optional App Lock:** Hide the interface behind a PIN or password, with a recovery key, lock-on-hide and Windows session lock. This protects the UI; it does not encrypt clipboard data on disk
 - **Automatic Backups:** Create one JSON backup per day while CyberPaste is running, choose the folder and retention, or back up on demand
+- **Achievements & Progress:** Optional local milestones for long-term use, included in manual and automatic backups. See [the achievements guide](docs/ACHIEVEMENTS.md)
 - **Privacy Exceptions** — Ignore sensitive apps (password managers, banking tools) by process name or full executable path
 
 ### 🖥️ Desktop Integration

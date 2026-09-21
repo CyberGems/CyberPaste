@@ -100,6 +100,15 @@ pub async fn copy_clip_text(
                 log::error!("Failed to restart listener: {}", e);
             }
 
+            if final_res.is_ok() {
+                crate::progress::record_event_for_app(
+                    &app,
+                    pool,
+                    crate::progress::ProgressEvent::Copied,
+                )
+                .await;
+            }
+
             final_res
         }
         None => Err("Clip not found".to_string()),
@@ -215,6 +224,13 @@ pub async fn ai_process_clip(
         .execute(pool)
         .await
         .map_err(|e| e.to_string())?;
+
+    crate::progress::record_event_for_app(
+        &app,
+        pool,
+        crate::progress::ProgressEvent::AiAction,
+    )
+    .await;
 
     Ok(result)
 }
@@ -1208,6 +1224,13 @@ pub async fn paste_clip(
             }
 
             if final_res.is_ok() {
+                crate::progress::record_event_for_app(
+                    &app,
+                    pool,
+                    crate::progress::ProgressEvent::Pasted,
+                )
+                .await;
+
                 let content = if clip.clip_type == "image" {
                     "[Image]".to_string()
                 } else if clip.clip_type == "file"
@@ -1537,7 +1560,7 @@ pub async fn copy_clip(
             }
 
             // Play clipboard sound if enabled
-            if settings.clipboard_sound_enabled {
+            if settings.clipboard_sound_enabled && !crate::quiet_hours::is_active(&settings) {
                 let _ = play_clipboard_sound(settings.clipboard_sound_path.clone());
             }
 
@@ -1578,6 +1601,16 @@ pub async fn copy_clip(
                     Some(clip_id),
                     clip.source_app.clone(),
                     clip.source_icon.clone(),
+                    None,
+                )
+                .await;
+            }
+
+            if final_res.is_ok() {
+                crate::progress::record_event_for_app(
+                    &app,
+                    pool,
+                    crate::progress::ProgressEvent::Copied,
                 )
                 .await;
             }
@@ -1624,6 +1657,7 @@ pub async fn delete_clip(
 #[tauri::command]
 pub async fn toggle_clip_pin(
     uuid: String,
+    app: AppHandle,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<bool, String> {
     crate::app_lock::require_unlocked()?;
@@ -1657,6 +1691,15 @@ pub async fn toggle_clip_pin(
     .fetch_one(pool)
     .await
     .map_err(|e| e.to_string())?;
+
+    if is_pinned {
+        crate::progress::record_event_for_app(
+            &app,
+            pool,
+            crate::progress::ProgressEvent::Pinned,
+        )
+        .await;
+    }
 
     Ok(is_pinned)
 }
@@ -2338,6 +2381,13 @@ pub async fn create_folder(
         .map_err(|e| e.to_string())?
         .last_insert_rowid();
 
+    crate::progress::record_event_for_app(
+        window.app_handle(),
+        pool,
+        crate::progress::ProgressEvent::FolderCreated,
+    )
+    .await;
+
     let _ = window.emit("clipboard-change", ());
 
     Ok(FolderItem {
@@ -2704,6 +2754,41 @@ pub async fn get_clip_stats(
         "rtf": rtf,
         "urls": urls
     }))
+}
+
+#[tauri::command]
+pub async fn get_achievement_progress(
+    app: AppHandle,
+    db: tauri::State<'_, Arc<Database>>,
+) -> Result<crate::progress::ProgressData, String> {
+    crate::app_lock::require_unlocked()?;
+    let manager = app.state::<Arc<SettingsManager>>();
+    crate::progress::progress_data(&db.pool, manager.get().first_used_at)
+        .await
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub async fn reset_achievement_progress(
+    app: AppHandle,
+    db: tauri::State<'_, Arc<Database>>,
+) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
+    crate::progress::reset(&db.pool)
+        .await
+        .map_err(|error| error.to_string())?;
+    let _ = app.emit("achievements-updated", ());
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn record_progress_search(
+    app: AppHandle,
+    db: tauri::State<'_, Arc<Database>>,
+) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
+    crate::progress::record_search_for_app(&app, &db.pool).await;
+    Ok(())
 }
 
 #[tauri::command]
@@ -3285,6 +3370,7 @@ pub async fn import_backup(
             settings.auto_backup_enabled,
             settings.auto_backup_folder,
             settings.auto_backup_retention,
+            settings.first_used_at.clone(),
         )
     };
 
@@ -3371,6 +3457,12 @@ pub async fn import_backup(
             .map_err(|e| e.to_string())?;
     }
 
+    if let Some(progress) = data.progress.as_ref() {
+        crate::progress::restore_snapshot(&mut tx, progress)
+            .await
+            .map_err(|e| e.to_string())?;
+    }
+
     tx.commit().await.map_err(|e| e.to_string())?;
     let _ = cleanup_orphan_clip_image_files(pool).await;
 
@@ -3379,6 +3471,9 @@ pub async fn import_backup(
     restored_settings.auto_backup_enabled = local_backup_settings.0;
     restored_settings.auto_backup_folder = local_backup_settings.1;
     restored_settings.auto_backup_retention = local_backup_settings.2;
+    if restored_settings.first_used_at.is_none() {
+        restored_settings.first_used_at = local_backup_settings.3;
+    }
     manager.save(restored_settings).map_err(|e| e.to_string())?;
     {
         let mut stored = manager.get();
@@ -3738,6 +3833,8 @@ use parking_lot::Mutex;
 pub struct ToastPayload {
     message: String,
     toast_type: String,
+    #[serde(default)]
+    bypass_quiet_hours: bool,
     clip_type: Option<String>,
     image_preview: Option<String>,
     clip_uuid: Option<String>,
@@ -3784,7 +3881,7 @@ pub async fn toast_ready(
             use std::sync::Arc;
             let manager = app.state::<Arc<SettingsManager>>();
             let settings = manager.get();
-            if settings.startup_sound_enabled {
+            if settings.startup_sound_enabled && !crate::quiet_hours::is_active(&settings) {
                 let path_to_play = if settings.startup_sound_path.is_empty() {
                     let data_dir = crate::get_data_dir();
                     data_dir.join("activation_sound.wav").to_string_lossy().to_string()
@@ -3809,12 +3906,14 @@ pub async fn show_toast(
     clip_uuid: Option<String>,
     source_app: Option<String>,
     source_icon: Option<String>,
+    bypass_quiet_hours: Option<bool>,
 ) -> Result<(), String> {
     dispatch_toast(
         app,
         ToastPayload {
             message,
             toast_type,
+            bypass_quiet_hours: bypass_quiet_hours.unwrap_or(false),
             clip_type,
             image_preview,
             clip_uuid,
@@ -3842,6 +3941,7 @@ pub async fn show_content_limit_toast(
         ToastPayload {
             message: String::new(),
             toast_type: "error".to_string(),
+            bypass_quiet_hours: false,
             clip_type: Some("content_limit".to_string()),
             image_preview: None,
             clip_uuid: None,
@@ -3869,6 +3969,7 @@ pub async fn show_image_limit_toast(
         ToastPayload {
             message: String::new(),
             toast_type: "error".to_string(),
+            bypass_quiet_hours: false,
             clip_type: Some("image_limit".to_string()),
             image_preview: None,
             clip_uuid: None,
@@ -3898,6 +3999,7 @@ pub async fn show_storage_quota_toast(
         ToastPayload {
             message: String::new(),
             toast_type: "info".to_string(),
+            bypass_quiet_hours: false,
             clip_type: Some("storage_quota".to_string()),
             image_preview: None,
             clip_uuid: None,
@@ -3925,6 +4027,13 @@ async fn dispatch_toast(app: AppHandle, payload: ToastPayload) -> Result<(), Str
     }
 
     let payload = payload;
+    if crate::quiet_hours::is_active(&manager.get())
+        && payload.toast_type != "error"
+        && !payload.bypass_quiet_hours
+    {
+        return Ok(());
+    }
+
     if crate::app_lock::is_locked() {
         let clip_like = payload.clip_uuid.is_some()
             || payload.image_preview.is_some()
@@ -3962,12 +4071,13 @@ async fn dispatch_toast(app: AppHandle, payload: ToastPayload) -> Result<(), Str
 
         // If this is the welcome toast and the window already exists, play the sound immediately
         if is_welcome {
-            if manager.get().startup_sound_enabled {
-                let path_to_play = if manager.get().startup_sound_path.is_empty() {
+            let settings = manager.get();
+            if settings.startup_sound_enabled && !crate::quiet_hours::is_active(&settings) {
+                let path_to_play = if settings.startup_sound_path.is_empty() {
                     let data_dir = crate::get_data_dir();
                     data_dir.join("activation_sound.wav").to_string_lossy().to_string()
                 } else {
-                    manager.get().startup_sound_path.clone()
+                    settings.startup_sound_path.clone()
                 };
                 let _ = play_clipboard_sound(path_to_play);
             }

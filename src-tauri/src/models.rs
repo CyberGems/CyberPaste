@@ -75,6 +75,12 @@ pub struct AppSettings {
     pub duplicate_toast_enabled: bool,
     pub toast_monitor: String,
     pub toast_click_action: String,
+    #[serde(default)]
+    pub quiet_hours_enabled: bool,
+    #[serde(default = "default_quiet_hours_start")]
+    pub quiet_hours_start: String,
+    #[serde(default = "default_quiet_hours_end")]
+    pub quiet_hours_end: String,
     #[serde(default = "default_true")]
     pub auto_backup_enabled: bool,
     #[serde(default)]
@@ -151,10 +157,24 @@ pub struct AppSettings {
     pub app_lock_idle_seconds: i64,
     #[serde(default)]
     pub app_lock_pause_capture: bool,
+    #[serde(default = "default_true")]
+    pub achievements_enabled: bool,
+    #[serde(default = "default_true")]
+    pub achievement_notifications_enabled: bool,
+    #[serde(default)]
+    pub first_used_at: Option<String>,
 }
 
 fn default_lock_mode() -> String {
     "pin".to_string()
+}
+
+fn default_quiet_hours_start() -> String {
+    "22:00".to_string()
+}
+
+fn default_quiet_hours_end() -> String {
+    "07:00".to_string()
 }
 
 impl Default for AppSettings {
@@ -216,6 +236,9 @@ impl Default for AppSettings {
             duplicate_toast_enabled: true,
             toast_monitor: "primary".to_string(),
             toast_click_action: "close".to_string(),
+            quiet_hours_enabled: false,
+            quiet_hours_start: default_quiet_hours_start(),
+            quiet_hours_end: default_quiet_hours_end(),
             auto_backup_enabled: true,
             auto_backup_folder: "".to_string(),
             auto_backup_retention: 3,
@@ -271,6 +294,9 @@ impl Default for AppSettings {
             app_lock_on_windows_lock: true,
             app_lock_idle_seconds: 0,
             app_lock_pause_capture: false,
+            achievements_enabled: true,
+            achievement_notifications_enabled: true,
+            first_used_at: None,
         }
     }
 }
@@ -367,6 +393,8 @@ pub struct BackupData {
     pub folders: Vec<Folder>,
     pub clip_images: Vec<ClipImage>,
     pub settings: AppSettings,
+    #[serde(default)]
+    pub progress: Option<crate::progress::ProgressSnapshot>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

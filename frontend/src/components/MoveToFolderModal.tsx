@@ -43,13 +43,14 @@ import {
   Share2,
   Smile,
   Sun,
+  type LucideIcon,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { FolderItem } from '../types';
 import { useTranslation } from 'react-i18next';
 import Tooltip from './Tooltip';
 
-const IconMap: Record<string, React.ComponentType<{ size?: number; style?: React.CSSProperties; className?: string }>> = {
+const IconMap: Record<string, LucideIcon> = {
   Zap,
   Flame,
   Star,

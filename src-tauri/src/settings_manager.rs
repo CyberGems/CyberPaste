@@ -1,6 +1,7 @@
 use crate::database::Database;
 use crate::models::AppSettings;
 use crate::secrets;
+use chrono::Utc;
 use parking_lot::RwLock;
 use std::fs;
 use std::path::PathBuf;
@@ -28,6 +29,10 @@ impl SettingsManager {
         };
 
         let mut needs_save = !path.exists();
+        if settings.first_used_at.is_none() {
+            settings.first_used_at = Some(infer_first_used_at(&path, db));
+            needs_save = true;
+        }
         let normalized_text_limit =
             crate::content_limits::normalize_max_clipboard_text_bytes(
                 settings.max_clipboard_text_bytes,
@@ -252,6 +257,15 @@ impl SettingsManager {
         f(&mut settings);
         self.save(settings)
     }
+}
+
+fn infer_first_used_at(settings_path: &PathBuf, db: &Database) -> String {
+    for candidate in [settings_path, &db.path] {
+        if let Ok(created) = fs::metadata(candidate).and_then(|metadata| metadata.created()) {
+            return chrono::DateTime::<Utc>::from(created).to_rfc3339();
+        }
+    }
+    Utc::now().to_rfc3339()
 }
 
 pub fn emit_changed(app: &AppHandle) {

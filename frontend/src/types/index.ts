@@ -72,6 +72,9 @@ export interface Settings {
   duplicate_toast_enabled?: boolean;
   toast_monitor?: string;
   toast_click_action?: 'none' | 'close' | 'open' | 'system_viewer' | 'toggle_pin';
+  quiet_hours_enabled?: boolean;
+  quiet_hours_start?: string;
+  quiet_hours_end?: string;
   auto_backup_enabled?: boolean;
   auto_backup_folder?: string;
   auto_backup_retention?: number;
@@ -126,6 +129,42 @@ export interface Settings {
   app_lock_idle_seconds?: number;
   app_lock_pause_capture?: boolean;
   ai_api_key_configured?: boolean;
+  achievements_enabled?: boolean;
+  achievement_notifications_enabled?: boolean;
+  first_used_at?: string | null;
+}
+
+export interface UsageTotals {
+  clips_captured: number;
+  captured_text: number;
+  captured_image: number;
+  captured_code: number;
+  captured_url: number;
+  captured_file: number;
+  captured_html: number;
+  captured_rtf: number;
+  pastes: number;
+  copies: number;
+  searches: number;
+  folders_created: number;
+  pins: number;
+  ai_actions: number;
+}
+
+export interface AchievementProgress {
+  id: string;
+  target: number;
+  value: number;
+  unlocked: boolean;
+  unlocked_at: string | null;
+}
+
+export interface ProgressData {
+  first_used_at: string | null;
+  totals: UsageTotals;
+  active_days: number;
+  current_streak: number;
+  achievements: AchievementProgress[];
 }
 
 export interface AppLockStatus {

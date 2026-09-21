@@ -360,6 +360,7 @@ function App() {
   const selectedFolderRef = useRef(selectedFolder);
   selectedFolderRef.current = selectedFolder;
   const loadPerfIdRef = useRef(0);
+  const lastProgressSearchAtRef = useRef(0);
   const perfLogEnabled =
     typeof window !== 'undefined' &&
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
@@ -435,6 +436,17 @@ function App() {
         setFullTypeFilter(event.payload.full_type_filter as FullTypeFilter);
       }
     });
+
+    const unlistenAchievements = listen<{ achievement_id: string }[]>(
+      'achievements-updated',
+      (event) => {
+        if (!(settingsRef.current?.achievement_notifications_enabled ?? true)) return;
+        for (const achievement of event.payload ?? []) {
+          const title = t(`settings.achievement.${achievement.achievement_id}.title`);
+          toast.success(t('settings.achievementUnlockedToast', { achievement: title }));
+        }
+      }
+    );
 
     // Listen for open-settings from tray
     const unlistenOpenSettings = listen<string>('open-settings', (event) => {
@@ -540,6 +552,7 @@ function App() {
 
     return () => {
       unlisten.then((f) => f());
+      unlistenAchievements.then((f) => f());
       unlistenOpenSettings.then((f) => f());
       unlistenSelectClip.then((f) => f());
       unlistenEditClip.then((f) => f());
@@ -661,6 +674,14 @@ function App() {
             typeFilter: typeFilterParam,
           });
           if (perfLogEnabled) invokeEnd = performance.now();
+        }
+
+        if (searchQuery.trim() && !append) {
+          const now = Date.now();
+          if (now - lastProgressSearchAtRef.current >= 1200) {
+            lastProgressSearchAtRef.current = now;
+            void invoke('record_progress_search').catch(() => {});
+          }
         }
 
         const imageCount = perfLogEnabled

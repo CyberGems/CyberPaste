@@ -29,6 +29,8 @@ mod database;
 mod highlight;
 mod models;
 mod ocr;
+mod progress;
+mod quiet_hours;
 mod secrets;
 mod settings_commands;
 mod settings_manager;
@@ -606,6 +608,7 @@ pub fn run_app() {
                     None,
                     None,
                     None,
+                    None,
                 )
                 .await;
             });
@@ -641,6 +644,9 @@ pub fn run_app() {
             commands::hide_window,
             commands::get_clipboard_history_size,
             commands::get_clip_stats,
+            commands::get_achievement_progress,
+            commands::reset_achievement_progress,
+            commands::record_progress_search,
             commands::get_db_size,
             commands::get_storage_usage,
             commands::clear_clipboard_history,
