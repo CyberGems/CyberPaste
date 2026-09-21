@@ -132,7 +132,7 @@ export function AppLockScreen({
 
   return (
     <div
-      className="absolute inset-0 z-[220] flex select-none flex-col bg-background backdrop-blur-xl"
+      className="absolute inset-0 z-[220] flex select-none flex-col bg-background/[0.96] backdrop-blur-md"
       onCopy={(e) => {
         const target = e.target as HTMLElement | null;
         if (target?.closest('input, textarea')) return;
