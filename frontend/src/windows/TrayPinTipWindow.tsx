@@ -197,7 +197,7 @@ function TrayOverflowIcon() {
   return (
     <span
       aria-hidden="true"
-      className="mx-0.5 inline-flex h-[1.2em] w-[1.2em] translate-y-[0.08em] items-center justify-center rounded-[4px] border border-foreground/20 bg-foreground/[0.07] align-middle text-foreground/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+      className="mx-0.5 inline-flex h-[1.2em] w-[1.2em] -translate-y-[0.04em] items-center justify-center rounded-[4px] border border-foreground/20 bg-foreground/[0.07] align-middle text-foreground/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
     >
       <ChevronUp size={11} strokeWidth={2.5} />
     </span>
