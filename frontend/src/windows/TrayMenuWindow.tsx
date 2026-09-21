@@ -457,7 +457,7 @@ export function TrayMenuWindow() {
           <div key="suite" className="animate-in fade-in slide-in-from-right-4 duration-200">
             <SubHeader
               title={t('tray.suiteTitle', { defaultValue: 'CyberGems' })}
-              icon={<Gem size={14} strokeWidth={1.8} />}
+              icon={<img src="/cybergems-logo.svg" alt="" className="h-4 w-4 object-contain" />}
               backLabel={t('tray.back', { defaultValue: 'Back' })}
               onBack={() => goView('main')}
             />
