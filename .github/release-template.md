@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/CyberGems/CyberPaste/main/frontend/public/logo.png" width="120" alt="CyberPaste">
+</p>
+
 ## 📋 CyberPaste {{VERSION}}: Release Notes
 
 ### 🚀 What's new in this release
