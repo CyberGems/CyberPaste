@@ -7,7 +7,6 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { check } from '@tauri-apps/plugin-updater';
 import {
   AlertCircle,
-  ArrowRight,
   BookOpen,
   Check,
   ChevronDown,
@@ -479,7 +478,7 @@ export function AboutWindow() {
                   <span className="cursor-default select-none">{t('settings.suiteTitle')}</span>
                   <div className="h-px flex-1 bg-primary/20" />
                 </div>
-                <div className="mx-auto flex max-w-[270px] flex-wrap items-center justify-center gap-2">
+                <div className="mx-auto flex w-full flex-nowrap items-center justify-center gap-2">
                   {RECOMMENDED_SUITE_APPS.map((app) => (
                     <Tooltip key={app.slug} label={app.tagline[suiteLang]} placement="top">
                       <button
@@ -496,16 +495,6 @@ export function AboutWindow() {
                       </button>
                     </Tooltip>
                   ))}
-                </div>
-                <div className="flex justify-center">
-                  <button
-                    type="button"
-                    onClick={() => openUrl('https://cybergems.org/#apps').catch(console.error)}
-                    className="btn inline-flex items-center gap-1 rounded-[4px] border border-primary/20 bg-primary/10 px-3 py-1.5 text-[11px] font-medium text-primary hover:bg-primary/20"
-                  >
-                    {t('settings.suiteMore')}
-                    <ArrowRight size={12} strokeWidth={2} />
-                  </button>
                 </div>
               </section>
             ) : null}
