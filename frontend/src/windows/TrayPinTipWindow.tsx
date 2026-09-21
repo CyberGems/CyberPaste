@@ -104,6 +104,9 @@ export function TrayPinTipWindow() {
   const isRow = edge === 'left' || edge === 'right';
   const tailFirst = edge === 'top' || edge === 'left';
   const bodyParts = t('trayPinTip.body').split('(^)');
+  const overflowLeadMatch = bodyParts[0].match(/^(.*\s)(\S+\s+\S+\s*)$/s);
+  const bodyPrefix = overflowLeadMatch?.[1] ?? bodyParts[0];
+  const overflowLead = overflowLeadMatch?.[2] ?? '';
 
   return (
     <div
@@ -145,13 +148,18 @@ export function TrayPinTipWindow() {
             </button>
           </div>
           <p className="mt-2.5 text-[12.5px] leading-[18px] text-muted-foreground">
-            {bodyParts[0]}
             {bodyParts.length > 1 ? (
               <>
-                <TrayOverflowIcon />
+                {bodyPrefix}
+                <span className="whitespace-nowrap">
+                  {overflowLead}
+                  <TrayOverflowIcon />
+                </span>
                 {bodyParts.slice(1).join('(^)')}
               </>
-            ) : null}
+            ) : (
+              bodyParts[0]
+            )}
           </p>
           <label className="mt-3 flex cursor-pointer items-center gap-2 text-[12px] text-muted-foreground">
             <input
@@ -189,7 +197,7 @@ function TrayOverflowIcon() {
   return (
     <span
       aria-hidden="true"
-      className="mx-0.5 inline-flex h-[1.2em] w-[1.2em] translate-y-[0.12em] items-center justify-center rounded-[4px] border border-foreground/20 bg-foreground/[0.07] align-middle text-foreground/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+      className="mx-0.5 inline-flex h-[1.2em] w-[1.2em] translate-y-[0.08em] items-center justify-center rounded-[4px] border border-foreground/20 bg-foreground/[0.07] align-middle text-foreground/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
     >
       <ChevronUp size={11} strokeWidth={2.5} />
     </span>
