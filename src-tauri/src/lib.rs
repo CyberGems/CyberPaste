@@ -1,7 +1,7 @@
 #![allow(non_snake_case)] // crate name CyberPaste is intentional
 use std::fs;
 use std::str::FromStr;
-use std::sync::atomic::{AtomicBool, AtomicI64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI64, AtomicUsize, Ordering};
 use std::sync::Arc;
 use tauri::{
     image::Image,
@@ -15,8 +15,34 @@ use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 static IS_ANIMATING: AtomicBool = AtomicBool::new(false);
 static LAST_SHOW_TIME: AtomicI64 = AtomicI64::new(0);
 static SKIP_LOCK_ON_NEXT_HIDE: AtomicBool = AtomicBool::new(false);
+static NATIVE_DIALOG_DEPTH: AtomicUsize = AtomicUsize::new(0);
+static NATIVE_DIALOG_SUPPRESS_UNTIL: AtomicI64 = AtomicI64::new(0);
 static TARGET_FOREGROUND_HND: std::sync::atomic::AtomicPtr<()> =
     std::sync::atomic::AtomicPtr::new(std::ptr::null_mut());
+
+pub struct NativeDialogGuard;
+
+impl NativeDialogGuard {
+    pub fn new() -> Self {
+        NATIVE_DIALOG_DEPTH.fetch_add(1, Ordering::SeqCst);
+        Self
+    }
+}
+
+impl Drop for NativeDialogGuard {
+    fn drop(&mut self) {
+        if NATIVE_DIALOG_DEPTH.fetch_sub(1, Ordering::SeqCst) == 1 {
+            let suppress_until = chrono::Local::now().timestamp_millis() + 750;
+            NATIVE_DIALOG_SUPPRESS_UNTIL.store(suppress_until, Ordering::SeqCst);
+        }
+    }
+}
+
+fn native_dialog_is_open() -> bool {
+    NATIVE_DIALOG_DEPTH.load(Ordering::SeqCst) > 0
+        || chrono::Local::now().timestamp_millis()
+            < NATIVE_DIALOG_SUPPRESS_UNTIL.load(Ordering::SeqCst)
+}
 
 mod ai;
 mod app_lock;
@@ -252,6 +278,10 @@ pub fn run_app() {
                     if !focused {
                         let label = window.label();
                         if label == "main" {
+                            if native_dialog_is_open() {
+                                return;
+                            }
+
                             if window.app_handle().get_webview_window("settings").is_some() {
                                 return;
                             }

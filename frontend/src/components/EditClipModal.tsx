@@ -5,6 +5,7 @@ import { ContextMenu } from './ContextMenu';
 import { useTextFieldContextMenu } from '../hooks/useTextFieldContextMenu';
 import { clsx } from 'clsx';
 import Tooltip from './Tooltip';
+import { ModalIcon } from './ModalIcon';
 import { systemToast as toast } from '../utils/toast';
 import { isExportCancelled, saveTextToFile } from '../utils/export';
 
@@ -175,9 +176,9 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
         {/* Editor Window Header */}
         <div className="flex flex-shrink-0 items-center justify-between border-b border-border bg-muted/40 px-4 py-2.5">
           <div className="flex min-w-0 items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-primary/25 bg-primary/15 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.2)]">
+            <ModalIcon className="h-7 w-7">
               {isCode ? <FileCode size={15} /> : <FileText size={15} />}
-            </div>
+            </ModalIcon>
             <div className="flex min-w-0 items-center gap-2">
               <h3 className="truncate text-sm font-bold tracking-tight text-foreground">
                 {t('settings.editClip', { type: typeLabel })}

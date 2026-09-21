@@ -2965,12 +2965,13 @@ pub fn show_window(window: tauri::WebviewWindow) -> Result<(), String> {
 #[tauri::command]
 pub async fn pick_file(
     app: AppHandle,
+    window: tauri::WebviewWindow,
     filter_name: Option<String>,
     extensions: Option<Vec<String>>,
 ) -> Result<String, String> {
     use tauri_plugin_dialog::DialogExt;
 
-    let mut dialog = app.dialog().file();
+    let mut dialog = app.dialog().file().set_parent(&window);
 
     if let (Some(name), Some(exts)) = (filter_name, extensions) {
         if !exts.is_empty() {
@@ -2982,7 +2983,10 @@ pub async fn pick_file(
         dialog = dialog.add_filter("All Files", &["*"]);
     }
 
-    let file_path = dialog.blocking_pick_file();
+    let file_path = {
+        let _dialog_guard = crate::NativeDialogGuard::new();
+        dialog.blocking_pick_file()
+    };
 
     match file_path {
         Some(path) => Ok(path.to_string()),
@@ -2991,10 +2995,15 @@ pub async fn pick_file(
 }
 
 #[tauri::command]
-pub async fn pick_folder(app: AppHandle) -> Result<String, String> {
+pub async fn pick_folder(app: AppHandle, window: tauri::WebviewWindow) -> Result<String, String> {
     use tauri_plugin_dialog::DialogExt;
 
-    match app.dialog().file().blocking_pick_folder() {
+    let folder_path = {
+        let _dialog_guard = crate::NativeDialogGuard::new();
+        app.dialog().file().set_parent(&window).blocking_pick_folder()
+    };
+
+    match folder_path {
         Some(path) => Ok(path.to_string()),
         None => Err("No folder selected".to_string()),
     }
@@ -3603,12 +3612,15 @@ pub async fn export_clip(
                 .file_name()
                 .and_then(|value| value.to_str())
                 .unwrap_or("ClipboardFile");
-            let target = file_dialog()
-                .set_title(&dialog_title)
-                .add_filter("All Files", &["*"])
-                .set_file_name(file_name)
-                .blocking_save_file()
-                .ok_or_else(|| "Export cancelled".to_string())?;
+            let target = {
+                let _dialog_guard = crate::NativeDialogGuard::new();
+                file_dialog()
+                    .set_title(&dialog_title)
+                    .add_filter("All Files", &["*"])
+                    .set_file_name(file_name)
+                    .blocking_save_file()
+                    .ok_or_else(|| "Export cancelled".to_string())?
+            };
             let target_path = Path::new(target.to_string().as_str()).to_path_buf();
             if target_path == source {
                 return Err("The destination is the original file".to_string());
@@ -3617,10 +3629,13 @@ pub async fn export_clip(
             return Ok(target_path.to_string_lossy().to_string());
         }
 
-        let folder = file_dialog()
-            .set_title(&dialog_title)
-            .blocking_pick_folder()
-            .ok_or_else(|| "Export cancelled".to_string())?;
+        let folder = {
+            let _dialog_guard = crate::NativeDialogGuard::new();
+            file_dialog()
+                .set_title(&dialog_title)
+                .blocking_pick_folder()
+                .ok_or_else(|| "Export cancelled".to_string())?
+        };
         let folder_string = folder.to_string();
         let folder_path = Path::new(&folder_string);
         for source in source_paths {
@@ -3647,12 +3662,15 @@ pub async fn export_clip(
         } else {
             format!("{stem}.png")
         };
-        let target = file_dialog()
-            .set_title(&dialog_title)
-            .add_filter("PNG Image", &["png"])
-            .set_file_name(&file_name)
-            .blocking_save_file()
-            .ok_or_else(|| "Export cancelled".to_string())?;
+        let target = {
+            let _dialog_guard = crate::NativeDialogGuard::new();
+            file_dialog()
+                .set_title(&dialog_title)
+                .add_filter("PNG Image", &["png"])
+                .set_file_name(&file_name)
+                .blocking_save_file()
+                .ok_or_else(|| "Export cancelled".to_string())?
+        };
         let target_path = target.to_string();
         fs::write(&target_path, image_content).map_err(|error| error.to_string())?;
         return Ok(target_path);
@@ -3669,12 +3687,15 @@ pub async fn export_clip(
         let url = String::from_utf8_lossy(&content);
         content = format!("[InternetShortcut]\r\nURL={url}\r\n").into_bytes();
     }
-    let target = file_dialog()
-        .set_title(&dialog_title)
-        .add_filter("Text or Web File", &[extension])
-        .set_file_name(&file_name)
-        .blocking_save_file()
-        .ok_or_else(|| "Export cancelled".to_string())?;
+    let target = {
+        let _dialog_guard = crate::NativeDialogGuard::new();
+        file_dialog()
+            .set_title(&dialog_title)
+            .add_filter("Text or Web File", &[extension])
+            .set_file_name(&file_name)
+            .blocking_save_file()
+            .ok_or_else(|| "Export cancelled".to_string())?
+    };
     let target_path = target.to_string();
     fs::write(&target_path, content).map_err(|error| error.to_string())?;
     Ok(target_path)
@@ -3706,12 +3727,15 @@ pub async fn save_text_to_file(
         "rtf" => "Rich Text File",
         _ => "Text File",
     };
-    let target = file_dialog()
-        .set_title(&dialog_title)
-        .add_filter(filter_name, &[extension])
-        .set_file_name(&file_name)
-        .blocking_save_file()
-        .ok_or_else(|| "Export cancelled".to_string())?;
+    let target = {
+        let _dialog_guard = crate::NativeDialogGuard::new();
+        file_dialog()
+            .set_title(&dialog_title)
+            .add_filter(filter_name, &[extension])
+            .set_file_name(&file_name)
+            .blocking_save_file()
+            .ok_or_else(|| "Export cancelled".to_string())?
+    };
     let target_path = target.to_string();
     fs::write(&target_path, content).map_err(|error| error.to_string())?;
     Ok(target_path)
@@ -3721,6 +3745,7 @@ pub async fn save_text_to_file(
 pub async fn export_backup_to_file(
     db: tauri::State<'_, Arc<Database>>,
     app: AppHandle,
+    window: tauri::WebviewWindow,
 ) -> Result<(), String> {
     crate::app_lock::require_unlocked()?;
     use tauri_plugin_dialog::DialogExt;
@@ -3729,13 +3754,16 @@ pub async fn export_backup_to_file(
     let data = export_backup(db, app.clone()).await?;
 
     // 2. Open Save Dialog
-    let file_path = app
-        .dialog()
-        .file()
-        .set_title("Save CyberPaste Backup")
-        .add_filter("CyberPaste Backup", &["json"])
-        .set_file_name("cyberpaste_backup.json")
-        .blocking_save_file();
+    let file_path = {
+        let _dialog_guard = crate::NativeDialogGuard::new();
+        app.dialog()
+            .file()
+            .set_parent(&window)
+            .set_title("Save CyberPaste Backup")
+            .add_filter("CyberPaste Backup", &["json"])
+            .set_file_name("cyberpaste_backup.json")
+            .blocking_save_file()
+    };
 
     if let Some(path) = file_path {
         let json = serde_json::to_string_pretty(&data).map_err(|e| e.to_string())?;
@@ -3750,17 +3778,21 @@ pub async fn export_backup_to_file(
 pub async fn import_backup_from_file(
     db: tauri::State<'_, Arc<Database>>,
     app: AppHandle,
+    window: tauri::WebviewWindow,
 ) -> Result<(), String> {
     crate::app_lock::require_unlocked()?;
     use tauri_plugin_dialog::DialogExt;
 
     // 1. Open File Dialog
-    let file_path = app
-        .dialog()
-        .file()
-        .set_title("Select CyberPaste Backup")
-        .add_filter("CyberPaste Backup", &["json"])
-        .blocking_pick_file();
+    let file_path = {
+        let _dialog_guard = crate::NativeDialogGuard::new();
+        app.dialog()
+            .file()
+            .set_parent(&window)
+            .set_title("Select CyberPaste Backup")
+            .add_filter("CyberPaste Backup", &["json"])
+            .blocking_pick_file()
+    };
 
     if let Some(path) = file_path {
         let json = std::fs::read_to_string(path.to_string()).map_err(|e| e.to_string())?;

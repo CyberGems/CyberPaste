@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 import { Check, Copy, Shield } from 'lucide-react';
+import { ModalIcon } from './ModalIcon';
 
 export function AppLockRecoveryKeyDialog({
   recoveryKey,
@@ -34,9 +35,9 @@ export function AppLockRecoveryKeyDialog({
     <div className="animate-in fade-in fixed inset-0 z-[80] flex items-center justify-center bg-black/55 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-lg border border-border bg-background p-6 shadow-lg">
         <div className="mb-3 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-primary">
+          <ModalIcon>
             <Shield size={16} />
-          </div>
+          </ModalIcon>
           <h3 className="text-lg font-semibold">{t('settings.appLockRecoveryKeyTitle')}</h3>
         </div>
         <p className="text-sm leading-relaxed text-muted-foreground">

@@ -1,6 +1,7 @@
 import { Settings, FolderItem, AppLockStatus, AppLockKeyResult } from '../types';
 import { AppLockRecoveryKeyDialog } from './AppLockRecoveryKeyDialog';
 import { AchievementProgressPanel } from './AchievementProgressPanel';
+import { ModalIcon } from './ModalIcon';
 import {
   X,
   Trash2,
@@ -172,9 +173,9 @@ function PromptEditor({
         }}
         className="flex w-full cursor-pointer items-start gap-3 px-4 py-3 text-left outline-none focus-visible:bg-accent/40"
       >
-        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-primary/25 bg-primary/10 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.12)]">
+        <ModalIcon className="mt-0.5">
           <Icon size={14} />
-        </div>
+        </ModalIcon>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <Tooltip label={t('settings.clickToRename')} placement="top">

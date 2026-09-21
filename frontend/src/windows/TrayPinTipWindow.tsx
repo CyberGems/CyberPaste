@@ -2,10 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { useTranslation } from 'react-i18next';
-import { Pin, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useLanguage } from '../hooks/useLanguage';
 import { useTheme } from '../hooks/useTheme';
 import type { Settings } from '../types';
+import { ModalIcon } from '../components/ModalIcon';
 
 type TaskbarEdge = 'bottom' | 'top' | 'left' | 'right';
 
@@ -125,7 +126,9 @@ export function TrayPinTipWindow() {
         >
           <div className="flex items-start gap-2">
             <div className="flex min-w-0 flex-1 items-center gap-2">
-              <Pin size={18} strokeWidth={2} className="shrink-0 text-foreground" />
+              <ModalIcon>
+                <img src="/logo.png" alt="" draggable={false} className="h-5 w-5 object-contain" />
+              </ModalIcon>
               <h1 className="text-[14px] font-semibold leading-snug text-foreground">
                 {t('trayPinTip.title')}
               </h1>
