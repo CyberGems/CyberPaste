@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { useTranslation } from 'react-i18next';
-import { X } from 'lucide-react';
+import { ChevronUp, X } from 'lucide-react';
 import { useLanguage } from '../hooks/useLanguage';
 import { useTheme } from '../hooks/useTheme';
 import type { Settings } from '../types';
@@ -103,6 +103,7 @@ export function TrayPinTipWindow() {
 
   const isRow = edge === 'left' || edge === 'right';
   const tailFirst = edge === 'top' || edge === 'left';
+  const bodyParts = t('trayPinTip.body').split('(^)');
 
   return (
     <div
@@ -144,7 +145,13 @@ export function TrayPinTipWindow() {
             </button>
           </div>
           <p className="mt-2.5 text-[12.5px] leading-[18px] text-muted-foreground">
-            {t('trayPinTip.body')}
+            {bodyParts[0]}
+            {bodyParts.length > 1 ? (
+              <>
+                <TrayOverflowIcon />
+                {bodyParts.slice(1).join('(^)')}
+              </>
+            ) : null}
           </p>
           <label className="mt-3 flex cursor-pointer items-center gap-2 text-[12px] text-muted-foreground">
             <input
@@ -175,6 +182,17 @@ export function TrayPinTipWindow() {
         {!tailFirst ? <TipTail edge={edge} /> : null}
       </div>
     </div>
+  );
+}
+
+function TrayOverflowIcon() {
+  return (
+    <span
+      aria-hidden="true"
+      className="mx-0.5 inline-flex h-[1.2em] w-[1.2em] translate-y-[0.12em] items-center justify-center rounded-[4px] border border-foreground/20 bg-foreground/[0.07] align-middle text-foreground/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+    >
+      <ChevronUp size={11} strokeWidth={2.5} />
+    </span>
   );
 }
 
