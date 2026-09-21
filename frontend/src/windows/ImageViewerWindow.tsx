@@ -6,6 +6,7 @@ import {
   X,
   ExternalLink,
   Copy,
+  Download,
   Maximize2,
   Minimize2,
   Minus,
@@ -30,6 +31,7 @@ import type { ClipboardItem, Settings } from '../types';
 import { ContextMenu } from '../components/ContextMenu';
 import Tooltip from '../components/Tooltip';
 import { TitleBarMenu } from '../components/TitleBarMenu';
+import { exportClip, isExportCancelled } from '../utils/export';
 
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 8;
@@ -524,6 +526,20 @@ export function ImageViewerWindow() {
     }
   }, [showStatus, t]);
 
+  const handleExport = useCallback(async () => {
+    const current = clipRef.current;
+    if (!current) return;
+    try {
+      await exportClip(current.id, t('export.dialogTitle'));
+      showStatus(t('export.saved'));
+    } catch (err) {
+      if (!isExportCancelled(err)) {
+        console.error('Failed to export image:', err);
+        showStatus(t('export.failed'), 2800);
+      }
+    }
+  }, [showStatus, t]);
+
   const ocrText = useMemo(() => {
     if (!clip || !clip.metadata) return null;
     try {
@@ -673,6 +689,9 @@ export function ImageViewerWindow() {
       } else if (key === 'o') {
         e.preventDefault();
         handleRunOcr();
+      } else if (key === 's') {
+        e.preventDefault();
+        handleExport();
       } else if (key === 'e') {
         e.preventDefault();
         handleEdit();
@@ -687,6 +706,7 @@ export function ImageViewerWindow() {
   }, [
     handleClose,
     handleCopy,
+    handleExport,
     handleEdit,
     handleRunOcr,
     handleToggleAlwaysOnTop,
@@ -874,6 +894,11 @@ export function ImageViewerWindow() {
               onClick: handleCopy,
             },
             {
+              label: t('export.saveAs'),
+              icon: <Download size={14} />,
+              onClick: handleExport,
+            },
+            {
               label: alwaysOnTop ? t('viewer.unpinOnTop') : t('viewer.pinOnTop'),
               icon: alwaysOnTop ? <Pin size={14} /> : <PinOff size={14} />,
               onClick: handleToggleAlwaysOnTop,
@@ -1020,6 +1045,16 @@ export function ImageViewerWindow() {
                 }`}
               >
                 {copied ? <Check size={15} /> : <Copy size={15} />}
+              </button>
+            </Tooltip>
+
+            <Tooltip label={t('export.saveAs')} placement="bottom">
+              <button
+                type="button"
+                onClick={handleExport}
+                className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
+              >
+                <Download size={15} />
               </button>
             </Tooltip>
 

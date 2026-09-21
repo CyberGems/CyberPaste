@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { convertFileSrc } from '@tauri-apps/api/core';
-import { X, Code, Copy, Check, Loader2, File as LucideFile } from 'lucide-react';
+import { X, Code, Copy, Check, Download, Loader2, File as LucideFile } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { clsx } from 'clsx';
 import Tooltip from './Tooltip';
 import type { ClipboardItem } from '../types';
+import { systemToast as toast } from '../utils/toast';
+import { exportClip, isExportCancelled } from '../utils/export';
 
 interface ClipPreviewModalProps {
   isOpen: boolean;
@@ -84,6 +86,18 @@ export const ClipPreviewModal: React.FC<ClipPreviewModalProps> = ({
     setTimeout(() => setCopied(false), 1500);
   };
 
+  const handleExport = async () => {
+    try {
+      await exportClip(clip.id, t('export.dialogTitle'));
+      toast.success(t('export.saved'));
+    } catch (err) {
+      if (!isExportCancelled(err)) {
+        console.error('Failed to export clip:', err);
+        toast.error(t('export.failed'));
+      }
+    }
+  };
+
   return (
     <div
       className="animate-in fade-in fixed inset-0 z-[150] flex items-center justify-center bg-black/45 p-6 backdrop-blur-sm duration-200"
@@ -131,6 +145,14 @@ export const ClipPreviewModal: React.FC<ClipPreviewModalProps> = ({
                 className="h-7 rounded-md px-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
+              </button>
+            </Tooltip>
+            <Tooltip label={t('export.saveAs')} placement="bottom">
+              <button
+                onClick={handleExport}
+                className="h-7 rounded-md px-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <Download size={13} />
               </button>
             </Tooltip>
             <button

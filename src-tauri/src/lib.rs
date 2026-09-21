@@ -620,6 +620,8 @@ pub fn run_app() {
             commands::get_clips,
             commands::get_clip,
             commands::get_clip_detail,
+            commands::export_clip,
+            commands::save_text_to_file,
             commands::paste_clip,
             commands::copy_clip,
             commands::delete_clip,

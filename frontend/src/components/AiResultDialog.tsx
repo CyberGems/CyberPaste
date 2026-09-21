@@ -1,7 +1,8 @@
-import { X, Copy, Check } from 'lucide-react';
+import { X, Copy, Download, Check } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { systemToast as toast } from '../utils/toast';
 import { useTranslation } from 'react-i18next';
+import { isExportCancelled, saveTextToFile } from '../utils/export';
 
 interface AiResultDialogProps {
   isOpen: boolean;
@@ -45,6 +46,18 @@ export function AiResultDialog({ isOpen, title, content, onClose }: AiResultDial
     }
   };
 
+  const handleExport = async () => {
+    try {
+      await saveTextToFile(content, t('export.dialogTitle'), 'CyberPaste_AI_Result.txt');
+      toast.success(t('export.saved'));
+    } catch (err) {
+      if (!isExportCancelled(err)) {
+        console.error('Failed to export AI result', err);
+        toast.error(t('export.failed'));
+      }
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -62,6 +75,14 @@ export function AiResultDialog({ isOpen, title, content, onClose }: AiResultDial
               title={t('settings.copyContent')}
             >
               {copied ? <Check size={18} className="text-emerald-500" /> : <Copy size={18} />}
+            </button>
+            <button
+              onClick={handleExport}
+              className="rounded-md p-2 hover:bg-accent hover:text-accent-foreground"
+              title={t('export.saveAs')}
+              aria-label={t('export.saveAs')}
+            >
+              <Download size={18} />
             </button>
             <button
               onClick={onClose}

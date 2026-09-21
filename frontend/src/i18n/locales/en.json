@@ -908,6 +908,12 @@
     "originalShort": "1:1",
     "openOcrText": "Show extracted text"
   },
+  "export": {
+    "saveAs": "Save as...",
+    "dialogTitle": "Save CyberPaste content",
+    "saved": "Content saved successfully",
+    "failed": "Could not save the content"
+  },
   "appLock": {
     "unlockTitle": "CyberPaste is locked",
     "unlockSubtitle": "Enter your PIN or password to see clipboard history.",

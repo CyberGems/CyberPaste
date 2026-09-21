@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { X, Save, Copy, Check, Eraser, WrapText, FileCode, FileText } from 'lucide-react';
+import { X, Save, Copy, Download, Check, Eraser, WrapText, FileCode, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ContextMenu } from './ContextMenu';
 import { useTextFieldContextMenu } from '../hooks/useTextFieldContextMenu';
 import { clsx } from 'clsx';
 import Tooltip from './Tooltip';
+import { systemToast as toast } from '../utils/toast';
+import { isExportCancelled, saveTextToFile } from '../utils/export';
 
 interface EditClipModalProps {
   isOpen: boolean;
@@ -125,6 +127,23 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
     }
   };
 
+  const handleExport = async () => {
+    const extension = clipType === 'html' ? 'html' : clipType === 'rtf' ? 'rtf' : 'txt';
+    try {
+      await saveTextToFile(
+        editedContent,
+        t('export.dialogTitle'),
+        `CyberPaste_Content.${extension}`
+      );
+      toast.success(t('export.saved'));
+    } catch (err) {
+      if (!isExportCancelled(err)) {
+        console.error('Failed to export edited clip:', err);
+        toast.error(t('export.failed'));
+      }
+    }
+  };
+
   const handleClear = () => {
     setEditedContent('');
     setCursorPos({ line: 1, col: 1 });
@@ -200,6 +219,14 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
                 <span className="hidden text-[10px] sm:inline">
                   {copied ? t('editor.copied') : t('editor.copyAll')}
                 </span>
+              </button>
+            </Tooltip>
+            <Tooltip label={t('export.saveAs')} placement="bottom">
+              <button
+                onClick={handleExport}
+                className="flex h-7 w-7 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-all hover:bg-accent hover:text-foreground"
+              >
+                <Download size={14} />
               </button>
             </Tooltip>
 

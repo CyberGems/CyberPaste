@@ -3491,6 +3491,226 @@ pub async fn import_backup(
     Ok(())
 }
 
+fn sanitize_export_file_name(name: &str, fallback: &str) -> String {
+    let sanitized: String = name
+        .chars()
+        .map(|character| match character {
+            '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*' => '_',
+            character if character.is_control() => '_',
+            character => character,
+        })
+        .collect();
+    let trimmed = sanitized.trim().trim_matches('.');
+    if trimmed.is_empty() {
+        fallback.to_string()
+    } else {
+        trimmed.to_string()
+    }
+}
+
+fn clip_export_stem(clip: &Clip) -> String {
+    format!(
+        "CyberPaste_{}",
+        clip.created_at.format("%Y-%m-%d_%H-%M-%S")
+    )
+}
+
+fn metadata_object(clip: &Clip) -> serde_json::Map<String, serde_json::Value> {
+    clip.metadata
+        .as_deref()
+        .and_then(|metadata| serde_json::from_str(metadata).ok())
+        .unwrap_or_default()
+}
+
+fn text_export_extension(clip: &Clip) -> &'static str {
+    let metadata = metadata_object(clip);
+    match clip.clip_type.as_str() {
+        "html" => "html",
+        "rtf" if metadata.get("converted") != Some(&serde_json::Value::Bool(true)) => "rtf",
+        "url" => "url",
+        _ => "txt",
+    }
+}
+
+fn available_export_path(folder: &Path, file_name: &str) -> std::path::PathBuf {
+    let candidate = folder.join(file_name);
+    if !candidate.exists() {
+        return candidate;
+    }
+
+    let path = Path::new(file_name);
+    let stem = path.file_stem().and_then(|value| value.to_str()).unwrap_or("file");
+    let extension = path.extension().and_then(|value| value.to_str());
+    for index in 2.. {
+        let candidate_name = match extension {
+            Some(extension) => format!("{stem}_{index}.{extension}"),
+            None => format!("{stem}_{index}"),
+        };
+        let candidate = folder.join(candidate_name);
+        if !candidate.exists() {
+            return candidate;
+        }
+    }
+    unreachable!("the export path suffix range is unbounded")
+}
+
+#[tauri::command]
+pub async fn export_clip(
+    app: AppHandle,
+    clip_id: String,
+    dialog_title: String,
+    suggested_file_name: Option<String>,
+    db: tauri::State<'_, Arc<Database>>,
+) -> Result<String, String> {
+    crate::app_lock::require_unlocked()?;
+    use tauri_plugin_dialog::DialogExt;
+
+    let mut clip: Clip = sqlx::query_as(r#"SELECT * FROM clips WHERE uuid = ? AND is_deleted = 0"#)
+        .bind(&clip_id)
+        .fetch_optional(&db.pool)
+        .await
+        .map_err(|error| error.to_string())?
+        .ok_or_else(|| "Clip not found".to_string())?;
+
+    if clip.clip_type == "file" {
+        let paths: Vec<String> =
+            serde_json::from_slice(&clip.content).map_err(|_| "File paths are unavailable".to_string())?;
+        if paths.is_empty() {
+            return Err("File paths are unavailable".to_string());
+        }
+        let source_paths: Vec<&Path> = paths
+            .iter()
+            .map(Path::new)
+            .filter(|path| path.is_file())
+            .collect();
+        if source_paths.len() != paths.len() {
+            return Err("One or more original files are no longer available".to_string());
+        }
+
+        if source_paths.len() == 1 {
+            let source = source_paths[0];
+            let file_name = source
+                .file_name()
+                .and_then(|value| value.to_str())
+                .unwrap_or("ClipboardFile");
+            let target = app
+                .dialog()
+                .file()
+                .set_title(&dialog_title)
+                .add_filter("All Files", &["*"])
+                .set_file_name(file_name)
+                .blocking_save_file()
+                .ok_or_else(|| "Export cancelled".to_string())?;
+            let target_path = Path::new(target.to_string().as_str()).to_path_buf();
+            if target_path == source {
+                return Err("The destination is the original file".to_string());
+            }
+            fs::copy(source, &target_path).map_err(|error| error.to_string())?;
+            return Ok(target_path.to_string_lossy().to_string());
+        }
+
+        let folder = app
+            .dialog()
+            .file()
+            .set_title(&dialog_title)
+            .blocking_pick_folder()
+            .ok_or_else(|| "Export cancelled".to_string())?;
+        let folder_string = folder.to_string();
+        let folder_path = Path::new(&folder_string);
+        for source in source_paths {
+            let file_name = source
+                .file_name()
+                .and_then(|value| value.to_str())
+                .unwrap_or("ClipboardFile");
+            let target = available_export_path(folder_path, file_name);
+            fs::copy(source, &target).map_err(|error| error.to_string())?;
+        }
+        return Ok(folder_path.to_string_lossy().to_string());
+    }
+
+    let default_stem = clip_export_stem(&clip);
+    let stem = sanitize_export_file_name(
+        suggested_file_name.as_deref().unwrap_or(&default_stem),
+        &default_stem,
+    );
+
+    if clip.clip_type == "image" {
+        let image_content = load_full_image_content(&db.pool, &mut clip).await?;
+        let file_name = if Path::new(&stem).extension().is_some() {
+            stem
+        } else {
+            format!("{stem}.png")
+        };
+        let target = app
+            .dialog()
+            .file()
+            .set_title(&dialog_title)
+            .add_filter("PNG Image", &["png"])
+            .set_file_name(&file_name)
+            .blocking_save_file()
+            .ok_or_else(|| "Export cancelled".to_string())?;
+        let target_path = target.to_string();
+        fs::write(&target_path, image_content).map_err(|error| error.to_string())?;
+        return Ok(target_path);
+    }
+
+    let extension = text_export_extension(&clip);
+    let file_name = if Path::new(&stem).extension().is_some() {
+        stem
+    } else {
+        format!("{stem}.{extension}")
+    };
+    let mut content = clip.content;
+    if clip.clip_type == "url" {
+        let url = String::from_utf8_lossy(&content);
+        content = format!("[InternetShortcut]\r\nURL={url}\r\n").into_bytes();
+    }
+    let target = app
+        .dialog()
+        .file()
+        .set_title(&dialog_title)
+        .add_filter("Text or Web File", &[extension])
+        .set_file_name(&file_name)
+        .blocking_save_file()
+        .ok_or_else(|| "Export cancelled".to_string())?;
+    let target_path = target.to_string();
+    fs::write(&target_path, content).map_err(|error| error.to_string())?;
+    Ok(target_path)
+}
+
+#[tauri::command]
+pub async fn save_text_to_file(
+    app: AppHandle,
+    content: String,
+    dialog_title: String,
+    suggested_file_name: String,
+) -> Result<String, String> {
+    crate::app_lock::require_unlocked()?;
+    use tauri_plugin_dialog::DialogExt;
+
+    let file_name = sanitize_export_file_name(&suggested_file_name, "CyberPaste_Content.txt");
+    let extension = Path::new(&file_name)
+        .extension()
+        .and_then(|value| value.to_str())
+        .unwrap_or("txt");
+    let filter_name = match extension {
+        "html" | "htm" => "HTML File",
+        "rtf" => "Rich Text File",
+        _ => "Text File",
+    };
+    let target = app
+        .dialog()
+        .file()
+        .set_title(&dialog_title)
+        .add_filter(filter_name, &[extension])
+        .set_file_name(&file_name)
+        .blocking_save_file()
+        .ok_or_else(|| "Export cancelled".to_string())?;
+    let target_path = target.to_string();
+    fs::write(&target_path, content).map_err(|error| error.to_string())?;
+    Ok(target_path)
+}
+
 #[tauri::command]
 pub async fn export_backup_to_file(
     db: tauri::State<'_, Arc<Database>>,

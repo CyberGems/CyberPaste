@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Copy, Save, Check, FileText } from 'lucide-react';
+import { X, Copy, Download, Save, Check, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { systemToast as toast } from '../utils/toast';
 import { ContextMenu } from './ContextMenu';
 import { useTextFieldContextMenu } from '../hooks/useTextFieldContextMenu';
+import { isExportCancelled, saveTextToFile } from '../utils/export';
 
 interface OcrResultModalProps {
   isOpen: boolean;
@@ -86,6 +87,18 @@ export const OcrResultModal: React.FC<OcrResultModalProps> = ({
     }
   };
 
+  const handleExport = async () => {
+    try {
+      await saveTextToFile(editedText, t('export.dialogTitle'), 'CyberPaste_OCR.txt');
+      toast.success(t('export.saved'));
+    } catch (err) {
+      if (!isExportCancelled(err)) {
+        console.error('Failed to export OCR text:', err);
+        toast.error(t('export.failed'));
+      }
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -145,6 +158,13 @@ export const OcrResultModal: React.FC<OcrResultModalProps> = ({
             >
               {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
               {t('viewer.copyOcrText') || 'Copy'}
+            </button>
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-2 rounded-lg border border-border bg-background/50 px-3 py-1.5 text-xs font-medium text-foreground transition-all hover:bg-white/5"
+            >
+              <Download size={14} />
+              {t('export.saveAs')}
             </button>
             <button
               onClick={onClose}
