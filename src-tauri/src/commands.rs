@@ -14,7 +14,7 @@ use std::fs;
 use std::path::Path;
 use std::str::FromStr;
 use std::sync::Arc;
-use std::time::Instant;
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use std::sync::atomic::{AtomicBool, Ordering};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 
@@ -3561,6 +3561,7 @@ fn available_export_path(folder: &Path, file_name: &str) -> std::path::PathBuf {
 #[tauri::command]
 pub async fn export_clip(
     app: AppHandle,
+    window: tauri::WebviewWindow,
     clip_id: String,
     dialog_title: String,
     suggested_file_name: Option<String>,
@@ -3568,6 +3569,11 @@ pub async fn export_clip(
 ) -> Result<String, String> {
     crate::app_lock::require_unlocked()?;
     use tauri_plugin_dialog::DialogExt;
+
+    let file_dialog = || {
+        let dialog = app.dialog().file();
+        dialog.set_parent(&window)
+    };
 
     let mut clip: Clip = sqlx::query_as(r#"SELECT * FROM clips WHERE uuid = ? AND is_deleted = 0"#)
         .bind(&clip_id)
@@ -3597,9 +3603,7 @@ pub async fn export_clip(
                 .file_name()
                 .and_then(|value| value.to_str())
                 .unwrap_or("ClipboardFile");
-            let target = app
-                .dialog()
-                .file()
+            let target = file_dialog()
                 .set_title(&dialog_title)
                 .add_filter("All Files", &["*"])
                 .set_file_name(file_name)
@@ -3613,9 +3617,7 @@ pub async fn export_clip(
             return Ok(target_path.to_string_lossy().to_string());
         }
 
-        let folder = app
-            .dialog()
-            .file()
+        let folder = file_dialog()
             .set_title(&dialog_title)
             .blocking_pick_folder()
             .ok_or_else(|| "Export cancelled".to_string())?;
@@ -3645,9 +3647,7 @@ pub async fn export_clip(
         } else {
             format!("{stem}.png")
         };
-        let target = app
-            .dialog()
-            .file()
+        let target = file_dialog()
             .set_title(&dialog_title)
             .add_filter("PNG Image", &["png"])
             .set_file_name(&file_name)
@@ -3669,9 +3669,7 @@ pub async fn export_clip(
         let url = String::from_utf8_lossy(&content);
         content = format!("[InternetShortcut]\r\nURL={url}\r\n").into_bytes();
     }
-    let target = app
-        .dialog()
-        .file()
+    let target = file_dialog()
         .set_title(&dialog_title)
         .add_filter("Text or Web File", &[extension])
         .set_file_name(&file_name)
@@ -3685,12 +3683,18 @@ pub async fn export_clip(
 #[tauri::command]
 pub async fn save_text_to_file(
     app: AppHandle,
+    window: tauri::WebviewWindow,
     content: String,
     dialog_title: String,
     suggested_file_name: String,
 ) -> Result<String, String> {
     crate::app_lock::require_unlocked()?;
     use tauri_plugin_dialog::DialogExt;
+
+    let file_dialog = || {
+        let dialog = app.dialog().file();
+        dialog.set_parent(&window)
+    };
 
     let file_name = sanitize_export_file_name(&suggested_file_name, "CyberPaste_Content.txt");
     let extension = Path::new(&file_name)
@@ -3702,9 +3706,7 @@ pub async fn save_text_to_file(
         "rtf" => "Rich Text File",
         _ => "Text File",
     };
-    let target = app
-        .dialog()
-        .file()
+    let target = file_dialog()
         .set_title(&dialog_title)
         .add_filter(filter_name, &[extension])
         .set_file_name(&file_name)
@@ -4756,6 +4758,8 @@ pub struct TrayMenuState {
 
 static TRAY_MENU_ANCHOR: std::sync::Mutex<Option<(i32, i32)>> = std::sync::Mutex::new(None);
 static TRAY_MENU_WATCH_GEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+static TRAY_MENU_IGNORE_OUTSIDE_UNTIL_MS: std::sync::atomic::AtomicU64 =
+    std::sync::atomic::AtomicU64::new(0);
 static UPDATE_AVAILABLE: AtomicBool = AtomicBool::new(false);
 /// Set when a cold-created window still needs to be positioned+shown by `tray_menu_ready`.
 static TRAY_MENU_PENDING_SHOW: std::sync::atomic::AtomicBool =
@@ -4772,6 +4776,13 @@ const TRAY_MENU_SHADOW_PAD: f64 = 26.0;
 ///   header(14+18+10) + divider(1) + group1[p1.5=12 + 3xgap0.5=6 + 4x36] + divider(1)
 ///   + exit-group(6+36+8) + border(2) = 258
 const TRAY_MENU_EST_HEIGHT: f64 = 295.0;
+
+fn tray_menu_now_ms() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_millis() as u64)
+        .unwrap_or(0)
+}
 
 /// Compute window position + physical size for the tray popup near the anchor point.
 fn tray_menu_geometry(
@@ -5005,6 +5016,13 @@ pub async fn tray_menu_ready(app: AppHandle, width: f64, height: f64) -> Result<
         return Ok(());
     };
 
+    // A view transition resizes/repositions the native popup while the pointer is still down.
+    // Ignore the resulting transient outside-click sample so internal navigation cannot dismiss it.
+    TRAY_MENU_IGNORE_OUTSIDE_UNTIL_MS.store(
+        tray_menu_now_ms().saturating_add(250),
+        std::sync::atomic::Ordering::SeqCst,
+    );
+
     let scale = win.scale_factor().unwrap_or(1.0);
     let width_px = (width * scale).round() as u32;
     let height_px = (height * scale).round() as u32;
@@ -5083,6 +5101,20 @@ fn start_tray_menu_outside_click_watcher(app: AppHandle, win: tauri::WebviewWind
                 };
 
                 if down && !prev_down {
+                    if tray_menu_now_ms()
+                        < TRAY_MENU_IGNORE_OUTSIDE_UNTIL_MS
+                            .load(std::sync::atomic::Ordering::SeqCst)
+                    {
+                        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+                        continue;
+                    }
+                    // Internal clicks focus the popup. Defer the geometry check until focus is
+                    // lost, because a view transition can move the native window underneath the
+                    // pointer before the next polling sample.
+                    if win.is_focused().unwrap_or(false) {
+                        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+                        continue;
+                    }
                     let mut pt = POINT { x: 0, y: 0 };
                     if unsafe { GetCursorPos(&mut pt).is_ok() } {
                         let inside = match (win.outer_position(), win.outer_size()) {

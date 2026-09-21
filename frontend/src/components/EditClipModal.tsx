@@ -194,14 +194,13 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
               <button
                 onClick={() => setWordWrap(!wordWrap)}
                 className={clsx(
-                  'flex h-7 items-center gap-1.5 rounded-md border px-2 text-xs transition-all',
+                  'flex h-7 w-7 items-center justify-center rounded-md border transition-all',
                   wordWrap
                     ? 'border-primary/30 bg-primary/15 font-semibold text-primary'
                     : 'border-transparent text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
               >
                 <WrapText size={13} />
-                <span className="hidden text-[10px] sm:inline">{t('editor.wordWrap')}</span>
               </button>
             </Tooltip>
 
@@ -323,7 +322,7 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
 
         {/* Modal Action Footer */}
         <div className="flex flex-shrink-0 items-center justify-between border-t border-border bg-muted/40 px-4 py-3">
-          <span className="hidden font-mono text-[11px] text-muted-foreground/60 sm:inline-block">
+          <span className="hidden select-none font-mono text-[11px] text-muted-foreground/60 sm:inline-block">
             {t('editor.saveShortcutHint')}
           </span>
           <div className="ml-auto flex items-center gap-2">

@@ -38,6 +38,7 @@ import { triggerFolderFlash } from './hooks/useFolderFlash';
 import { triggerDeleteFlash, cancelDeleteFlash } from './hooks/useDeleteFlash';
 import { useTranslation } from 'react-i18next';
 import { systemToast as toast } from './utils/toast';
+import { exportClip, isExportCancelled } from './utils/export';
 import { IS_PORTABLE_BUILD } from './utils/build';
 import { LAYOUT } from './constants';
 import { generateDemoClips } from './debug/demoData';
@@ -65,6 +66,7 @@ import {
   PanelRightOpen,
   ChevronsUp,
   ChevronsDown,
+  Download,
 } from 'lucide-react';
 
 const base64ToBlob = (base64: string, mimeType: string = 'image/png'): Blob => {
@@ -2513,6 +2515,21 @@ function App() {
     [t, loadFolders, refreshTotalCount]
   );
 
+  const handleExportClip = useCallback(
+    async (clipId: string) => {
+      try {
+        await exportClip(clipId, t('export.dialogTitle'));
+        toast.success(t('export.saved'));
+      } catch (error) {
+        if (!isExportCancelled(error)) {
+          console.error('Failed to export clip:', error);
+          toast.error(t('export.failed'));
+        }
+      }
+    },
+    [t]
+  );
+
   const handleContextMenu = useCallback(
     (e: React.MouseEvent, type: 'card' | 'folder', itemId: string) => {
       e.preventDefault();
@@ -2645,6 +2662,14 @@ function App() {
             },
           });
         }
+
+        opts.push({
+          label: t('export.saveAs'),
+          icon: <Download size={14} />,
+          onClick: () => {
+            void handleExportClip(itemId);
+          },
+        });
 
         const pinLatestDisabled =
           isLiveMainListClip(itemId, clipsRef.current, selectedFolderRef.current) &&
@@ -2781,6 +2806,7 @@ function App() {
     [
       t,
       handleOpenPreview,
+      handleExportClip,
       handleAiAction,
       handlePaste,
       handleToggleClipPin,

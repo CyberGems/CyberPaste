@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { History, Search, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -12,12 +13,43 @@ export function SearchHistoryMenu({ history, onSelect, onClear }: SearchHistoryM
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [menuPosition, setMenuPosition] = useState({ left: 8, top: 8 });
+
+  useLayoutEffect(() => {
+    if (!open) return;
+
+    const updatePosition = () => {
+      const button = buttonRef.current;
+      if (!button) return;
+      const rect = button.getBoundingClientRect();
+      const menuWidth = 288;
+      const left = Math.min(Math.max(8, rect.left), Math.max(8, window.innerWidth - menuWidth - 8));
+      const menuHeight = menuRef.current?.offsetHeight ?? 296;
+      const belowTop = rect.bottom + 4;
+      const top =
+        belowTop + menuHeight > window.innerHeight - 8
+          ? Math.max(8, rect.top - menuHeight - 4)
+          : belowTop;
+      setMenuPosition({ left, top });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
 
     const handlePointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (!rootRef.current?.contains(target) && !menuRef.current?.contains(target)) {
         setOpen(false);
       }
     };
@@ -40,6 +72,7 @@ export function SearchHistoryMenu({ history, onSelect, onClear }: SearchHistoryM
     <div ref={rootRef} className="relative shrink-0">
       <button
         type="button"
+        ref={buttonRef}
         aria-label={t('common.searchHistory')}
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
@@ -52,56 +85,61 @@ export function SearchHistoryMenu({ history, onSelect, onClear }: SearchHistoryM
         <History size={15} />
       </button>
 
-      {open ? (
-        <div
-          role="dialog"
-          aria-label={t('common.searchHistory')}
-          className="absolute right-0 top-full z-[80] mt-1 w-72 overflow-hidden rounded-xl border border-border bg-popover/95 shadow-2xl backdrop-blur-xl"
-        >
-          <div className="flex items-center justify-between border-b border-border/70 px-3 py-2">
-            <div className="flex items-center gap-2 text-[11px] font-semibold text-foreground">
-              <Search size={13} className="text-primary" />
-              {t('common.searchHistory')}
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                onClear();
-              }}
-              disabled={history.length === 0}
-              aria-label={t('common.clearSearchHistory')}
-              className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-35"
+      {open
+        ? createPortal(
+            <div
+              ref={menuRef}
+              style={{ left: menuPosition.left, top: menuPosition.top }}
+              role="dialog"
+              aria-label={t('common.searchHistory')}
+              className="fixed z-[240] w-72 overflow-hidden rounded-xl border border-border bg-popover/95 shadow-2xl backdrop-blur-xl"
             >
-              <Trash2 size={13} />
-            </button>
-          </div>
-
-          <div className="max-h-64 overflow-y-auto p-1">
-            {history.length > 0 ? (
-              history.map((query) => (
+              <div className="flex items-center justify-between border-b border-border/70 px-3 py-2">
+                <div className="flex items-center gap-2 text-[11px] font-semibold text-foreground">
+                  <Search size={13} className="text-primary" />
+                  {t('common.searchHistory')}
+                </div>
                 <button
-                  key={query}
                   type="button"
-                  title={query}
                   onClick={() => {
                     setOpen(false);
-                    onSelect(query);
+                    onClear();
                   }}
-                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  disabled={history.length === 0}
+                  aria-label={t('common.clearSearchHistory')}
+                  className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-35"
                 >
-                  <History size={12} className="shrink-0 text-primary/70" />
-                  <span className="min-w-0 flex-1 truncate">{query}</span>
+                  <Trash2 size={13} />
                 </button>
-              ))
-            ) : (
-              <p className="px-2.5 py-3 text-center text-[11px] text-muted-foreground">
-                {t('common.searchHistoryEmpty')}
-              </p>
-            )}
-          </div>
-        </div>
-      ) : null}
+              </div>
+
+              <div className="max-h-64 overflow-y-auto p-1">
+                {history.length > 0 ? (
+                  history.map((query) => (
+                    <button
+                      key={query}
+                      type="button"
+                      title={query}
+                      onClick={() => {
+                        setOpen(false);
+                        onSelect(query);
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    >
+                      <History size={12} className="shrink-0 text-primary/70" />
+                      <span className="min-w-0 flex-1 truncate">{query}</span>
+                    </button>
+                  ))
+                ) : (
+                  <p className="px-2.5 py-3 text-center text-[11px] text-muted-foreground">
+                    {t('common.searchHistoryEmpty')}
+                  </p>
+                )}
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 }
