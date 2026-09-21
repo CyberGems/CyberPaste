@@ -132,6 +132,7 @@ export interface Settings {
   achievements_enabled?: boolean;
   achievement_notifications_enabled?: boolean;
   first_used_at?: string | null;
+  recent_searches?: string[];
 }
 
 export interface UsageTotals {

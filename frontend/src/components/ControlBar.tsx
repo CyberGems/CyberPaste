@@ -60,6 +60,7 @@ import { CONTEXT_MENU_EVENT, type ContextMenuEventDetail } from '../utils/contex
 import { clsx } from 'clsx';
 import { useTranslation } from 'react-i18next';
 import Tooltip from './Tooltip';
+import { SearchHistoryMenu } from './SearchHistoryMenu';
 import { TitleBarMenu } from './TitleBarMenu';
 import { TitleBarUpdateButton } from './TitleBarUpdateButton';
 import { useFolderFlash } from '../hooks/useFolderFlash';
@@ -116,6 +117,10 @@ interface ControlBarProps {
   showSearch: boolean;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  onSearchCommit: (query: string) => void;
+  recentSearches: string[];
+  onSelectSearchHistory: (query: string) => void;
+  onClearSearchHistory: () => void;
   onSearchClick: () => void;
   onAddClick: () => void;
   onMoreClick: () => void;
@@ -229,6 +234,10 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   showSearch,
   searchQuery,
   onSearchChange,
+  onSearchCommit,
+  recentSearches,
+  onSelectSearchHistory,
+  onClearSearchHistory,
   onSearchClick,
   onAddClick,
   onMoreClick,
@@ -741,6 +750,15 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           </button>
         </Tooltip>
 
+        <SearchHistoryMenu
+          history={recentSearches}
+          onSelect={(query) => {
+            onSelectSearchHistory(query);
+            if (!showSearch) onSearchClick();
+          }}
+          onClear={onClearSearchHistory}
+        />
+
         <div className="mx-0.5 h-5 w-px shrink-0 bg-border/50" />
 
         <div className="relative flex h-full min-w-0 flex-1 items-center">
@@ -864,6 +882,12 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
                     onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onSearchCommit(searchQuery);
+                        return;
+                      }
                       if (e.key === 'Escape') {
                         e.stopPropagation();
                         onSearchClick();

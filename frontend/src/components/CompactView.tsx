@@ -76,6 +76,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import Tooltip from './Tooltip';
+import { SearchHistoryMenu } from './SearchHistoryMenu';
 import { TitleBarMenu } from './TitleBarMenu';
 import { TitleBarUpdateButton } from './TitleBarUpdateButton';
 import { TITLEBAR_HOTKEYS } from '../hooks/useKeyboard';
@@ -365,6 +366,10 @@ interface CompactViewProps {
   onSelectFolder: (id: string | null) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  onSearchCommit: (query: string) => void;
+  recentSearches: string[];
+  onSelectSearchHistory: (query: string) => void;
+  onClearSearchHistory: () => void;
   onPaste: (id: string) => void;
   onSelectClip?: (id: string, event: React.MouseEvent) => void;
   singleClickPaste?: boolean;
@@ -592,6 +597,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
   onSelectFolder,
   searchQuery,
   onSearchChange,
+  onSearchCommit,
+  recentSearches,
+  onSelectSearchHistory,
+  onClearSearchHistory,
   onPaste,
   onSelectClip,
   singleClickPaste = true,
@@ -1569,6 +1578,13 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     placeholder={t('common.search')}
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onSearchCommit(searchQuery);
+                      }
+                    }}
                     className="w-full rounded-lg border border-border bg-input py-1.5 pl-8 pr-8 text-sm text-foreground transition-all placeholder:text-muted-foreground/70 focus:border-primary/50 focus:bg-background focus:outline-none"
                   />
                   {searchQuery && (
@@ -1582,6 +1598,11 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     </Tooltip>
                   )}
                 </div>
+                <SearchHistoryMenu
+                  history={recentSearches}
+                  onSelect={onSelectSearchHistory}
+                  onClear={onClearSearchHistory}
+                />
                 {canUndo && onUndo && (
                   <Tooltip label={t('common.undoDelete') || t('contextMenu.undo') || 'Undo'} placement="bottom">
                     <button
@@ -1693,6 +1714,13 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   placeholder={t('common.search')}
                   value={searchQuery}
                   onChange={(e) => onSearchChange(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onSearchCommit(searchQuery);
+                    }
+                  }}
                   className="w-full rounded-lg border border-border bg-input py-1.5 pl-8 pr-8 text-sm text-foreground transition-all placeholder:text-muted-foreground/70 focus:border-primary/50 focus:bg-background focus:outline-none"
                 />
                 {searchQuery && (
@@ -1706,6 +1734,11 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   </Tooltip>
                 )}
               </div>
+              <SearchHistoryMenu
+                history={recentSearches}
+                onSelect={onSelectSearchHistory}
+                onClear={onClearSearchHistory}
+              />
               {canUndo && onUndo && (
                 <Tooltip label={t('common.undoDelete') || t('contextMenu.undo') || 'Undo'} placement="bottom">
                   <button

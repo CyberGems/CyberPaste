@@ -2474,7 +2474,11 @@ pub async fn search_clips(
     let pool = &db.pool;
     let started = Instant::now();
 
-    let search_pattern = format!("%{}%", query);
+    let escaped_query = query
+        .replace('\\', "\\\\")
+        .replace('%', "\\%")
+        .replace('_', "\\_");
+    let search_pattern = format!("%{}%", escaped_query);
 
     let type_clause = type_matches_filter(&type_filter);
     let has_type_filter = !type_clause.is_empty();
@@ -2494,7 +2498,7 @@ pub async fn search_clips(
             if let Some(numeric_id) = folder_id_num {
                 let sql = format!(
                     r#"
-                    SELECT * FROM clips WHERE is_deleted = 0 AND folder_id = ? AND (text_preview LIKE ? OR content LIKE ?) {}
+                    SELECT * FROM clips WHERE is_deleted = 0 AND folder_id = ? AND (text_preview LIKE ? ESCAPE '\' OR content LIKE ? ESCAPE '\') {}
                     {} LIMIT ? OFFSET ?
                 "#,
                     in_placeholders,
@@ -2519,7 +2523,7 @@ pub async fn search_clips(
         None => {
             let sql = format!(
                 r#"
-                SELECT * FROM clips WHERE is_deleted = 0 AND folder_id IS NULL AND (text_preview LIKE ? OR content LIKE ?) {}
+                SELECT * FROM clips WHERE is_deleted = 0 AND folder_id IS NULL AND (text_preview LIKE ? ESCAPE '\' OR content LIKE ? ESCAPE '\') {}
                 {} LIMIT ? OFFSET ?
             "#,
                 in_placeholders,

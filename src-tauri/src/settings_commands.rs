@@ -3,6 +3,8 @@ use dark_light::Mode;
 use std::sync::Arc;
 use tauri::{AppHandle, Manager};
 
+const MAX_RECENT_SEARCHES: usize = 10;
+
 #[tauri::command]
 pub async fn get_settings(app: AppHandle) -> Result<serde_json::Value, String> {
     let manager = app.state::<Arc<SettingsManager>>();
@@ -27,6 +29,50 @@ pub async fn get_settings(app: AppHandle) -> Result<serde_json::Value, String> {
     }
 
     Ok(value)
+}
+
+#[tauri::command]
+pub async fn record_search_history(app: AppHandle, query: String) -> Result<Vec<String>, String> {
+    crate::app_lock::require_unlocked()?;
+    let manager = app.state::<Arc<SettingsManager>>();
+    let trimmed = query.trim();
+    if trimmed.is_empty() {
+        return Ok(manager.get().recent_searches);
+    }
+
+    let mut current = manager.get();
+    let normalized = trimmed.to_lowercase();
+    let mut recent = vec![trimmed.to_string()];
+    for entry in current.recent_searches.drain(..) {
+        let entry = entry.trim().to_string();
+        if entry.is_empty()
+            || entry.to_lowercase() == normalized
+            || recent
+                .iter()
+                .any(|existing| existing.to_lowercase() == entry.to_lowercase())
+        {
+            continue;
+        }
+        recent.push(entry);
+        if recent.len() >= MAX_RECENT_SEARCHES {
+            break;
+        }
+    }
+    current.recent_searches = recent.clone();
+    manager.save(current)?;
+    crate::settings_manager::emit_changed(&app);
+    Ok(recent)
+}
+
+#[tauri::command]
+pub async fn clear_search_history(app: AppHandle) -> Result<Vec<String>, String> {
+    crate::app_lock::require_unlocked()?;
+    let manager = app.state::<Arc<SettingsManager>>();
+    let mut current = manager.get();
+    current.recent_searches.clear();
+    manager.save(current)?;
+    crate::settings_manager::emit_changed(&app);
+    Ok(Vec::new())
 }
 
 #[tauri::command]
@@ -69,6 +115,9 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
     if !incoming_has_first_used_at {
         new_settings.first_used_at = current.first_used_at.clone();
     }
+    // Search history is managed by dedicated commands so stale settings round-trips cannot
+    // overwrite a newer query committed by another window.
+    new_settings.recent_searches = current.recent_searches.clone();
 
     // Lock core is only changed via dedicated commands.
     new_settings.app_lock_enabled = current.app_lock_enabled;

@@ -96,6 +96,8 @@ pub struct AppSettings {
     pub viewer_window_maximized: bool,
     pub show_action_messages: bool,
     pub type_to_search: bool,
+    #[serde(default)]
+    pub recent_searches: Vec<String>,
     pub clip_numbering: String,
     pub auto_check_updates: bool,
     #[serde(default = "default_true")]
@@ -250,6 +252,7 @@ impl Default for AppSettings {
             viewer_window_maximized: false,
             show_action_messages: true,
             type_to_search: true,
+            recent_searches: Vec::new(),
             clip_numbering: "positional".to_string(),
             auto_check_updates: false,
             show_app_recommendations: true,

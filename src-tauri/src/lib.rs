@@ -642,6 +642,8 @@ pub fn run_app() {
             commands::search_clips,
             commands::get_folders,
             settings_commands::get_settings,
+            settings_commands::record_search_history,
+            settings_commands::clear_search_history,
             settings_commands::save_settings,
             commands::hide_window,
             commands::get_clipboard_history_size,

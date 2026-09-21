@@ -218,7 +218,7 @@ export function AchievementProgressPanel({
             {t('settings.achievementsUnavailable')}
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {progress.achievements.map((achievement) => {
               const percentage = Math.min(
                 100,
@@ -227,7 +227,7 @@ export function AchievementProgressPanel({
               return (
                 <div
                   key={achievement.id}
-                  className={`rounded-xl border p-4 transition-colors ${
+                  className={`rounded-xl border p-3 transition-colors ${
                     achievement.unlocked
                       ? 'border-primary/35 bg-primary/[0.06]'
                       : 'border-border bg-card'
@@ -248,7 +248,7 @@ export function AchievementProgressPanel({
                       </span>
                     )}
                   </div>
-                  <div className="mt-4 flex items-center gap-3">
+                  <div className="mt-3 flex items-center gap-3">
                     <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
                       <div
                         className={`h-full rounded-full transition-all ${

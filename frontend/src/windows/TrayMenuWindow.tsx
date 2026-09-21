@@ -86,6 +86,9 @@ export function TrayMenuWindow() {
   const goView = useCallback((next: TrayView) => {
     viewRef.current = next;
     setView(next);
+    window.setTimeout(() => {
+      getCurrentWindow().setFocus().catch(() => {});
+    }, 0);
   }, []);
 
   useEffect(() => {
@@ -235,15 +238,6 @@ export function TrayMenuWindow() {
       })
       .catch(console.error);
 
-    const win = getCurrentWindow();
-    const unlistenBlur = win.onFocusChanged(({ payload: focused }) => {
-      if (!focused) {
-        window.setTimeout(() => {
-          hide();
-        }, 80);
-      }
-    });
-
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       if (viewRef.current !== 'main') {
@@ -260,7 +254,6 @@ export function TrayMenuWindow() {
       unlistenShow.then((f) => f());
       unlistenHide.then((f) => f());
       unlistenSettings.then((f) => f());
-      unlistenBlur.then((f) => f());
       window.removeEventListener('keydown', onKey);
     };
   }, [hide, i18n, reportSize, goView]);

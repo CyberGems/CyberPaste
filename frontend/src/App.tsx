@@ -150,6 +150,7 @@ function App() {
   foldersRef.current = folders;
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [showSearch, setShowSearch] = useState(false);
   const [compactTypeFilter, setCompactTypeFilter] = useState<
     'all' | 'text' | 'code' | 'image' | 'url' | 'file'
@@ -189,6 +190,8 @@ function App() {
     ids: [],
   });
   const settingsRef = useRef<Settings | null>(null);
+  const recentSearchesRef = useRef<string[]>([]);
+  const searchHistoryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTogglingRef = useRef(false);
   const [viewModeFading, setViewModeFading] = useState(false);
 
@@ -360,6 +363,7 @@ function App() {
   const selectedFolderRef = useRef(selectedFolder);
   selectedFolderRef.current = selectedFolder;
   const loadPerfIdRef = useRef(0);
+  const latestLoadRequestRef = useRef(0);
   const lastProgressSearchAtRef = useRef(0);
   const perfLogEnabled =
     typeof window !== 'undefined' &&
@@ -388,6 +392,8 @@ function App() {
       .then((s) => {
         setTheme(s.theme);
         setSettings(s);
+        recentSearchesRef.current = s.recent_searches ?? [];
+        setRecentSearches(recentSearchesRef.current);
         // Cargar preferencias compact persistidas
         if (s.compact_type_filter && s.compact_type_filter !== 'all') {
           setCompactTypeFilter(s.compact_type_filter as any);
@@ -432,6 +438,8 @@ function App() {
     const unlisten = listen<Settings>('settings-changed', (event) => {
       setTheme(event.payload.theme);
       setSettings(event.payload);
+      recentSearchesRef.current = event.payload.recent_searches ?? [];
+      setRecentSearches(recentSearchesRef.current);
       if (event.payload.full_type_filter) {
         setFullTypeFilter(event.payload.full_type_filter as FullTypeFilter);
       }
@@ -626,6 +634,74 @@ function App() {
     }
   }, []);
 
+  const commitSearchHistory = useCallback(async (query: string) => {
+    const normalized = query.trim();
+    if (!normalized || isLockedRef.current) return;
+    try {
+      const history = await invoke<string[]>('record_search_history', { query: normalized });
+      recentSearchesRef.current = history;
+      setRecentSearches(history);
+    } catch (error) {
+      console.error('Failed to record search history:', error);
+    }
+  }, []);
+
+  const scheduleSearchHistory = useCallback(
+    (query: string) => {
+      if (searchHistoryTimerRef.current) {
+        clearTimeout(searchHistoryTimerRef.current);
+        searchHistoryTimerRef.current = null;
+      }
+      if (!query.trim()) return;
+      searchHistoryTimerRef.current = setTimeout(() => {
+        searchHistoryTimerRef.current = null;
+        void commitSearchHistory(query);
+      }, 750);
+    },
+    [commitSearchHistory]
+  );
+
+  const handleSearchCommit = useCallback(
+    (query: string) => {
+      if (searchHistoryTimerRef.current) {
+        clearTimeout(searchHistoryTimerRef.current);
+        searchHistoryTimerRef.current = null;
+      }
+      void commitSearchHistory(query);
+    },
+    [commitSearchHistory]
+  );
+
+  const handleSelectSearchHistory = useCallback(
+    (query: string) => {
+      if (searchHistoryTimerRef.current) {
+        clearTimeout(searchHistoryTimerRef.current);
+        searchHistoryTimerRef.current = null;
+      }
+      setSearchQuery(query);
+      void commitSearchHistory(query);
+    },
+    [commitSearchHistory]
+  );
+
+  const handleClearSearchHistory = useCallback(async () => {
+    try {
+      const history = await invoke<string[]>('clear_search_history');
+      recentSearchesRef.current = history;
+      setRecentSearches(history);
+    } catch (error) {
+      console.error('Failed to clear search history:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (searchHistoryTimerRef.current) {
+        clearTimeout(searchHistoryTimerRef.current);
+      }
+    };
+  }, []);
+
   const loadClips = useCallback(
     async (
       folderId: string | null,
@@ -635,6 +711,7 @@ function App() {
       typeFilter: FullTypeFilter = 'all'
     ) => {
       const perfId = ++loadPerfIdRef.current;
+      const requestId = ++latestLoadRequestRef.current;
       const loadStart = perfLogEnabled ? performance.now() : 0;
       let invokeStart = 0;
       let invokeEnd = 0;
@@ -654,10 +731,11 @@ function App() {
 
         let data: AppClipboardItem[];
 
-        if (searchQuery.trim()) {
+        const normalizedQuery = searchQuery.trim();
+        if (normalizedQuery) {
           if (perfLogEnabled) invokeStart = performance.now();
           data = await invoke<AppClipboardItem[]>('search_clips', {
-            query: searchQuery,
+            query: normalizedQuery,
             filterId: folderId,
             limit,
             offset: currentOffset,
@@ -676,7 +754,9 @@ function App() {
           if (perfLogEnabled) invokeEnd = performance.now();
         }
 
-        if (searchQuery.trim() && !append) {
+        if (requestId !== latestLoadRequestRef.current) return;
+
+        if (normalizedQuery && !append) {
           const now = Date.now();
           if (now - lastProgressSearchAtRef.current >= 1200) {
             lastProgressSearchAtRef.current = now;
@@ -725,7 +805,7 @@ function App() {
                 id: perfId,
                 folderId: folderId ?? 'all',
                 append,
-                hasSearch: Boolean(searchQuery.trim()),
+                hasSearch: Boolean(normalizedQuery),
                 offset: currentOffset,
                 itemCount: data.length,
                 imageCount,
@@ -741,7 +821,9 @@ function App() {
       } catch (error) {
         console.error('Failed to load clips:', error);
       } finally {
-        setIsLoading(false);
+        if (requestId === latestLoadRequestRef.current) {
+          setIsLoading(false);
+        }
       }
     },
     [clips.length]
@@ -766,9 +848,13 @@ function App() {
     loadClips(selectedFolderRef.current, false, searchQuery, clipLimit, fullTypeFilter);
   }, [loadClips, searchQuery, fullTypeFilter]);
 
-  const handleSearch = useCallback((query: string) => {
-    setSearchQuery(query);
-  }, []);
+  const handleSearch = useCallback(
+    (query: string) => {
+      setSearchQuery(query);
+      scheduleSearchHistory(query);
+    },
+    [scheduleSearchHistory]
+  );
 
   const handleStartTypingSearch = useCallback(
     (char: string) => {
@@ -799,11 +885,10 @@ function App() {
     loadFolders();
     // Load all clips for compact view, paginate for full view
     const clipLimit = settings?.view_mode === 'compact' ? 9999 : 20;
-    if (searchQuery.trim()) {
+    const loadTimer = window.setTimeout(() => {
       loadClips(selectedFolder, false, searchQuery, clipLimit, fullTypeFilter);
-    } else {
-      loadClips(selectedFolder, false, '', clipLimit, fullTypeFilter);
-    }
+    }, 120);
+    return () => window.clearTimeout(loadTimer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFolder, searchQuery, clipListResetToken, settings?.view_mode, fullTypeFilter, lockReady, isLocked]);
 
@@ -2976,6 +3061,10 @@ function App() {
               onSelectFolder={handleSelectFolder}
               searchQuery={searchQuery}
               onSearchChange={handleSearch}
+              onSearchCommit={handleSearchCommit}
+              recentSearches={recentSearches}
+              onSelectSearchHistory={handleSelectSearchHistory}
+              onClearSearchHistory={handleClearSearchHistory}
               onPaste={handlePaste}
               onSelectClip={handleClipClick}
               singleClickPaste={settings?.single_click_paste ?? true}
@@ -3073,6 +3162,10 @@ function App() {
                 showSearch={showSearch}
                 searchQuery={searchQuery}
                 onSearchChange={handleSearch}
+                onSearchCommit={handleSearchCommit}
+                recentSearches={recentSearches}
+                onSelectSearchHistory={handleSelectSearchHistory}
+                onClearSearchHistory={handleClearSearchHistory}
                 onSearchClick={() => {
                   if (showSearch) {
                     handleSearch(''); // Clear search when closing
