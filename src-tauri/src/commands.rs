@@ -1774,7 +1774,7 @@ pub async fn copy_to_folder(
     folder_id: Option<String>,
     app: tauri::AppHandle,
     db: tauri::State<'_, Arc<Database>>,
-) -> Result<(), String> {
+) -> Result<String, String> {
     crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
@@ -1898,7 +1898,7 @@ pub async fn copy_to_folder(
         .await;
     }
 
-    Ok(())
+    Ok(new_uuid)
 }
 
 /// Batch-copy — copies every listed clip into the target folder in a single transaction.

@@ -1438,13 +1438,17 @@ function App() {
         if (isCrossFolderDrag) {
           // Copy clip to the destination folder first, then reorder
           try {
-            await invoke('copy_to_folder', { clipId, folderId: selectedFolderRef.current });
+            const copiedClipId = await invoke<string>('copy_to_folder', {
+              clipId,
+              folderId: selectedFolderRef.current,
+            });
             triggerFolderFlash(selectedFolderRef.current);
             await loadClips(selectedFolderRef.current);
             await loadFolders();
             // Now reorder within the new folder
             await invoke('reorder_clip', {
-              clipUuid: clipId,
+              // copy_to_folder creates a new UUID; reorder that destination copy.
+              clipUuid: copiedClipId,
               targetUuid: reorderClipId,
               position: reorderPos,
             });
