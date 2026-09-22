@@ -8,7 +8,7 @@
 
 <!-- Maintainer: Rewrite the marked paragraph for every release. Use 25-45 words, lead with user-facing changes, and do not repeat the app name or version. -->
 <!-- changelog-summary:start -->
-AI configuration is more capable and transparent, keyboard navigation is faster, history controls are more precise, and window behavior has been refined across the main app, image viewer, About experience, and clipboard grid.
+Local usage statistics now celebrate long-term clipboard progress with backup-safe achievements, while quiet hours, export tools, search history, lock-screen focus, and tray guidance make daily use calmer, more recoverable, and easier to manage.
 <!-- changelog-summary:end -->
 
 > **New to CyberPaste?** A fast, privacy-first Windows clipboard manager with history, folders, OCR, and configurable AI actions.
@@ -17,21 +17,20 @@ AI configuration is more capable and transparent, keyboard navigation is faster,
 
 ### ✨ Key Features & Highlights
 
-- 🤖 **AI Settings & Providers**:
-  - Added the Meta (Muse Spark) provider.
-  - Added prompt rename/reset controls, descriptions, truthful default placeholders, and Enter-to-confirm field editing.
-  - Improved bidirectional translation defaults and refreshed default AI models, including Grok.
+- 🏆 **Achievements, Statistics & Backups**:
+  - Added optional, local-only usage statistics with long-term achievements, active days, profile start date, and a 25,000-clip milestone.
+  - Backups now include progress totals, daily activity, unlocked achievements, and the original profile date while remaining compatible with older backups.
+  - Added configurable quiet hours that suppress notification sounds as well as non-critical notifications.
 
-- 🧭 **Keyboard & Clipboard Workflow**:
-  - Space opens the selected clip's action menu for keyboard-driven actions.
-  - Improved keyboard navigation so it does not fight hover state.
-  - Added move-to-top/bottom actions and Clear History to the title-bar menu.
-  - The history cap now correctly counts pinned items.
+- 💾 **Export & Search Workflow**:
+  - Added Save As actions for images, text, HTML, RTF, URLs, original files, and multi-file clips.
+  - Clips can be saved directly from context menus without opening a separate viewer.
+  - Added persistent MRU search history with literal wildcard handling and a dedicated no-results state.
 
-- 🪟 **Window & About Experience**:
-  - Added more menus across the main and image viewer windows and corrected image viewer title-bar behavior.
-  - Window branding can open About directly; About remembers its monitor and shows Check Now status.
-  - The full clipboard grid is remeasured after the window is shown for more reliable layout.
+- 🔒 **Lock Screen & Windows Integration**:
+  - Wrong PIN attempts clear the input and restore the caret for the next attempt.
+  - Native export and backup dialogs stay attached to the active app window.
+  - Refined tray visibility guidance, modal branding, search popup bounds, full-mode counts, and bilingual settings polish.
 
 ---
 

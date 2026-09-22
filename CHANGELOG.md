@@ -2,6 +2,25 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.21.0] — 2026-09-22
+
+### 🏆 Achievements, Statistics & Backups
+- **Local Usage Progress**: Added optional, local-only usage statistics with long-term achievements, active-day tracking, profile start date, and a 25,000-clip milestone.
+- **Backup-Safe Progress**: Backups now include lifetime totals, daily activity, unlocked achievements, and the original profile date while preserving compatibility with older backups.
+- **Quiet Hours**: Added configurable notification quiet hours that also suppress associated sounds while preserving critical alerts.
+
+### 💾 Export, Search & Clipboard Workflow
+- **Save As**: Added native export actions for clips and content windows, including images, text, HTML, RTF, URLs, original files, and multi-file clips.
+- **Context Menu Export**: Clips can be saved directly from their context menus without opening a separate viewer.
+- **Search History**: Added persistent MRU search history with case-insensitive deduplication, keyboard commit, clear controls, and literal `%` / `_` search handling.
+- **Clearer Empty States**: Search failures now show a dedicated “No results” message instead of the default empty-history message.
+
+### 🔒 Lock Screen, Windows Integration & UI Polish
+- **Lock Screen Focus**: Wrong PIN attempts clear the field and return the caret to the input for the next attempt.
+- **Native Dialog Stability**: Save and import dialogs remain attached to the active window without hiding the main app.
+- **Tray Guidance**: Added contextual tray visibility guidance with CyberPaste branding, overflow visuals, and bilingual controls.
+- **Modal and Layout Polish**: Refined lock-screen glass, modal icon styling, full-mode counts, search popup bounds, and related bilingual settings interfaces.
+
 ## [1.20.0] — 2026-09-07
 
 ### 🤖 AI Settings & Providers
