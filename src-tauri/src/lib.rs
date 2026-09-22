@@ -694,6 +694,7 @@ pub fn run_app() {
             settings_commands::skip_update_version,
             settings_commands::save_settings,
             commands::hide_window,
+            commands::request_close,
             commands::handle_close_choice,
             commands::get_clipboard_history_size,
             commands::get_clip_stats,

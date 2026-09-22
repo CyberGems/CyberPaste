@@ -2665,11 +2665,38 @@ pub fn hide_window(window: tauri::WebviewWindow, skip_lock: Option<bool>) -> Res
 }
 
 #[tauri::command]
-pub fn handle_close_choice(
-    app: AppHandle,
-    action: String,
-    remember: bool,
-) -> Result<(), String> {
+pub fn request_close(app: AppHandle) -> Result<(), String> {
+    let manager = app.state::<Arc<SettingsManager>>();
+    let action = manager.get().close_behavior;
+
+    match action.as_deref() {
+        Some("minimize") => execute_close_action(&app, "minimize"),
+        Some("quit") => execute_close_action(&app, "quit"),
+        _ => {
+            if let Some(window) = app.get_webview_window("main") {
+                window.emit("close-requested", ()).map_err(|e| e.to_string())?;
+            }
+            Ok(())
+        }
+    }
+}
+
+fn execute_close_action(app: &AppHandle, action: &str) -> Result<(), String> {
+    match action {
+        "minimize" => {
+            if let Some(window) = app.get_webview_window("main") {
+                crate::animate_window_hide(&window, None);
+            }
+        }
+        "quit" => app.exit(0),
+        _ => return Err("Unknown close action".to_string()),
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+pub fn handle_close_choice(app: AppHandle, action: String, remember: bool) -> Result<(), String> {
     if action != "minimize" && action != "quit" {
         return Err("Unknown close action".to_string());
     }
@@ -2682,17 +2709,7 @@ pub fn handle_close_choice(
         crate::settings_manager::emit_changed(&app);
     }
 
-    match action.as_str() {
-        "minimize" => {
-            if let Some(window) = app.get_webview_window("main") {
-                crate::animate_window_hide(&window, None);
-            }
-        }
-        "quit" => app.exit(0),
-        _ => unreachable!(),
-    }
-
-    Ok(())
+    execute_close_action(&app, &action)
 }
 
 #[tauri::command]

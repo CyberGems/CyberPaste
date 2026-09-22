@@ -576,18 +576,24 @@ function App() {
     };
   }, []);
 
-  const requestCloseWindow = useCallback(() => {
+  const showCloseWindowPrompt = useCallback(() => {
     setShowCloseWindowDialog(true);
+  }, []);
+
+  const requestCloseWindow = useCallback(() => {
+    invoke('request_close').catch((error) => {
+      console.error('Failed to request window close:', error);
+    });
   }, []);
 
   useEffect(() => {
     const unlisten = listen('close-requested', () => {
-      requestCloseWindow();
+      showCloseWindowPrompt();
     });
     return () => {
       unlisten.then((cleanup) => cleanup());
     };
-  }, [requestCloseWindow]);
+  }, [showCloseWindowPrompt]);
 
   const handleShowUpdate = useCallback(async () => {
     if (IS_PORTABLE_BUILD) return;
