@@ -122,6 +122,7 @@ export interface Settings {
   wheel_folder_navigation?: boolean;
   title_bar_animation_enabled?: boolean;
   has_seen_tray_pin_tip?: boolean;
+  close_behavior?: 'minimize' | 'quit' | null;
   app_lock_enabled?: boolean;
   app_lock_mode?: 'pin' | 'password' | string;
   app_lock_on_hide?: boolean;

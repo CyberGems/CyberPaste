@@ -137,6 +137,9 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
     // The skipped update version is managed by its dedicated command so a stale settings
     // window cannot make a dismissed release reappear.
     new_settings.skipped_update_version = current.skipped_update_version.clone();
+    // The close behavior is managed by the close dialog so stale settings round-trips cannot
+    // silently change the user's remembered choice.
+    new_settings.close_behavior = current.close_behavior.clone();
 
     // Lock core is only changed via dedicated commands.
     new_settings.app_lock_enabled = current.app_lock_enabled;

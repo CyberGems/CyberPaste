@@ -67,6 +67,13 @@
     "deselect": "Deseleccionar",
     "undoDelete": "Deshacer eliminación"
   },
+  "closeDialog": {
+    "title": "Cerrar ventana",
+    "message": "¿Qué te gustaría hacer al cerrar la ventana? Salir de la aplicación detiene todas las tareas en ejecución y los trabajos programados.",
+    "remember": "Recordar mi elección",
+    "minimize": "Minimizar a la bandeja",
+    "quit": "Salir de CyberPaste"
+  },
   "bulk": {
     "selectedSingle": "seleccionado",
     "selectedPlural": "seleccionados",

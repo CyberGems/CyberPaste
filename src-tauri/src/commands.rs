@@ -2665,6 +2665,37 @@ pub fn hide_window(window: tauri::WebviewWindow, skip_lock: Option<bool>) -> Res
 }
 
 #[tauri::command]
+pub fn handle_close_choice(
+    app: AppHandle,
+    action: String,
+    remember: bool,
+) -> Result<(), String> {
+    if action != "minimize" && action != "quit" {
+        return Err("Unknown close action".to_string());
+    }
+
+    if remember {
+        let manager = app.state::<Arc<SettingsManager>>();
+        let mut settings = manager.get();
+        settings.close_behavior = Some(action.clone());
+        manager.save(settings)?;
+        crate::settings_manager::emit_changed(&app);
+    }
+
+    match action.as_str() {
+        "minimize" => {
+            if let Some(window) = app.get_webview_window("main") {
+                crate::animate_window_hide(&window, None);
+            }
+        }
+        "quit" => app.exit(0),
+        _ => unreachable!(),
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
 pub fn ping() -> Result<String, String> {
     Ok("pong".to_string())
 }

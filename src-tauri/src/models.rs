@@ -141,6 +141,9 @@ pub struct AppSettings {
     /// First-run balloon pointing at the tray overflow. Once true, never shown again.
     #[serde(default)]
     pub has_seen_tray_pin_tip: bool,
+    /// Optional action to apply when the main window is closed: "minimize" or "quit".
+    #[serde(default)]
+    pub close_behavior: Option<String>,
 
     /// UI lock (PIN/password). Does not encrypt clip data on disk.
     #[serde(default)]
@@ -292,6 +295,7 @@ impl Default for AppSettings {
             wheel_folder_navigation: false,
             title_bar_animation_enabled: true,
             has_seen_tray_pin_tip: false,
+            close_behavior: None,
             app_lock_enabled: false,
             app_lock_mode: default_lock_mode(),
             app_lock_hash: String::new(),

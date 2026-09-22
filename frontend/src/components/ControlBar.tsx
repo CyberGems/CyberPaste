@@ -155,6 +155,7 @@ interface ControlBarProps {
   updateAvailable?: boolean;
   updateVersion?: string;
   onShowUpdate?: () => void;
+  onRequestClose?: () => void;
 }
 
 interface FolderTabButtonProps {
@@ -271,6 +272,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   updateAvailable = false,
   updateVersion,
   onShowUpdate,
+  onRequestClose,
 }) => {
   const foldersRef = React.useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
@@ -725,7 +727,13 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             placement="bottom"
           >
             <button
-              onClick={() => (window as any).__TAURI_INTERNALS__.invoke('hide_window')}
+              onClick={() => {
+                if (onRequestClose) {
+                  onRequestClose();
+                } else {
+                  (window as any).__TAURI_INTERNALS__.invoke('hide_window');
+                }
+              }}
               className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-rose-500/20 hover:bg-rose-500/15 hover:text-rose-400 active:bg-rose-500/25"
             >
               <X size={15} />

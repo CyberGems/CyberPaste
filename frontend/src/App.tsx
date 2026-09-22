@@ -26,6 +26,7 @@ import { AiResultDialog } from './components/AiResultDialog';
 import { OcrResultModal } from './components/OcrResultModal';
 import { check } from '@tauri-apps/plugin-updater';
 import { UpdateModal } from './components/UpdateModal';
+import { CloseWindowDialog } from './components/CloseWindowDialog';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { AppLockScreen } from './components/AppLockScreen';
 import { TITLEBAR_HOTKEYS, useKeyboard } from './hooks/useKeyboard';
@@ -180,6 +181,7 @@ function App() {
   const [updateAvailable, setUpdateAvailable] = useState<any>(null);
   const updateAvailableRef = useRef<any>(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [showCloseWindowDialog, setShowCloseWindowDialog] = useState(false);
   const [deletedStack, setDeletedStack] = useState<{ ids: string[] }[]>([]);
   const [pendingDeleteModal, setPendingDeleteModal] = useState<{
     isOpen: boolean;
@@ -574,6 +576,19 @@ function App() {
     };
   }, []);
 
+  const requestCloseWindow = useCallback(() => {
+    setShowCloseWindowDialog(true);
+  }, []);
+
+  useEffect(() => {
+    const unlisten = listen('close-requested', () => {
+      requestCloseWindow();
+    });
+    return () => {
+      unlisten.then((cleanup) => cleanup());
+    };
+  }, [requestCloseWindow]);
+
   const handleShowUpdate = useCallback(async () => {
     if (IS_PORTABLE_BUILD) return;
     if (updateAvailableRef.current) {
@@ -599,6 +614,18 @@ function App() {
     setUpdateAvailable(null);
     await invoke('set_update_available', { available: false });
   }, []);
+
+  const handleCloseChoice = useCallback(
+    async (action: 'minimize' | 'quit', remember: boolean) => {
+      try {
+        await invoke('handle_close_choice', { action, remember });
+        setShowCloseWindowDialog(false);
+      } catch (error) {
+        console.error('Failed to apply close choice:', error);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     if (IS_PORTABLE_BUILD) return;
@@ -2975,10 +3002,7 @@ function App() {
 
   useKeyboard({
     onClose: () => {
-      appWindow.hide().catch((err) => {
-        console.error('hide() failed, trying close():', err);
-        appWindow.close().catch(() => {});
-      });
+      requestCloseWindow();
     },
     onSearch: () => {
       if (settings?.view_mode === 'compact') {
@@ -3132,6 +3156,7 @@ function App() {
               updateAvailable={!!updateAvailable}
               updateVersion={updateAvailable?.version}
               onShowUpdate={handleShowUpdate}
+              onRequestClose={requestCloseWindow}
               totalClipCount={totalClipCount}
               onFolderContextMenu={(e, folderId) => {
                 if (folderId) handleContextMenu(e, 'folder', folderId);
@@ -3248,6 +3273,7 @@ function App() {
                 updateAvailable={!!updateAvailable}
                 updateVersion={updateAvailable?.version}
                 onShowUpdate={handleShowUpdate}
+                onRequestClose={requestCloseWindow}
               />
 
               {/* Type filter chips (Full mode) */}
@@ -3438,6 +3464,8 @@ function App() {
           onClose={() => setShowUpdateModal(false)}
           onSkipVersion={handleSkipUpdateVersion}
         />
+
+        <CloseWindowDialog isOpen={showCloseWindowDialog} onAction={handleCloseChoice} />
 
         <ConfirmDialog
           isOpen={pendingDeleteModal.isOpen}

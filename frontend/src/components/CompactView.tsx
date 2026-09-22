@@ -439,6 +439,7 @@ interface CompactViewProps {
   updateAvailable?: boolean;
   updateVersion?: string;
   onShowUpdate?: () => void;
+  onRequestClose?: () => void;
 }
 
 interface CompactSidebarFolderItemProps {
@@ -666,6 +667,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   updateAvailable = false,
   updateVersion,
   onShowUpdate,
+  onRequestClose,
 }) => {
   const { t } = useTranslation();
   const folderScrollRef = useRef<HTMLDivElement>(null);
@@ -1411,11 +1413,15 @@ export const CompactView: React.FC<CompactViewProps> = ({
             placement="bottom"
           >
             <button
-              onClick={() =>
-                invoke('hide_window').catch(() =>
-                  (window as any).__TAURI_INTERNALS__?.invoke('hide_window')
-                )
-              }
+              onClick={() => {
+                if (onRequestClose) {
+                  onRequestClose();
+                } else {
+                  invoke('hide_window').catch(() =>
+                    (window as any).__TAURI_INTERNALS__?.invoke('hide_window')
+                  );
+                }
+              }}
               className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-rose-500/20 hover:bg-rose-500/15 hover:text-rose-400 active:bg-rose-500/25"
             >
               <X size={14} />

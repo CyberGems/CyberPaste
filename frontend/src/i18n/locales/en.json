@@ -67,6 +67,13 @@
     "deselect": "Deselect",
     "undoDelete": "Undo deletion"
   },
+  "closeDialog": {
+    "title": "Close Window",
+    "message": "What would you like to do when closing the window? Quitting the app stops all running tasks and scheduled jobs.",
+    "remember": "Remember my choice",
+    "minimize": "Minimize to Tray",
+    "quit": "Exit CyberPaste"
+  },
   "bulk": {
     "selectedSingle": "selected",
     "selectedPlural": "selected",

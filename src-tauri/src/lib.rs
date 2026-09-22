@@ -201,6 +201,23 @@ pub fn run_app() {
         .manage(db_arc.clone())
         .on_window_event(|window, event| {
             match event {
+                tauri::WindowEvent::CloseRequested { api, .. } if window.label() == "main" => {
+                    api.prevent_close();
+                    let settings = window.state::<Arc<SettingsManager>>().get();
+                    match settings.close_behavior.as_deref() {
+                        Some("minimize") => {
+                            if let Some(main) = window.app_handle().get_webview_window("main") {
+                                crate::animate_window_hide(&main, None);
+                            }
+                        }
+                        Some("quit") => {
+                            window.app_handle().exit(0);
+                        }
+                        _ => {
+                            let _ = window.emit("close-requested", ());
+                        }
+                    }
+                }
                 tauri::WindowEvent::Moved(pos) => {
                     // The clamp is only for the hidden, borderless main window.
                     // Applying it to settings can interfere with Windows'
@@ -677,6 +694,7 @@ pub fn run_app() {
             settings_commands::skip_update_version,
             settings_commands::save_settings,
             commands::hide_window,
+            commands::handle_close_choice,
             commands::get_clipboard_history_size,
             commands::get_clip_stats,
             commands::get_achievement_progress,
