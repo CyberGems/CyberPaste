@@ -37,6 +37,8 @@ interface ClipListProps {
   showNumber?: boolean;
   showScrollbar?: boolean;
   fullPeekEnabled?: boolean;
+  emptyLabel?: string;
+  emptyDescription?: string;
   actionTooltip?: string;
   singleClickPaste?: boolean;
   onRequestPreview?: (id: string) => void;
@@ -75,6 +77,8 @@ export const ClipList: React.FC<ClipListProps> = ({
   showNumber = true,
   showScrollbar = true,
   fullPeekEnabled = true,
+  emptyLabel,
+  emptyDescription,
   actionTooltip,
   singleClickPaste = true,
   onRequestPreview,
@@ -419,8 +423,12 @@ export const ClipList: React.FC<ClipListProps> = ({
         </div>
       ) : showEmpty ? (
         <div className="flex h-full w-full flex-col items-center justify-center p-8 text-center">
-          <h3 className="mb-2 text-lg font-semibold text-gray-400">{t('clipList.empty')}</h3>
-          <p className="max-w-xs text-sm text-gray-500">{t('clipList.emptyDesc')}</p>
+          <h3 className="mb-2 text-lg font-semibold text-gray-400">
+            {emptyLabel ?? t('clipList.empty')}
+          </h3>
+          <p className="max-w-xs text-sm text-gray-500">
+            {emptyDescription ?? (emptyLabel ? t('clipList.noResultsDesc') : t('clipList.emptyDesc'))}
+          </p>
         </div>
       ) : (
         <Grid

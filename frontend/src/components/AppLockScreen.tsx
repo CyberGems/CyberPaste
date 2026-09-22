@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff, Lock, X } from 'lucide-react';
 import type { AppLockStatus } from '../types';
@@ -63,9 +64,24 @@ export function AppLockScreen({
   }, []);
 
   useEffect(() => {
-    const id = window.setTimeout(focusInput, 80);
-    return () => window.clearTimeout(id);
-  }, [focusInput, showForgot]);
+    const ids = [0, 80, 240, 500].map((delay) => window.setTimeout(focusInput, delay));
+    return () => ids.forEach((id) => window.clearTimeout(id));
+  }, [focusInput, showForgot, status.mode]);
+
+  useEffect(() => {
+    const focusAfterActivation = () => {
+      focusInput();
+      window.setTimeout(focusInput, 80);
+    };
+    const unlisten = listen('tauri://focus', focusAfterActivation);
+    window.addEventListener('focus', focusAfterActivation);
+    document.addEventListener('visibilitychange', focusAfterActivation);
+    return () => {
+      unlisten.then((cleanup) => cleanup());
+      window.removeEventListener('focus', focusAfterActivation);
+      document.removeEventListener('visibilitychange', focusAfterActivation);
+    };
+  }, [focusInput]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -175,6 +191,7 @@ export function AppLockScreen({
               id="app-lock-recovery"
               ref={inputRef}
               type="text"
+              autoFocus
               autoComplete="off"
               spellCheck={false}
               value={recoveryKey}
@@ -271,6 +288,7 @@ export function AppLockScreen({
                 ref={inputRef}
                 type={showSecret ? 'text' : 'password'}
                 inputMode={isPin ? 'numeric' : 'text'}
+                autoFocus
                 autoComplete="off"
                 spellCheck={false}
                 value={secret}

@@ -1658,7 +1658,9 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 compactShowNumber={compactShowNumber}
                 showScrollbar={compactShowScrollbar}
                 emptyLabel={
-                  isFiltering && clips.length > 0
+                  searchQuery.trim()
+                    ? t('clipList.noResults')
+                    : isFiltering && clips.length > 0
                     ? t('compact.noMatchFilter') === 'compact.noMatchFilter'
                       ? 'No clips match this filter'
                       : t('compact.noMatchFilter')
@@ -1874,7 +1876,9 @@ export const CompactView: React.FC<CompactViewProps> = ({
               isLoading={isLoading}
               isFiltering={isFiltering}
               emptyLabel={
-                isFiltering && clips.length > 0
+                searchQuery.trim()
+                  ? t('clipList.noResults')
+                  : isFiltering && clips.length > 0
                   ? t('compact.noMatchFilter') === 'compact.noMatchFilter'
                     ? 'No clips match this filter'
                     : t('compact.noMatchFilter')

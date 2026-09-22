@@ -178,6 +178,8 @@
   "clipList": {
     "empty": "No clips yet",
     "emptyDesc": "Copy something to your clipboard and it will appear here.",
+    "noResults": "No results",
+    "noResultsDesc": "Try another search or clear the active search.",
     "loadingClips": "Loading clips...",
     "imageSize": "{{width}}x{{height}} • {{size}}KB",
     "textLength": "{{count}} characters"

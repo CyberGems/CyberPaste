@@ -1591,27 +1591,30 @@ function App() {
     refreshTotalCount();
   }, [isLocked, refreshTotalCount]);
 
-  // Auto-select first clip and reset view (if enabled) when window is reopened (visibility becomes true)
+  const resetViewOnWindowVisibility = useCallback(() => {
+    if (!settingsRef.current?.reset_view_on_paste) return;
+    setSearchQuery('');
+    setShowSearch(false);
+    setSelectedFolder(null);
+    setCompactTypeFilter('all');
+    setFullTypeFilter('all');
+    setSelectedClipId(null);
+    setSelectedClipIds(new Set());
+    setDetailPanelOpen(false);
+    setClipListResetToken((prev) => prev + 1);
+  }, []);
+
+  // Reset search and view (if enabled) when the window closes or reopens.
   useEffect(() => {
-    const unlisten = listen<boolean>('window-visibility', (event) => {
-      if (event.payload && settingsRef.current?.reset_view_on_paste) {
-        setSearchQuery('');
-        setShowSearch(false);
-        setSelectedFolder(null);
-        setCompactTypeFilter('all');
-        setFullTypeFilter('all');
-        // Let the refreshed data choose the first clip instead of using the
-        // ordering from before the window was reopened.
-        setSelectedClipId(null);
-        setClipListResetToken((prev) => prev + 1);
-      }
+    const unlisten = listen<boolean>('window-visibility', () => {
+      if (settingsRef.current?.reset_view_on_paste) resetViewOnWindowVisibility();
     });
     return () => {
       unlisten.then((u) => {
         if (typeof u === 'function') u();
       });
     };
-  }, []);
+  }, [resetViewOnWindowVisibility]);
 
   useEffect(() => {
     const unlistenClipboard = listen('clipboard-change', () => {
@@ -3287,6 +3290,7 @@ function App() {
                   showNumber={settings?.full_show_number ?? true}
                   showScrollbar={settings?.full_show_scrollbar ?? true}
                   fullPeekEnabled={settings?.full_peek_enabled ?? true}
+                  emptyLabel={searchQuery.trim() ? t('clipList.noResults') : undefined}
                   actionTooltip={fullActionTooltip}
                   singleClickPaste={settings?.single_click_paste ?? true}
                   onRequestPreview={handleOpenPreview}

@@ -178,6 +178,8 @@
   "clipList": {
     "empty": "No hay clips aún",
     "emptyDesc": "Copia algo a tu portapapeles y aparecerá aquí.",
+    "noResults": "Sin resultados",
+    "noResultsDesc": "Prueba con otra búsqueda o limpia la búsqueda activa.",
     "loadingClips": "Cargando clips...",
     "imageSize": "{{width}}x{{height}} • {{size}}KB",
     "textLength": "{{count}} caracteres"
