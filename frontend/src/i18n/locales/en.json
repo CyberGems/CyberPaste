@@ -70,11 +70,11 @@
   },
   "closeDialog": {
     "title": "Close Window",
-    "message": "Choose whether to minimize CyberPaste to the tray or exit it completely. Exiting stops clipboard capture and prevents scheduled automatic backups from running.",
+    "message": "Choose whether to hide CyberPaste in the tray or exit it completely. Exiting stops clipboard capture and prevents scheduled automatic backups from running.",
     "remember": "Remember my choice",
     "cancel": "Cancel",
-    "minimize": "Minimize to Tray",
-    "quit": "Exit CyberPaste"
+    "minimize": "Hide to Tray",
+    "quit": "Exit"
   },
   "undoWarning": {
     "title": "Pending undo actions",

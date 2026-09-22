@@ -70,11 +70,11 @@
   },
   "closeDialog": {
     "title": "Cerrar ventana",
-    "message": "Elige si quieres minimizar CyberPaste a la bandeja o salir por completo. Salir detiene la captura del portapapeles y evita que se ejecuten los respaldos automáticos programados.",
+    "message": "Elige si quieres ocultar CyberPaste en la bandeja o salir por completo. Salir detiene la captura del portapapeles y evita que se ejecuten los respaldos automáticos programados.",
     "remember": "Recordar mi elección",
     "cancel": "Cancelar",
-    "minimize": "Minimizar a la bandeja",
-    "quit": "Salir de CyberPaste"
+    "minimize": "Ocultar en la bandeja",
+    "quit": "Salir"
   },
   "undoWarning": {
     "title": "Acciones de deshacer pendientes",

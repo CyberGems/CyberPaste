@@ -84,7 +84,7 @@ export function CloseWindowDialog({ isOpen, onCancel, onAction }: CloseWindowDia
             <button
               type="button"
               onClick={onCancel}
-              className="inline-flex items-center justify-center gap-2 rounded-md border border-border bg-transparent px-4 py-2.5 text-base font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-transparent px-3.5 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               {t('closeDialog.cancel')}
               <EscGlyph />
@@ -101,7 +101,7 @@ export function CloseWindowDialog({ isOpen, onCancel, onAction }: CloseWindowDia
             <button
               type="button"
               onClick={handleQuit}
-              className="rounded-md border border-border bg-transparent px-4 py-2.5 text-base font-semibold text-muted-foreground transition-colors hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-transparent px-3.5 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
             >
               {t('closeDialog.quit')}
               <SpaceGlyph label={t('common.space')} />
@@ -118,7 +118,7 @@ export function CloseWindowDialog({ isOpen, onCancel, onAction }: CloseWindowDia
             <button
               type="button"
               onClick={handleMinimize}
-              className="inline-flex items-center justify-center gap-2 rounded-md border border-primary/60 bg-primary px-4 py-2.5 text-base font-semibold text-primary-foreground shadow-[0_0_10px_rgba(var(--primary-rgb),0.18)] transition-colors hover:bg-primary/90"
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-primary/60 bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground shadow-[0_0_10px_rgba(var(--primary-rgb),0.18)] transition-colors hover:bg-primary/90"
             >
               {t('closeDialog.minimize')}
               <EnterGlyph />

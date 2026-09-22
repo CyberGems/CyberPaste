@@ -19,7 +19,7 @@ export function EnterGlyph() {
 
 export function EscGlyph() {
   return (
-    <span className="rounded-[4px] border border-current px-1.5 py-px text-[10px] font-bold leading-tight tracking-wide opacity-85">
+    <span className="inline-flex h-5 items-center justify-center rounded-[4px] border border-current px-1.5 text-[10px] font-bold leading-tight tracking-wide opacity-85">
       Esc
     </span>
   );
@@ -27,7 +27,7 @@ export function EscGlyph() {
 
 export function SpaceGlyph({ label = 'Space' }: { label?: string }) {
   return (
-    <span className="min-w-[2.75rem] rounded-[4px] border border-current px-1.5 py-px text-center text-[10px] font-bold leading-tight tracking-wide opacity-85">
+    <span className="inline-flex h-5 min-w-[3.25rem] items-center justify-center rounded-[4px] border border-current px-1.5 text-center text-[10px] font-bold leading-tight tracking-wide opacity-85">
       {label}
     </span>
   );
@@ -49,7 +49,12 @@ export function useModalKeys({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
-      const isButton = target?.tagName === 'BUTTON';
+      const isButton = target?.tagName === 'BUTTON' && Boolean(target.closest('[role="dialog"]'));
+      const isSpaceKey =
+        event.code === 'Space' ||
+        event.key === ' ' ||
+        event.key === 'Spacebar' ||
+        event.key.toLowerCase() === 'space';
 
       if (event.key === 'Escape') {
         event.preventDefault();
@@ -70,7 +75,7 @@ export function useModalKeys({
 
       if (
         onSpace &&
-        (event.key === ' ' || event.code === 'Space') &&
+        isSpaceKey &&
         !event.ctrlKey &&
         !event.metaKey &&
         !event.altKey &&
