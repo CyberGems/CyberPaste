@@ -187,10 +187,6 @@ function App() {
   const [deleteGeneration, setDeleteGeneration] = useState(0);
   const [undoWarningSeenGeneration, setUndoWarningSeenGeneration] = useState(0);
   const [showUndoWarning, setShowUndoWarning] = useState(false);
-  const [pendingCloseChoice, setPendingCloseChoice] = useState<{
-    action: 'quit';
-    remember: boolean;
-  } | null>(null);
   const [pendingDeleteModal, setPendingDeleteModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -611,31 +607,26 @@ function App() {
   }, []);
 
   const handleCloseChoice = useCallback(
-    async (action: 'minimize' | 'quit', remember: boolean, skipUndoWarning = false) => {
-      if (
-        action === 'quit' &&
-        !skipUndoWarning &&
-        deletedStack.length > 0 &&
-        deleteGeneration > undoWarningSeenGeneration
-      ) {
-        setPendingCloseChoice({ action: 'quit', remember });
-        setUndoWarningSeenGeneration(deleteGeneration);
-        setShowCloseWindowDialog(false);
-        setShowUndoWarning(true);
-        return;
-      }
-
+    async (action: 'minimize' | 'quit', remember: boolean) => {
       try {
         await invoke('handle_close_choice', { action, remember });
+        setDeletedStack([]);
         setShowCloseWindowDialog(false);
       } catch (error) {
         console.error('Failed to apply close choice:', error);
       }
     },
-    [deleteGeneration, deletedStack.length, undoWarningSeenGeneration]
+    []
   );
 
   const requestCloseWindow = useCallback(async () => {
+    if (deletedStack.length > 0 && deleteGeneration > undoWarningSeenGeneration) {
+      setUndoWarningSeenGeneration(deleteGeneration);
+      setShowCloseWindowDialog(false);
+      setShowUndoWarning(true);
+      return;
+    }
+
     try {
       const action = await invoke<'prompt' | 'minimize' | 'quit'>('request_close');
       if (action === 'prompt') {
@@ -646,7 +637,12 @@ function App() {
     } catch (error) {
       console.error('Failed to request window close:', error);
     }
-  }, [handleCloseChoice]);
+  }, [
+    deleteGeneration,
+    deletedStack.length,
+    handleCloseChoice,
+    undoWarningSeenGeneration,
+  ]);
 
   useEffect(() => {
     const unlisten = listen('close-requested', () => {
@@ -659,17 +655,12 @@ function App() {
 
   const handleKeepUndoWarningOpen = useCallback(() => {
     setShowUndoWarning(false);
-    setPendingCloseChoice(null);
   }, []);
 
-  const handleContinueAfterUndoWarning = useCallback(async () => {
-    const pending = pendingCloseChoice;
+  const handleContinueAfterUndoWarning = useCallback(() => {
     setShowUndoWarning(false);
-    setPendingCloseChoice(null);
-    if (pending) {
-      await handleCloseChoice(pending.action, pending.remember, true);
-    }
-  }, [handleCloseChoice, pendingCloseChoice]);
+    setShowCloseWindowDialog(true);
+  }, []);
 
   useEffect(() => {
     if (IS_PORTABLE_BUILD) return;
@@ -3522,7 +3513,11 @@ function App() {
           onContinue={handleContinueAfterUndoWarning}
         />
 
-        <CloseWindowDialog isOpen={showCloseWindowDialog} onAction={handleCloseChoice} />
+        <CloseWindowDialog
+          isOpen={showCloseWindowDialog}
+          onCancel={() => setShowCloseWindowDialog(false)}
+          onAction={handleCloseChoice}
+        />
 
         <ConfirmDialog
           isOpen={pendingDeleteModal.isOpen}

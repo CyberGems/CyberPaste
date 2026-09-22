@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { EnterGlyph, EscGlyph, useModalKeys } from './ModalActions';
 import Tooltip from './Tooltip';
 
 interface UndoWarningDialogProps {
@@ -15,6 +16,12 @@ export function UndoWarningDialog({
   onContinue,
 }: UndoWarningDialogProps) {
   const { t } = useTranslation();
+
+  useModalKeys({
+    enabled: isOpen,
+    onEsc: onKeepOpen,
+    onEnter: onContinue,
+  });
 
   if (!isOpen) return null;
 
@@ -33,23 +40,25 @@ export function UndoWarningDialog({
           {t('undoWarning.message', { count })}
         </p>
 
-        <div className="mt-6 flex justify-end gap-3">
+        <div className="mt-6 flex justify-end gap-2.5">
           <Tooltip label={t('undoWarning.keepOpen')} placement="top">
             <button
               type="button"
               onClick={onKeepOpen}
-              className="rounded-md border border-border bg-white/5 px-4 py-2.5 text-base font-semibold text-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-border bg-transparent px-4 py-2.5 text-base font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:bg-accent hover:text-foreground"
             >
               {t('undoWarning.keepOpen')}
+              <EscGlyph />
             </button>
           </Tooltip>
           <Tooltip label={t('undoWarning.continue')} placement="top">
             <button
               type="button"
               onClick={onContinue}
-              className="rounded-md bg-destructive/15 px-4 py-2.5 text-base font-semibold text-destructive transition-colors hover:bg-destructive/25"
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-primary/60 bg-primary px-4 py-2.5 text-base font-semibold text-primary-foreground shadow-[0_0_10px_rgba(var(--primary-rgb),0.18)] transition-colors hover:bg-primary/90"
             >
               {t('undoWarning.continue')}
+              <EnterGlyph />
             </button>
           </Tooltip>
         </div>

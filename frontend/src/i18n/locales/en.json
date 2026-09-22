@@ -69,16 +69,17 @@
   },
   "closeDialog": {
     "title": "Close Window",
-    "message": "What would you like to do when closing the window? Exiting CyberPaste stops clipboard capture and prevents scheduled automatic backups from running.",
+    "message": "Choose whether to minimize CyberPaste to the tray or exit it completely. Exiting stops clipboard capture and prevents scheduled automatic backups from running.",
     "remember": "Remember my choice",
+    "cancel": "Cancel",
     "minimize": "Minimize to Tray",
     "quit": "Exit CyberPaste"
   },
   "undoWarning": {
     "title": "Pending undo actions",
-    "message": "You have {{count}} deletion action(s) that can still be undone. If you exit CyberPaste, these undo actions will be lost.",
-    "keepOpen": "Keep CyberPaste open",
-    "continue": "Exit CyberPaste"
+    "message": "You have {{count}} deletion action(s) that can still be undone. If you close this window, these undo actions will be lost.",
+    "keepOpen": "Stay",
+    "continue": "Leave"
   },
   "bulk": {
     "selectedSingle": "selected",

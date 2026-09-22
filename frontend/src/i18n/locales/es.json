@@ -69,16 +69,17 @@
   },
   "closeDialog": {
     "title": "Cerrar ventana",
-    "message": "¿Qué te gustaría hacer al cerrar la ventana? Salir de CyberPaste detiene la captura del portapapeles y evita que se ejecuten los respaldos automáticos programados.",
+    "message": "Elige si quieres minimizar CyberPaste a la bandeja o salir por completo. Salir detiene la captura del portapapeles y evita que se ejecuten los respaldos automáticos programados.",
     "remember": "Recordar mi elección",
+    "cancel": "Cancelar",
     "minimize": "Minimizar a la bandeja",
     "quit": "Salir de CyberPaste"
   },
   "undoWarning": {
     "title": "Acciones de deshacer pendientes",
-    "message": "Tienes {{count}} acciones de borrado que todavía puedes deshacer. Si sales de CyberPaste, perderás estas acciones de deshacer.",
-    "keepOpen": "Seguir en CyberPaste",
-    "continue": "Salir de CyberPaste"
+    "message": "Tienes {{count}} acciones de borrado que todavía puedes deshacer. Si cierras esta ventana, perderás estas acciones de deshacer.",
+    "keepOpen": "Seguir",
+    "continue": "Salir"
   },
   "bulk": {
     "selectedSingle": "seleccionado",

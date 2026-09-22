@@ -1,20 +1,36 @@
 import { Check } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { EnterGlyph, EscGlyph, useModalKeys } from './ModalActions';
 import Tooltip from './Tooltip';
 
 interface CloseWindowDialogProps {
   isOpen: boolean;
+  onCancel: () => void;
   onAction: (action: 'minimize' | 'quit', remember: boolean) => void | Promise<void>;
 }
 
-export function CloseWindowDialog({ isOpen, onAction }: CloseWindowDialogProps) {
+export function CloseWindowDialog({ isOpen, onCancel, onAction }: CloseWindowDialogProps) {
   const { t } = useTranslation();
   const [remember, setRemember] = useState(false);
 
   useEffect(() => {
     if (isOpen) setRemember(false);
   }, [isOpen]);
+
+  const handleMinimize = useCallback(() => {
+    void onAction('minimize', remember);
+  }, [onAction, remember]);
+
+  const handleQuit = useCallback(() => {
+    void onAction('quit', remember);
+  }, [onAction, remember]);
+
+  useModalKeys({
+    enabled: isOpen,
+    onEsc: onCancel,
+    onEnter: handleMinimize,
+  });
 
   if (!isOpen) return null;
 
@@ -55,23 +71,34 @@ export function CloseWindowDialog({ isOpen, onAction }: CloseWindowDialogProps) 
           </label>
         </Tooltip>
 
-        <div className="mt-6 flex justify-end gap-3">
-          <Tooltip label={t('closeDialog.minimize')} placement="top">
+        <div className="mt-6 flex justify-end gap-2.5">
+          <Tooltip label={t('closeDialog.cancel')} placement="top">
             <button
               type="button"
-              onClick={() => onAction('minimize', remember)}
-              className="rounded-md border border-border bg-white/5 px-4 py-2.5 text-base font-semibold text-foreground transition-colors hover:bg-accent hover:text-foreground"
+              onClick={onCancel}
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-border bg-transparent px-4 py-2.5 text-base font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
-              {t('closeDialog.minimize')}
+              {t('closeDialog.cancel')}
+              <EscGlyph />
             </button>
           </Tooltip>
           <Tooltip label={t('closeDialog.quit')} placement="top">
             <button
               type="button"
-              onClick={() => onAction('quit', remember)}
-              className="rounded-md bg-destructive/15 px-4 py-2.5 text-base font-semibold text-destructive transition-colors hover:bg-destructive/25"
+              onClick={handleQuit}
+              className="rounded-md border border-border bg-transparent px-4 py-2.5 text-base font-semibold text-muted-foreground transition-colors hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
             >
               {t('closeDialog.quit')}
+            </button>
+          </Tooltip>
+          <Tooltip label={t('closeDialog.minimize')} placement="top">
+            <button
+              type="button"
+              onClick={handleMinimize}
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-primary/60 bg-primary px-4 py-2.5 text-base font-semibold text-primary-foreground shadow-[0_0_10px_rgba(var(--primary-rgb),0.18)] transition-colors hover:bg-primary/90"
+            >
+              {t('closeDialog.minimize')}
+              <EnterGlyph />
             </button>
           </Tooltip>
         </div>
