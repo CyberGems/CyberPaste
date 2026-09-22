@@ -443,6 +443,8 @@
     "updatesLatestVersion": "Última Versión: {{version}}",
     "updatesUpdateNow": "Actualizar Ahora",
     "updatesLater": "Más tarde",
+    "updatesSkipVersion": "Omitir versión",
+    "updatesSkipError": "No se pudo omitir esta versión. Inténtalo de nuevo.",
     "updatesDownloading": "Descargando Actualización...",
     "updatesInstalling": "Instalando...",
     "updatesErrorTitle": "Actualización Fallida",

@@ -165,6 +165,9 @@ pub struct AppSettings {
     pub achievement_notifications_enabled: bool,
     #[serde(default)]
     pub first_used_at: Option<String>,
+    /// Version explicitly skipped in the update prompt. A newer version still shows normally.
+    #[serde(default)]
+    pub skipped_update_version: Option<String>,
 }
 
 fn default_lock_mode() -> String {
@@ -300,6 +303,7 @@ impl Default for AppSettings {
             achievements_enabled: true,
             achievement_notifications_enabled: true,
             first_used_at: None,
+            skipped_update_version: None,
         }
     }
 }

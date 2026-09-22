@@ -446,6 +446,8 @@
     "updatesLatestVersion": "Latest Version: {{version}}",
     "updatesUpdateNow": "Update Now",
     "updatesLater": "Later",
+    "updatesSkipVersion": "Skip version",
+    "updatesSkipError": "Could not skip this version. Please try again.",
     "updatesDownloading": "Downloading Update...",
     "updatesInstalling": "Installing...",
     "updatesErrorTitle": "Update Failed",

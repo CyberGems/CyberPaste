@@ -40,6 +40,7 @@ import { useTranslation } from 'react-i18next';
 import { systemToast as toast } from './utils/toast';
 import { exportClip, isExportCancelled } from './utils/export';
 import { IS_PORTABLE_BUILD } from './utils/build';
+import { isSkippedUpdateVersion } from './utils/updater';
 import { LAYOUT } from './constants';
 import { generateDemoClips } from './debug/demoData';
 import {
@@ -414,7 +415,7 @@ function App() {
           setTimeout(() => {
             check({ timeout: 15000 })
               .then((update) => {
-                if (update) {
+                if (update && !isSkippedUpdateVersion(update.version, s.skipped_update_version)) {
                   updateAvailableRef.current = update;
                   setUpdateAvailable(update);
                   setShowUpdateModal(true);
@@ -422,6 +423,7 @@ function App() {
                   invoke('set_update_available', { available: true }).catch(console.error);
                 } else {
                   updateAvailableRef.current = null;
+                  setUpdateAvailable(null);
                   invoke('set_update_available', { available: false }).catch(console.error);
                 }
               })
@@ -589,6 +591,13 @@ function App() {
     } catch (err) {
       console.warn('Update check from title bar failed:', err);
     }
+  }, []);
+
+  const handleSkipUpdateVersion = useCallback(async (version: string) => {
+    await invoke('skip_update_version', { version });
+    updateAvailableRef.current = null;
+    setUpdateAvailable(null);
+    await invoke('set_update_available', { available: false });
   }, []);
 
   useEffect(() => {
@@ -3427,6 +3436,7 @@ function App() {
           isOpen={showUpdateModal}
           update={updateAvailable}
           onClose={() => setShowUpdateModal(false)}
+          onSkipVersion={handleSkipUpdateVersion}
         />
 
         <ConfirmDialog

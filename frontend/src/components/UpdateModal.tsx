@@ -5,6 +5,7 @@ import { check } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { getVersion } from '@tauri-apps/api/app';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import Tooltip from './Tooltip';
 
 type UpdateType = Awaited<ReturnType<typeof check>>;
 
@@ -12,14 +13,17 @@ interface UpdateModalProps {
   isOpen: boolean;
   update: UpdateType;
   onClose: () => void;
+  onSkipVersion: (version: string) => Promise<void>;
 }
 
-export function UpdateModal({ isOpen, update, onClose }: UpdateModalProps) {
+export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateModalProps) {
   const { t } = useTranslation();
   const [currentVersion, setCurrentVersion] = useState<string>('...');
   const [status, setStatus] = useState<'prompt' | 'downloading' | 'error'>('prompt');
   const [progress, setProgress] = useState<number>(0);
   const [errorMsg, setErrorMsg] = useState<string>('');
+  const [skipBusy, setSkipBusy] = useState(false);
+  const [skipError, setSkipError] = useState(false);
 
   useEffect(() => {
     getVersion().then(setCurrentVersion).catch(console.error);
@@ -30,6 +34,8 @@ export function UpdateModal({ isOpen, update, onClose }: UpdateModalProps) {
       setStatus('prompt');
       setProgress(0);
       setErrorMsg('');
+      setSkipBusy(false);
+      setSkipError(false);
     }
   }, [isOpen]);
 
@@ -77,6 +83,21 @@ export function UpdateModal({ isOpen, update, onClose }: UpdateModalProps) {
     openUrl(githubReleaseUrl(update.version)).catch(console.error);
   };
 
+  const handleSkipVersion = async () => {
+    if (!update || skipBusy) return;
+    setSkipBusy(true);
+    setSkipError(false);
+    try {
+      await onSkipVersion(update.version);
+      onClose();
+    } catch (err) {
+      console.error('Failed to skip update version:', err);
+      setSkipError(true);
+    } finally {
+      setSkipBusy(false);
+    }
+  };
+
   return (
     <div className="animate-in fade-in fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md duration-300">
       <div className="animate-in zoom-in-95 relative flex max-h-[min(90vh,680px)] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-primary/20 bg-background/90 p-6 shadow-2xl shadow-primary/10 duration-300">
@@ -92,12 +113,16 @@ export function UpdateModal({ isOpen, update, onClose }: UpdateModalProps) {
             </h3>
           </div>
           {status !== 'downloading' && (
-            <button 
-              onClick={onClose} 
-              className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground"
-            >
-              <X size={18} />
-            </button>
+            <Tooltip label={t('common.close')} placement="bottom">
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label={t('common.close')}
+                className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground"
+              >
+                <X size={18} />
+              </button>
+            </Tooltip>
           )}
         </div>
 
@@ -132,31 +157,55 @@ export function UpdateModal({ isOpen, update, onClose }: UpdateModalProps) {
                   <div className="min-h-[9rem] max-h-[240px] overflow-y-auto rounded-lg border border-border/60 bg-black/20 px-3.5 py-3 text-[12.5px] leading-relaxed text-foreground/80 scrollbar-thin">
                     <ReleaseNotes body={update.body} />
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleOpenReleasePage}
-                    className="inline-flex shrink-0 items-center gap-1.5 self-start text-xs font-medium text-primary transition-colors hover:text-primary/80 hover:underline"
-                  >
-                    <ExternalLink size={12} />
-                    {t('settings.updatesViewOnGithub')}
-                  </button>
+                  <Tooltip label={t('settings.updatesViewOnGithub')} placement="bottom">
+                    <button
+                      type="button"
+                      onClick={handleOpenReleasePage}
+                      className="inline-flex shrink-0 items-center gap-1.5 self-start text-xs font-medium text-primary transition-colors hover:text-primary/80 hover:underline"
+                    >
+                      <ExternalLink size={12} />
+                      {t('settings.updatesViewOnGithub')}
+                    </button>
+                  </Tooltip>
                 </div>
               )}
 
               <div className="flex shrink-0 justify-end gap-3 pt-1">
-                <button
-                  onClick={onClose}
-                  className="rounded-md border border-border bg-white/5 px-4 py-2 text-sm font-medium text-foreground/85 transition-all hover:bg-accent hover:text-foreground"
-                >
-                  {t('settings.updatesLater')}
-                </button>
-                <button
-                  onClick={handleUpdate}
-                  className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:bg-primary/90 hover:shadow-primary/35"
-                >
-                  <Download size={16} strokeWidth={2.4} className="text-primary-foreground" />
-                  {t('settings.updatesUpdateNow')}
-                </button>
+                {skipError && (
+                  <p className="mr-auto self-center text-xs text-destructive">
+                    {t('settings.updatesSkipError')}
+                  </p>
+                )}
+                <Tooltip label={t('settings.updatesSkipVersion')} placement="top">
+                  <button
+                    type="button"
+                    onClick={handleSkipVersion}
+                    disabled={skipBusy}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-border bg-transparent px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:bg-accent hover:text-foreground disabled:cursor-wait disabled:opacity-60"
+                  >
+                    {skipBusy && <Loader2 size={14} className="animate-spin" />}
+                    {t('settings.updatesSkipVersion')}
+                  </button>
+                </Tooltip>
+                <Tooltip label={t('settings.updatesLater')} placement="top">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="rounded-md border border-border bg-white/5 px-4 py-2 text-sm font-medium text-foreground/85 transition-all hover:bg-accent hover:text-foreground"
+                  >
+                    {t('settings.updatesLater')}
+                  </button>
+                </Tooltip>
+                <Tooltip label={t('settings.updatesUpdateNow')} placement="top">
+                  <button
+                    type="button"
+                    onClick={handleUpdate}
+                    className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:bg-primary/90 hover:shadow-primary/35"
+                  >
+                    <Download size={16} strokeWidth={2.4} className="text-primary-foreground" />
+                    {t('settings.updatesUpdateNow')}
+                  </button>
+                </Tooltip>
               </div>
             </div>
           )}
@@ -199,19 +248,25 @@ export function UpdateModal({ isOpen, update, onClose }: UpdateModalProps) {
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
-                <button
-                  onClick={onClose}
-                  className="rounded-md border border-input bg-transparent px-4 py-2 text-sm font-medium text-muted-foreground transition-all hover:bg-accent hover:text-accent-foreground"
-                >
-                  {t('common.close')}
-                </button>
-                <button
-                  onClick={handleOpenReleasePage}
-                  className="flex items-center gap-1.5 rounded-md bg-primary/20 border border-primary/30 px-4 py-2 text-sm font-semibold text-primary transition-all hover:bg-primary/30"
-                >
-                  <ExternalLink size={14} />
-                  {t('settings.updatesOpenReleasePage')}
-                </button>
+                <Tooltip label={t('common.close')} placement="top">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="rounded-md border border-input bg-transparent px-4 py-2 text-sm font-medium text-muted-foreground transition-all hover:bg-accent hover:text-accent-foreground"
+                  >
+                    {t('common.close')}
+                  </button>
+                </Tooltip>
+                <Tooltip label={t('settings.updatesOpenReleasePage')} placement="top">
+                  <button
+                    type="button"
+                    onClick={handleOpenReleasePage}
+                    className="flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/20 px-4 py-2 text-sm font-semibold text-primary transition-all hover:bg-primary/30"
+                  >
+                    <ExternalLink size={14} />
+                    {t('settings.updatesOpenReleasePage')}
+                  </button>
+                </Tooltip>
               </div>
             </div>
           )}

@@ -52,3 +52,13 @@ export function isUpdaterNetworkError(message: string): boolean {
     message
   );
 }
+
+/** Compare updater versions while tolerating the optional leading `v` used by release tags. */
+export function isSkippedUpdateVersion(
+  version: string | null | undefined,
+  skippedVersion: string | null | undefined
+): boolean {
+  if (!version || !skippedVersion) return false;
+  const normalize = (value: string) => value.trim().replace(/^v/i, '');
+  return normalize(version) === normalize(skippedVersion);
+}

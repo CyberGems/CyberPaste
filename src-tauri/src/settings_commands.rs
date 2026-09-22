@@ -76,6 +76,22 @@ pub async fn clear_search_history(app: AppHandle) -> Result<Vec<String>, String>
 }
 
 #[tauri::command]
+pub async fn skip_update_version(app: AppHandle, version: String) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
+    let version = version.trim().trim_start_matches('v').trim().to_string();
+    if version.is_empty() {
+        return Err("Update version cannot be empty".to_string());
+    }
+
+    let manager = app.state::<Arc<SettingsManager>>();
+    let mut current = manager.get();
+    current.skipped_update_version = Some(version);
+    manager.save(current)?;
+    crate::settings_manager::emit_changed(&app);
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Result<(), String> {
     crate::app_lock::require_unlocked()?;
     let manager = app.state::<Arc<SettingsManager>>();
@@ -118,6 +134,9 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
     // Search history is managed by dedicated commands so stale settings round-trips cannot
     // overwrite a newer query committed by another window.
     new_settings.recent_searches = current.recent_searches.clone();
+    // The skipped update version is managed by its dedicated command so a stale settings
+    // window cannot make a dismissed release reappear.
+    new_settings.skipped_update_version = current.skipped_update_version.clone();
 
     // Lock core is only changed via dedicated commands.
     new_settings.app_lock_enabled = current.app_lock_enabled;

@@ -28,7 +28,11 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useTheme } from '../hooks/useTheme';
 import { systemToast as toast } from '../utils/toast';
 import { IS_PORTABLE_BUILD } from '../utils/build';
-import { formatUpdaterError, isUpdaterNetworkError } from '../utils/updater';
+import {
+  formatUpdaterError,
+  isSkippedUpdateVersion,
+  isUpdaterNetworkError,
+} from '../utils/updater';
 import { UpdateModal } from '../components/UpdateModal';
 import Tooltip from '../components/Tooltip';
 import { RECOMMENDED_SUITE_APPS, suiteLanguage } from '../data/suiteApps';
@@ -101,16 +105,22 @@ export function AboutWindow() {
   }, []);
 
   useEffect(() => {
-    if (IS_PORTABLE_BUILD) return;
+    if (IS_PORTABLE_BUILD || !settings) return;
     let cancelled = false;
     invoke<any>('get_tray_menu_state')
       .then((state: any) => {
         if (state?.update_available && !updateAvailable) {
           check({ timeout: 15000 })
             .then((u) => {
-              if (!cancelled && u) {
+              if (
+                !cancelled &&
+                u &&
+                !isSkippedUpdateVersion(u.version, settings.skipped_update_version)
+              ) {
                 setUpdateAvailable(u);
                 invoke('set_update_available', { available: true }).catch(console.error);
+              } else if (!cancelled && u) {
+                invoke('set_update_available', { available: false }).catch(console.error);
               }
             })
             .catch(() => {});
@@ -120,7 +130,7 @@ export function AboutWindow() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [settings, updateAvailable]);
 
   useEffect(() => {
     if (!settings) return;
@@ -225,6 +235,12 @@ export function AboutWindow() {
       setUpdateCheckError(raw);
       console.error('Update check failed:', error);
     }
+  }, []);
+
+  const handleSkipUpdateVersion = useCallback(async (version: string) => {
+    await invoke('skip_update_version', { version });
+    setUpdateAvailable(null);
+    await invoke('set_update_available', { available: false });
   }, []);
 
   useEffect(() => {
@@ -583,6 +599,7 @@ export function AboutWindow() {
         isOpen={showUpdateModal}
         update={updateAvailable}
         onClose={() => setShowUpdateModal(false)}
+        onSkipVersion={handleSkipUpdateVersion}
       />
     </div>
   );
