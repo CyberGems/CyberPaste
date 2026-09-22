@@ -42,6 +42,8 @@ export function AppLockScreen({
   const [newConfirm, setNewConfirm] = useState('');
 
   const isPin = status.mode !== 'password';
+  const lockedOut = lockoutMs > 0;
+  const lockoutSecs = Math.ceil(lockoutMs / 1000);
 
   useEffect(() => {
     setLockoutMs(status.lockout_remaining_ms);
@@ -84,6 +86,12 @@ export function AppLockScreen({
   }, [focusInput]);
 
   useEffect(() => {
+    if (showForgot || busy || lockedOut || !error) return;
+    const ids = [0, 80].map((delay) => window.setTimeout(focusInput, delay));
+    return () => ids.forEach((id) => window.clearTimeout(id));
+  }, [busy, error, focusInput, lockedOut, showForgot]);
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       e.preventDefault();
@@ -92,9 +100,6 @@ export function AppLockScreen({
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
   }, []);
-
-  const lockedOut = lockoutMs > 0;
-  const lockoutSecs = Math.ceil(lockoutMs / 1000);
 
   const submitUnlock = async () => {
     if (busy || lockedOut || !secret.trim()) return;
@@ -105,6 +110,7 @@ export function AppLockScreen({
       setSecret('');
       onUnlocked(next);
     } catch (err) {
+      setSecret('');
       setError(errorMessage(err, t, false));
       try {
         const latest = await invoke<AppLockStatus>('get_app_lock_status');
