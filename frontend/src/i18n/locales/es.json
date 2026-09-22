@@ -69,7 +69,7 @@
   },
   "closeDialog": {
     "title": "Cerrar ventana",
-    "message": "¿Qué te gustaría hacer al cerrar la ventana? Salir de la aplicación detiene todas las tareas en ejecución y los trabajos programados.",
+    "message": "¿Qué te gustaría hacer al cerrar la ventana? Salir de CyberPaste detiene la captura del portapapeles y evita que se ejecuten los respaldos automáticos programados.",
     "remember": "Recordar mi elección",
     "minimize": "Minimizar a la bandeja",
     "quit": "Salir de CyberPaste"

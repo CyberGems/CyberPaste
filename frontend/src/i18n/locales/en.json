@@ -69,7 +69,7 @@
   },
   "closeDialog": {
     "title": "Close Window",
-    "message": "What would you like to do when closing the window? Quitting the app stops all running tasks and scheduled jobs.",
+    "message": "What would you like to do when closing the window? Exiting CyberPaste stops clipboard capture and prevents scheduled automatic backups from running.",
     "remember": "Remember my choice",
     "minimize": "Minimize to Tray",
     "quit": "Exit CyberPaste"
