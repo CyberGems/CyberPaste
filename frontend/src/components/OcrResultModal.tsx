@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useEffect, useRef } from 'react';
-import { X, Copy, Download, Save, Check, FileText } from 'lucide-react';
+import { X, Copy, Download, Check, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { systemToast as toast } from '../utils/toast';
 import { ContextMenu } from './ContextMenu';
@@ -168,11 +168,7 @@ export const OcrResultModal: React.FC<OcrResultModalProps> = ({
               {t('export.saveAs')}
             </button>
             <Tooltip
-              label={
-                <>
-                  {t('common.cancel') || 'Cancel'} <EscGlyph />
-                </>
-              }
+              label={`${t('common.cancel') || 'Cancel'} (${t('common.escape')})`}
               placement="top"
             >
               <button
@@ -184,13 +180,12 @@ export const OcrResultModal: React.FC<OcrResultModalProps> = ({
                 <EscGlyph />
               </button>
             </Tooltip>
-            <Tooltip label={t('editor.saveShortcutHint')} placement="top">
+            <Tooltip label={`${t('common.save') || 'Save'} (${t('common.enter')})`} placement="top">
               <button
                 type="button"
                 onClick={() => onSave(editedText)}
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
-                <Save size={14} />
                 {t('common.save') || 'Save'}
                 <EnterGlyph />
               </button>

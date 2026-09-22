@@ -65,11 +65,7 @@ export function ConfirmDialog({
 
         <div className="flex justify-end gap-3">
           <Tooltip
-            label={
-              <>
-                {cancelText || t('common.cancel')} <EscGlyph />
-              </>
-            }
+            label={`${cancelText || t('common.cancel')} (${t('common.escape')})`}
             placement="top"
           >
             <button
@@ -82,11 +78,7 @@ export function ConfirmDialog({
             </button>
           </Tooltip>
           <Tooltip
-            label={
-              <>
-                {confirmText || t('common.confirm')} <EnterGlyph />
-              </>
-            }
+            label={`${confirmText || t('common.confirm')} (${t('common.enter')})`}
             placement="top"
           >
             <button

@@ -1,8 +1,6 @@
 import React, { useCallback, useState, useEffect, useRef } from 'react';
 import {
   X,
-  Check,
-  Save,
   Zap,
   Flame,
   Star,
@@ -260,14 +258,7 @@ export const FolderModal: React.FC<FolderModalProps> = ({
 
         {/* Footer */}
         <div className="flex flex-shrink-0 justify-end gap-2 border-t border-border bg-muted/30 px-5 py-3">
-          <Tooltip
-            label={
-              <>
-                {t('common.cancel')} <EscGlyph />
-              </>
-            }
-            placement="top"
-          >
+          <Tooltip label={`${t('common.cancel')} (${t('common.escape')})`} placement="top">
             <button
               type="button"
               onClick={onClose}
@@ -278,11 +269,7 @@ export const FolderModal: React.FC<FolderModalProps> = ({
             </button>
           </Tooltip>
           <Tooltip
-            label={
-              <>
-                {mode === 'create' ? t('common.create') : t('common.save')} <EnterGlyph />
-              </>
-            }
+            label={`${mode === 'create' ? t('common.create') : t('common.save')} (${t('common.enter')})`}
             placement="top"
           >
             <button
@@ -291,7 +278,6 @@ export const FolderModal: React.FC<FolderModalProps> = ({
               disabled={!name.trim()}
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {mode === 'create' ? <Check size={14} /> : <Save size={14} />}
               {mode === 'create' ? t('common.create') : t('common.save')}
               <EnterGlyph />
             </button>

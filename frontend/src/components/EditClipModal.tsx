@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { X, Save, Copy, Download, Check, Eraser, WrapText, FileCode, FileText } from 'lucide-react';
+import { X, Copy, Download, Check, Eraser, WrapText, FileCode, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ContextMenu } from './ContextMenu';
 import { useTextFieldContextMenu } from '../hooks/useTextFieldContextMenu';
@@ -324,14 +324,7 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
             {t('editor.saveShortcutHint')}
           </span>
           <div className="ml-auto flex items-center gap-2">
-            <Tooltip
-              label={
-                <>
-                  {t('common.cancel')} <EscGlyph />
-                </>
-              }
-              placement="top"
-            >
+            <Tooltip label={`${t('common.cancel')} (${t('common.escape')})`} placement="top">
               <button
                 type="button"
                 onClick={onClose}
@@ -341,13 +334,12 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
                 <EscGlyph />
               </button>
             </Tooltip>
-            <Tooltip label={t('editor.saveShortcutHint')} placement="top">
+            <Tooltip label={`${t('common.save')} (${t('common.enter')})`} placement="top">
               <button
                 type="button"
                 onClick={() => onSave(editedContent)}
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] hover:shadow-primary/35 active:scale-[0.98]"
               >
-                <Save size={14} />
                 {t('common.save')}
                 <EnterGlyph />
               </button>

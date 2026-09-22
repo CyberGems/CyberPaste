@@ -73,14 +73,7 @@ export function CloseWindowDialog({ isOpen, onCancel, onAction }: CloseWindowDia
         </Tooltip>
 
         <div className="mt-6 flex justify-end gap-2.5">
-          <Tooltip
-            label={
-              <>
-                {t('closeDialog.cancel')} <EscGlyph />
-              </>
-            }
-            placement="top"
-          >
+          <Tooltip label={`${t('closeDialog.cancel')} (${t('common.escape')})`} placement="top">
             <button
               type="button"
               onClick={onCancel}
@@ -90,14 +83,7 @@ export function CloseWindowDialog({ isOpen, onCancel, onAction }: CloseWindowDia
               <EscGlyph />
             </button>
           </Tooltip>
-          <Tooltip
-            label={
-              <>
-                {t('closeDialog.quit')} <SpaceGlyph label={t('common.space')} />
-              </>
-            }
-            placement="top"
-          >
+          <Tooltip label={`${t('closeDialog.quit')} (${t('common.space')})`} placement="top">
             <button
               type="button"
               onClick={handleQuit}
@@ -107,14 +93,7 @@ export function CloseWindowDialog({ isOpen, onCancel, onAction }: CloseWindowDia
               <SpaceGlyph label={t('common.space')} />
             </button>
           </Tooltip>
-          <Tooltip
-            label={
-              <>
-                {t('closeDialog.minimize')} <EnterGlyph />
-              </>
-            }
-            placement="top"
-          >
+          <Tooltip label={`${t('closeDialog.minimize')} (${t('common.enter')})`} placement="top">
             <button
               type="button"
               onClick={handleMinimize}

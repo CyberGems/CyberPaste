@@ -127,6 +127,9 @@ pub fn run_app() {
     });
 
     let db_arc = Arc::new(db);
+    let launched_from_windows_startup = cfg!(target_os = "windows")
+        && std::env::args()
+            .any(|arg| arg.eq_ignore_ascii_case("--autostart"));
 
     let mut log_builder = tauri_plugin_log::Builder::default()
         .format(|out, message, record| {
@@ -646,6 +649,17 @@ pub fn run_app() {
                 )
                 .await;
             });
+
+            if !launched_from_windows_startup {
+                let initial_window = win.clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+                    log::info!("Manual launch detected; showing the main window.");
+                    position_window_at_bottom(&initial_window);
+                });
+            } else {
+                log::info!("Windows startup launch detected; keeping the main window hidden.");
+            }
 
             Ok(())
         })
@@ -1416,7 +1430,7 @@ fn quote_windows_run_command() {
         log::warn!("autostart: current_exe() failed");
         return;
     };
-    let cmd = format!("\"{}\"", exe.display());
+    let cmd = format!("\"{}\" --autostart", exe.display());
     let data: Vec<u16> = cmd.encode_utf16().chain(std::iter::once(0)).collect();
     let bytes = (data.len() * 2) as u32;
     let name = HSTRING::from(env!("CARGO_PKG_NAME"));
