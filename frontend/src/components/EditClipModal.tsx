@@ -6,6 +6,7 @@ import { useTextFieldContextMenu } from '../hooks/useTextFieldContextMenu';
 import { clsx } from 'clsx';
 import Tooltip from './Tooltip';
 import { ModalIcon } from './ModalIcon';
+import { EnterGlyph, EscGlyph, useModalKeys } from './ModalActions';
 import { systemToast as toast } from '../utils/toast';
 import { isExportCancelled, saveTextToFile } from '../utils/export';
 
@@ -101,22 +102,18 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
     [editedContent, onSave, updateCursorPosition]
   );
 
-  useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        if (menuPos) {
-          closeMenu();
-          return;
-        }
-        onClose();
-      }
-    };
-    if (isOpen) {
-      window.addEventListener('keydown', handleGlobalKeyDown, true);
+  const handleModalEscape = useCallback(() => {
+    if (menuPos) {
+      closeMenu();
+    } else {
+      onClose();
     }
-    return () => window.removeEventListener('keydown', handleGlobalKeyDown, true);
-  }, [isOpen, onClose, menuPos, closeMenu]);
+  }, [closeMenu, menuPos, onClose]);
+
+  useModalKeys({
+    enabled: isOpen,
+    onEsc: handleModalEscape,
+  });
 
   const handleCopyAll = async () => {
     try {
@@ -327,19 +324,34 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
             {t('editor.saveShortcutHint')}
           </span>
           <div className="ml-auto flex items-center gap-2">
-            <button
-              onClick={onClose}
-              className="rounded-lg px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-accent hover:text-foreground"
+            <Tooltip
+              label={
+                <>
+                  {t('common.cancel')} <EscGlyph />
+                </>
+              }
+              placement="top"
             >
-              {t('common.cancel')}
-            </button>
-            <button
-              onClick={() => onSave(editedContent)}
-              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] hover:shadow-primary/35 active:scale-[0.98]"
-            >
-              <Save size={14} />
-              {t('common.save')}
-            </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-transparent px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-accent hover:text-foreground"
+              >
+                {t('common.cancel')}
+                <EscGlyph />
+              </button>
+            </Tooltip>
+            <Tooltip label={t('editor.saveShortcutHint')} placement="top">
+              <button
+                type="button"
+                onClick={() => onSave(editedContent)}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] hover:shadow-primary/35 active:scale-[0.98]"
+              >
+                <Save size={14} />
+                {t('common.save')}
+                <EnterGlyph />
+              </button>
+            </Tooltip>
           </div>
         </div>
       </div>

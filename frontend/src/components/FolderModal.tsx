@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import {
   X,
   Check,
@@ -49,6 +49,8 @@ import { clsx } from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { ContextMenu } from './ContextMenu';
 import { useTextFieldContextMenu } from '../hooks/useTextFieldContextMenu';
+import { EnterGlyph, EscGlyph, useModalKeys } from './ModalActions';
+import Tooltip from './Tooltip';
 
 const IconMap: Record<string, any> = {
   Zap,
@@ -129,11 +131,25 @@ export const FolderModal: React.FC<FolderModalProps> = ({
     }
   }, [isOpen, initialName, initialIcon, initialColor, resetHistory]);
 
+  const handleSave = useCallback(() => {
+    if (!name.trim()) return;
+    onSave(name, selectedIcon, selectedColor);
+  }, [name, onSave, selectedColor, selectedIcon]);
+
+  useModalKeys({
+    enabled: isOpen,
+    onEsc: onClose,
+    onEnter: handleSave,
+  });
+
   if (!isOpen) return null;
 
   return (
     <div className="animate-in fade-in fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm duration-200">
-      <div className="animate-in zoom-in-95 flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-primary/20 bg-card shadow-[0_0_50px_rgba(var(--primary-rgb),0.15)] duration-300" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="animate-in zoom-in-95 flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-primary/20 bg-card shadow-[0_0_50px_rgba(var(--primary-rgb),0.15)] duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex flex-shrink-0 items-center justify-between border-b border-border bg-muted/30 px-5 py-3">
           <div className="flex min-w-0 items-center gap-2 text-primary">
@@ -142,20 +158,21 @@ export const FolderModal: React.FC<FolderModalProps> = ({
               {mode === 'create' ? t('folders.createNew') : t('folders.rename')}
             </h3>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-white/10"
-          >
-            <X size={18} />
-          </button>
+          <Tooltip label={t('common.close')} placement="bottom">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-white/10"
+            >
+              <X size={18} />
+            </button>
+          </Tooltip>
         </div>
 
         <div className="custom-scrollbar flex-1 space-y-6 overflow-y-auto p-5">
           {/* Name Input */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-white/40">
-              {t('folders.folderName')}
-            </label>
+            <label className="text-xs font-bold text-white/40">{t('folders.folderName')}</label>
             <input
               ref={nameInputRef}
               autoFocus
@@ -172,12 +189,8 @@ export const FolderModal: React.FC<FolderModalProps> = ({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <label className="text-xs font-bold text-white/40">
-                  {t('folders.iconLabel')}
-                </label>
-                <p className="text-[11px] text-muted-foreground/50">
-                  {t('folders.iconHelper')}
-                </p>
+                <label className="text-xs font-bold text-white/40">{t('folders.iconLabel')}</label>
+                <p className="text-[11px] text-muted-foreground/50">{t('folders.iconHelper')}</p>
               </div>
               <div className="flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-2 py-0.5">
                 {selectedIcon &&
@@ -247,20 +260,42 @@ export const FolderModal: React.FC<FolderModalProps> = ({
 
         {/* Footer */}
         <div className="flex flex-shrink-0 justify-end gap-2 border-t border-border bg-muted/30 px-5 py-3">
-          <button
-            onClick={onClose}
-            className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-white/5"
+          <Tooltip
+            label={
+              <>
+                {t('common.cancel')} <EscGlyph />
+              </>
+            }
+            placement="top"
           >
-            {t('common.cancel')}
-          </button>
-          <button
-            onClick={() => onSave(name, selectedIcon, selectedColor)}
-            disabled={!name.trim()}
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-transparent px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-white/5"
+            >
+              {t('common.cancel')}
+              <EscGlyph />
+            </button>
+          </Tooltip>
+          <Tooltip
+            label={
+              <>
+                {mode === 'create' ? t('common.create') : t('common.save')} <EnterGlyph />
+              </>
+            }
+            placement="top"
           >
-            {mode === 'create' ? <Check size={14} /> : <Save size={14} />}
-            {mode === 'create' ? t('common.create') : t('common.save')}
-          </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!name.trim()}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {mode === 'create' ? <Check size={14} /> : <Save size={14} />}
+              {mode === 'create' ? t('common.create') : t('common.save')}
+              <EnterGlyph />
+            </button>
+          </Tooltip>
         </div>
       </div>
 

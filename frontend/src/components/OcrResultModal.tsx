@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { X, Copy, Download, Save, Check, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { systemToast as toast } from '../utils/toast';
 import { ContextMenu } from './ContextMenu';
 import { useTextFieldContextMenu } from '../hooks/useTextFieldContextMenu';
 import { isExportCancelled, saveTextToFile } from '../utils/export';
+import { EnterGlyph, EscGlyph, useModalKeys } from './ModalActions';
+import Tooltip from './Tooltip';
 
 interface OcrResultModalProps {
   isOpen: boolean;
@@ -57,22 +59,18 @@ export const OcrResultModal: React.FC<OcrResultModalProps> = ({
     }
   }, [isOpen, content, t, resetHistory]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        if (menuPos) {
-          closeMenu();
-          return;
-        }
-        onClose();
-      }
-    };
-    if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown, true);
+  const handleModalEscape = useCallback(() => {
+    if (menuPos) {
+      closeMenu();
+    } else {
+      onClose();
     }
-    return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [isOpen, onClose, menuPos, closeMenu]);
+  }, [closeMenu, menuPos, onClose]);
+
+  useModalKeys({
+    enabled: isOpen,
+    onEsc: handleModalEscape,
+  });
 
   const handleCopy = async () => {
     try {
@@ -116,12 +114,15 @@ export const OcrResultModal: React.FC<OcrResultModalProps> = ({
               {t('viewer.extractText') || 'Extract Text (OCR)'}
             </h3>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-white/10"
-          >
-            <X size={18} />
-          </button>
+          <Tooltip label={t('common.close')} placement="bottom">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-white/10"
+            >
+              <X size={18} />
+            </button>
+          </Tooltip>
         </div>
 
         <div className="flex-1 overflow-y-auto bg-black/20 p-4">
@@ -166,19 +167,34 @@ export const OcrResultModal: React.FC<OcrResultModalProps> = ({
               <Download size={14} />
               {t('export.saveAs')}
             </button>
-            <button
-              onClick={onClose}
-              className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-white/5"
+            <Tooltip
+              label={
+                <>
+                  {t('common.cancel') || 'Cancel'} <EscGlyph />
+                </>
+              }
+              placement="top"
             >
-              {t('common.cancel') || 'Cancel'}
-            </button>
-            <button
-              onClick={() => onSave(editedText)}
-              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <Save size={14} />
-              {t('common.save') || 'Save'}
-            </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-transparent px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-white/5"
+              >
+                {t('common.cancel') || 'Cancel'}
+                <EscGlyph />
+              </button>
+            </Tooltip>
+            <Tooltip label={t('editor.saveShortcutHint')} placement="top">
+              <button
+                type="button"
+                onClick={() => onSave(editedText)}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <Save size={14} />
+                {t('common.save') || 'Save'}
+                <EnterGlyph />
+              </button>
+            </Tooltip>
           </div>
         </div>
       </div>

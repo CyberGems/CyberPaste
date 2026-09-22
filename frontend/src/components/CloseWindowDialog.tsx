@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { EnterGlyph, EscGlyph, useModalKeys } from './ModalActions';
+import { EnterGlyph, EscGlyph, SpaceGlyph, useModalKeys } from './ModalActions';
 import Tooltip from './Tooltip';
 
 interface CloseWindowDialogProps {
@@ -30,6 +30,7 @@ export function CloseWindowDialog({ isOpen, onCancel, onAction }: CloseWindowDia
     enabled: isOpen,
     onEsc: onCancel,
     onEnter: handleMinimize,
+    onSpace: handleQuit,
   });
 
   if (!isOpen) return null;
@@ -72,7 +73,14 @@ export function CloseWindowDialog({ isOpen, onCancel, onAction }: CloseWindowDia
         </Tooltip>
 
         <div className="mt-6 flex justify-end gap-2.5">
-          <Tooltip label={t('closeDialog.cancel')} placement="top">
+          <Tooltip
+            label={
+              <>
+                {t('closeDialog.cancel')} <EscGlyph />
+              </>
+            }
+            placement="top"
+          >
             <button
               type="button"
               onClick={onCancel}
@@ -82,16 +90,31 @@ export function CloseWindowDialog({ isOpen, onCancel, onAction }: CloseWindowDia
               <EscGlyph />
             </button>
           </Tooltip>
-          <Tooltip label={t('closeDialog.quit')} placement="top">
+          <Tooltip
+            label={
+              <>
+                {t('closeDialog.quit')} <SpaceGlyph label={t('common.space')} />
+              </>
+            }
+            placement="top"
+          >
             <button
               type="button"
               onClick={handleQuit}
               className="rounded-md border border-border bg-transparent px-4 py-2.5 text-base font-semibold text-muted-foreground transition-colors hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
             >
               {t('closeDialog.quit')}
+              <SpaceGlyph label={t('common.space')} />
             </button>
           </Tooltip>
-          <Tooltip label={t('closeDialog.minimize')} placement="top">
+          <Tooltip
+            label={
+              <>
+                {t('closeDialog.minimize')} <EnterGlyph />
+              </>
+            }
+            placement="top"
+          >
             <button
               type="button"
               onClick={handleMinimize}

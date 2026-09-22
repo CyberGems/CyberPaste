@@ -25,34 +25,68 @@ export function EscGlyph() {
   );
 }
 
+export function SpaceGlyph({ label = 'Space' }: { label?: string }) {
+  return (
+    <span className="min-w-[2.75rem] rounded-[4px] border border-current px-1.5 py-px text-center text-[10px] font-bold leading-tight tracking-wide opacity-85">
+      {label}
+    </span>
+  );
+}
+
 export function useModalKeys({
   enabled,
   onEsc,
   onEnter,
+  onSpace,
 }: {
   enabled: boolean;
   onEsc?: () => void;
   onEnter?: () => void;
+  onSpace?: () => void;
 }) {
   useEffect(() => {
     if (!enabled) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const isButton = target?.tagName === 'BUTTON';
+
       if (event.key === 'Escape') {
         event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
         onEsc?.();
         return;
       }
 
-      if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return;
-      if ((event.target as HTMLElement | null)?.tagName === 'BUTTON') return;
-      if ((event.target as HTMLElement | null)?.tagName === 'TEXTAREA') return;
+      if (onEnter && event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+        if (isButton) return;
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        onEnter?.();
+        return;
+      }
 
-      event.preventDefault();
-      onEnter?.();
+      if (
+        onSpace &&
+        (event.key === ' ' || event.code === 'Space') &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey &&
+        !isButton &&
+        target?.tagName !== 'INPUT' &&
+        target?.tagName !== 'TEXTAREA' &&
+        target?.tagName !== 'SELECT'
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        onSpace();
+      }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [enabled, onEnter, onEsc]);
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [enabled, onEnter, onEsc, onSpace]);
 }

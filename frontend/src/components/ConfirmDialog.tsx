@@ -1,6 +1,7 @@
 import { X, AlertTriangle } from 'lucide-react';
-import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { EnterGlyph, EscGlyph, useModalKeys } from './ModalActions';
+import Tooltip from './Tooltip';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -25,15 +26,11 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   const { t } = useTranslation();
 
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCancel();
-    };
-    if (isOpen) {
-      window.addEventListener('keydown', handleEscape);
-    }
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [isOpen, onCancel]);
+  useModalKeys({
+    enabled: isOpen,
+    onEsc: onCancel,
+    onEnter: onConfirm,
+  });
 
   if (!isOpen) return null;
 
@@ -53,30 +50,58 @@ export function ConfirmDialog({
             </div>
             <h3 className="text-lg font-semibold">{title}</h3>
           </div>
-          <button onClick={onCancel} className="text-muted-foreground hover:text-foreground">
-            <X size={18} />
-          </button>
+          <Tooltip label={t('common.close')} placement="bottom">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <X size={18} />
+            </button>
+          </Tooltip>
         </div>
 
         <p className="mb-6 text-sm text-muted-foreground">{message}</p>
 
         <div className="flex justify-end gap-3">
-          <button
-            onClick={onCancel}
-            className="rounded-md border border-input bg-transparent px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+          <Tooltip
+            label={
+              <>
+                {cancelText || t('common.cancel')} <EscGlyph />
+              </>
+            }
+            placement="top"
           >
-            {cancelText || t('common.cancel')}
-          </button>
-          <button
-            onClick={onConfirm}
-            className={`rounded-md px-4 py-2 text-sm font-medium text-white transition-colors ${
-              variant === 'danger'
-                ? 'bg-destructive hover:bg-destructive/90'
-                : 'bg-primary hover:bg-primary/90'
-            }`}
+            <button
+              type="button"
+              onClick={onCancel}
+              className="inline-flex items-center gap-2 rounded-md border border-input bg-transparent px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+            >
+              {cancelText || t('common.cancel')}
+              <EscGlyph />
+            </button>
+          </Tooltip>
+          <Tooltip
+            label={
+              <>
+                {confirmText || t('common.confirm')} <EnterGlyph />
+              </>
+            }
+            placement="top"
           >
-            {confirmText || t('common.confirm')}
-          </button>
+            <button
+              type="button"
+              onClick={onConfirm}
+              className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-white transition-colors ${
+                variant === 'danger'
+                  ? 'bg-destructive hover:bg-destructive/90'
+                  : 'bg-primary hover:bg-primary/90'
+              }`}
+            >
+              {confirmText || t('common.confirm')}
+              <EnterGlyph />
+            </button>
+          </Tooltip>
         </div>
       </div>
     </div>

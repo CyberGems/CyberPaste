@@ -41,7 +41,14 @@ export function UndoWarningDialog({
         </p>
 
         <div className="mt-6 flex justify-end gap-2.5">
-          <Tooltip label={t('undoWarning.keepOpen')} placement="top">
+          <Tooltip
+            label={
+              <>
+                {t('undoWarning.keepOpen')} <EscGlyph />
+              </>
+            }
+            placement="top"
+          >
             <button
               type="button"
               onClick={onKeepOpen}
@@ -51,7 +58,14 @@ export function UndoWarningDialog({
               <EscGlyph />
             </button>
           </Tooltip>
-          <Tooltip label={t('undoWarning.continue')} placement="top">
+          <Tooltip
+            label={
+              <>
+                {t('undoWarning.continue')} <EnterGlyph />
+              </>
+            }
+            placement="top"
+          >
             <button
               type="button"
               onClick={onContinue}
