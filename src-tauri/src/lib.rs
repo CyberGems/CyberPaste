@@ -203,20 +203,7 @@ pub fn run_app() {
             match event {
                 tauri::WindowEvent::CloseRequested { api, .. } if window.label() == "main" => {
                     api.prevent_close();
-                    let settings = window.state::<Arc<SettingsManager>>().get();
-                    match settings.close_behavior.as_deref() {
-                        Some("minimize") => {
-                            if let Some(main) = window.app_handle().get_webview_window("main") {
-                                crate::animate_window_hide(&main, None);
-                            }
-                        }
-                        Some("quit") => {
-                            window.app_handle().exit(0);
-                        }
-                        _ => {
-                            let _ = window.emit("close-requested", ());
-                        }
-                    }
+                    let _ = window.emit("close-requested", ());
                 }
                 tauri::WindowEvent::Moved(pos) => {
                     // The clamp is only for the hidden, borderless main window.

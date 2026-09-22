@@ -18,6 +18,25 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use std::sync::atomic::{AtomicBool, Ordering};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 
+fn duplicate_clip_error(app: &AppHandle) -> String {
+    let manager = app.state::<Arc<SettingsManager>>();
+    let language = manager.get().language;
+    let normalized = language.trim().to_lowercase();
+    let is_spanish = if normalized.is_empty() || normalized == "auto" {
+        sys_locale::get_locale()
+            .map(|locale| locale.to_lowercase().starts_with("es"))
+            .unwrap_or(false)
+    } else {
+        normalized.starts_with("es")
+    };
+
+    if is_spanish {
+        "El clip ya existe en esta carpeta".to_string()
+    } else {
+        "Clip already exists in this folder".to_string()
+    }
+}
+
 /// Native clipboard read (avoids browser Clipboard API permission prompts).
 #[tauri::command]
 pub async fn read_clipboard_text() -> Result<String, String> {
@@ -1838,17 +1857,7 @@ pub async fn copy_to_folder(
     };
 
     if existing_in_folder.is_some() {
-        use crate::settings_manager::SettingsManager;
-        use tauri::Manager;
-        let settings_manager = app.state::<Arc<SettingsManager>>();
-        let settings = settings_manager.get();
-        let lang = settings.language.as_str();
-
-        if lang == "es" {
-            return Err("El clip ya existe en esta carpeta".to_string());
-        } else {
-            return Err("Clip already exists in this folder".to_string());
-        }
+        return Err(duplicate_clip_error(&app));
     }
 
     let new_uuid = uuid::Uuid::new_v4().to_string();
@@ -2163,17 +2172,7 @@ pub async fn move_to_folder(
         .map_err(|e| e.to_string())?;
 
         if existing_in_folder.is_some() {
-            use crate::settings_manager::SettingsManager;
-            use tauri::Manager;
-            let settings_manager = app.state::<Arc<SettingsManager>>();
-            let settings = settings_manager.get();
-            let lang = settings.language.as_str();
-
-            if lang == "es" {
-                return Err("El clip ya existe en esta carpeta".to_string());
-            } else {
-                return Err("Clip already exists in this folder".to_string());
-            }
+            return Err(duplicate_clip_error(&app));
         }
     }
 
@@ -2665,20 +2664,15 @@ pub fn hide_window(window: tauri::WebviewWindow, skip_lock: Option<bool>) -> Res
 }
 
 #[tauri::command]
-pub fn request_close(app: AppHandle) -> Result<(), String> {
+pub fn request_close(app: AppHandle) -> Result<String, String> {
     let manager = app.state::<Arc<SettingsManager>>();
-    let action = manager.get().close_behavior;
+    let action = manager
+        .get()
+        .close_behavior
+        .filter(|value| value == "minimize" || value == "quit")
+        .unwrap_or_else(|| "prompt".to_string());
 
-    match action.as_deref() {
-        Some("minimize") => execute_close_action(&app, "minimize"),
-        Some("quit") => execute_close_action(&app, "quit"),
-        _ => {
-            if let Some(window) = app.get_webview_window("main") {
-                window.emit("close-requested", ()).map_err(|e| e.to_string())?;
-            }
-            Ok(())
-        }
-    }
+    Ok(action)
 }
 
 fn execute_close_action(app: &AppHandle, action: &str) -> Result<(), String> {

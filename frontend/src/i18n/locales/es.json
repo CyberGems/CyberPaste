@@ -74,6 +74,12 @@
     "minimize": "Minimizar a la bandeja",
     "quit": "Salir de CyberPaste"
   },
+  "undoWarning": {
+    "title": "Acciones de deshacer pendientes",
+    "message": "Tienes {{count}} acciones de borrado que todavía puedes deshacer. Si sales de CyberPaste, perderás estas acciones de deshacer.",
+    "keepOpen": "Seguir en CyberPaste",
+    "continue": "Salir de CyberPaste"
+  },
   "bulk": {
     "selectedSingle": "seleccionado",
     "selectedPlural": "seleccionados",
@@ -816,7 +822,8 @@
     "ocrError": "Error de OCR: {{error}}",
     "failedToCopyText": "Error al copiar texto",
     "fromApp": "desde",
-    "duplicateStatus": "Duplicado detectado en el historial",
+    "duplicateStatus": "Ya existe en esta carpeta",
+    "duplicateMessage": "El clip no se volvió a copiar.",
     "tooltipNone": "Notificación",
     "tooltipClose": "Cerrar notificación",
     "tooltipOpen": "Abrir clip",

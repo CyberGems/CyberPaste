@@ -27,6 +27,7 @@ import { OcrResultModal } from './components/OcrResultModal';
 import { check } from '@tauri-apps/plugin-updater';
 import { UpdateModal } from './components/UpdateModal';
 import { CloseWindowDialog } from './components/CloseWindowDialog';
+import { UndoWarningDialog } from './components/UndoWarningDialog';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { AppLockScreen } from './components/AppLockScreen';
 import { TITLEBAR_HOTKEYS, useKeyboard } from './hooks/useKeyboard';
@@ -183,6 +184,13 @@ function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showCloseWindowDialog, setShowCloseWindowDialog] = useState(false);
   const [deletedStack, setDeletedStack] = useState<{ ids: string[] }[]>([]);
+  const [deleteGeneration, setDeleteGeneration] = useState(0);
+  const [undoWarningSeenGeneration, setUndoWarningSeenGeneration] = useState(0);
+  const [showUndoWarning, setShowUndoWarning] = useState(false);
+  const [pendingCloseChoice, setPendingCloseChoice] = useState<{
+    action: 'quit';
+    remember: boolean;
+  } | null>(null);
   const [pendingDeleteModal, setPendingDeleteModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -576,25 +584,6 @@ function App() {
     };
   }, []);
 
-  const showCloseWindowPrompt = useCallback(() => {
-    setShowCloseWindowDialog(true);
-  }, []);
-
-  const requestCloseWindow = useCallback(() => {
-    invoke('request_close').catch((error) => {
-      console.error('Failed to request window close:', error);
-    });
-  }, []);
-
-  useEffect(() => {
-    const unlisten = listen('close-requested', () => {
-      showCloseWindowPrompt();
-    });
-    return () => {
-      unlisten.then((cleanup) => cleanup());
-    };
-  }, [showCloseWindowPrompt]);
-
   const handleShowUpdate = useCallback(async () => {
     if (IS_PORTABLE_BUILD) return;
     if (updateAvailableRef.current) {
@@ -622,7 +611,20 @@ function App() {
   }, []);
 
   const handleCloseChoice = useCallback(
-    async (action: 'minimize' | 'quit', remember: boolean) => {
+    async (action: 'minimize' | 'quit', remember: boolean, skipUndoWarning = false) => {
+      if (
+        action === 'quit' &&
+        !skipUndoWarning &&
+        deletedStack.length > 0 &&
+        deleteGeneration > undoWarningSeenGeneration
+      ) {
+        setPendingCloseChoice({ action: 'quit', remember });
+        setUndoWarningSeenGeneration(deleteGeneration);
+        setShowCloseWindowDialog(false);
+        setShowUndoWarning(true);
+        return;
+      }
+
       try {
         await invoke('handle_close_choice', { action, remember });
         setShowCloseWindowDialog(false);
@@ -630,8 +632,44 @@ function App() {
         console.error('Failed to apply close choice:', error);
       }
     },
-    []
+    [deleteGeneration, deletedStack.length, undoWarningSeenGeneration]
   );
+
+  const requestCloseWindow = useCallback(async () => {
+    try {
+      const action = await invoke<'prompt' | 'minimize' | 'quit'>('request_close');
+      if (action === 'prompt') {
+        setShowCloseWindowDialog(true);
+      } else {
+        await handleCloseChoice(action, false);
+      }
+    } catch (error) {
+      console.error('Failed to request window close:', error);
+    }
+  }, [handleCloseChoice]);
+
+  useEffect(() => {
+    const unlisten = listen('close-requested', () => {
+      void requestCloseWindow();
+    });
+    return () => {
+      unlisten.then((cleanup) => cleanup());
+    };
+  }, [requestCloseWindow]);
+
+  const handleKeepUndoWarningOpen = useCallback(() => {
+    setShowUndoWarning(false);
+    setPendingCloseChoice(null);
+  }, []);
+
+  const handleContinueAfterUndoWarning = useCallback(async () => {
+    const pending = pendingCloseChoice;
+    setShowUndoWarning(false);
+    setPendingCloseChoice(null);
+    if (pending) {
+      await handleCloseChoice(pending.action, pending.remember, true);
+    }
+  }, [handleCloseChoice, pendingCloseChoice]);
 
   useEffect(() => {
     if (IS_PORTABLE_BUILD) return;
@@ -1462,7 +1500,7 @@ function App() {
               typeof e === 'string' &&
               (e.toLowerCase().includes('existe') || e.toLowerCase().includes('exist'))
             ) {
-              toast.duplicate(errMsg);
+              toast.duplicate(t('toasts.duplicateMessage'));
             } else {
               toast.error(errMsg);
             }
@@ -1697,6 +1735,7 @@ function App() {
 
         // Add to temporary Undo stack (max 50 recent actions)
         setDeletedStack((prev) => [...prev.slice(-49), { ids: [clipId] }]);
+        setDeleteGeneration((prev) => prev + 1);
 
         // Refresh counts
         loadFolders();
@@ -2101,6 +2140,7 @@ function App() {
 
         // Add to temporary Undo stack
         setDeletedStack((prev) => [...prev.slice(-49), { ids }]);
+        setDeleteGeneration((prev) => prev + 1);
 
         loadFolders();
         refreshTotalCount();
@@ -2189,7 +2229,7 @@ function App() {
           typeof e === 'string' &&
           (e.toLowerCase().includes('existe') || e.toLowerCase().includes('exist'))
         ) {
-          toast.duplicate(errMsg);
+          toast.duplicate(t('toasts.duplicateMessage'));
         } else {
           toast.error(errMsg);
         }
@@ -2386,7 +2426,7 @@ function App() {
         typeof error === 'string' &&
         (error.toLowerCase().includes('existe') || error.toLowerCase().includes('exist'))
       ) {
-        toast.duplicate(errMsg);
+        toast.duplicate(t('toasts.duplicateMessage'));
       } else {
         toast.error(errMsg);
       }
@@ -2951,7 +2991,7 @@ function App() {
           typeof e === 'string' &&
           (e.toLowerCase().includes('existe') || e.toLowerCase().includes('exist'))
         ) {
-          toast.duplicate(errMsg);
+          toast.duplicate(t('toasts.duplicateMessage'));
         } else {
           toast.error(errMsg);
         }
@@ -3473,6 +3513,13 @@ function App() {
           update={updateAvailable}
           onClose={() => setShowUpdateModal(false)}
           onSkipVersion={handleSkipUpdateVersion}
+        />
+
+        <UndoWarningDialog
+          isOpen={showUndoWarning}
+          count={deletedStack.length}
+          onKeepOpen={handleKeepUndoWarningOpen}
+          onContinue={handleContinueAfterUndoWarning}
         />
 
         <CloseWindowDialog isOpen={showCloseWindowDialog} onAction={handleCloseChoice} />

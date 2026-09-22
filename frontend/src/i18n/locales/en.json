@@ -74,6 +74,12 @@
     "minimize": "Minimize to Tray",
     "quit": "Exit CyberPaste"
   },
+  "undoWarning": {
+    "title": "Pending undo actions",
+    "message": "You have {{count}} deletion action(s) that can still be undone. If you exit CyberPaste, these undo actions will be lost.",
+    "keepOpen": "Keep CyberPaste open",
+    "continue": "Exit CyberPaste"
+  },
   "bulk": {
     "selectedSingle": "selected",
     "selectedPlural": "selected",
@@ -816,7 +822,8 @@
     "ocrError": "OCR Error: {{error}}",
     "failedToCopyText": "Failed to copy text",
     "fromApp": "from",
-    "duplicateStatus": "Duplicate detected in history",
+    "duplicateStatus": "Already in this folder",
+    "duplicateMessage": "The clip was not copied again.",
     "tooltipNone": "Notification",
     "tooltipClose": "Close notification",
     "tooltipOpen": "Open clip",
