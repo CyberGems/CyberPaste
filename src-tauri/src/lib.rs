@@ -2,7 +2,7 @@
 use std::fs;
 use std::str::FromStr;
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicUsize, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use tauri::{
     image::Image,
     tray::{TrayIcon, TrayIconBuilder},
@@ -17,6 +17,9 @@ static LAST_SHOW_TIME: AtomicI64 = AtomicI64::new(0);
 static SKIP_LOCK_ON_NEXT_HIDE: AtomicBool = AtomicBool::new(false);
 static NATIVE_DIALOG_DEPTH: AtomicUsize = AtomicUsize::new(0);
 static NATIVE_DIALOG_SUPPRESS_UNTIL: AtomicI64 = AtomicI64::new(0);
+/// WebView2 can reject concurrent controller creation when several windows share
+/// the default user-data folder. Serialize secondary-window creation on Windows.
+pub(crate) static WEBVIEW_CREATE_LOCK: Mutex<()> = Mutex::new(());
 static TARGET_FOREGROUND_HND: std::sync::atomic::AtomicPtr<()> =
     std::sync::atomic::AtomicPtr::new(std::ptr::null_mut());
 

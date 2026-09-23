@@ -10,11 +10,14 @@ export const TITLEBAR_HOTKEYS = {
   maximize: 'Alt+Enter',
   mode: 'Ctrl+M',
   compactLayout: 'Ctrl+Shift+L',
+  searchHistory: 'Ctrl+H',
 } as const;
 
 interface KeyboardOptions {
   onClose?: () => void;
   onSearch?: () => void;
+  onToggleSearchHistory?: () => void;
+  searchHistoryHotkey?: string;
   onDelete?: () => void;
   onPin?: () => void;
   onNavigatePrev?: () => void;
@@ -146,6 +149,17 @@ export function useKeyboard(options: KeyboardOptions) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'f' && options.onSearch) {
         e.preventDefault();
         options.onSearch();
+      }
+
+      if (
+        options.onToggleSearchHistory &&
+        options.searchHistoryHotkey &&
+        matchesHotkey(options.searchHistoryHotkey)
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        options.onToggleSearchHistory();
+        return;
       }
 
       // Dynamic Toggle Mode Hotkey

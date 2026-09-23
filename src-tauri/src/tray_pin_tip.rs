@@ -47,7 +47,10 @@ pub async fn show_if_needed(app: AppHandle) -> Result<(), String> {
     let est_w = CARD_WIDTH + 2.0 * SHADOW_PAD + TAIL;
     let est_h = EST_CARD_HEIGHT + 2.0 * SHADOW_PAD + TAIL;
 
-    let win = tauri::WebviewWindowBuilder::new(
+    let webview_create_guard = crate::WEBVIEW_CREATE_LOCK
+        .lock()
+        .map_err(|_| "WebView creation lock poisoned".to_string())?;
+    let result = tauri::WebviewWindowBuilder::new(
         &app,
         WINDOW_LABEL,
         tauri::WebviewUrl::App("index.html?window=tray_pin_tip".into()),
@@ -62,8 +65,9 @@ pub async fn show_if_needed(app: AppHandle) -> Result<(), String> {
     .shadow(false)
     .focused(false)
     .visible(false)
-    .build()
-    .map_err(|e| format!("Failed to create tray pin tip: {e}"))?;
+    .build();
+    drop(webview_create_guard);
+    let win = result.map_err(|e| format!("Failed to create tray pin tip: {e}"))?;
 
     apply_geometry(&win, &anchor, edge, est_w, est_h);
     PENDING_SHOW.store(true, Ordering::SeqCst);

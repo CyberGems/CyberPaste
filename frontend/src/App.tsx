@@ -156,6 +156,7 @@ function App() {
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [searchHistoryToggleToken, setSearchHistoryToggleToken] = useState(0);
   const [showSearch, setShowSearch] = useState(false);
   const [compactTypeFilter, setCompactTypeFilter] = useState<
     'all' | 'text' | 'code' | 'image' | 'url' | 'file'
@@ -3052,6 +3053,10 @@ function App() {
         setShowSearch(true);
       }
     },
+    onToggleSearchHistory: () => {
+      setSearchHistoryToggleToken((prev) => prev + 1);
+    },
+    searchHistoryHotkey: TITLEBAR_HOTKEYS.searchHistory,
     onDelete: () => handleDelete(selectedClipId),
     onPin: () => handleToggleClipPin(selectedClipId),
     onNavigatePrev: handleNavigatePrev,
@@ -3166,6 +3171,7 @@ function App() {
               onSearchChange={handleSearch}
               onSearchCommit={handleSearchCommit}
               recentSearches={recentSearches}
+              searchHistoryToggleToken={searchHistoryToggleToken}
               onSelectSearchHistory={handleSelectSearchHistory}
               onClearSearchHistory={handleClearSearchHistory}
               onPaste={handlePaste}
@@ -3268,6 +3274,7 @@ function App() {
                 onSearchChange={handleSearch}
                 onSearchCommit={handleSearchCommit}
                 recentSearches={recentSearches}
+                searchHistoryToggleToken={searchHistoryToggleToken}
                 onSelectSearchHistory={handleSelectSearchHistory}
                 onClearSearchHistory={handleClearSearchHistory}
                 onSearchClick={() => {

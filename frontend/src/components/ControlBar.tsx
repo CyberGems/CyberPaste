@@ -119,6 +119,7 @@ interface ControlBarProps {
   onSearchChange: (query: string) => void;
   onSearchCommit: (query: string) => void;
   recentSearches: string[];
+  searchHistoryToggleToken?: number;
   onSelectSearchHistory: (query: string) => void;
   onClearSearchHistory: () => void;
   onSearchClick: () => void;
@@ -237,6 +238,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   onSearchChange,
   onSearchCommit,
   recentSearches,
+  searchHistoryToggleToken,
   onSelectSearchHistory,
   onClearSearchHistory,
   onSearchClick,
@@ -760,6 +762,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
 
         <SearchHistoryMenu
           history={recentSearches}
+          toggleToken={searchHistoryToggleToken}
           onSelect={(query) => {
             onSelectSearchHistory(query);
             if (!showSearch) onSearchClick();
@@ -884,8 +887,13 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                   <input
                     autoFocus
                     type="text"
+                    name="cyberpaste-search"
                     id="search-input"
                     placeholder="..."
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="none"
+                    spellCheck={false}
                     className="min-w-0 flex-1 bg-transparent py-1 text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}

@@ -368,6 +368,7 @@ interface CompactViewProps {
   onSearchChange: (query: string) => void;
   onSearchCommit: (query: string) => void;
   recentSearches: string[];
+  searchHistoryToggleToken?: number;
   onSelectSearchHistory: (query: string) => void;
   onClearSearchHistory: () => void;
   onPaste: (id: string) => void;
@@ -600,6 +601,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   onSearchChange,
   onSearchCommit,
   recentSearches,
+  searchHistoryToggleToken,
   onSelectSearchHistory,
   onClearSearchHistory,
   onPaste,
@@ -1579,9 +1581,14 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   />
                   <input
                     type="text"
+                    name="cyberpaste-search"
                     id="search-input"
                     ref={searchInputRef}
                     placeholder={t('common.search')}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="none"
+                    spellCheck={false}
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
                     onKeyDown={(e) => {
@@ -1606,6 +1613,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 </div>
                 <SearchHistoryMenu
                   history={recentSearches}
+                  toggleToken={searchHistoryToggleToken}
                   onSelect={onSelectSearchHistory}
                   onClear={onClearSearchHistory}
                 />
@@ -1717,9 +1725,14 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 />
                 <input
                   type="text"
+                  name="cyberpaste-search"
                   id="search-input"
                   ref={searchInputRef}
                   placeholder={t('common.search')}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   value={searchQuery}
                   onChange={(e) => onSearchChange(e.target.value)}
                   onKeyDown={(e) => {
@@ -1744,6 +1757,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
               </div>
               <SearchHistoryMenu
                 history={recentSearches}
+                toggleToken={searchHistoryToggleToken}
                 onSelect={onSelectSearchHistory}
                 onClear={onClearSearchHistory}
               />

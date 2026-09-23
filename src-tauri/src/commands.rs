@@ -4383,7 +4383,10 @@ async fn dispatch_toast(app: AppHandle, payload: ToastPayload) -> Result<(), Str
             }
         }
     } else {
-        let _ = tauri::WebviewWindowBuilder::new(
+        let webview_create_guard = crate::WEBVIEW_CREATE_LOCK
+            .lock()
+            .map_err(|_| "WebView creation lock poisoned".to_string())?;
+        let result = tauri::WebviewWindowBuilder::new(
             &app,
             window_label,
             tauri::WebviewUrl::App("index.html?window=toast".into()),
@@ -4399,8 +4402,9 @@ async fn dispatch_toast(app: AppHandle, payload: ToastPayload) -> Result<(), Str
         .focused(false)
         .focusable(false)
         .visible(false) // hidden until positioned
-        .build()
-        .map_err(|e| format!("Failed to create toast window: {}", e))?;
+        .build();
+        drop(webview_create_guard);
+        result.map_err(|e| format!("Failed to create toast window: {}", e))?;
     }
 
     Ok(())
@@ -4615,7 +4619,12 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
         builder = builder.position(x as f64, y as f64);
     }
 
-    let win = builder.build().map_err(|e| {
+    let webview_create_guard = crate::WEBVIEW_CREATE_LOCK
+        .lock()
+        .map_err(|_| "WebView creation lock poisoned".to_string())?;
+    let result = builder.build();
+    drop(webview_create_guard);
+    let win = result.map_err(|e| {
         log::error!("Failed to build image-viewer window: {}", e);
         e.to_string()
     })?;
@@ -4977,7 +4986,10 @@ fn show_tray_menu_fast(app: &AppHandle, anchor_x: i32, anchor_y: i32) -> Result<
     let (created_now, win) = if let Some(win) = app.get_webview_window(window_label) {
         (false, win)
     } else {
-        let win = tauri::WebviewWindowBuilder::new(
+        let webview_create_guard = crate::WEBVIEW_CREATE_LOCK
+            .lock()
+            .map_err(|_| "WebView creation lock poisoned".to_string())?;
+        let result = tauri::WebviewWindowBuilder::new(
             app,
             window_label,
             tauri::WebviewUrl::App("index.html?window=tray_menu".into()),
@@ -4992,8 +5004,9 @@ fn show_tray_menu_fast(app: &AppHandle, anchor_x: i32, anchor_y: i32) -> Result<
         .shadow(false) // CSS box-shadow on the menu card (transparent chrome)
         .focused(true)
         .visible(false)
-        .build()
-        .map_err(|e| format!("Failed to create tray menu window: {}", e))?;
+        .build();
+        drop(webview_create_guard);
+        let win = result.map_err(|e| format!("Failed to create tray menu window: {}", e))?;
 
         // Native focus-loss dismiss (more reliable than webview blur alone)
         let win_blur = win.clone();
@@ -5288,7 +5301,11 @@ fn open_about_window(app: &AppHandle) {
         builder = builder.center();
     }
 
-    let _ = builder.build();
+    if let Ok(_webview_create_guard) = crate::WEBVIEW_CREATE_LOCK.lock() {
+        let _ = builder.build();
+    } else {
+        log::error!("WebView creation lock poisoned while opening About");
+    }
 }
 
 fn open_settings_window(app: &AppHandle, tab: Option<&str>) {
@@ -5349,7 +5366,11 @@ fn open_settings_window(app: &AppHandle, tab: Option<&str>) {
         }
     }
 
-    let _ = builder.build();
+    if let Ok(_webview_create_guard) = crate::WEBVIEW_CREATE_LOCK.lock() {
+        let _ = builder.build();
+    } else {
+        log::error!("WebView creation lock poisoned while opening Settings");
+    }
 
     if let Some(t) = tab {
         let app_clone = app.clone();
