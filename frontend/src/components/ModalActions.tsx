@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 
-export function EnterGlyph() {
+export function EnterGlyph({ compact = false }: { compact?: boolean }) {
   return (
     <svg
-      className="h-3.5 w-3.5 flex-none opacity-85"
+      className={`${compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} flex-none opacity-85`}
       viewBox="0 0 20 20"
       fill="none"
       aria-hidden="true"
@@ -17,17 +17,25 @@ export function EnterGlyph() {
   );
 }
 
-export function EscGlyph() {
+export function EscGlyph({ compact = false }: { compact?: boolean }) {
   return (
-    <span className="inline-flex h-5 items-center justify-center rounded-[4px] border border-current px-1.5 text-[10px] font-bold leading-tight tracking-wide opacity-85">
+    <span
+      className={`inline-flex ${
+        compact ? 'h-4 px-1 text-[9px]' : 'h-5 px-1.5 text-[10px]'
+      } items-center justify-center rounded-[4px] border border-current font-bold leading-tight tracking-wide opacity-85`}
+    >
       Esc
     </span>
   );
 }
 
-export function SpaceGlyph({ label = 'Space' }: { label?: string }) {
+export function SpaceGlyph({ label = 'Space', compact = false }: { label?: string; compact?: boolean }) {
   return (
-    <span className="inline-flex h-5 min-w-[3.25rem] items-center justify-center rounded-[4px] border border-current px-1.5 text-center text-[10px] font-bold leading-tight tracking-wide opacity-85">
+    <span
+      className={`inline-flex ${
+        compact ? 'h-4 min-w-[2.75rem] px-1 text-[9px]' : 'h-5 min-w-[3.25rem] px-1.5 text-[10px]'
+      } items-center justify-center rounded-[4px] border border-current text-center font-bold leading-tight tracking-wide opacity-85`}
+    >
       {label}
     </span>
   );

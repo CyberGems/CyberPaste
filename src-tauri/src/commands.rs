@@ -5253,6 +5253,7 @@ pub async fn open_about(app: AppHandle) -> Result<(), String> {
 fn open_about_window(app: &AppHandle) {
     if let Some(about_win) = app.get_webview_window("about") {
         let _ = about_win.unminimize();
+        let _ = about_win.set_always_on_top(true);
         let _ = about_win.show();
         let _ = about_win.set_focus();
         return;
@@ -5277,6 +5278,7 @@ fn open_about_window(app: &AppHandle) {
     .maximizable(false)
     .decorations(false)
     .transparent(false)
+    .always_on_top(true)
     .visible(false);
 
     let saved_pos = match (settings.about_window_x, settings.about_window_y) {

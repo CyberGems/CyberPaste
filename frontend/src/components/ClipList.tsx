@@ -11,6 +11,7 @@ import { clsx } from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { usePeekPointerArm } from '../hooks/usePeekPointerArm';
 import { isListHoverLocked, subscribeListHoverLock } from '../hooks/useListHoverLock';
+import { SEARCH_HISTORY_EVENT } from './SearchHistoryMenu';
 
 interface ClipListProps {
   clips: ClipboardItem[];
@@ -106,6 +107,7 @@ export const ClipList: React.FC<ClipListProps> = ({
   } | null>(null);
   const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const peekOriginMousePosRef = useRef<{ x: number; y: number } | null>(null);
+  const searchHistoryOpenRef = useRef(false);
 
   const closePeek = useCallback(() => {
     setPeekClip(null);
@@ -122,9 +124,21 @@ export const ClipList: React.FC<ClipListProps> = ({
     if (locked) closePeek();
   }), [closePeek]);
 
+  useEffect(() => {
+    const handleSearchHistory = (event: Event) => {
+      const isOpen = (event as CustomEvent<{ open?: boolean }>).detail?.open;
+      searchHistoryOpenRef.current = Boolean(isOpen);
+      if (isOpen) closePeek();
+    };
+
+    window.addEventListener(SEARCH_HISTORY_EVENT, handleSearchHistory);
+    return () => window.removeEventListener(SEARCH_HISTORY_EVENT, handleSearchHistory);
+  }, [closePeek]);
+
   const handleCardMouseEnter = useCallback(
     (e: React.MouseEvent, clip: ClipboardItem) => {
       if (isListHoverLocked()) return;
+      if (searchHistoryOpenRef.current) return;
       if (!fullPeekEnabled || !!draggingClipId) return;
 
       notePeekPointer(e.screenX, e.screenY);

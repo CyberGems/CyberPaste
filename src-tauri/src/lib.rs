@@ -14,6 +14,7 @@ use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 static IS_ANIMATING: AtomicBool = AtomicBool::new(false);
 static LAST_SHOW_TIME: AtomicI64 = AtomicI64::new(0);
+static STARTUP_FOCUS_GRACE_UNTIL: AtomicI64 = AtomicI64::new(0);
 static SKIP_LOCK_ON_NEXT_HIDE: AtomicBool = AtomicBool::new(false);
 static NATIVE_DIALOG_DEPTH: AtomicUsize = AtomicUsize::new(0);
 static NATIVE_DIALOG_SUPPRESS_UNTIL: AtomicI64 = AtomicI64::new(0);
@@ -296,8 +297,34 @@ pub fn run_app() {
                                 return;
                             }
 
+                            // Secondary CyberPaste windows can legitimately take focus while
+                            // the main window remains open. In particular, the first-run tray
+                            // guidance is shown shortly after startup and would otherwise make
+                            // a manual launch disappear as soon as the guidance appears.
+                            let app_handle = window.app_handle();
+                            let secondary_window_is_visible = [
+                                "about",
+                                "image_viewer",
+                                "toast",
+                                "tray_menu",
+                                "tray_pin_tip",
+                            ]
+                            .iter()
+                            .any(|label| {
+                                app_handle
+                                    .get_webview_window(label)
+                                    .and_then(|secondary| secondary.is_visible().ok())
+                                    .unwrap_or(false)
+                            });
+                            if secondary_window_is_visible {
+                                return;
+                            }
+
                             let last_show = LAST_SHOW_TIME.load(Ordering::SeqCst);
                             let now = chrono::Local::now().timestamp_millis();
+                            if now < STARTUP_FOCUS_GRACE_UNTIL.load(Ordering::SeqCst) {
+                                return;
+                            }
                             let debounce_ms = 500;
                             if now - last_show < debounce_ms {
                                 return;
@@ -657,6 +684,10 @@ pub fn run_app() {
                 let initial_window = win.clone();
                 tauri::async_runtime::spawn(async move {
                     tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+                    STARTUP_FOCUS_GRACE_UNTIL.store(
+                        chrono::Local::now().timestamp_millis() + 4000,
+                        Ordering::SeqCst,
+                    );
                     log::info!("Manual launch detected; showing the main window.");
                     position_window_at_bottom(&initial_window);
                 });

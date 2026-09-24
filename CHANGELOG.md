@@ -2,6 +2,25 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.22.0] — 2026-09-24
+
+### ⌨️ Keyboard Navigation & Search History
+- **Keyboard-first history**: `Ctrl+H` opens search history with the first item selected, while arrow keys and Enter provide predictable navigation in Full and Compact modes.
+- **History isolation**: Search history now suppresses competing tooltips and peek previews while it is open, and pointer hover does not steal the initial keyboard selection.
+- **Unified shortcuts**: Title-bar actions now use the same single-modifier `Ctrl` convention, including peek, reset size, More, maximize, and Compact layout.
+
+### 🪟 Window & Menu Reliability
+- **Adaptive More menu**: The menu repositions, fits the available height, exposes scrolling when needed, and includes Reset window size above Clear history.
+- **Peek controls**: Peek toggles sit with the relevant filters/search controls and remain visually neutral when enabled.
+- **Close-flow cleanup**: Pending close dialogs disappear when the main window is hidden through another route, and startup focus handling is more resilient when secondary windows appear.
+- **About focus**: The About window stays above the main window when opened from More.
+
+### 🎨 About & Modal Polish
+- **Update feedback**: About now shows a clearer success card with a dismiss button, while its original logo identity is preserved without the experimental glass background.
+- **CyberGems apps**: About presents five randomized companion apps with a compact “See more...” action.
+- **Diagnostics**: Added a footer action to copy useful diagnostic information for bug reports.
+- **Bilingual refinement**: Improved update text, tooltips, keyboard hints, and close-dialog spacing in English and Spanish.
+
 ## [1.21.0] — 2026-09-22
 
 ### 🏆 Achievements, Statistics & Backups

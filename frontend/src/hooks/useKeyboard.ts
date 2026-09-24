@@ -3,13 +3,13 @@ import { lockListHover } from './useListHoverLock';
 
 export const TITLEBAR_HOTKEYS = {
   pin: 'Ctrl+P',
-  peek: 'Ctrl+Shift+P',
-  resetSize: 'Ctrl+Shift+R',
+  peek: 'Ctrl+E',
+  resetSize: 'Ctrl+R',
   settings: 'Ctrl+,',
-  more: 'Ctrl+Shift+M',
-  maximize: 'Alt+Enter',
+  more: 'Ctrl+.',
+  maximize: 'Ctrl+F11',
   mode: 'Ctrl+M',
-  compactLayout: 'Ctrl+Shift+L',
+  compactLayout: 'Ctrl+L',
   searchHistory: 'Ctrl+H',
 } as const;
 

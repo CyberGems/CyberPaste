@@ -1682,7 +1682,11 @@ function App() {
 
   // Reset search and view (if enabled) when the window closes or reopens.
   useEffect(() => {
-    const unlisten = listen<boolean>('window-visibility', () => {
+    const unlisten = listen<boolean>('window-visibility', (event) => {
+      if (!event.payload) {
+        setShowCloseWindowDialog(false);
+        setShowUndoWarning(false);
+      }
       if (settingsRef.current?.reset_view_on_paste) resetViewOnWindowVisibility();
     });
     return () => {
@@ -3312,9 +3316,6 @@ function App() {
                 onLockNow={handleLockNow}
                 onResetSize={handleResetSize}
                 hotkey={settings?.hotkey}
-                fullPeekEnabled={settings?.full_peek_enabled ?? true}
-                onTogglePeek={handleTogglePeek}
-                peekHotkey={TITLEBAR_HOTKEYS.peek}
                 onReorderFolder={handleReorderFolder}
                 showHud={settings?.full_show_hud ?? true}
                 titleBarAnimationEnabled={settings?.title_bar_animation_enabled ?? true}
@@ -3341,6 +3342,9 @@ function App() {
                 onGridScaleChange={handleGridScaleChange}
                 detailPanelOpen={detailPanelOpen}
                 onToggleDetailPanel={() => setDetailPanelOpen((prev) => !prev)}
+                fullPeekEnabled={settings?.full_peek_enabled ?? true}
+                onTogglePeek={handleTogglePeek}
+                peekHotkey={TITLEBAR_HOTKEYS.peek}
                 canUndo={deletedStack.length > 0}
                 onUndo={handleUndoDelete}
               />

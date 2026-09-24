@@ -11,6 +11,8 @@ import { useTranslation } from 'react-i18next';
 import Tooltip from './Tooltip';
 import { TITLEBAR_HOTKEYS } from '../hooks/useKeyboard';
 
+export const SEARCH_HISTORY_EVENT = 'cyberpaste:search-history';
+
 interface SearchHistoryMenuProps {
   history: string[];
   onSelect: (query: string) => void;
@@ -33,6 +35,8 @@ export function SearchHistoryMenu({
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const lastToggleTokenRef = useRef(toggleToken);
   const [menuPosition, setMenuPosition] = useState({ left: 8, top: 8 });
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [pointerMovedSinceOpen, setPointerMovedSinceOpen] = useState(false);
 
   const focusFirstItem = () => {
     const firstItem = itemRefs.current.find((item) => item !== null);
@@ -56,11 +60,23 @@ export function SearchHistoryMenu({
     setOpen((value) => !value);
   }, [toggleToken]);
 
-  useEffect(() => {
-    if (!open) return;
-    const frame = window.requestAnimationFrame(focusFirstItem);
-    return () => window.cancelAnimationFrame(frame);
+  useLayoutEffect(() => {
+    if (!open) {
+      setActiveIndex(null);
+      return;
+    }
+    setPointerMovedSinceOpen(false);
+    setActiveIndex(history.length > 0 ? 0 : null);
+    focusFirstItem();
   }, [open, history.length]);
+
+  useEffect(() => {
+    document.body.dataset.searchHistoryOpen = open ? 'true' : 'false';
+    window.dispatchEvent(new CustomEvent(SEARCH_HISTORY_EVENT, { detail: { open } }));
+    return () => {
+      delete document.body.dataset.searchHistoryOpen;
+    };
+  }, [open]);
 
   useLayoutEffect(() => {
     if (!open) return;
@@ -142,6 +158,7 @@ export function SearchHistoryMenu({
       } else {
         nextIndex = items.length - 1;
       }
+      setActiveIndex(nextIndex);
       items[nextIndex]?.focus();
       return;
     }
@@ -188,7 +205,10 @@ export function SearchHistoryMenu({
               role="menu"
               tabIndex={-1}
               aria-label={t('common.searchHistory')}
-              onKeyDownCapture={handleMenuKeyDown}
+              onKeyDown={handleMenuKeyDown}
+              onPointerMove={() => {
+                if (!pointerMovedSinceOpen) setPointerMovedSinceOpen(true);
+              }}
               className="fixed z-[240] w-72 overflow-hidden rounded-xl border border-border bg-popover/95 shadow-2xl backdrop-blur-xl"
             >
               <div className="flex items-center justify-between border-b border-border/70 px-3 py-2">
@@ -216,23 +236,32 @@ export function SearchHistoryMenu({
               <div className="max-h-64 overflow-y-auto p-1">
                 {history.length > 0 ? (
                   history.map((query, index) => (
-                    <Tooltip key={query} label={query} placement="right">
-                      <button
-                        ref={(element) => {
-                          itemRefs.current[index] = element;
-                        }}
-                        type="button"
-                        role="menuitem"
-                        onClick={() => {
-                          closeMenu();
-                          onSelect(query);
-                        }}
-                        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                      >
-                        <History size={12} className="shrink-0 text-primary/70" />
-                        <span className="min-w-0 flex-1 truncate">{query}</span>
-                      </button>
-                    </Tooltip>
+                    <button
+                      key={`${query}-${index}`}
+                      ref={(element) => {
+                        itemRefs.current[index] = element;
+                      }}
+                      type="button"
+                      role="menuitem"
+                      aria-selected={activeIndex === index}
+                      onFocus={() => setActiveIndex(index)}
+                      onClick={() => {
+                        closeMenu();
+                        onSelect(query);
+                      }}
+                      className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs outline-none transition-colors ${
+                        activeIndex === index
+                          ? 'bg-accent text-foreground ring-1 ring-primary/50'
+                          : 'text-muted-foreground'
+                      } ${
+                        pointerMovedSinceOpen
+                          ? 'hover:bg-accent hover:text-foreground'
+                          : ''
+                      } focus-visible:bg-accent focus-visible:text-foreground`}
+                    >
+                      <History size={12} className="shrink-0 text-primary/70" />
+                      <span className="min-w-0 flex-1 truncate">{query}</span>
+                    </button>
                   ))
                 ) : (
                   <p className="px-2.5 py-3 text-center text-[11px] text-muted-foreground">

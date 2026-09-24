@@ -12,11 +12,14 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Undo2,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { clsx } from 'clsx';
 import Tooltip from './Tooltip';
+import { TITLEBAR_HOTKEYS } from '../hooks/useKeyboard';
 
 export type FullTypeFilter = 'all' | 'text' | 'code' | 'image' | 'url' | 'file';
 
@@ -41,6 +44,9 @@ interface TypeFilterChipRowProps {
   onGridScaleChange?: (next: number) => void;
   detailPanelOpen?: boolean;
   onToggleDetailPanel?: () => void;
+  fullPeekEnabled?: boolean;
+  onTogglePeek?: () => void;
+  peekHotkey?: string;
   canUndo?: boolean;
   onUndo?: () => void;
 }
@@ -53,6 +59,9 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
   onGridScaleChange,
   detailPanelOpen = false,
   onToggleDetailPanel,
+  fullPeekEnabled = true,
+  onTogglePeek,
+  peekHotkey = TITLEBAR_HOTKEYS.peek,
   canUndo = false,
   onUndo,
 }) => {
@@ -134,6 +143,30 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
             >
               <Undo2 size={13} className="shrink-0" />
               <span className="hidden sm:inline font-medium">{t('contextMenu.undo')}</span>
+            </button>
+          </Tooltip>
+        )}
+
+        {onTogglePeek && (
+          <Tooltip
+            label={t(fullPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek', {
+              hotkey: peekHotkey,
+            })}
+            placement="bottom"
+          >
+            <button
+              type="button"
+              onClick={onTogglePeek}
+              aria-label={t(fullPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek', {
+                hotkey: peekHotkey,
+              })}
+              aria-pressed={fullPeekEnabled}
+              className={clsx(
+                'flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition-colors',
+                'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground'
+              )}
+            >
+              {fullPeekEnabled ? <Eye size={13} /> : <EyeOff size={13} />}
             </button>
           </Tooltip>
         )}

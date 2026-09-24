@@ -8,8 +8,9 @@ import { check } from '@tauri-apps/plugin-updater';
 import {
   AlertCircle,
   BookOpen,
-  Check,
+  CheckCircle2,
   ChevronDown,
+  Copy,
   ExternalLink,
   Github,
   Globe,
@@ -43,7 +44,17 @@ const REPO_URL = 'https://github.com/CyberGems/CyberPaste';
 const WEBSITE_URL = 'https://cybergems.org';
 const WIKI_URL = 'https://github.com/CyberGems/CyberPaste/wiki';
 const DONATE_URL = 'https://github.com/CyberGems/CyberPaste#%EF%B8%8F-donate';
+const SUITE_URL = 'https://cybergems.org/#apps';
 const HEART_COLOR = '#F43F5E';
+
+function pickRecommendedSuiteApps() {
+  const apps = [...RECOMMENDED_SUITE_APPS];
+  for (let index = apps.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [apps[index], apps[randomIndex]] = [apps[randomIndex], apps[index]];
+  }
+  return apps.slice(0, 5);
+}
 
 function BugIcon({ size = 15 }: { size?: number }) {
   return (
@@ -82,6 +93,7 @@ export function AboutWindow() {
   const [updateCheckError, setUpdateCheckError] = useState<string | null>(null);
   const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
   const [checkStatus, setCheckStatus] = useState<'idle' | 'checking' | 'upToDate'>('idle');
+  const [recommendedSuiteApps] = useState(pickRecommendedSuiteApps);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -193,6 +205,28 @@ export function AboutWindow() {
     }
   };
 
+  const handleCopyDiagnosticInfo = async () => {
+    if (!settings) return;
+
+    const diagnosticInfo = [
+      `CyberPaste ${appVersion || 'unknown'}`,
+      `Platform: ${navigator.platform || 'unknown'}`,
+      `User agent: ${navigator.userAgent}`,
+      `Language: ${settings.language || 'system'}`,
+      `Theme: ${settings.theme || 'unknown'}`,
+      `Portable build: ${IS_PORTABLE_BUILD ? 'yes' : 'no'}`,
+      `Device pixel ratio: ${window.devicePixelRatio}`,
+    ].join('\n');
+
+    try {
+      await navigator.clipboard.writeText(diagnosticInfo);
+      toast.success(t('settings.aboutDiagnosticCopied'));
+    } catch (error) {
+      console.error('Failed to copy diagnostic information:', error);
+      toast.error(t('settings.aboutDiagnosticCopyFailed'));
+    }
+  };
+
   const updateAutoCheck = async () => {
     if (IS_PORTABLE_BUILD) return;
     if (!settings) return;
@@ -263,8 +297,8 @@ export function AboutWindow() {
   const suiteLang = suiteLanguage(settings.language);
 
   return (
-    <div className="settings-window h-screen">
-      <div className="flex h-full flex-col overflow-hidden bg-background text-foreground">
+    <div className="settings-window relative isolate h-screen overflow-hidden bg-background">
+      <div className="relative z-10 flex h-full flex-col overflow-hidden bg-background text-foreground">
         <header className="flex cursor-default select-none items-center justify-between border-b border-border bg-transparent px-4 py-3">
           <div data-tauri-drag-region className="flex min-w-0 flex-1 items-center gap-2.5">
             <Info size={18} className="shrink-0 text-primary" />
@@ -298,12 +332,10 @@ export function AboutWindow() {
             <section className="grid cursor-default select-none grid-cols-[auto_minmax(200px,1fr)] items-center gap-9 py-1">
               <div className="flex items-center gap-5">
                 <div className="relative flex h-20 w-20 shrink-0 items-center justify-center">
-                  {/* Subtle ambient glow behind logo */}
-                  <div className="pointer-events-none absolute h-12 w-12 animate-pulse rounded-full bg-primary/25 blur-xl" />
                   <img
                     src="/logo.png"
                     alt="CyberPaste"
-                    className="relative z-10 h-14 w-14 select-none object-contain drop-shadow-[0_0_10px_rgba(var(--primary-rgb),0.4)]"
+                    className="h-14 w-14 select-none object-contain drop-shadow-[0_0_10px_rgba(var(--primary-rgb),0.4)]"
                   />
                 </div>
                 <div className="min-w-0 cursor-default select-none">
@@ -313,7 +345,7 @@ export function AboutWindow() {
                   </p>
                 </div>
               </div>
-              <div className="cursor-default select-none rounded-xl border border-primary/20 bg-card px-5 py-4">
+              <div className="cursor-default select-none rounded-xl border border-primary/25 bg-card px-5 py-4">
                 <p className="cursor-default select-none text-[13px] leading-6 text-foreground/80">
                   {t('settings.aboutDescription')}
                 </p>
@@ -325,7 +357,7 @@ export function AboutWindow() {
                 <h3 className="cursor-default select-none px-0 text-[13px] font-semibold text-primary">
                   {t('settings.aboutUpdatesSection')}
                 </h3>
-                <div className="rounded-[4px] border border-border bg-secondary px-4">
+                <div className="rounded-[4px] border border-border/80 bg-secondary px-4">
                   <div className="grid min-h-[60px] grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3">
                     <RotateCcw size={23} className="text-muted-foreground" />
                     <div className="min-w-0">
@@ -368,11 +400,6 @@ export function AboutWindow() {
                             <Loader2 size={12} className="animate-spin text-primary" />
                             {t('settings.checkingUpdates')}
                           </span>
-                        ) : checkStatus === 'upToDate' ? (
-                          <span className="inline-flex items-center gap-1.5 text-foreground">
-                            <Check size={12} className="text-primary" />
-                            {t('settings.noUpdates')}
-                          </span>
                         ) : (
                           t('settings.checkForUpdatesDesc')
                         )}
@@ -405,8 +432,32 @@ export function AboutWindow() {
                     )}
                   </div>
 
+                  {checkStatus === 'upToDate' && (
+                    <div className="relative mb-3 flex items-center gap-3 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-10 py-2.5 text-emerald-100">
+                      <CheckCircle2 size={20} className="shrink-0 text-emerald-400" />
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-semibold">
+                          {t('settings.aboutUpdateSuccess')}
+                        </p>
+                        <p className="mt-0.5 text-xs text-emerald-100/70">
+                          {t('settings.aboutUpdateSuccessDesc')}
+                        </p>
+                      </div>
+                      <Tooltip label={t('common.close')} placement="top">
+                        <button
+                          type="button"
+                          onClick={() => setCheckStatus('idle')}
+                          aria-label={t('common.close')}
+                          className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-emerald-100/70 transition-colors hover:bg-emerald-400/15 hover:text-emerald-100"
+                        >
+                          <X size={14} />
+                        </button>
+                      </Tooltip>
+                    </div>
+                  )}
+
                   {updateCheckError && (
-                    <div className="mb-3 space-y-2.5 rounded-[6px] border border-border/80 bg-card/60 p-3.5 shadow-sm">
+                    <div className="mb-3 space-y-2.5 rounded-[6px] border border-border/80 bg-card p-3.5">
                       <div className="flex items-start gap-2.5">
                         <div className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
                           {isUpdaterNetworkError(updateCheckError) ? (
@@ -495,13 +546,13 @@ export function AboutWindow() {
                   <div className="h-px flex-1 bg-primary/20" />
                 </div>
                 <div className="mx-auto flex w-full flex-nowrap items-center justify-center gap-2">
-                  {RECOMMENDED_SUITE_APPS.map((app) => (
+                  {recommendedSuiteApps.map((app) => (
                     <Tooltip key={app.slug} label={app.tagline[suiteLang]} placement="top">
                       <button
                         type="button"
                         onClick={() => openUrl(app.site).catch(console.error)}
                         aria-label={`${app.name}: ${app.tagline[suiteLang]}`}
-                        className="group flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-card p-1 transition-colors hover:border-primary/50 hover:bg-accent"
+                        className="group flex h-11 w-11 items-center justify-center rounded-lg border border-border/80 bg-card p-1 transition-colors hover:border-primary/50 hover:bg-accent"
                       >
                         <img
                           src={app.icon}
@@ -511,6 +562,16 @@ export function AboutWindow() {
                       </button>
                     </Tooltip>
                   ))}
+                  <Tooltip label={t('settings.suiteMoreTooltip')} placement="top">
+                    <button
+                      type="button"
+                      onClick={() => openUrl(SUITE_URL).catch(console.error)}
+                      aria-label={t('settings.suiteMoreTooltip')}
+                      className="inline-flex h-11 items-center rounded-lg border border-transparent px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary/35 hover:bg-primary/[0.06] hover:text-primary"
+                    >
+                      <span>{t('settings.suiteMore')}</span>
+                    </button>
+                  </Tooltip>
                 </div>
               </section>
             ) : null}
@@ -569,6 +630,16 @@ export function AboutWindow() {
                 className="flex h-[30px] w-[30px] items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 <BugIcon size={15} />
+              </button>
+            </Tooltip>
+            <Tooltip label={t('settings.aboutDiagnosticTooltip')} placement="top">
+              <button
+                type="button"
+                aria-label={t('settings.aboutDiagnosticTooltip')}
+                onClick={handleCopyDiagnosticInfo}
+                className="flex h-[30px] w-[30px] items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <Copy size={15} strokeWidth={1.5} />
               </button>
             </Tooltip>
             <Tooltip label={t('settings.aboutReleasesTooltip')} placement="top">

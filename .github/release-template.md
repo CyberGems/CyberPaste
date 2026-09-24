@@ -8,7 +8,7 @@
 
 <!-- Maintainer: Rewrite the marked paragraph for every release. Use 25-45 words, lead with user-facing changes, and do not repeat the app name or version. -->
 <!-- changelog-summary:start -->
-Local usage statistics now celebrate long-term clipboard progress with backup-safe achievements, while quiet hours, export tools, search history, lock-screen focus, and tray guidance make daily use calmer, more recoverable, and easier to manage.
+Keyboard-first search history, unified shortcuts, adaptive menus, and neutral peek controls make navigation more predictable, while About improvements add clearer update feedback, diagnostics, quieter app recommendations, and more reliable window visibility.
 <!-- changelog-summary:end -->
 
 > **New to CyberPaste?** A fast, privacy-first Windows clipboard manager with history, folders, OCR, and configurable AI actions.
@@ -17,20 +17,20 @@ Local usage statistics now celebrate long-term clipboard progress with backup-sa
 
 ### ✨ Key Features & Highlights
 
-- 🏆 **Achievements, Statistics & Backups**:
-  - Added optional, local-only usage statistics with long-term achievements, active days, profile start date, and a 25,000-clip milestone.
-  - Backups now include progress totals, daily activity, unlocked achievements, and the original profile date while remaining compatible with older backups.
-  - Added configurable quiet hours that suppress notification sounds as well as non-critical notifications.
+- ⌨️ **Keyboard Navigation & Search History**:
+  - `Ctrl+H` opens the history with the first item selected, with reliable arrow-key and Enter navigation in both view modes.
+  - Search history suppresses competing tooltips and peek previews, while pointer hover no longer steals the initial selection.
+  - Title-bar actions now share a consistent single-modifier `Ctrl` shortcut convention.
 
-- 💾 **Export & Search Workflow**:
-  - Added Save As actions for images, text, HTML, RTF, URLs, original files, and multi-file clips.
-  - Clips can be saved directly from context menus without opening a separate viewer.
-  - Added persistent MRU search history with literal wildcard handling and a dedicated no-results state.
+- 🪟 **Window & Menu Reliability**:
+  - The More menu adapts to the available space, supports scrolling, and includes Reset window size above Clear history.
+  - Peek toggles are grouped with the relevant controls and remain visually neutral when enabled.
+  - Close dialogs clear when the main window is hidden through another route, and About opens above the main window.
 
-- 🔒 **Lock Screen & Windows Integration**:
-  - Wrong PIN attempts clear the input and restore the caret for the next attempt.
-  - Native export and backup dialogs stay attached to the active app window.
-  - Refined tray visibility guidance, modal branding, search popup bounds, full-mode counts, and bilingual settings polish.
+- 🎨 **About & Modal Polish**:
+  - About adds dismissible update feedback, diagnostic copying, five randomized companion apps, and a compact “See more...” action.
+  - Preserved the original CyberPaste logo identity while removing the experimental glass background treatment.
+  - Refined bilingual update text, tooltips, keyboard hints, and close-dialog spacing.
 
 ---
 

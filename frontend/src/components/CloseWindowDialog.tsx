@@ -80,7 +80,7 @@ export function CloseWindowDialog({ isOpen, onCancel, onAction }: CloseWindowDia
               className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-transparent px-3.5 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               {t('closeDialog.cancel')}
-              <EscGlyph />
+              <EscGlyph compact />
             </button>
           </Tooltip>
           <Tooltip label={`${t('closeDialog.quit')} (${t('common.space')})`} placement="top">
@@ -90,7 +90,7 @@ export function CloseWindowDialog({ isOpen, onCancel, onAction }: CloseWindowDia
               className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-transparent px-3.5 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
             >
               {t('closeDialog.quit')}
-              <SpaceGlyph label={t('common.space')} />
+              <SpaceGlyph compact label={t('common.space')} />
             </button>
           </Tooltip>
           <Tooltip label={`${t('closeDialog.minimize')} (${t('common.enter')})`} placement="top">
@@ -100,7 +100,7 @@ export function CloseWindowDialog({ isOpen, onCancel, onAction }: CloseWindowDia
               className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-primary/60 bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground shadow-[0_0_10px_rgba(var(--primary-rgb),0.18)] transition-colors hover:bg-primary/90"
             >
               {t('closeDialog.minimize')}
-              <EnterGlyph />
+              <EnterGlyph compact />
             </button>
           </Tooltip>
         </div>

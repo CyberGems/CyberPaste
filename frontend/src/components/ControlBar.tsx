@@ -50,10 +50,7 @@ import {
   Smile,
   Sun,
   Pin,
-  RotateCcw,
   Keyboard,
-  Eye,
-  EyeOff,
 } from 'lucide-react';
 import { FolderItem } from '../types';
 import { CONTEXT_MENU_EVENT, type ContextMenuEventDetail } from '../utils/contextMenuEvents';
@@ -144,9 +141,6 @@ interface ControlBarProps {
   onResetSize?: () => void;
   style?: React.CSSProperties;
   hotkey?: string;
-  fullPeekEnabled?: boolean;
-  onTogglePeek?: () => void;
-  peekHotkey?: string;
   toggleModeHotkey?: string;
   showHud?: boolean;
   onReorderFolder?: (folderId: string, targetId: string, position: 'before' | 'after') => void;
@@ -262,9 +256,6 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   isDragging,
   style,
   hotkey,
-  fullPeekEnabled = true,
-  onTogglePeek,
-  peekHotkey = 'Ctrl+Shift+P',
   toggleModeHotkey = TITLEBAR_HOTKEYS.mode,
   showHud = true,
   onReorderFolder,
@@ -633,44 +624,6 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             </Tooltip>
           )}
 
-          {onTogglePeek && (
-            <Tooltip
-              label={t(fullPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek', {
-                hotkey: peekHotkey,
-              })}
-              placement="bottom"
-            >
-              <button
-                onClick={onTogglePeek}
-                aria-label={t(fullPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek', {
-                  hotkey: peekHotkey,
-                })}
-                aria-pressed={fullPeekEnabled}
-                className={clsx(
-                  headerBtnClass,
-                  fullPeekEnabled &&
-                    'border-primary/30 bg-primary/20 text-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.35)]'
-                )}
-              >
-                {fullPeekEnabled ? <Eye size={15} /> : <EyeOff size={15} />}
-              </button>
-            </Tooltip>
-          )}
-
-          {onResetSize && (
-            <Tooltip
-              label={t('common.tooltipWithHotkey', {
-                label: t('common.resetWindowSize'),
-                hotkey: TITLEBAR_HOTKEYS.resetSize,
-              })}
-              placement="bottom"
-            >
-              <button onClick={onResetSize} className={headerBtnClass}>
-                <RotateCcw size={15} />
-              </button>
-            </Tooltip>
-          )}
-
           <Tooltip
             label={t('common.tooltipWithHotkey', {
               label: t('settings.title'),
@@ -683,7 +636,11 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             </button>
           </Tooltip>
 
-          <TitleBarMenu iconSize={15} hotkey={TITLEBAR_HOTKEYS.more} />
+          <TitleBarMenu
+            iconSize={15}
+            hotkey={TITLEBAR_HOTKEYS.more}
+            onResetSize={onResetSize}
+          />
 
           <Tooltip
             label={t('common.tooltipWithHotkey', {

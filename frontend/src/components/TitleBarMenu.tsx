@@ -11,6 +11,7 @@ import {
   Trash2,
   Settings,
   Lock,
+  RotateCcw,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { openUrl } from '@tauri-apps/plugin-opener';
@@ -35,17 +36,19 @@ export function TitleBarMenu({
   iconSize = 14,
   variant = 'main',
   hotkey,
+  onResetSize,
 }: {
   iconSize?: number;
   variant?: TitleBarMenuVariant;
   hotkey?: string;
+  onResetSize?: () => void | Promise<void>;
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [menuPointerActive, setMenuPointerActive] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
   const [lockEnabled, setLockEnabled] = useState(false);
-  const [pos, setPos] = useState({ top: 0, right: 0 });
+  const [pos, setPos] = useState({ top: 0, right: 0, maxHeight: 120 });
   const wrapRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -63,8 +66,40 @@ export function TitleBarMenu({
 
   useLayoutEffect(() => {
     if (!open || !wrapRef.current) return;
-    const r = wrapRef.current.getBoundingClientRect();
-    setPos({ top: r.bottom + 6, right: Math.max(8, window.innerWidth - r.right) });
+    const updatePosition = () => {
+      const anchor = wrapRef.current;
+      const menu = menuRef.current;
+      if (!anchor) return;
+
+      const anchorRect = anchor.getBoundingClientRect();
+      const gap = 6;
+      const viewportMargin = 8;
+      const naturalHeight = menu?.scrollHeight ?? 0;
+      const spaceBelow = Math.max(
+        0,
+        window.innerHeight - anchorRect.bottom - gap - viewportMargin
+      );
+      const spaceAbove = Math.max(0, anchorRect.top - gap - viewportMargin);
+      const opensAbove = naturalHeight > spaceBelow && spaceAbove > spaceBelow;
+      const availableHeight = Math.max(120, opensAbove ? spaceAbove : spaceBelow);
+      const maxHeight = Math.min(
+        naturalHeight || availableHeight,
+        availableHeight
+      );
+      const top = opensAbove
+        ? anchorRect.top - gap - maxHeight
+        : anchorRect.bottom + gap;
+
+      setPos({
+        top,
+        right: Math.max(8, window.innerWidth - anchorRect.right),
+        maxHeight,
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    return () => window.removeEventListener('resize', updatePosition);
   }, [open]);
 
   useEffect(() => {
@@ -178,8 +213,16 @@ export function TitleBarMenu({
     }
   };
 
+  const handleResetWindowSize = () => {
+    if (onResetSize) {
+      void onResetSize();
+      return;
+    }
+    invoke('reset_window_size').catch(console.error);
+  };
+
   const itemClass = clsx(
-    'group flex w-full items-center gap-2.5 rounded-md px-2.5 py-[7px] text-left text-[13px] font-medium text-foreground/90 transition-colors focus:outline-none focus-visible:bg-accent focus-visible:text-foreground focus-visible:ring-1 focus-visible:ring-primary/50',
+    'group flex w-full items-center gap-2.5 rounded-md px-2.5 py-[5px] text-left text-[13px] font-medium text-foreground/90 transition-colors focus:outline-none focus-visible:bg-accent focus-visible:text-foreground focus-visible:ring-1 focus-visible:ring-primary/50',
     menuPointerActive && 'hover:bg-accent hover:text-foreground'
   );
   const iconClass = clsx(
@@ -246,10 +289,11 @@ export function TitleBarMenu({
                       items.length;
               items[nextIndex]?.focus();
             }}
-            className="fixed z-[300] flex w-56 flex-col gap-0.5 rounded-lg border border-border bg-popover p-[5px] shadow-[0_10px_30px_rgba(0,0,0,0.5),0_1px_3px_rgba(0,0,0,0.3)]"
+            className="custom-scrollbar fixed z-[300] flex max-h-[calc(100vh-16px)] w-56 flex-col gap-0.5 overflow-y-auto rounded-lg border border-border bg-popover p-[5px] shadow-[0_10px_30px_rgba(0,0,0,0.5),0_1px_3px_rgba(0,0,0,0.3)]"
             style={{
               top: pos.top,
               right: pos.right,
+              maxHeight: pos.maxHeight,
               animation: 'titlebarMenuFade 0.12s ease-out',
             }}
           >
@@ -276,7 +320,7 @@ export function TitleBarMenu({
               <span>{t('common.donate')}</span>
             </button>
 
-            <div className="mx-1.5 my-1 h-px bg-border" />
+            <div className="mx-1.5 my-0.5 h-px bg-border" />
 
             <button
               type="button"
@@ -333,7 +377,7 @@ export function TitleBarMenu({
 
             {variant === 'main' && lockEnabled && (
               <>
-                <div className="mx-1.5 my-1 h-px bg-border" />
+                <div className="mx-1.5 my-0.5 h-px bg-border" />
                 <button
                   type="button"
                   role="menuitem"
@@ -352,7 +396,19 @@ export function TitleBarMenu({
 
             {showClearHistory && (
               <>
-                <div className="mx-1.5 my-1 h-px bg-border" />
+                <div className="mx-1.5 my-0.5 h-px bg-border" />
+
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={itemClass}
+                  onClick={() => closeAnd(handleResetWindowSize)}
+                >
+                  <RotateCcw size={14} className={iconClass} />
+                  <span>{t('common.resetWindowSize')}</span>
+                </button>
+
+                <div className="mx-1.5 my-0.5 h-px bg-border" />
 
                 <button
                   type="button"
@@ -368,7 +424,7 @@ export function TitleBarMenu({
 
             {showOpenSettings && (
               <>
-                <div className="mx-1.5 my-1 h-px bg-border" />
+                <div className="mx-1.5 my-0.5 h-px bg-border" />
 
                 <button
                   type="button"
@@ -386,7 +442,7 @@ export function TitleBarMenu({
               </>
             )}
 
-            <div className="mx-1.5 my-1 h-px bg-border" />
+            <div className="mx-1.5 my-0.5 h-px bg-border" />
 
             <button
               type="button"

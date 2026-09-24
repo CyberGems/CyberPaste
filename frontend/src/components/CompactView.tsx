@@ -50,7 +50,6 @@ import {
   Share2,
   Smile,
   Sun,
-  RotateCcw,
   Undo2,
   LayoutGrid,
   MoveHorizontal,
@@ -76,7 +75,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import Tooltip from './Tooltip';
-import { SearchHistoryMenu } from './SearchHistoryMenu';
+import { SEARCH_HISTORY_EVENT, SearchHistoryMenu } from './SearchHistoryMenu';
 import { TitleBarMenu } from './TitleBarMenu';
 import { TitleBarUpdateButton } from './TitleBarUpdateButton';
 import { TITLEBAR_HOTKEYS } from '../hooks/useKeyboard';
@@ -654,7 +653,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   entranceAnim = true,
   compactPeekEnabled = true,
   onTogglePeek,
-  peekHotkey = 'Ctrl+Shift+P',
+  peekHotkey = TITLEBAR_HOTKEYS.peek,
   toggleModeHotkey = TITLEBAR_HOTKEYS.mode,
   compactLayoutHotkey = TITLEBAR_HOTKEYS.compactLayout,
   canUndo = false,
@@ -690,6 +689,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   const isPeekVisible = !!peekClipId;
   const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const peekOriginMousePosRef = useRef<{ x: number; y: number } | null>(null);
+  const searchHistoryOpenRef = useRef(false);
 
   const closePeek = useCallback(() => {
     setPeekClipId(null);
@@ -705,6 +705,17 @@ export const CompactView: React.FC<CompactViewProps> = ({
   useEffect(() => subscribeListHoverLock((locked) => {
     if (locked) closePeek();
   }), [closePeek]);
+
+  useEffect(() => {
+    const handleSearchHistory = (event: Event) => {
+      const isOpen = (event as CustomEvent<{ open?: boolean }>).detail?.open;
+      searchHistoryOpenRef.current = Boolean(isOpen);
+      if (isOpen) closePeek();
+    };
+
+    window.addEventListener(SEARCH_HISTORY_EVENT, handleSearchHistory);
+    return () => window.removeEventListener(SEARCH_HISTORY_EVENT, handleSearchHistory);
+  }, [closePeek]);
 
   // NUEVO: micro-animación de entrada
   const [mounted, setMounted] = useState(false);
@@ -1029,6 +1040,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   const handleRowMouseEnter = useCallback(
     (clip: AppClip, e: React.MouseEvent) => {
       if (isListHoverLocked()) return;
+      if (searchHistoryOpenRef.current) return;
       if (!compactPeekEnabled || isDragging) return;
 
       notePeekPointer(e.screenX, e.screenY);
@@ -1302,30 +1314,6 @@ export const CompactView: React.FC<CompactViewProps> = ({
               </button>
             </Tooltip>
           )}
-          {onTogglePeek && (
-            <Tooltip
-              label={t(compactPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek', {
-                hotkey: peekHotkey,
-              })}
-              placement="bottom"
-            >
-              <button
-                onClick={onTogglePeek}
-                aria-label={t(compactPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek', {
-                  hotkey: peekHotkey,
-                })}
-                aria-pressed={compactPeekEnabled}
-                className={cn(
-                  'flex h-8 w-8 items-center justify-center rounded-lg border transition-all focus:outline-none',
-                  compactPeekEnabled
-                    ? 'border-primary/30 bg-primary/20 text-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.35)]'
-                    : 'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
-                )}
-              >
-                {compactPeekEnabled ? <Eye size={14} /> : <EyeOff size={14} />}
-              </button>
-            </Tooltip>
-          )}
           {onToggleLayout && (
             <Tooltip
               label={t('common.tooltipWithHotkey', {
@@ -1344,20 +1332,6 @@ export const CompactView: React.FC<CompactViewProps> = ({
           )}
           <Tooltip
             label={t('common.tooltipWithHotkey', {
-              label: t('common.resetDefaultSize'),
-              hotkey: TITLEBAR_HOTKEYS.resetSize,
-            })}
-            placement="bottom"
-          >
-            <button
-              onClick={handleResetSize}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80"
-            >
-              <RotateCcw size={14} />
-            </button>
-          </Tooltip>
-          <Tooltip
-            label={t('common.tooltipWithHotkey', {
               label: t('common.settings'),
               hotkey: TITLEBAR_HOTKEYS.settings,
             })}
@@ -1371,7 +1345,11 @@ export const CompactView: React.FC<CompactViewProps> = ({
             </button>
           </Tooltip>
 
-          <TitleBarMenu iconSize={14} hotkey={TITLEBAR_HOTKEYS.more} />
+          <TitleBarMenu
+            iconSize={14}
+            hotkey={TITLEBAR_HOTKEYS.more}
+            onResetSize={handleResetSize}
+          />
 
           <Tooltip
             label={t('common.tooltipWithHotkey', {
@@ -1617,6 +1595,29 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   onSelect={onSelectSearchHistory}
                   onClear={onClearSearchHistory}
                 />
+                {onTogglePeek && (
+                  <Tooltip
+                    label={t(compactPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek', {
+                      hotkey: peekHotkey,
+                    })}
+                    placement="top"
+                  >
+                    <button
+                      type="button"
+                      onClick={onTogglePeek}
+                      aria-label={t(compactPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek', {
+                        hotkey: peekHotkey,
+                      })}
+                      aria-pressed={compactPeekEnabled}
+                      className={cn(
+                        'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all focus:outline-none',
+                        'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
+                      )}
+                    >
+                      {compactPeekEnabled ? <Eye size={14} /> : <EyeOff size={14} />}
+                    </button>
+                  </Tooltip>
+                )}
                 {canUndo && onUndo && (
                   <Tooltip label={t('common.undoDelete') || t('contextMenu.undo') || 'Undo'} placement="bottom">
                     <button
@@ -1761,6 +1762,29 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 onSelect={onSelectSearchHistory}
                 onClear={onClearSearchHistory}
               />
+              {onTogglePeek && (
+                <Tooltip
+                  label={t(compactPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek', {
+                    hotkey: peekHotkey,
+                  })}
+                  placement="top"
+                >
+                  <button
+                    type="button"
+                    onClick={onTogglePeek}
+                    aria-label={t(compactPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek', {
+                      hotkey: peekHotkey,
+                    })}
+                    aria-pressed={compactPeekEnabled}
+                    className={cn(
+                      'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all focus:outline-none',
+                      'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
+                    )}
+                  >
+                    {compactPeekEnabled ? <Eye size={14} /> : <EyeOff size={14} />}
+                  </button>
+                </Tooltip>
+              )}
               {canUndo && onUndo && (
                 <Tooltip label={t('common.undoDelete') || t('contextMenu.undo') || 'Undo'} placement="bottom">
                   <button
@@ -2627,12 +2651,16 @@ function CompactClipList({
   // Resetting the view must be immediate. Keep it separate from the
   // selection-following effect, which intentionally animates keyboard moves.
   useEffect(() => {
+    // react-window rejects index 0 while the list is still empty. This happens
+    // during the initial render before the first clipboard query completes.
+    if (clips.length === 0) return;
+
     listRef.current?.scrollToRow({
       index: 0,
       align: 'start',
       behavior: 'instant',
     });
-  }, [listRef, resetToken]);
+  }, [clips.length, listRef, resetToken]);
 
   const rowProps = useMemo(
     () => ({

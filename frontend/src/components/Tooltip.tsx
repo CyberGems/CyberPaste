@@ -137,6 +137,23 @@ export default function Tooltip({ label, placement = 'bottom', children, disable
     };
   }, []);
 
+  // Search history is a modal-like portal. Suppress tooltips behind it and
+  // prevent a tooltip from reopening while the pointer remains in place.
+  useEffect(() => {
+    const hideForSearchHistory = (event: Event) => {
+      const isOpen = (event as CustomEvent<{ open?: boolean }>).detail?.open;
+      if (!isOpen) return;
+      if (delayTimer.current) {
+        clearTimeout(delayTimer.current);
+        delayTimer.current = null;
+      }
+      setAnchorEl(null);
+    };
+
+    window.addEventListener('cyberpaste:search-history', hideForSearchHistory);
+    return () => window.removeEventListener('cyberpaste:search-history', hideForSearchHistory);
+  }, []);
+
   // Cancelar un show pendiente si hay scroll durante el retardo: sin esto el
   // tooltip aparecería con la posición del layout anterior, despegado del ancla.
   useEffect(() => {
@@ -167,7 +184,10 @@ export default function Tooltip({ label, placement = 'bottom', children, disable
 
   const show = (e: ReactMouseEvent<HTMLElement>): void => {
     child.props.onMouseEnter?.(e);
-    if (document.body.dataset.titlebarMenuOpen === 'true') {
+    if (
+      document.body.dataset.titlebarMenuOpen === 'true' ||
+      document.body.dataset.searchHistoryOpen === 'true'
+    ) {
       return;
     }
     if (delayTimer.current) {
@@ -215,7 +235,10 @@ export default function Tooltip({ label, placement = 'bottom', children, disable
   };
   const handleMouseMove = (e: ReactMouseEvent<HTMLElement>): void => {
     child.props.onMouseMove?.(e);
-    if (document.body.dataset.titlebarMenuOpen === 'true') {
+    if (
+      document.body.dataset.titlebarMenuOpen === 'true' ||
+      document.body.dataset.searchHistoryOpen === 'true'
+    ) {
       if (delayTimer.current) {
         clearTimeout(delayTimer.current);
         delayTimer.current = null;
