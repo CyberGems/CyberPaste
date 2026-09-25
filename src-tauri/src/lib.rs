@@ -48,6 +48,104 @@ fn native_dialog_is_open() -> bool {
             < NATIVE_DIALOG_SUPPRESS_UNTIL.load(Ordering::SeqCst)
 }
 
+fn cursor_inside_window(win: &tauri::WebviewWindow, x: i32, y: i32) -> bool {
+    match (win.outer_position(), win.outer_size()) {
+        (Ok(pos), Ok(size)) => {
+            x >= pos.x - 8
+                && x <= pos.x + size.width as i32 + 8
+                && y >= pos.y - 8
+                && y <= pos.y + size.height as i32 + 8
+        }
+        _ => true,
+    }
+}
+
+/// Always-on-top windows on Windows often keep focus when the user clicks the
+/// desktop, so `Focused(false)` never arrives. Watch the foreground window and
+/// outside clicks directly.
+fn start_main_window_outside_click_watcher(app: tauri::AppHandle) {
+    #[cfg(target_os = "windows")]
+    {
+        std::thread::spawn(move || {
+            use windows::Win32::Foundation::{HWND, POINT};
+            use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON};
+            use windows::Win32::UI::WindowsAndMessaging::{
+                GetAncestor, GetCursorPos, GetForegroundWindow, GA_ROOT,
+            };
+
+            let mut prev_down = false;
+            loop {
+                std::thread::sleep(std::time::Duration::from_millis(16));
+                let Some(win) = app.get_webview_window("main") else {
+                    continue;
+                };
+                if !win.is_visible().unwrap_or(false) || IS_ANIMATING.load(Ordering::SeqCst) {
+                    prev_down = false;
+                    continue;
+                }
+                let settings = app
+                    .try_state::<Arc<settings_manager::SettingsManager>>()
+                    .map(|manager| manager.get());
+                let Some(settings) = settings else {
+                    continue;
+                };
+                if !settings.hide_on_blur || settings.pinned || native_dialog_is_open() {
+                    continue;
+                }
+                let now = chrono::Local::now().timestamp_millis();
+                if now < STARTUP_FOCUS_GRACE_UNTIL.load(Ordering::SeqCst) {
+                    continue;
+                }
+                if now - LAST_SHOW_TIME.load(Ordering::SeqCst) < 400 {
+                    continue;
+                }
+
+                let our_hwnd = win.hwnd().ok().map(|handle| HWND(handle.0 as _));
+                let foreground = unsafe { GetForegroundWindow() };
+                let foreground_root = unsafe { GetAncestor(foreground, GA_ROOT) };
+                let foreground_is_ours = our_hwnd.is_some_and(|hwnd| {
+                    hwnd == foreground || hwnd == foreground_root
+                });
+                // Settings, About and the image viewer are real windows the user
+                // switched to. Toasts and the tray popup must not veto hiding.
+                let foreground_is_sibling = ["settings", "about", "image_viewer"]
+                    .iter()
+                    .any(|label| {
+                        app.get_webview_window(label)
+                            .and_then(|secondary| secondary.hwnd().ok())
+                            .is_some_and(|handle| {
+                                let hwnd = HWND(handle.0 as _);
+                                hwnd == foreground || hwnd == foreground_root
+                            })
+                    });
+
+                let key_state = unsafe { GetAsyncKeyState(VK_LBUTTON.0 as i32) as u16 };
+                let down = (key_state & 0x8000) != 0;
+                let clicked = (down && !prev_down) || (key_state & 0x0001) != 0;
+                prev_down = down;
+
+                let mut point = POINT { x: 0, y: 0 };
+                let have_cursor = unsafe { GetCursorPos(&mut point) }.is_ok();
+                let inside = have_cursor && cursor_inside_window(&win, point.x, point.y);
+                // Resize/drag keeps the button down over the window.
+                if down && inside {
+                    continue;
+                }
+
+                let clicked_outside = clicked && have_cursor && !inside;
+                let focus_left = !foreground_is_ours && !foreground_is_sibling && !foreground.0.is_null();
+                if clicked_outside || focus_left {
+                    crate::animate_window_hide(&win, None);
+                }
+            }
+        });
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = app;
+    }
+}
+
 mod ai;
 mod app_lock;
 mod backup;
@@ -293,30 +391,21 @@ pub fn run_app() {
                                 return;
                             }
 
-                            if window.app_handle().get_webview_window("settings").is_some() {
+                            if window
+                                .app_handle()
+                                .get_webview_window("settings")
+                                .and_then(|settings| settings.is_visible().ok())
+                                .unwrap_or(false)
+                            {
                                 return;
                             }
 
-                            // Secondary CyberPaste windows can legitimately take focus while
-                            // the main window remains open. In particular, the first-run tray
-                            // guidance is shown shortly after startup and would otherwise make
-                            // a manual launch disappear as soon as the guidance appears.
-                            let app_handle = window.app_handle();
-                            let secondary_window_is_visible = [
-                                "about",
-                                "image_viewer",
-                                "toast",
-                                "tray_menu",
-                                "tray_pin_tip",
-                            ]
-                            .iter()
-                            .any(|label| {
-                                app_handle
-                                    .get_webview_window(label)
-                                    .and_then(|secondary| secondary.is_visible().ok())
-                                    .unwrap_or(false)
-                            });
-                            if secondary_window_is_visible {
+                            let hide_on_blur = window
+                                .app_handle()
+                                .try_state::<Arc<crate::settings_manager::SettingsManager>>()
+                                .map(|manager| manager.get().hide_on_blur)
+                                .unwrap_or(true);
+                            if !hide_on_blur {
                                 return;
                             }
 
@@ -551,6 +640,7 @@ pub fn run_app() {
 
             let app_handle = handle.clone();
             let win = app_handle.get_webview_window("main").unwrap();
+            start_main_window_outside_click_watcher(app_handle.clone());
 
             {
                 let app_handle_clone = app_handle.clone();

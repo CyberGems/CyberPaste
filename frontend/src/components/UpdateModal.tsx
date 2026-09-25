@@ -100,12 +100,12 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
 
   return (
     <div className="animate-in fade-in fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md duration-300">
-      <div className="animate-in zoom-in-95 relative flex max-h-[min(90vh,680px)] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-primary/20 bg-background/90 p-6 shadow-2xl shadow-primary/10 duration-300">
+      <div className="animate-in zoom-in-95 relative flex max-h-[min(90vh,680px)] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-primary/20 bg-background/90 shadow-2xl shadow-primary/10 duration-300">
         
         <div className="absolute -left-16 -top-16 h-32 w-32 rounded-full bg-primary/10 blur-2xl" />
         <div className="absolute -right-16 -bottom-16 h-32 w-32 rounded-full bg-cyan-500/10 blur-2xl" />
 
-        <div className="relative mb-5 flex shrink-0 items-center justify-between">
+        <div className="relative flex shrink-0 items-center justify-between px-6 pb-4 pt-6">
           <div className="flex items-center gap-2 text-primary">
             <Sparkles size={20} className="animate-pulse" />
             <h3 className="text-lg font-bold tracking-wide">
@@ -128,12 +128,13 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
 
         <div className="relative z-10 flex min-h-0 flex-1 flex-col">
           {status === 'prompt' && (
-            <div className="flex min-h-0 flex-1 flex-col space-y-4">
-              <p className="shrink-0 text-sm font-medium text-foreground/90">
+            <>
+            <div className="max-h-[min(380px,calc(90vh-13rem))] space-y-4 overflow-y-auto px-6 pb-4">
+              <p className="text-sm font-medium text-foreground/90">
                 {t('settings.updatesNewVersionAvailable')}
               </p>
               
-              <div className="grid shrink-0 grid-cols-2 gap-3 rounded-lg border border-border bg-secondary/50 p-3.5 text-xs font-mono">
+              <div className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-secondary/50 p-3.5 text-xs font-mono">
                 <div>
                   <span className="text-muted-foreground block mb-0.5">
                     {t('settings.updatesCurrentVersion', { version: '' }).replace(':', '')}
@@ -153,15 +154,15 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
               </div>
               
               {update.body && (
-                <div className="flex min-h-0 flex-1 flex-col gap-2">
-                  <div className="min-h-[9rem] max-h-[240px] overflow-y-auto rounded-lg border border-border/60 bg-black/20 px-3.5 py-3 text-[12.5px] leading-relaxed text-foreground/80 scrollbar-thin">
+                <div className="flex flex-col gap-2">
+                  <div className="rounded-lg border border-border/60 bg-black/20 px-3.5 py-3 text-[12.5px] leading-relaxed text-foreground/80">
                     <ReleaseNotes body={update.body} />
                   </div>
                   <Tooltip label={t('settings.updatesViewOnGithub')} placement="bottom">
                     <button
                       type="button"
                       onClick={handleOpenReleasePage}
-                      className="inline-flex shrink-0 items-center gap-1.5 self-start text-xs font-medium text-primary transition-colors hover:text-primary/80 hover:underline"
+                      className="inline-flex items-center gap-1.5 self-start text-xs font-medium text-primary transition-colors hover:text-primary/80 hover:underline"
                     >
                       <ExternalLink size={12} />
                       {t('settings.updatesViewOnGithub')}
@@ -169,8 +170,9 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
                   </Tooltip>
                 </div>
               )}
+            </div>
 
-              <div className="flex shrink-0 justify-end gap-3 pt-1">
+              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-border/60 bg-background/95 px-6 py-4">
                 {skipError && (
                   <p className="mr-auto self-center text-xs text-destructive">
                     {t('settings.updatesSkipError')}
@@ -207,11 +209,11 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
                   </button>
                 </Tooltip>
               </div>
-            </div>
+            </>
           )}
 
           {status === 'downloading' && (
-            <div className="space-y-5 py-4 text-center">
+            <div className="space-y-5 px-6 py-4 text-center">
               <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
               <div className="space-y-2">
                 <p className="text-sm font-semibold text-foreground/90">
@@ -229,7 +231,7 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
           )}
 
           {status === 'error' && (
-            <div className="space-y-4">
+            <div className="space-y-4 px-6 pb-6">
               <div className="flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-3.5">
                 <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
                 <div>

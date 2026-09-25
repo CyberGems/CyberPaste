@@ -551,6 +551,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
       // Feedback for changes
       const SETTING_LABELS: Record<string, string> = {
         startup_with_windows: 'settings.startupWithWindows',
+        hide_on_blur: 'settings.hideOnBlur',
         ignore_ghost_clips: 'settings.ignoreGhostClips',
         clipboard_sound_enabled: 'settings.clipboardSound',
         auto_paste: 'settings.autoPaste',
@@ -1250,6 +1251,28 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.startup_with_windows ? 'translate-x-5' : 'translate-x-0.5'}`}
                       />
                     </button>
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
+                    <div>
+                      <span className="text-sm font-medium">{t('settings.hideOnBlur')}</span>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {t('settings.hideOnBlurDesc')}
+                      </p>
+                    </div>
+                    <Tooltip label={t('settings.hideOnBlur')} placement="top">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateSetting('hide_on_blur', settings.hide_on_blur === false)
+                        }
+                        className={`h-6 w-11 rounded-full transition-colors ${settings.hide_on_blur !== false ? 'bg-primary' : 'bg-white/10'}`}
+                      >
+                        <div
+                          className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.hide_on_blur !== false ? 'translate-x-5' : 'translate-x-0.5'}`}
+                        />
+                      </button>
+                    </Tooltip>
                   </div>
 
                   <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">

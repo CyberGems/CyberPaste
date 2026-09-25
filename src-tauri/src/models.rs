@@ -44,6 +44,9 @@ pub struct AppSettings {
     pub startup_sound_path: String,
     pub auto_inject_paste: bool,
     pub pinned: bool,
+    /// Hide the main window when it loses focus or the user clicks outside it.
+    #[serde(default = "default_true")]
+    pub hide_on_blur: bool,
     pub reset_view_on_paste: bool,
     pub image_editor_path: String,
 
@@ -213,6 +216,7 @@ impl Default for AppSettings {
             startup_sound_path: "".to_string(),
             auto_inject_paste: true,
             pinned: false,
+            hide_on_blur: true,
             reset_view_on_paste: false,
             image_editor_path: "".to_string(),
 

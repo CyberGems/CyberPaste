@@ -660,6 +660,18 @@ async fn process_clipboard_change(
         return;
     }
 
+    // Apps such as OpenCode put a styled HTML wrapper on the clipboard for a
+    // plain sentence. Keep that sentence, not the stylesheet.
+    if let Some((plain, kind, preview)) =
+        collapse_presentation_html(clip_type, &clip_content)
+    {
+        clip_content = plain.into_bytes();
+        clip_hash = calculate_hash(&clip_content);
+        clip_type = kind;
+        clip_preview = preview;
+        metadata = String::new();
+    }
+
     let max_text_bytes = app
         .try_state::<Arc<crate::settings_manager::SettingsManager>>()
         .map(|manager| manager.get().max_clipboard_text_bytes)
@@ -1562,6 +1574,39 @@ pub fn strip_html_tags(html: &str) -> String {
     out.trim().to_string()
 }
 
+/// Styled spans from Electron apps (OpenCode and others) are not a document the
+/// user copied. Return the visible sentence so it is stored as plain text.
+pub fn collapse_presentation_html(
+    clip_type: &str,
+    content: &[u8],
+) -> Option<(String, &'static str, String)> {
+    if !matches!(clip_type, "html" | "code" | "text" | "rtf") {
+        return None;
+    }
+    let raw = String::from_utf8_lossy(content);
+    let trimmed = raw.trim();
+    let looks_like_html = clip_type == "html"
+        || trimmed.contains("StartFragment")
+        || (trimmed.contains('<') && trimmed.contains("</"));
+    if !looks_like_html || is_structural_rich_html(trimmed) {
+        return None;
+    }
+    let plain = strip_html_tags(trimmed);
+    let plain = plain.trim();
+    if plain.is_empty() || plain == trimmed {
+        return None;
+    }
+    let kind = if is_url(plain) {
+        "url"
+    } else if is_code_snippet(plain) {
+        "code"
+    } else {
+        "text"
+    };
+    let preview = plain.chars().take(200).collect();
+    Some((plain.to_string(), kind, preview))
+}
+
 pub fn is_structural_rich_html(html: &str) -> bool {
     let bytes = html.as_bytes();
     let mut i = 0;
@@ -2003,6 +2048,22 @@ mod tests {
     #[test]
     fn rejects_short_prose() {
         assert!(!is_code_snippet("Hello there"));
+    }
+
+    #[test]
+    fn styled_html_fragment_collapses_to_plain_text() {
+        let html = r#"<html><body><!--StartFragment--><span style="color: rgb(237, 237, 237); font-family: Segoe UI;">Continúa por favor</span><!--EndFragment--></body></html>"#;
+        let (plain, kind, preview) =
+            collapse_presentation_html("html", html.as_bytes()).expect("should collapse");
+        assert_eq!(plain, "Continúa por favor");
+        assert_eq!(kind, "text");
+        assert_eq!(preview, "Continúa por favor");
+    }
+
+    #[test]
+    fn structural_html_is_kept() {
+        let html = "<table><tr><td>A</td><td>B</td></tr></table>";
+        assert!(collapse_presentation_html("html", html.as_bytes()).is_none());
     }
 
     #[test]

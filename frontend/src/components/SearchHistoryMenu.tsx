@@ -18,6 +18,8 @@ interface SearchHistoryMenuProps {
   onSelect: (query: string) => void;
   onClear: () => void;
   toggleToken?: number;
+  /** Sit inside the search field, flush to its right edge. */
+  embedded?: boolean;
 }
 
 export function SearchHistoryMenu({
@@ -25,6 +27,7 @@ export function SearchHistoryMenu({
   onSelect,
   onClear,
   toggleToken = 0,
+  embedded = false,
 }: SearchHistoryMenuProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -171,7 +174,12 @@ export function SearchHistoryMenu({
   };
 
   return (
-    <div ref={rootRef} className="relative shrink-0">
+    <div
+      ref={rootRef}
+      className={
+        embedded ? 'absolute right-1 top-1/2 z-10 -translate-y-1/2' : 'relative shrink-0'
+      }
+    >
       <Tooltip
         label={t('common.tooltipWithHotkey', {
           label: t('common.searchHistory'),
@@ -187,13 +195,17 @@ export function SearchHistoryMenu({
           aria-haspopup="menu"
           aria-keyshortcuts="Control+H"
           onClick={() => (open ? closeMenu() : openMenu())}
-          className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-all ${
+          className={`flex items-center justify-center transition-all ${
+            embedded ? 'h-6 w-6 rounded-md' : 'h-8 w-8 rounded-lg border'
+          } ${
             open
               ? 'border-primary/50 bg-primary/10 text-primary'
-              : 'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground'
+              : embedded
+                ? 'text-muted-foreground/80 hover:bg-accent hover:text-foreground'
+                : 'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground'
           }`}
         >
-          <History size={15} />
+          <History size={embedded ? 13 : 15} />
         </button>
       </Tooltip>
 

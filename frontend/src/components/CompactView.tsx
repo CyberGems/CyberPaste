@@ -1377,7 +1377,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
           >
             <button
               onClick={onToggleMode}
-              className="group relative ml-1 flex h-8 items-center gap-1.5 overflow-hidden rounded-lg border border-primary/40 bg-gradient-to-r from-primary/20 to-primary/10 px-2.5 text-[10px] font-bold uppercase tracking-widest text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.2)] transition-all duration-200 hover:border-primary/70 hover:from-primary/30 hover:to-primary/20 hover:shadow-[0_0_18px_rgba(var(--primary-rgb),0.45)] active:scale-[0.98]"
+              className="group relative ml-1 flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border border-transparent bg-transparent text-primary transition-all duration-200 hover:border-primary/50 hover:bg-primary/15 hover:shadow-[0_0_12px_rgba(var(--primary-rgb),0.35)] active:scale-[0.98]"
             >
               {/* shimmer sweep */}
               <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
@@ -1576,25 +1576,29 @@ export const CompactView: React.FC<CompactViewProps> = ({
                         onSearchCommit(searchQuery);
                       }
                     }}
-                    className="w-full rounded-lg border border-border bg-input py-1.5 pl-8 pr-8 text-sm text-foreground transition-all placeholder:text-muted-foreground/70 focus:border-primary/50 focus:bg-background focus:outline-none"
+                    className={cn(
+                      'w-full rounded-lg border border-border bg-input py-1.5 pl-8 text-sm text-foreground transition-all placeholder:text-muted-foreground/70 focus:border-primary/50 focus:bg-background focus:outline-none',
+                      searchQuery ? 'pr-14' : 'pr-8'
+                    )}
                   />
                   {searchQuery && (
                     <Tooltip label={t('common.clearSearch') || 'Clear search'} placement="bottom">
                       <button
                         onClick={() => onSearchChange('')}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                        className="absolute right-8 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                       >
                         <X size={14} />
                       </button>
                     </Tooltip>
                   )}
+                  <SearchHistoryMenu
+                    embedded
+                    history={recentSearches}
+                    toggleToken={searchHistoryToggleToken}
+                    onSelect={onSelectSearchHistory}
+                    onClear={onClearSearchHistory}
+                  />
                 </div>
-                <SearchHistoryMenu
-                  history={recentSearches}
-                  toggleToken={searchHistoryToggleToken}
-                  onSelect={onSelectSearchHistory}
-                  onClear={onClearSearchHistory}
-                />
                 {onTogglePeek && (
                   <Tooltip
                     label={t(compactPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek', {
@@ -1743,25 +1747,29 @@ export const CompactView: React.FC<CompactViewProps> = ({
                       onSearchCommit(searchQuery);
                     }
                   }}
-                  className="w-full rounded-lg border border-border bg-input py-1.5 pl-8 pr-8 text-sm text-foreground transition-all placeholder:text-muted-foreground/70 focus:border-primary/50 focus:bg-background focus:outline-none"
+                  className={cn(
+                    'w-full rounded-lg border border-border bg-input py-1.5 pl-8 text-sm text-foreground transition-all placeholder:text-muted-foreground/70 focus:border-primary/50 focus:bg-background focus:outline-none',
+                    searchQuery ? 'pr-14' : 'pr-8'
+                  )}
                 />
                 {searchQuery && (
                   <Tooltip label={t('common.clearSearch') || 'Clear search'} placement="bottom">
                     <button
                       onClick={() => onSearchChange('')}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                      className="absolute right-8 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                     >
                       <X size={14} />
                     </button>
                   </Tooltip>
                 )}
+                <SearchHistoryMenu
+                  embedded
+                  history={recentSearches}
+                  toggleToken={searchHistoryToggleToken}
+                  onSelect={onSelectSearchHistory}
+                  onClear={onClearSearchHistory}
+                />
               </div>
-              <SearchHistoryMenu
-                history={recentSearches}
-                toggleToken={searchHistoryToggleToken}
-                onSelect={onSelectSearchHistory}
-                onClear={onClearSearchHistory}
-              />
               {onTogglePeek && (
                 <Tooltip
                   label={t(compactPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek', {

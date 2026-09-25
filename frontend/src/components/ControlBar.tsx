@@ -667,7 +667,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           >
             <button
               onClick={onToggleMode}
-              className="group relative ml-1 flex h-8 items-center gap-1.5 overflow-hidden rounded-lg border border-primary/40 bg-gradient-to-r from-primary/20 to-primary/10 px-2 text-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.15)] transition-all duration-200 hover:border-primary/70 hover:from-primary/30 hover:to-primary/20 hover:shadow-[0_0_16px_rgba(var(--primary-rgb),0.4)] active:scale-[0.98]"
+              className="group relative ml-1 flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border border-transparent bg-transparent text-primary transition-all duration-200 hover:border-primary/50 hover:bg-primary/15 hover:shadow-[0_0_12px_rgba(var(--primary-rgb),0.35)] active:scale-[0.98]"
             >
               <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
               {viewMode === 'full' ? (

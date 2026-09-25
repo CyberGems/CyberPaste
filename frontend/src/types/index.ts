@@ -47,6 +47,7 @@ export interface Settings {
   startup_sound_path?: string;
   auto_inject_paste?: boolean;
   pinned?: boolean;
+  hide_on_blur?: boolean;
   auto_paste: boolean;
   single_click_paste?: boolean;
   ignore_ghost_clips: boolean;

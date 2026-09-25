@@ -258,7 +258,9 @@ export function AboutWindow() {
         setCheckStatus('idle');
         setUpdateAvailable(update);
         setShowUpdateModal(true);
-        invoke('set_update_available', { available: true }).catch(console.error);
+        if (!isSkippedUpdateVersion(update.version, settingsRef.current?.skipped_update_version)) {
+          invoke('set_update_available', { available: true }).catch(console.error);
+        }
       } else {
         invoke('set_update_available', { available: false }).catch(console.error);
         setCheckStatus('upToDate');

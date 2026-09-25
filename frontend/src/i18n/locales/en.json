@@ -321,6 +321,8 @@
     "launchAtLoginDesc": "Start automatically when logging into Windows",
     "startupWithWindows": "Start with Windows",
     "startupWithWindowsDesc": "Automatically start when Windows boots",
+    "hideOnBlur": "Hide when focus is lost",
+    "hideOnBlurDesc": "Hide the window when you click outside it or switch to another app. Pinning the window keeps it open.",
     "keepVisibleInTray": "Keep CyberPaste visible in the tray",
     "keepVisibleInTrayDesc": "Windows hides new tray icons behind the overflow (^). Drag CyberPaste onto the taskbar, or pin it in Windows Settings.",
     "keepVisibleInTrayTooltip": "Open the Windows page where you can pin CyberPaste to the visible tray.",

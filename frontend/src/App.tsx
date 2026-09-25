@@ -670,9 +670,16 @@ function App() {
         if (updateAvailableRef.current) return;
         check({ timeout: 15000 })
           .then((update) => {
-            if (update) {
+            if (
+              update &&
+              !isSkippedUpdateVersion(update.version, settingsRef.current?.skipped_update_version)
+            ) {
               updateAvailableRef.current = update;
               setUpdateAvailable(update);
+            } else if (update) {
+              updateAvailableRef.current = null;
+              setUpdateAvailable(null);
+              invoke('set_update_available', { available: false }).catch(console.error);
             }
           })
           .catch((err) => {
