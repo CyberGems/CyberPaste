@@ -125,6 +125,30 @@
   animation: folder-double-flash 0.65s ease-in-out forwards !important;
 }
 
+@keyframes folder-soft-flash {
+  0% {
+    background-color: transparent;
+  }
+  40% {
+    background-color: rgba(34, 211, 238, 0.16);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+.folder-soft-flash {
+  animation: folder-soft-flash 0.45s ease-out forwards !important;
+}
+
+@keyframes compact-hint-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes toast-shrink {
   from {
     transform: scaleX(1);

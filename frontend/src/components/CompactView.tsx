@@ -471,6 +471,7 @@ const CompactSidebarFolderItem: React.FC<CompactSidebarFolderItemProps> = ({
   onContextMenu,
   onMouseEnter,
 }) => {
+  const { t } = useTranslation();
   const isFlashing = useFolderFlash(folder.id);
   const Icon = IconMap[folder.icon || 'Folder'] || FolderIcon;
 
@@ -489,7 +490,7 @@ const CompactSidebarFolderItem: React.FC<CompactSidebarFolderItemProps> = ({
         onContextMenu={(e) => onContextMenu?.(e, folder.id)}
         className={cn(
           'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2 py-1.5 text-[11px] font-medium transition-all focus:outline-none focus-visible:ring-0',
-          isFlashing && 'folder-double-flash',
+          isFlashing && 'folder-soft-flash',
           isSelected && dragTargetFolderId === undefined
             ? 'border-transparent bg-primary/15 font-semibold text-foreground'
             : isDragTarget
@@ -554,6 +555,7 @@ const CompactTopFolderItem: React.FC<CompactTopFolderItemProps> = ({
   onContextMenu,
   onMouseEnter,
 }) => {
+  const { t } = useTranslation();
   const isFlashing = useFolderFlash(folder.id);
   const Icon = IconMap[folder.icon || 'Folder'] || FolderIcon;
 
@@ -677,6 +679,19 @@ export const CompactView: React.FC<CompactViewProps> = ({
   onRequestClose,
 }) => {
   const { t } = useTranslation();
+  const footerHints = useMemo(
+    () => [t('compact.typeToSearch'), t('compact.arrowsFolders'), t('compact.peekHint')],
+    [t]
+  );
+  const [footerHintIndex, setFooterHintIndex] = useState(0);
+  useEffect(() => {
+    if (!isWindowActive) return;
+    const timer = setInterval(
+      () => setFooterHintIndex((i) => (i + 1) % footerHints.length),
+      7000
+    );
+    return () => clearInterval(timer);
+  }, [isWindowActive, footerHints.length]);
   const folderScrollRef = useRef<HTMLDivElement>(null);
   const clipListApiRef = useListRef(null);
   const isVertical = compactFolderLayout === 'vertical';
@@ -1201,7 +1216,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   ) =>
     cn(
       'flex items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2 py-1.5 text-[11px] font-medium transition-all focus:outline-none focus-visible:ring-0',
-      isFlashing && 'folder-double-flash',
+      isFlashing && 'folder-soft-flash',
       isSelected && dragTargetFolderId === undefined
         ? 'border-transparent bg-primary/15 font-semibold text-foreground'
         : isDragTarget && isDragging
@@ -1455,7 +1470,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                       data-selected={highlightedFolderId === null}
                       className={cn(
                         'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2 py-1.5 text-[11px] font-medium transition-all focus:outline-none focus-visible:ring-0',
-                        isClipboardFlashing && 'folder-double-flash',
+                        isClipboardFlashing && 'folder-soft-flash',
                         highlightedFolderId === null && dragTargetFolderId === undefined
                           ? 'border-transparent bg-primary/15 font-semibold text-foreground'
                           : dragTargetFolderId === null && isDragging
@@ -1713,12 +1728,22 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   ? t('compact.footerWithSelection', { count: selectedCount })
                   : t('compact.enterToPaste')}
               </span>
-              <span>
-                {isFiltering || searchQuery || selectedFolder
-                  ? isFiltering
-                    ? `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: t(`compact.filter${typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}`) })}`
-                    : t('compact.footerTotalClips', { count: filteredClips.length })
-                  : t('compact.typeToSearch')}
+              <span className="min-w-0 truncate px-2 text-center">
+                {isFiltering || searchQuery || selectedFolder ? (
+                  isFiltering ? (
+                    `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: t(`compact.filter${typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}`) })}`
+                  ) : (
+                    t('compact.footerTotalClips', { count: filteredClips.length })
+                  )
+                ) : (
+                  <span
+                    key={footerHintIndex}
+                    className="inline-block"
+                    style={{ animation: 'compact-hint-fade 0.8s ease-out' }}
+                  >
+                    {footerHints[footerHintIndex]}
+                  </span>
+                )}
               </span>
               <span>{t('compact.escToHide')}</span>
             </div>
@@ -1971,12 +1996,22 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 ? t('compact.footerWithSelection', { count: selectedCount })
                 : t('compact.enterToPaste')}
             </span>
-            <span>
-              {isFiltering || searchQuery || selectedFolder
-                ? isFiltering
-                  ? `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: t(`compact.filter${typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}`) })}`
-                  : t('compact.footerTotalClips', { count: filteredClips.length })
-                : t('compact.typeToSearch')}
+            <span className="min-w-0 truncate px-2 text-center">
+              {isFiltering || searchQuery || selectedFolder ? (
+                isFiltering ? (
+                  `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: t(`compact.filter${typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}`) })}`
+                ) : (
+                  t('compact.footerTotalClips', { count: filteredClips.length })
+                )
+              ) : (
+                <span
+                  key={footerHintIndex}
+                  className="inline-block"
+                  style={{ animation: 'compact-hint-fade 0.8s ease-out' }}
+                >
+                  {footerHints[footerHintIndex]}
+                </span>
+              )}
             </span>
             <span>{t('compact.escToHide')}</span>
           </div>

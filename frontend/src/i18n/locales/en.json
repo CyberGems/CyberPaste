@@ -163,6 +163,7 @@
     "enterToPaste": "ENTER TO PASTE",
     "arrowsFolders": "←→ FOLDERS",
     "typeToSearch": "TYPE TO SEARCH",
+    "peekHint": "CTRL+E PREVIEW",
     "escToHide": "ESC TO HIDE",
     "switchHorizontal": "Switch to Horizontal Tabs",
     "switchVertical": "Switch to Vertical Tabs",
