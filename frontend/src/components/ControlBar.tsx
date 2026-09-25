@@ -120,6 +120,7 @@ interface ControlBarProps {
   onSelectSearchHistory: (query: string) => void;
   onClearSearchHistory: () => void;
   onSearchClick: () => void;
+  typeToSearch?: boolean;
   onAddClick: () => void;
   onMoreClick: () => void;
   onMoveClip: (clipId: string, folderId: string | null) => void;
@@ -183,11 +184,16 @@ const FolderTabButton: React.FC<FolderTabButtonProps> = ({
   onContextMenu,
   onMouseEnter,
 }) => {
+  const { t } = useTranslation();
   const isFlashing = useFolderFlash(folder.id);
   const Icon = IconMap[folder.icon || 'FolderIcon'] || FolderIcon;
   const folderColor = folder.color || undefined;
 
   return (
+    <Tooltip
+      label={t('common.tooltipWithHotkey', { label: folder.name, hotkey: 'Ctrl+←/→' })}
+      placement="bottom"
+    >
     <button
       data-folder-id={folder.id}
       onMouseDown={(e) => onMouseDown(e, folder.id)}
@@ -220,6 +226,7 @@ const FolderTabButton: React.FC<FolderTabButtonProps> = ({
         ({folder.item_count || 0})
       </span>
     </button>
+    </Tooltip>
   );
 };
 
@@ -236,6 +243,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   onSelectSearchHistory,
   onClearSearchHistory,
   onSearchClick,
+  typeToSearch = true,
   onAddClick,
   onMoreClick,
   onDragHover,
@@ -703,7 +711,14 @@ export const ControlBar: React.FC<ControlBarProps> = ({
 
       {/* ── Main Toolbar ── */}
       <div className="flex min-w-0 flex-1 items-center gap-1 px-4">
-        <Tooltip label={t('common.search')} placement="top">
+        <Tooltip
+          label={
+            typeToSearch
+              ? t('common.searchTooltipTyping', { hotkey: 'Ctrl+F' })
+              : t('common.tooltipWithHotkey', { label: t('common.search'), hotkey: 'Ctrl+F' })
+          }
+          placement="top"
+        >
           <button
             onClick={onSearchClick}
             className={clsx(
@@ -744,6 +759,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             {(() => {
               const isClipboardFlashing = useFolderFlash(null);
               return (
+                <Tooltip label={t('common.folderNavHintFull')} placement="bottom">
                 <button
                   onClick={() => onSelectFolder(null)}
                   onMouseEnter={() => isDragging && onDragHover(null)}
@@ -771,6 +787,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                     ({totalClipCount})
                   </span>
                 </button>
+                </Tooltip>
               );
             })()}
 

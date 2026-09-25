@@ -3288,6 +3288,7 @@ function App() {
                 searchHistoryToggleToken={searchHistoryToggleToken}
                 onSelectSearchHistory={handleSelectSearchHistory}
                 onClearSearchHistory={handleClearSearchHistory}
+                typeToSearch={settings?.type_to_search !== false}
                 onSearchClick={() => {
                   if (showSearch) {
                     handleSearch(''); // Clear search when closing

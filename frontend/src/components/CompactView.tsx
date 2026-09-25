@@ -475,7 +475,10 @@ const CompactSidebarFolderItem: React.FC<CompactSidebarFolderItemProps> = ({
   const Icon = IconMap[folder.icon || 'Folder'] || FolderIcon;
 
   return (
-    <Tooltip label={folder.name} placement="right">
+    <Tooltip
+      label={t('common.tooltipWithHotkey', { label: folder.name, hotkey: '←/→' })}
+      placement="right"
+    >
       <button
         data-folder-id={folder.id}
         onMouseDown={(e) => onMouseDown(e, folder.id)}
@@ -555,7 +558,10 @@ const CompactTopFolderItem: React.FC<CompactTopFolderItemProps> = ({
   const Icon = IconMap[folder.icon || 'Folder'] || FolderIcon;
 
   return (
-    <Tooltip label={folder.name} placement="bottom">
+    <Tooltip
+      label={t('common.tooltipWithHotkey', { label: folder.name, hotkey: '←/→' })}
+      placement="bottom"
+    >
       <button
         data-folder-id={folder.id}
         onMouseDown={(e) => onMouseDown(e, folder.id)}
@@ -1442,7 +1448,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   className="no-scrollbar flex h-full flex-col gap-1 overflow-y-auto py-2"
                   style={{ width: SIDEBAR_EXPANDED_W }}
                 >
-                  <Tooltip label={t('folders.clipboard')} placement="right">
+                  <Tooltip label={t('common.folderNavHintCompact')} placement="right">
                     <button
                       onClick={() => onSelectFolder(null)}
                       data-folder-id="clipboard"
@@ -1820,7 +1826,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
               onWheel={handleWheel}
               className="no-scrollbar flex gap-1 overflow-x-auto scroll-smooth pb-1"
             >
-              <Tooltip label={t('folders.clipboard')} placement="bottom">
+              <Tooltip label={t('common.folderNavHintCompact')} placement="bottom">
                 <button
                   onClick={() => onSelectFolder(null)}
                   data-folder-id="clipboard"
