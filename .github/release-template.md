@@ -8,7 +8,7 @@
 
 <!-- Maintainer: Rewrite the marked paragraph for every release. Use 25-45 words, lead with user-facing changes, and do not repeat the app name or version. -->
 <!-- changelog-summary:start -->
-Keyboard-first search history, unified shortcuts, adaptive menus, and neutral peek controls make navigation more predictable, while About improvements add clearer update feedback, diagnostics, quieter app recommendations, and more reliable window visibility.
+Outside clicks hide the window again, styled clipboard HTML is stored as plain text, and the update dialog keeps its actions below the notes. Search and folder hints are clearer, with a quieter compact footer that rotates the useful shortcuts.
 <!-- changelog-summary:end -->
 
 > **New to CyberPaste?** A fast, privacy-first Windows clipboard manager with history, folders, OCR, and configurable AI actions.
@@ -17,20 +17,18 @@ Keyboard-first search history, unified shortcuts, adaptive menus, and neutral pe
 
 ### ✨ Key Features & Highlights
 
-- ⌨️ **Keyboard Navigation & Search History**:
-  - `Ctrl+H` opens the history with the first item selected, with reliable arrow-key and Enter navigation in both view modes.
-  - Search history suppresses competing tooltips and peek previews, while pointer hover no longer steals the initial selection.
-  - Title-bar actions now share a consistent single-modifier `Ctrl` shortcut convention.
+- 🪟 **Hide on Outside Click**:
+  - Clicking the desktop or another app hides the window again in Full and Compact, even when it stays above other windows.
+  - The hide-on-blur setting shows its proper name in the confirmation toast.
 
-- 🪟 **Window & Menu Reliability**:
-  - The More menu adapts to the available space, supports scrolling, and includes Reset window size above Clear history.
-  - Peek toggles are grouped with the relevant controls and remain visually neutral when enabled.
-  - Close dialogs clear when the main window is hidden through another route, and About opens above the main window.
+- 📋 **Clipboard Text**:
+  - Styled HTML that is only a sentence, such as a colored span from another app, is stored as plain text.
+  - Tables and other structural HTML stay HTML.
 
-- 🎨 **About & Modal Polish**:
-  - About adds dismissible update feedback, diagnostic copying, five randomized companion apps, and a compact “See more...” action.
-  - Preserved the original CyberPaste logo identity while removing the experimental glass background treatment.
-  - Refined bilingual update text, tooltips, keyboard hints, and close-dialog spacing.
+- 🔎 **Search, Folders & Updates**:
+  - Search history sits inside the field. The tooltip mentions type-to-search, and `Ctrl+F` always focuses the bar.
+  - Full-mode folders use `Ctrl+←/→`. Compact folders use `←/→`, with a short quiet highlight and a slow footer rotation of search, folder, and peek hints.
+  - The update dialog keeps Skip, Later, and Update below the notes. Spanish Skip reads “Saltar versión”.
 
 ---
 

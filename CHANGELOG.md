@@ -2,6 +2,21 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.23.0] — 2026-09-25
+
+### 🪟 Hide on Outside Click
+- **Focus loss**: Clicking the desktop or another app hides CyberPaste again in both Full and Compact, including when the window stays above other windows.
+- **Setting label**: The hide-on-blur toggle now shows its proper name in the confirmation toast.
+
+### 📋 Clipboard Text
+- **Styled fragments**: Clipboard HTML that is only a styled sentence, such as a colored span from another app, is stored as plain text. Tables and other real HTML stay HTML.
+
+### 🔎 Search, Folders & Update Dialog
+- **Search field**: The history button sits inside the field, and the search tooltip mentions type-to-search plus `Ctrl+F`, which always focuses the bar.
+- **Folder hints**: Full-mode tabs show `Ctrl+←/→`. Compact tabs show `←/→`. Compact folder changes use a short, quiet highlight, and the footer slowly rotates search, folder, and peek hints in the same muted style.
+- **View button**: The mode switch stays a plain icon until hover.
+- **Update dialog**: Notes scroll on their own, and Skip, Later, and Update stay below them. Skip is labeled “Saltar versión” in Spanish.
+
 ## [1.22.0] — 2026-09-24
 
 ### ⌨️ Keyboard Navigation & Search History
