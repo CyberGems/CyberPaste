@@ -30,6 +30,25 @@ Outside clicks hide the window again, styled clipboard HTML is stored as plain t
   - Full-mode folders use `Ctrl+←/→`. Compact folders use `←/→`, with a short quiet highlight and a slow footer rotation of search, folder, and peek hints.
   - The update dialog keeps Skip, Later, and Update below the notes. Spanish Skip reads “Saltar versión”.
 
+<details>
+<summary><b>🇪🇸 Ver notas de la versión en Español</b></summary>
+
+<!-- Maintainer: Traduce el resumen y los puntos clave de arriba al español en cada release. -->
+
+### 🚀 Novedades de esta versión
+
+<!-- Maintainer: Resumen en español (25-45 palabras), mismos cambios visibles que el resumen en inglés. -->
+
+> **¿Nuevo en CyberPaste?** Un gestor de portapapeles rápido y privado para Windows, con historial, carpetas, OCR y acciones de IA configurables.
+
+---
+
+### ✨ Novedades destacadas
+
+<!-- Maintainer: Versión en español de "Key Features & Highlights". -->
+
+</details>
+
 ---
 
 ### 📦 Downloads & Packages

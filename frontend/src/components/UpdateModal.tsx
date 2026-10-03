@@ -5,6 +5,7 @@ import { check } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { getVersion } from '@tauri-apps/api/app';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { extractLocalizedReleaseNotes } from '../utils/releaseNotes';
 import Tooltip from './Tooltip';
 
 type UpdateType = Awaited<ReturnType<typeof check>>;
@@ -306,7 +307,9 @@ function renderInline(text: string): ReactNode {
 }
 
 function ReleaseNotes({ body }: { body: string }) {
-  const lines = body.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').split('\n');
+  const { i18n } = useTranslation();
+  const localized = extractLocalizedReleaseNotes(body, i18n.language);
+  const lines = localized.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').split('\n');
   const nodes: ReactNode[] = [];
   let listItems: string[] = [];
 
