@@ -1,4 +1,8 @@
 <p align="center">
+  English · <a href="./README.es.md">Español</a>
+</p>
+
+<p align="center">
   <a href="https://cybergems.org/apps/cyberpaste/">
     <img src="https://cybergems.org/banners/cyberpaste.png" alt="CyberPaste — recall text, code, images and files with a private local clipboard history" />
   </a>
@@ -83,6 +87,43 @@ Most clipboard managers either send your data to the cloud or are too basic to b
 
 ---
 
+## 🚀 Getting Started
+
+### Install (Recommended)
+
+1. Download the latest installer or portable build from [GitHub Releases](https://github.com/CyberGems/CyberPaste/releases)
+2. Run the installer or the portable executable
+3. Launch CyberPaste. No other requirements needed: you do **not** need Node.js or Rust
+
+> **WinGet:** Support is planned, but `CyberGems.CyberPaste` has not yet been published in the official WinGet community source. The `winget install CyberGems.CyberPaste` command is not available yet.
+
+### 🛡️ Windows SmartScreen
+
+Windows may show a SmartScreen warning the first time you run the CyberPaste installer: this is an unsigned hobby app, so Windows hasn't built reputation for the file yet. This is expected; the source is public so you can inspect exactly what it does. The same can appear when launching the portable build.
+
+To continue:
+
+<details>
+<summary><strong>See how to run the installer (step by step)</strong></summary>
+
+Windows shows this warning for any installer without a paid code-signing certificate; it does not mean the file is unsafe. Do <strong>not</strong> click "Don't run":
+
+1. Run the installer. Windows may show the blue "Windows protected your PC" dialog.
+
+![Windows SmartScreen warning](https://cybergems.org/branding/smartscreen-warning.svg)
+
+2. Click the small **More info** link.
+
+![SmartScreen dialog after More info](https://cybergems.org/branding/smartscreen-runanyway.svg)
+
+3. Click **Run anyway**. The installer starts normally.
+
+You can verify the file independently: compare the SHA with the GitHub release, scan it on VirusTotal, or build from source. More details: [SmartScreen guide on the website](https://cybergems.org/download#smartscreen).
+
+</details>
+
+---
+
 ## 🛠️ Tech Stack & Architecture
 
 - **Platform:** Windows 10 / 11
@@ -120,42 +161,11 @@ CyberPaste/
 └── README.md
 ```
 
----
+#### Building from Source (Developers)
 
-## 🚀 Getting Started
+Only needed if you want to work on CyberPaste or build it yourself; regular users can skip this section.
 
-### Install
-
-Download the latest installer or portable build from [GitHub Releases](https://github.com/CyberGems/CyberPaste/releases).
-
-> **WinGet:** Support is planned, but `CyberGems.CyberPaste` has not yet been published in the official WinGet community source. The `winget install CyberGems.CyberPaste` command is not available yet.
-
-### 🛡️ Windows SmartScreen
-
-Windows may show a SmartScreen warning the first time you run the CyberPaste installer: this is an unsigned hobby app, so Windows hasn't built reputation for the file yet. This is expected; the source is public so you can inspect exactly what it does. The same can appear when launching the portable build.
-
-To continue:
-
-<details>
-<summary><strong>See how to run the installer (step by step)</strong></summary>
-
-Windows shows this warning for any installer without a paid code-signing certificate; it does not mean the file is unsafe. Do <strong>not</strong> click "Don't run":
-
-1. Run the installer. Windows may show the blue "Windows protected your PC" dialog.
-
-![Windows SmartScreen warning](https://cybergems.org/branding/smartscreen-warning.svg)
-
-2. Click the small **More info** link.
-
-![SmartScreen dialog after More info](https://cybergems.org/branding/smartscreen-runanyway.svg)
-
-3. Click **Run anyway**. The installer starts normally.
-
-You can verify the file independently: compare the SHA with the GitHub release, scan it on VirusTotal, or build from source. More details: [SmartScreen guide on the website](https://cybergems.org/download#smartscreen).
-
-</details>
-
-### Development
+#### Development
 
 **Prerequisites:** Node.js 18+, Rust 1.77+, npm
 
@@ -164,7 +174,7 @@ npm install
 npm run tauri dev
 ```
 
-### Build
+#### Build
 
 ```bash
 npm run tauri build
