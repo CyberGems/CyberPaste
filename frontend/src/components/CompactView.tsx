@@ -66,6 +66,8 @@ import {
   Trash2,
   Eye,
   EyeOff,
+  Pause,
+  Play,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
@@ -88,6 +90,7 @@ import { CompactPeek } from './CompactPeek';
 import { usePinFlash } from '../hooks/usePinFlash';
 import { useFolderFlash } from '../hooks/useFolderFlash';
 import { useDeleteFlash } from '../hooks/useDeleteFlash';
+import { useClipboardMonitoring } from '../hooks/useClipboardMonitoring';
 import { usePeekPointerArm } from '../hooks/usePeekPointerArm';
 import {
   isListHoverLocked,
@@ -683,6 +686,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   onRequestClose,
 }) => {
   const { t } = useTranslation();
+  const { isPaused, toggleMonitoring } = useClipboardMonitoring();
   const footerHints = useMemo(
     () => [t('compact.typeToSearch'), t('compact.arrowsFolders'), t('compact.peekHint')],
     [t]
@@ -1356,6 +1360,33 @@ export const CompactView: React.FC<CompactViewProps> = ({
               </button>
             </Tooltip>
           )}
+          <Tooltip
+            label={
+              isPaused
+                ? t('common.resumeMonitoringTooltip', {
+                    defaultValue: 'Reanudar monitoreo (Monitoreo pausado)',
+                  })
+                : t('common.pauseMonitoringTooltip', {
+                    defaultValue: 'Pausar monitoreo del portapapeles',
+                  })
+            }
+            placement="bottom"
+          >
+            <button
+              type="button"
+              onClick={toggleMonitoring}
+              aria-label={isPaused ? t('common.resumeMonitoring') : t('common.pauseMonitoring')}
+              className={cn(
+                'flex h-8 w-8 items-center justify-center rounded-lg border transition-all focus:outline-none',
+                isPaused
+                  ? 'border-amber-500/50 bg-amber-500/15 text-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.25)] hover:border-amber-500/80 hover:bg-amber-500/25 active:scale-95'
+                  : 'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
+              )}
+            >
+              {isPaused ? <Play size={14} className="fill-amber-500/30" /> : <Pause size={14} />}
+            </button>
+          </Tooltip>
+
           <Tooltip
             label={t('common.tooltipWithHotkey', {
               label: t('common.settings'),

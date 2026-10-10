@@ -71,7 +71,11 @@
     "clipDetails": "Clip details",
     "select": "Select",
     "deselect": "Deselect",
-    "undoDelete": "Undo deletion"
+    "undoDelete": "Undo deletion",
+    "pauseMonitoring": "Pause Monitoring",
+    "resumeMonitoring": "Resume Monitoring",
+    "pauseMonitoringTooltip": "Pause clipboard monitoring",
+    "resumeMonitoringTooltip": "Resume monitoring (Monitoring paused)"
   },
   "closeDialog": {
     "title": "Close Window",

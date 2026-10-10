@@ -51,6 +51,8 @@ import {
   Sun,
   Pin,
   Keyboard,
+  Pause,
+  Play,
 } from 'lucide-react';
 import { FolderItem } from '../types';
 import { CONTEXT_MENU_EVENT, type ContextMenuEventDetail } from '../utils/contextMenuEvents';
@@ -62,6 +64,7 @@ import { TitleBarMenu } from './TitleBarMenu';
 import { TitleBarUpdateButton } from './TitleBarUpdateButton';
 import { useFolderFlash } from '../hooks/useFolderFlash';
 import { TITLEBAR_HOTKEYS } from '../hooks/useKeyboard';
+import { useClipboardMonitoring } from '../hooks/useClipboardMonitoring';
 import { invoke } from '@tauri-apps/api/core';
 
 const IconMap: Record<string, any> = {
@@ -277,6 +280,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
 }) => {
   const foldersRef = React.useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
+  const { isPaused, toggleMonitoring } = useClipboardMonitoring();
 
   const currentFolderName = selectedFolder
     ? folders.find((f) => f.id === selectedFolder)?.name || t('detailPanel.folder')
@@ -631,6 +635,33 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               </button>
             </Tooltip>
           )}
+
+          <Tooltip
+            label={
+              isPaused
+                ? t('common.resumeMonitoringTooltip', {
+                    defaultValue: 'Reanudar monitoreo (Monitoreo pausado)',
+                  })
+                : t('common.pauseMonitoringTooltip', {
+                    defaultValue: 'Pausar monitoreo del portapapeles',
+                  })
+            }
+            placement="bottom"
+          >
+            <button
+              type="button"
+              onClick={toggleMonitoring}
+              aria-label={isPaused ? t('common.resumeMonitoring') : t('common.pauseMonitoring')}
+              className={clsx(
+                'flex h-8 w-8 items-center justify-center rounded-lg border transition-all focus:outline-none',
+                isPaused
+                  ? 'border-amber-500/50 bg-amber-500/15 text-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.25)] hover:border-amber-500/80 hover:bg-amber-500/25 active:scale-95'
+                  : headerBtnClass
+              )}
+            >
+              {isPaused ? <Play size={15} className="fill-amber-500/30" /> : <Pause size={15} />}
+            </button>
+          </Tooltip>
 
           <Tooltip
             label={t('common.tooltipWithHotkey', {

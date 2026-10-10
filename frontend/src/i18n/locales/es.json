@@ -71,7 +71,11 @@
     "clipDetails": "Detalles del clip",
     "select": "Seleccionar",
     "deselect": "Deseleccionar",
-    "undoDelete": "Deshacer eliminación"
+    "undoDelete": "Deshacer eliminación",
+    "pauseMonitoring": "Pausar monitoreo",
+    "resumeMonitoring": "Reanudar monitoreo",
+    "pauseMonitoringTooltip": "Pausar monitoreo del portapapeles",
+    "resumeMonitoringTooltip": "Reanudar monitoreo (Monitoreo pausado)"
   },
   "closeDialog": {
     "title": "Cerrar ventana",
