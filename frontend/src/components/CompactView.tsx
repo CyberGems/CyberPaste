@@ -89,7 +89,11 @@ import { usePinFlash } from '../hooks/usePinFlash';
 import { useFolderFlash } from '../hooks/useFolderFlash';
 import { useDeleteFlash } from '../hooks/useDeleteFlash';
 import { usePeekPointerArm } from '../hooks/usePeekPointerArm';
-import { isListHoverLocked, subscribeListHoverLock, useListHoverLocked } from '../hooks/useListHoverLock';
+import {
+  isListHoverLocked,
+  subscribeListHoverLock,
+  useListHoverLocked,
+} from '../hooks/useListHoverLock';
 
 const localeMap: Record<string, any> = {
   de,
@@ -686,10 +690,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   const [footerHintIndex, setFooterHintIndex] = useState(0);
   useEffect(() => {
     if (!isWindowActive) return;
-    const timer = setInterval(
-      () => setFooterHintIndex((i) => (i + 1) % footerHints.length),
-      7000
-    );
+    const timer = setInterval(() => setFooterHintIndex((i) => (i + 1) % footerHints.length), 7000);
     return () => clearInterval(timer);
   }, [isWindowActive, footerHints.length]);
   const folderScrollRef = useRef<HTMLDivElement>(null);
@@ -723,9 +724,13 @@ export const CompactView: React.FC<CompactViewProps> = ({
   }, []);
   const { armedRef: peekArmedRef, notePointer: notePeekPointer } = usePeekPointerArm(closePeek);
 
-  useEffect(() => subscribeListHoverLock((locked) => {
-    if (locked) closePeek();
-  }), [closePeek]);
+  useEffect(
+    () =>
+      subscribeListHoverLock((locked) => {
+        if (locked) closePeek();
+      }),
+    [closePeek]
+  );
 
   useEffect(() => {
     const handleSearchHistory = (event: Event) => {
@@ -1240,7 +1245,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
         "relative flex h-full w-full select-none flex-col overflow-hidden font-['Segoe_UI',system-ui,sans-serif]",
         theme === 'light' ? 'text-slate-800' : 'text-white/90'
       )}
-      style={{ border: '1px solid rgba(34, 211, 238, 0.1)' }}
+      style={{ border: '1px solid rgba(var(--primary-rgb), 0.15)' }}
     >
       <style>{`
         @keyframes compact-scan {
@@ -1272,7 +1277,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
           <Tooltip label={t('common.openAbout')} placement="bottom">
             <button
               type="button"
-              className="no-drag flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1 -ml-1.5 transition-colors hover:bg-accent/60"
+              className="no-drag -ml-1.5 flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1 transition-colors hover:bg-accent/60"
               aria-label={t('common.openAbout')}
               onClick={(e) => {
                 e.stopPropagation();
@@ -1280,10 +1285,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
               }}
             >
               <img src="/logo.png" alt="" className="h-5 w-5 shrink-0 object-contain" />
-              <span className="truncate text-sm font-bold tracking-tight text-foreground leading-5">
+              <span className="truncate text-sm font-bold leading-5 tracking-tight text-foreground">
                 CyberPaste
               </span>
-              <span className="inline-flex shrink-0 items-center justify-center rounded border border-primary/30 bg-primary/10 px-1 py-px text-[8px] font-semibold uppercase tracking-wide text-primary leading-none shadow-[0_0_8px_rgba(var(--primary-rgb),0.15)]">
+              <span className="inline-flex shrink-0 items-center justify-center rounded border border-primary/30 bg-primary/10 px-1 py-px text-[8px] font-semibold uppercase leading-none tracking-wide text-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.15)]">
                 Compact
               </span>
             </button>
@@ -1437,7 +1442,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
           {/* Sidebar */}
           <div
             className={cn(
-              'group/sidebar relative flex-shrink-0 overflow-hidden border-r border-border bg-card transition-all duration-200',
+              'group/sidebar relative flex-shrink-0 overflow-hidden border-r border-sidebar-border bg-sidebar transition-all duration-200',
               compactSidebarCollapsed && 'hover:bg-accent/60',
               isPeekVisible && 'blur-[3px]'
             )}
@@ -1546,7 +1551,9 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     <div className="mx-1.5 mt-6 flex flex-col items-center gap-2 rounded-lg border border-dashed border-border/40 bg-muted/20 px-3 py-5 text-center">
                       <FolderIcon size={18} className="opacity-20" />
                       <p className="text-[10px] leading-snug text-muted-foreground/60">
-                        {t('folders.noFoldersCreated', { defaultValue: 'No folders yet — drag clips to organize' })}
+                        {t('folders.noFoldersCreated', {
+                          defaultValue: 'No folders yet — drag clips to organize',
+                        })}
                       </p>
                     </div>
                   )}
@@ -1630,9 +1637,12 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     <button
                       type="button"
                       onClick={onTogglePeek}
-                      aria-label={t(compactPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek', {
-                        hotkey: peekHotkey,
-                      })}
+                      aria-label={t(
+                        compactPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek',
+                        {
+                          hotkey: peekHotkey,
+                        }
+                      )}
                       aria-pressed={compactPeekEnabled}
                       className={cn(
                         'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all focus:outline-none',
@@ -1644,14 +1654,17 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   </Tooltip>
                 )}
                 {canUndo && onUndo && (
-                  <Tooltip label={t('common.undoDelete') || t('contextMenu.undo') || 'Undo'} placement="bottom">
+                  <Tooltip
+                    label={t('common.undoDelete') || t('contextMenu.undo') || 'Undo'}
+                    placement="bottom"
+                  >
                     <button
                       type="button"
                       onClick={onUndo}
-                      className="flex h-8 shrink-0 items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 text-xs font-medium text-amber-500 transition-all hover:border-amber-500/70 hover:bg-amber-500/20 active:scale-95 shadow-[0_0_10px_rgba(245,158,11,0.15)]"
+                      className="flex h-8 shrink-0 items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 text-xs font-medium text-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.15)] transition-all hover:border-amber-500/70 hover:bg-amber-500/20 active:scale-95"
                     >
                       <Undo2 size={13} className="shrink-0" />
-                      <span className="hidden sm:inline text-[11px]">{t('contextMenu.undo')}</span>
+                      <span className="hidden text-[11px] sm:inline">{t('contextMenu.undo')}</span>
                     </button>
                   </Tooltip>
                 )}
@@ -1701,10 +1714,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   searchQuery.trim()
                     ? t('clipList.noResults')
                     : isFiltering && clips.length > 0
-                    ? t('compact.noMatchFilter') === 'compact.noMatchFilter'
-                      ? 'No clips match this filter'
-                      : t('compact.noMatchFilter')
-                    : t('clipList.empty')
+                      ? t('compact.noMatchFilter') === 'compact.noMatchFilter'
+                        ? 'No clips match this filter'
+                        : t('compact.noMatchFilter')
+                      : t('clipList.empty')
                 }
                 onRowsRendered={handleRowsRendered}
                 selectedClipIds={selectedClipIds}
@@ -1811,9 +1824,12 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   <button
                     type="button"
                     onClick={onTogglePeek}
-                    aria-label={t(compactPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek', {
-                      hotkey: peekHotkey,
-                    })}
+                    aria-label={t(
+                      compactPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek',
+                      {
+                        hotkey: peekHotkey,
+                      }
+                    )}
                     aria-pressed={compactPeekEnabled}
                     className={cn(
                       'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all focus:outline-none',
@@ -1825,14 +1841,17 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 </Tooltip>
               )}
               {canUndo && onUndo && (
-                <Tooltip label={t('common.undoDelete') || t('contextMenu.undo') || 'Undo'} placement="bottom">
+                <Tooltip
+                  label={t('common.undoDelete') || t('contextMenu.undo') || 'Undo'}
+                  placement="bottom"
+                >
                   <button
                     type="button"
                     onClick={onUndo}
-                    className="flex h-8 shrink-0 items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 text-xs font-medium text-amber-500 transition-all hover:border-amber-500/70 hover:bg-amber-500/20 active:scale-95 shadow-[0_0_10px_rgba(245,158,11,0.15)]"
+                    className="flex h-8 shrink-0 items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 text-xs font-medium text-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.15)] transition-all hover:border-amber-500/70 hover:bg-amber-500/20 active:scale-95"
                   >
                     <Undo2 size={13} className="shrink-0" />
-                    <span className="hidden sm:inline text-[11px]">{t('contextMenu.undo')}</span>
+                    <span className="hidden text-[11px] sm:inline">{t('contextMenu.undo')}</span>
                   </button>
                 </Tooltip>
               )}
@@ -1962,10 +1981,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 searchQuery.trim()
                   ? t('clipList.noResults')
                   : isFiltering && clips.length > 0
-                  ? t('compact.noMatchFilter') === 'compact.noMatchFilter'
-                    ? 'No clips match this filter'
-                    : t('compact.noMatchFilter')
-                  : t('clipList.empty')
+                    ? t('compact.noMatchFilter') === 'compact.noMatchFilter'
+                      ? 'No clips match this filter'
+                      : t('compact.noMatchFilter')
+                    : t('clipList.empty')
               }
               onRowsRendered={handleRowsRendered}
               selectedClipIds={selectedClipIds}
@@ -2195,7 +2214,7 @@ const ClipRow = memo(function ClipRow({
   return (
     <div className="relative h-full">
       {reorderEnabled && reorderTargetClipId === clip.id && reorderTargetPosition === 'before' && (
-        <div className="pointer-events-none absolute left-2 right-2 -top-0.5 z-30 h-1 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.95)] ring-1 ring-cyan-300/60 animate-pulse" />
+        <div className="pointer-events-none absolute -top-0.5 left-2 right-2 z-30 h-1 animate-pulse rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.95)] ring-1 ring-cyan-300/60" />
       )}
       <div
         data-clip-id={clip.id}
@@ -2241,7 +2260,7 @@ const ClipRow = memo(function ClipRow({
           isDeleting &&
             'clip-deleting-row pointer-events-none border-rose-500/70 bg-rose-950 shadow-[0_0_16px_rgba(244,63,94,0.35)]',
           isSelected
-            ? 'border-primary ring-1 ring-primary/40 text-foreground shadow-[0_0_12px_rgba(var(--primary-rgb),0.25)]'
+            ? 'border-primary text-foreground shadow-[0_0_12px_rgba(var(--primary-rgb),0.25)] ring-1 ring-primary/40'
             : isNavigationSelected
               ? 'border-primary/40 text-foreground shadow-[0_0_12px_rgba(var(--primary-rgb),0.12)]'
               : showHover
@@ -2253,9 +2272,7 @@ const ClipRow = memo(function ClipRow({
         )}
       >
         {/* Solid base layer state tints (layered on top of opaque bg-card) */}
-        {isSelected && (
-          <div className="pointer-events-none absolute inset-0 z-0 bg-primary/20" />
-        )}
+        {isSelected && <div className="pointer-events-none absolute inset-0 z-0 bg-primary/20" />}
         {isNavigationSelected && !isSelected && (
           <div className="pointer-events-none absolute inset-0 z-0 bg-primary/10" />
         )}
@@ -2349,12 +2366,12 @@ const ClipRow = memo(function ClipRow({
                 <span className="flex-shrink-0 text-[10px] font-bold uppercase text-yellow-400/70">
                   {t('common.file')}
                 </span>
-                <span className="truncate text-xs leading-normal py-0.5 text-muted-foreground/80">
+                <span className="truncate py-0.5 text-xs leading-normal text-muted-foreground/80">
                   {clip.preview}
                 </span>
               </span>
             ) : (
-              <span className="truncate text-xs font-medium leading-normal py-0.5">
+              <span className="truncate py-0.5 text-xs font-medium leading-normal">
                 {clip.preview.replace(/[\n\r\t]+/g, ' ')}
               </span>
             )}
@@ -2437,11 +2454,7 @@ const ClipRow = memo(function ClipRow({
               showActions ? 'opacity-100' : 'pointer-events-none opacity-0'
             )}
           >
-            <Tooltip
-              label={t('common.moreActionsHint')}
-              placement="left"
-              disabled={isPeekVisible}
-            >
+            <Tooltip label={t('common.moreActionsHint')} placement="left" disabled={isPeekVisible}>
               <button
                 type="button"
                 aria-label={t('common.moreActionsHint')}
@@ -2465,7 +2478,7 @@ const ClipRow = memo(function ClipRow({
         </div>
       </div>
       {reorderEnabled && reorderTargetClipId === clip.id && reorderTargetPosition === 'after' && (
-        <div className="pointer-events-none absolute left-2 right-2 -bottom-0.5 z-30 h-1 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.95)] ring-1 ring-cyan-300/60 animate-pulse" />
+        <div className="pointer-events-none absolute -bottom-0.5 left-2 right-2 z-30 h-1 animate-pulse rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.95)] ring-1 ring-cyan-300/60" />
       )}
     </div>
   );

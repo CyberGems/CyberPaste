@@ -221,30 +221,30 @@
 
   /* ── Dark (monochrome grayscale with silver accent, opaque) ──────── */
   .dark {
-    --background: 216 10% 10%; /* #16181B */
+    --background: 216 11% 9%; /* #141619 - rich dark charcoal base */
     --foreground: 210 9% 92%; /* #E8EAEC */
-    --card: 214 9% 17%; /* #292D33 - lighter gray card */
+    --card: 216 10% 13%; /* #1D2024 - deep charcoal card matching settings */
     --card-foreground: 210 9% 92%;
-    --popover: 220 13% 10%; /* #14161A */
+    --popover: 216 12% 10%; /* #15181C */
     --popover-foreground: 210 9% 92%;
     --primary: 214 11% 75%; /* #B8BEC6 silver accent */
-    --primary-foreground: 216 10% 10%;
-    --secondary: 210 9% 11%; /* #1D2023 */
+    --primary-foreground: 216 11% 9%;
+    --secondary: 216 10% 14%; /* #1F2226 */
     --secondary-foreground: 215 9% 67%; /* #A6ABB2 */
-    --muted: 210 9% 11%;
-    --muted-foreground: 214 6% 46%; /* #6E747C */
-    --accent: 210 9% 11%;
+    --muted: 216 10% 14%;
+    --muted-foreground: 214 6% 50%; /* #767B83 */
+    --accent: 216 10% 15%; /* #212529 */
     --accent-foreground: 210 9% 92%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 85.7% 97.3%;
-    --border: 214 9% 23%; /* #353B42 - subtle lighter border */
-    --input: 214 9% 18%;
+    --border: 216 8% 18%; /* #282B30 - subtle hairline border */
+    --input: 216 10% 11%; /* #17191D */
     --ring: 214 11% 75%;
     --primary-rgb: 184, 190, 198;
 
-    --sidebar-background: 216 12% 7%; /* #121417 */
+    --sidebar-background: 216 13% 7%; /* #101215 - dark clean sidebar separation */
     --sidebar-foreground: 210 9% 92%;
-    --sidebar-border: 214 9% 18%;
+    --sidebar-border: 216 9% 14%; /* #1E2024 */
   }
 
   /* ── CyberPaste (now CyberSnap dark palette, Mica-backed) ────────── */
@@ -626,23 +626,23 @@
   }
 
   /* Toggles / Switcher styling */
-  .dark button.rounded-full:not(.bg-primary) {
+  .dark button.w-11.rounded-full:not(.bg-primary) {
     background: rgba(255, 255, 255, 0.05) !important;
     border: 1px solid rgba(255, 255, 255, 0.25) !important;
   }
 
-  .dark button.rounded-full.bg-primary {
+  .dark button.w-11.rounded-full.bg-primary {
     background: hsl(var(--primary)) !important; /* Silver accent */
     border-color: hsl(var(--primary)) !important;
   }
 
-  .dark button.rounded-full.bg-primary > div,
-  .dark button.rounded-full.bg-primary > span {
-    background: #16181b !important; /* switch active indicator matches background */
+  .dark button.w-11.rounded-full.bg-primary > div,
+  .dark button.w-11.rounded-full.bg-primary > span {
+    background: #141619 !important; /* switch active indicator matches background */
   }
 
-  .dark button.rounded-full:not(.bg-primary) > div,
-  .dark button.rounded-full:not(.bg-primary) > span {
+  .dark button.w-11.rounded-full:not(.bg-primary) > div,
+  .dark button.w-11.rounded-full:not(.bg-primary) > span {
     background: rgba(255, 255, 255, 0.8) !important;
   }
 

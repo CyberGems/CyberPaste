@@ -363,10 +363,10 @@ function App() {
     settings?.single_click_paste === false
       ? t('full.actionSelect')
       : settings?.auto_paste && settings?.auto_inject_paste
-      ? t('full.actionAutoInject')
-      : settings?.auto_paste
-        ? t('full.actionPaste')
-        : t('full.actionCopy');
+        ? t('full.actionAutoInject')
+        : settings?.auto_paste
+          ? t('full.actionPaste')
+          : t('full.actionCopy');
 
   const appWindow = getCurrentWindow();
   const [isMaximized, setIsMaximized] = useState(false);
@@ -607,18 +607,15 @@ function App() {
     await invoke('set_update_available', { available: false });
   }, []);
 
-  const handleCloseChoice = useCallback(
-    async (action: 'minimize' | 'quit', remember: boolean) => {
-      try {
-        await invoke('handle_close_choice', { action, remember });
-        setDeletedStack([]);
-        setShowCloseWindowDialog(false);
-      } catch (error) {
-        console.error('Failed to apply close choice:', error);
-      }
-    },
-    []
-  );
+  const handleCloseChoice = useCallback(async (action: 'minimize' | 'quit', remember: boolean) => {
+    try {
+      await invoke('handle_close_choice', { action, remember });
+      setDeletedStack([]);
+      setShowCloseWindowDialog(false);
+    } catch (error) {
+      console.error('Failed to apply close choice:', error);
+    }
+  }, []);
 
   const requestCloseWindow = useCallback(async () => {
     if (deletedStack.length > 0 && deleteGeneration > undoWarningSeenGeneration) {
@@ -638,12 +635,7 @@ function App() {
     } catch (error) {
       console.error('Failed to request window close:', error);
     }
-  }, [
-    deleteGeneration,
-    deletedStack.length,
-    handleCloseChoice,
-    undoWarningSeenGeneration,
-  ]);
+  }, [deleteGeneration, deletedStack.length, handleCloseChoice, undoWarningSeenGeneration]);
 
   useEffect(() => {
     const unlisten = listen('close-requested', () => {
@@ -971,7 +963,15 @@ function App() {
     }, 120);
     return () => window.clearTimeout(loadTimer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedFolder, searchQuery, clipListResetToken, settings?.view_mode, fullTypeFilter, lockReady, isLocked]);
+  }, [
+    selectedFolder,
+    searchQuery,
+    clipListResetToken,
+    settings?.view_mode,
+    fullTypeFilter,
+    lockReady,
+    isLocked,
+  ]);
 
   // Handle global mouse events for simulated drag
   useEffect(() => {
@@ -1817,9 +1817,7 @@ function App() {
             .querySelector<HTMLElement>(`[data-clip-id="${CSS.escape(clipId)}"]`)
             ?.scrollIntoView({ block: 'nearest', behavior: 'smooth', inline: 'nearest' });
         });
-        toast.success(
-          edge === 'top' ? t('toasts.clipMovedToTop') : t('toasts.clipMovedToBottom')
-        );
+        toast.success(edge === 'top' ? t('toasts.clipMovedToTop') : t('toasts.clipMovedToBottom'));
       } catch (error) {
         console.error('Failed to move clip:', error);
         toast.error(t('toasts.clipReorderFailed'));
@@ -2166,8 +2164,12 @@ function App() {
     if (hasPinned) {
       setPendingDeleteModal({
         isOpen: true,
-        title: ids.length === 1 ? t('confirm.deletePinnedTitle') : t('confirm.deletePinnedBulkTitle'),
-        message: ids.length === 1 ? t('confirm.deletePinnedMessage') : t('confirm.deletePinnedBulkMessage'),
+        title:
+          ids.length === 1 ? t('confirm.deletePinnedTitle') : t('confirm.deletePinnedBulkTitle'),
+        message:
+          ids.length === 1
+            ? t('confirm.deletePinnedMessage')
+            : t('confirm.deletePinnedBulkMessage'),
         ids,
       });
       return;
@@ -3113,8 +3115,7 @@ function App() {
       void handleToggleMaximize();
     },
     maximizeHotkey: TITLEBAR_HOTKEYS.maximize,
-    onToggleLayout:
-      settings?.view_mode === 'compact' ? handleToggleCompactLayout : undefined,
+    onToggleLayout: settings?.view_mode === 'compact' ? handleToggleCompactLayout : undefined,
     layoutHotkey: TITLEBAR_HOTKEYS.compactLayout,
     onStartTypingSearch: handleStartTypingSearch,
     onUndo: handleUndoDelete,
@@ -3124,25 +3125,20 @@ function App() {
     <div
       data-el="app-root"
       className={`relative h-dvh w-full overflow-hidden ${!isWindowActive ? 'pause-all-animations' : ''}`}
-      style={{ border: '1px solid rgba(34, 211, 238, 0.25)' }}
+      style={{ border: '1px solid rgba(var(--primary-rgb), 0.25)' }}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {isLocked && lockStatus && (
-        <AppLockScreen status={lockStatus} onUnlocked={applyLockStatus} />
-      )}
+      {isLocked && lockStatus && <AppLockScreen status={lockStatus} onUnlocked={applyLockStatus} />}
       {/* Content Container */}
-      <div
-        data-el="app-window"
-        className="relative h-full w-full overflow-hidden bg-background/80"
-      >
+      <div data-el="app-window" className="relative h-full w-full overflow-hidden bg-background/80">
         {/* Morph Transition Loader Overlay */}
         {viewModeFading && (
           <div className="animate-in fade-in pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center gap-3.5 bg-background/50 backdrop-blur-md duration-150">
             <div className="relative flex h-16 w-16 items-center justify-center">
               {/* Pulsing cyan glow */}
-              <div className="absolute inset-0 rounded-full bg-primary/25 blur-lg animate-pulse" />
+              <div className="absolute inset-0 animate-pulse rounded-full bg-primary/25 blur-lg" />
               {/* Spinning cyberpunk ring */}
-              <div className="absolute inset-0 rounded-full border-[2.5px] border-primary/20 border-t-primary animate-spin shadow-[0_0_16px_rgba(var(--primary-rgb),0.35)]" />
+              <div className="absolute inset-0 animate-spin rounded-full border-[2.5px] border-primary/20 border-t-primary shadow-[0_0_16px_rgba(var(--primary-rgb),0.35)]" />
               {/* App logo */}
               <img
                 src="/logo.png"
@@ -3150,8 +3146,12 @@ function App() {
                 className="relative h-8 w-8 object-contain drop-shadow-[0_0_10px_rgba(var(--primary-rgb),0.65)]"
               />
             </div>
-            <div className="flex items-center gap-1.5 font-mono text-[10.5px] font-semibold tracking-wider text-primary uppercase drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.3)]">
-              <span>{settings?.view_mode === 'compact' ? t('common.switchToFull') : t('common.switchToCompact')}</span>
+            <div className="flex items-center gap-1.5 font-mono text-[10.5px] font-semibold uppercase tracking-wider text-primary drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.3)]">
+              <span>
+                {settings?.view_mode === 'compact'
+                  ? t('common.switchToFull')
+                  : t('common.switchToCompact')}
+              </span>
             </div>
           </div>
         )}
@@ -3587,19 +3587,21 @@ function App() {
                   {draggingClip.clip_type}
                 </span>
               </div>
-              <div className="line-clamp-3 text-xs font-mono text-foreground/80">
+              <div className="line-clamp-3 font-mono text-xs text-foreground/80">
                 {draggingClip.clip_type === 'image' ? (
-                  <div className="flex items-center gap-2 text-xs text-cyan-400 font-sans">
+                  <div className="flex items-center gap-2 font-sans text-xs text-cyan-400">
                     <ImageIcon size={14} />
                     <span className="font-medium">{t('clipType.image') || 'Imagen'}</span>
                   </div>
                 ) : draggingClip.clip_type === 'file' ? (
-                  <div className="flex items-center gap-2 text-xs text-yellow-400 font-sans">
+                  <div className="flex items-center gap-2 font-sans text-xs text-yellow-400">
                     <LucideFile size={14} />
-                    <span className="truncate font-medium">{draggingClip.preview || t('common.file')}</span>
+                    <span className="truncate font-medium">
+                      {draggingClip.preview || t('common.file')}
+                    </span>
                   </div>
                 ) : (
-                  <pre className="whitespace-pre-wrap break-all text-[11px] font-mono leading-tight">
+                  <pre className="whitespace-pre-wrap break-all font-mono text-[11px] leading-tight">
                     {(draggingClip.preview || draggingClip.content || '').substring(0, 150)}
                   </pre>
                 )}
