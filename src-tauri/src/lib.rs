@@ -532,7 +532,18 @@ pub fn run_app() {
                         .try_state::<Arc<SettingsManager>>()
                         .map(|m| m.get())
                         .unwrap_or_default();
-                    let _ = crate::commands::enforce_storage_policy(h, db_prune, settings).await;
+                    let _ = crate::commands::enforce_storage_policy(h.clone(), db_prune.clone(), settings).await;
+
+                    loop {
+                        tokio::time::sleep(std::time::Duration::from_secs(3600)).await;
+                        let s = h
+                            .try_state::<Arc<SettingsManager>>()
+                            .map(|m| m.get())
+                            .unwrap_or_default();
+                        if s.auto_delete_days > 0 || s.max_items > 0 {
+                            let _ = crate::commands::enforce_storage_policy(h.clone(), db_prune.clone(), s).await;
+                        }
+                    }
                 });
             }
 

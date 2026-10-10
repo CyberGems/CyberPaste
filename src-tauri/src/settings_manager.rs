@@ -55,6 +55,13 @@ impl SettingsManager {
             settings.storage_quota_bytes = normalized_storage_quota;
             needs_save = true;
         }
+        // Auto-migrate legacy auto_delete_days: previously defaulted to 30 but was unused/unexposed.
+        // Ensure it defaults to 0 (disabled) unless explicitly configured by the user.
+        if !settings.auto_delete_migrated {
+            settings.auto_delete_days = 0;
+            settings.auto_delete_migrated = true;
+            needs_save = true;
+        }
         // Auto-migrate Kimi legacy base URL from .cn to .ai if currently set
         if settings.ai_provider == "kimi" && settings.ai_base_url == "https://api.moonshot.cn/v1" {
             settings.ai_base_url = "https://api.moonshot.ai/v1".to_string();

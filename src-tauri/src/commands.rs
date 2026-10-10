@@ -505,6 +505,56 @@ pub async fn prune_history(pool: &SqlitePool, max_items: i64) -> Result<usize, S
     Ok(deleted)
 }
 
+pub async fn prune_expired_history(pool: &SqlitePool, days: i64) -> Result<usize, String> {
+    if days <= 0 {
+        return Ok(0);
+    }
+
+    let uuids: Vec<String> = sqlx::query_scalar(
+        r#"
+        SELECT uuid FROM clips
+        WHERE folder_id IS NULL
+          AND is_pinned = 0
+          AND datetime(created_at) < datetime('now', '-' || ? || ' days')
+        ORDER BY created_at ASC
+        "#,
+    )
+    .bind(days)
+    .fetch_all(pool)
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let mut deleted = 0usize;
+    if !uuids.is_empty() {
+        for uuid in &uuids {
+            let _ = delete_clip_image_file_by_uuid(pool, uuid).await;
+        }
+
+        let placeholders = uuids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let del_images_sql = format!("DELETE FROM clip_images WHERE clip_uuid IN ({})", placeholders);
+        let mut q = sqlx::query(&del_images_sql);
+        for uuid in &uuids {
+            q = q.bind(uuid);
+        }
+        let _ = q.execute(pool).await;
+
+        let del_clips_sql = format!("DELETE FROM clips WHERE uuid IN ({})", placeholders);
+        let mut q2 = sqlx::query(&del_clips_sql);
+        for uuid in &uuids {
+            q2 = q2.bind(uuid);
+        }
+        q2.execute(pool).await.map_err(|e| e.to_string())?;
+        deleted = uuids.len();
+        log::info!(
+            "prune_expired_history: auto-deleted {} unpinned clips older than {} days",
+            deleted,
+            days
+        );
+        let _ = cleanup_orphan_clip_image_files(pool).await;
+    }
+    Ok(deleted)
+}
+
 pub async fn enforce_storage_quota(
     pool: &SqlitePool,
     database_path: &Path,
@@ -586,6 +636,9 @@ pub async fn enforce_storage_policy(
     settings: AppSettings,
 ) -> Result<usize, String> {
     let mut deleted_count = 0usize;
+    if settings.auto_delete_days > 0 {
+        deleted_count += prune_expired_history(&database.pool, settings.auto_delete_days).await?;
+    }
     if settings.max_items > 0 {
         deleted_count += prune_history(&database.pool, settings.max_items).await?;
     }
@@ -5640,6 +5693,67 @@ mod storage_tests {
 
         let _ = std::fs::remove_file(&database_path);
         let _ = std::fs::remove_file(&pinned_path);
+    }
+
+    #[tokio::test]
+    async fn prune_expired_history_removes_old_unpinned_clips_and_preserves_folders_and_pinned() {
+        let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
+        create_storage_schema(&pool).await;
+        let expired_path = test_path("expired-image");
+        let recent_path = test_path("recent-image");
+        let pinned_old_path = test_path("pinned-old-image");
+        let folder_old_path = test_path("folder-old-image");
+
+        std::fs::write(&expired_path, [0u8; 10]).unwrap();
+        std::fs::write(&recent_path, [0u8; 10]).unwrap();
+        std::fs::write(&pinned_old_path, [0u8; 10]).unwrap();
+        std::fs::write(&folder_old_path, [0u8; 10]).unwrap();
+
+        for (uuid, folder_id, is_pinned, created_at, path) in [
+            ("expired", None, 0, "2020-01-01 00:00:00", &expired_path),
+            ("recent", None, 0, "2099-01-01 00:00:00", &recent_path),
+            ("pinned_old", None, 1, "2020-01-01 00:00:00", &pinned_old_path),
+            ("folder_old", Some(1), 0, "2020-01-01 00:00:00", &folder_old_path),
+        ] {
+            sqlx::query(
+                "INSERT INTO clips (uuid, folder_id, is_pinned, created_at) VALUES (?, ?, ?, ?)",
+            )
+            .bind(uuid)
+            .bind(folder_id)
+            .bind(is_pinned)
+            .bind(created_at)
+            .execute(&pool)
+            .await
+            .unwrap();
+            sqlx::query("INSERT INTO clip_images (clip_uuid, file_path) VALUES (?, ?)")
+                .bind(uuid)
+                .bind(path.to_string_lossy().as_ref())
+                .execute(&pool)
+                .await
+                .unwrap();
+        }
+
+        // When days = 0 (disabled), nothing is deleted
+        let no_delete = prune_expired_history(&pool, 0).await.unwrap();
+        assert_eq!(no_delete, 0);
+
+        // When days = 1, the expired clip from 2020 is deleted, but recent, pinned, and folder clips are preserved
+        let deleted = prune_expired_history(&pool, 1).await.unwrap();
+        assert_eq!(deleted, 1);
+
+        let remaining: Vec<String> = sqlx::query_scalar("SELECT uuid FROM clips ORDER BY uuid")
+            .fetch_all(&pool)
+            .await
+            .unwrap();
+        assert_eq!(remaining, vec!["folder_old", "pinned_old", "recent"]);
+        assert!(!expired_path.exists());
+        assert!(recent_path.exists());
+        assert!(pinned_old_path.exists());
+        assert!(folder_old_path.exists());
+
+        let _ = std::fs::remove_file(&recent_path);
+        let _ = std::fs::remove_file(&pinned_old_path);
+        let _ = std::fs::remove_file(&folder_old_path);
     }
 }
 

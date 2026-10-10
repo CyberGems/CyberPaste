@@ -26,6 +26,8 @@ pub struct AppSettings {
     #[serde(default = "crate::content_limits::default_storage_quota_bytes")]
     pub storage_quota_bytes: i64,
     pub auto_delete_days: i64,
+    #[serde(default)]
+    pub auto_delete_migrated: bool,
     pub hotkey: String,
     pub view_mode_hotkey: String,
     pub auto_paste: bool,
@@ -198,7 +200,8 @@ impl Default for AppSettings {
             max_clipboard_text_bytes: crate::content_limits::default_max_clipboard_text_bytes(),
             max_clipboard_image_bytes: crate::content_limits::default_max_clipboard_image_bytes(),
             storage_quota_bytes: crate::content_limits::default_storage_quota_bytes(),
-            auto_delete_days: 30,
+            auto_delete_days: 0,
+            auto_delete_migrated: true,
             hotkey: "Ctrl+Shift+V".to_string(),
             view_mode_hotkey: "Ctrl+M".to_string(),
             auto_paste: true,

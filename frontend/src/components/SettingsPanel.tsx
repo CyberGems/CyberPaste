@@ -101,10 +101,9 @@ function formatDbSize(bytes: number) {
 
 const QUIET_HOURS_TIME_OPTIONS = Array.from({ length: 48 }, (_, index) => {
   const minutes = index * 30;
-  const value = `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(
-    2,
-    '0'
-  )}`;
+  const value = `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(
+    minutes % 60
+  ).padStart(2, '0')}`;
   return { value, label: value };
 });
 
@@ -114,6 +113,17 @@ const CLIPBOARD_IMAGE_LIMIT_OPTIONS_MB = [10, 25, 50, 100];
 const DEFAULT_CLIPBOARD_IMAGE_LIMIT_BYTES = 25 * 1024 * 1024;
 const STORAGE_QUOTA_OPTIONS_GB = [1, 2, 5, 10, 25, 50, 100];
 const DEFAULT_STORAGE_QUOTA_BYTES = 10 * 1024 * 1024 * 1024;
+const AUTO_DELETE_DAYS_OPTIONS = [
+  { value: '0', labelKey: 'settings.autoDeleteNever' },
+  { value: '1', labelKey: 'settings.autoDelete1Day' },
+  { value: '3', labelKey: 'settings.autoDelete3Days' },
+  { value: '7', labelKey: 'settings.autoDelete7Days' },
+  { value: '14', labelKey: 'settings.autoDelete14Days' },
+  { value: '30', labelKey: 'settings.autoDelete30Days' },
+  { value: '90', labelKey: 'settings.autoDelete90Days' },
+  { value: '180', labelKey: 'settings.autoDelete180Days' },
+  { value: '365', labelKey: 'settings.autoDelete365Days' },
+];
 
 function PromptEditor({
   label,
@@ -583,6 +593,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         show_app_recommendations: 'settings.showAppRecommendations',
         round_corners: 'settings.roundCorners',
         max_items: 'settings.historyLimit',
+        auto_delete_days: 'settings.autoDeleteHistory',
         max_clipboard_text_bytes: 'settings.clipboardTextLimit',
         max_clipboard_image_bytes: 'settings.clipboardImageLimit',
         storage_quota_bytes: 'settings.storageQuota',
@@ -1360,6 +1371,44 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           <span className="min-w-[3rem] rounded-lg border border-primary/20 bg-primary/10 px-2 py-1 text-center font-mono text-sm font-bold text-primary shadow-sm">
                             {settings.max_items || 300}
                           </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-3 rounded-[4px] border border-border bg-secondary p-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0 pr-4">
+                          <span className="text-sm font-medium">
+                            {t('settings.autoDeleteHistory')}
+                          </span>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {t('settings.autoDeleteHistoryDesc')}
+                          </p>
+                        </div>
+                        <div className="w-full flex-shrink-0 sm:w-[180px]">
+                          <Select
+                            value={String(settings.auto_delete_days ?? 0)}
+                            onChange={(value) =>
+                              updateSetting('auto_delete_days', parseInt(value, 10))
+                            }
+                            options={(() => {
+                              const currentValStr = String(settings.auto_delete_days ?? 0);
+                              const baseOptions = AUTO_DELETE_DAYS_OPTIONS.map((opt) => ({
+                                value: opt.value,
+                                label: t(opt.labelKey),
+                              }));
+                              if (AUTO_DELETE_DAYS_OPTIONS.some((o) => o.value === currentValStr)) {
+                                return baseOptions;
+                              }
+                              return [
+                                ...baseOptions,
+                                {
+                                  value: currentValStr,
+                                  label: t('settings.autoDeleteCustomDays', {
+                                    days: settings.auto_delete_days,
+                                    defaultValue: `${settings.auto_delete_days} days`,
+                                  }),
+                                },
+                              ];
+                            })()}
+                          />
                         </div>
                       </div>
                       <div className="space-y-3">
