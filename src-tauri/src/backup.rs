@@ -179,14 +179,24 @@ pub async fn collect_backup_data(
     for image in &mut clip_images {
         if image.storage_kind == "file" {
             if let Some(path) = &image.file_path {
-                image.full_content = clipboard::read_full_image_file(path).map_err(|error| {
-                    format!("Could not read image {} for backup: {}", path, error)
-                })?;
+                match clipboard::read_full_image_file(path) {
+                    Ok(content) => {
+                        image.full_content = content;
+                    }
+                    Err(error) => {
+                        log::warn!(
+                            "Could not read image {} for backup: {}, continuing without full image payload",
+                            path,
+                            error
+                        );
+                        image.full_content = Vec::new();
+                    }
+                }
             } else {
-                return Err(format!(
+                log::warn!(
                     "Image {} is marked as file-backed but has no file path",
                     image.clip_uuid
-                ));
+                );
             }
         }
     }

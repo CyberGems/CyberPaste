@@ -912,8 +912,6 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                     onChange={(e) => onSearchChange(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
-                        e.preventDefault();
-                        e.stopPropagation();
                         onSearchCommit(searchQuery);
                         return;
                       }

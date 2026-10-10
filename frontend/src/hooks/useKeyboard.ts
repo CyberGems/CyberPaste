@@ -114,8 +114,7 @@ export function useKeyboard(options: KeyboardOptions) {
         }
         // First Escape dismisses search (even after leaving the field with arrows).
         // A second Escape hides the window.
-        const searchFieldHasText =
-          isSearchInput && (e.target as HTMLInputElement).value.length > 0;
+        const searchFieldHasText = isSearchInput && (e.target as HTMLInputElement).value.length > 0;
         if (options.onClearSearch && (options.searchActive || searchFieldHasText)) {
           e.preventDefault();
           options.onClearSearch();
@@ -203,7 +202,11 @@ export function useKeyboard(options: KeyboardOptions) {
         return;
       }
 
-      if (options.onResetSize && options.resetSizeHotkey && matchesHotkey(options.resetSizeHotkey)) {
+      if (
+        options.onResetSize &&
+        options.resetSizeHotkey &&
+        matchesHotkey(options.resetSizeHotkey)
+      ) {
         e.preventDefault();
         e.stopPropagation();
         options.onResetSize();
@@ -312,10 +315,9 @@ export function useKeyboard(options: KeyboardOptions) {
         }
       }
 
-      // In full mode, the first arrow from search should land in the clip grid
-      // (blur the field) so left/right work like the unfiltered view.
-      const leaveSearchForGrid = () => {
-        if (isSearchInput && options.onNavigateLeft && e.target instanceof HTMLElement) {
+      // When navigating items from search, blur the field so keyboard focus lands in the clips list/grid.
+      const leaveSearchInput = () => {
+        if (isSearchInput && e.target instanceof HTMLElement) {
           e.target.blur();
         }
       };
@@ -326,7 +328,7 @@ export function useKeyboard(options: KeyboardOptions) {
         }
         e.preventDefault();
         e.stopPropagation();
-        leaveSearchForGrid();
+        leaveSearchInput();
         lockListHover();
         options.onNavigatePrev();
       }
@@ -337,7 +339,7 @@ export function useKeyboard(options: KeyboardOptions) {
         }
         e.preventDefault();
         e.stopPropagation();
-        leaveSearchForGrid();
+        leaveSearchInput();
         lockListHover();
         options.onNavigateNext();
       }
@@ -348,7 +350,7 @@ export function useKeyboard(options: KeyboardOptions) {
         }
         e.preventDefault();
         e.stopPropagation();
-        leaveSearchForGrid();
+        leaveSearchInput();
         lockListHover();
         options.onNavigateFirst();
       }
@@ -359,7 +361,7 @@ export function useKeyboard(options: KeyboardOptions) {
         }
         e.preventDefault();
         e.stopPropagation();
-        leaveSearchForGrid();
+        leaveSearchInput();
         lockListHover();
         options.onNavigateLast();
       }
@@ -370,7 +372,7 @@ export function useKeyboard(options: KeyboardOptions) {
         }
         e.preventDefault();
         e.stopPropagation();
-        leaveSearchForGrid();
+        leaveSearchInput();
         lockListHover();
         options.onNavigatePageUp();
       }
@@ -381,7 +383,7 @@ export function useKeyboard(options: KeyboardOptions) {
         }
         e.preventDefault();
         e.stopPropagation();
-        leaveSearchForGrid();
+        leaveSearchInput();
         lockListHover();
         options.onNavigatePageDown();
       }
@@ -394,14 +396,14 @@ export function useKeyboard(options: KeyboardOptions) {
           if (options.onFolderPrev) {
             e.preventDefault();
             e.stopPropagation();
-            leaveSearchForGrid();
+            leaveSearchInput();
             lockListHover();
             options.onFolderPrev();
           }
-        } else if (options.onNavigateLeft) {
+        } else if (options.onNavigateLeft && !isSearchInput) {
           e.preventDefault();
           e.stopPropagation();
-          leaveSearchForGrid();
+          leaveSearchInput();
           lockListHover();
           options.onNavigateLeft();
         } else if (options.onFolderPrev && !isSearchInput) {
@@ -417,14 +419,14 @@ export function useKeyboard(options: KeyboardOptions) {
           if (options.onFolderNext) {
             e.preventDefault();
             e.stopPropagation();
-            leaveSearchForGrid();
+            leaveSearchInput();
             lockListHover();
             options.onFolderNext();
           }
-        } else if (options.onNavigateRight) {
+        } else if (options.onNavigateRight && !isSearchInput) {
           e.preventDefault();
           e.stopPropagation();
-          leaveSearchForGrid();
+          leaveSearchInput();
           lockListHover();
           options.onNavigateRight();
         } else if (options.onFolderNext && !isSearchInput) {

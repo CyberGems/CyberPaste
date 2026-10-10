@@ -1641,9 +1641,18 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     onChange={(e) => onSearchChange(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
+                        if (e.ctrlKey || e.metaKey || e.shiftKey) {
+                          return;
+                        }
                         e.preventDefault();
-                        e.stopPropagation();
                         onSearchCommit(searchQuery);
+                        const targetId =
+                          selectedClipId && filteredClips.some((c) => c.id === selectedClipId)
+                            ? selectedClipId
+                            : filteredClips[0]?.id;
+                        if (targetId) {
+                          onPaste(targetId);
+                        }
                       }
                     }}
                     className={cn(
@@ -1828,9 +1837,18 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   onChange={(e) => onSearchChange(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
+                      if (e.ctrlKey || e.metaKey || e.shiftKey) {
+                        return;
+                      }
                       e.preventDefault();
-                      e.stopPropagation();
                       onSearchCommit(searchQuery);
+                      const targetId =
+                        selectedClipId && filteredClips.some((c) => c.id === selectedClipId)
+                          ? selectedClipId
+                          : filteredClips[0]?.id;
+                      if (targetId) {
+                        onPaste(targetId);
+                      }
                     }
                   }}
                   className={cn(

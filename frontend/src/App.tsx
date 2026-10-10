@@ -855,14 +855,20 @@ function App() {
           });
         } else {
           setClips(data);
-          // Keep current selection if it's still present, otherwise select the first clip
           if (data.length > 0) {
-            setSelectedClipId((prev) => {
-              if (prev && data.some((item) => item.id === prev)) {
-                return prev;
-              }
-              return data[0].id;
-            });
+            if (normalizedQuery) {
+              setSelectedClipId(data[0].id);
+            } else {
+              // Keep current selection if it's still present, otherwise select the first clip
+              setSelectedClipId((prev) => {
+                if (prev && data.some((item) => item.id === prev)) {
+                  return prev;
+                }
+                return data[0].id;
+              });
+            }
+          } else {
+            setSelectedClipId(null);
           }
         }
 
@@ -2098,10 +2104,12 @@ function App() {
   }, [folders, selectedFolder, handleSelectFolder]);
 
   const handlePasteSelected = useCallback(() => {
-    if (selectedClipId) {
-      handlePaste(selectedClipId);
+    const targetId =
+      selectedClipId && clips.some((c) => c.id === selectedClipId) ? selectedClipId : clips[0]?.id;
+    if (targetId) {
+      handlePaste(targetId);
     }
-  }, [selectedClipId, handlePaste]);
+  }, [selectedClipId, clips, handlePaste]);
 
   // Toggle single-clip membership in the bulk selection (Ctrl+Click)
   const handleClipToggleSelect = useCallback((id: string) => {
@@ -2347,14 +2355,18 @@ function App() {
 
   // Ctrl+Enter — copy the selected clip as plain text, without pasting
   const handleCopyPlainTextSelected = useCallback(async () => {
-    if (!selectedClipId) return;
-    const clip = clipsRef.current.find((c) => c.id === selectedClipId);
+    const targetId =
+      selectedClipId && clipsRef.current.some((c) => c.id === selectedClipId)
+        ? selectedClipId
+        : clipsRef.current[0]?.id;
+    if (!targetId) return;
+    const clip = clipsRef.current.find((c) => c.id === targetId);
     if (!clip || clip.clip_type === 'image' || clip.clip_type === 'file') {
       toast.info(t('contextMenu.noPlainText'));
       return;
     }
     try {
-      await invoke('copy_clip_text', { clipId: selectedClipId });
+      await invoke('copy_clip_text', { clipId: targetId });
       toast.success(t('common.copied'));
     } catch (err) {
       console.error('Failed to copy plain text:', err);
@@ -2552,7 +2564,11 @@ function App() {
 
   // Shift+Enter opens the full preview for the currently selected card
   const handlePreviewSelected = useCallback(() => {
-    if (selectedClipId) handleOpenPreview(selectedClipId);
+    const targetId =
+      selectedClipId && clipsRef.current.some((c) => c.id === selectedClipId)
+        ? selectedClipId
+        : clipsRef.current[0]?.id;
+    if (targetId) handleOpenPreview(targetId);
   }, [selectedClipId, handleOpenPreview]);
 
   const handleAiAction = useCallback(
