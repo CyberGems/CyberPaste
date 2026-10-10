@@ -8,7 +8,6 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { resolveLanguage, useLanguage } from '../hooks/useLanguage';
 import Tooltip from '../components/Tooltip';
 
-
 function getWelcomeTitle(version: string, lang?: string): string {
   const vStr = version ? ` v${version}` : '';
   const resolved = resolveLanguage(lang);
@@ -69,7 +68,11 @@ function formatLimitBytes(bytes: number | null | undefined): string {
   return `${Number.isInteger(megabytes) ? megabytes : megabytes.toFixed(1)} MB`;
 }
 
-function getClipTitle(clipType: string | null | undefined, toastType: string | undefined, t: any): string {
+function getClipTitle(
+  clipType: string | null | undefined,
+  toastType: string | undefined,
+  t: any
+): string {
   if (!clipType) {
     if (toastType === 'update') return t('toasts.titles.updateAvailable');
     if (toastType === 'duplicate') return t('toasts.titles.duplicate');
@@ -296,8 +299,8 @@ export function ToastWindow() {
 
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMouseInsideRef = useRef(false);
-  const TOAST_BLEED = 24;
-  const TOAST_VERTICAL_BLEED = 104;
+  const TOAST_BLEED = 8;
+  const TOAST_VERTICAL_BLEED = 12;
   const normalWidthRef = useRef(300);
   const normalHeightRef = useRef(110 + TOAST_VERTICAL_BLEED);
 
@@ -422,7 +425,7 @@ export function ToastWindow() {
     const isWelcome = payload.clip_type === 'welcome';
     const width = isWelcome ? 340 : 300;
     const isDupImage = payload.clip_type === 'image' && payload.toast_type === 'duplicate';
-    const height = isWelcome ? 80 : (isDupImage ? 120 : 110);
+    const height = isWelcome ? 80 : isDupImage ? 120 : 110;
     const windowHeight = height + TOAST_VERTICAL_BLEED;
     normalWidthRef.current = width;
     normalHeightRef.current = windowHeight;
@@ -482,8 +485,6 @@ export function ToastWindow() {
     }
   };
 
-
-
   const handleMouseEnter = () => {
     isMouseInsideRef.current = true;
     if (hideTimeoutRef.current) {
@@ -511,7 +512,7 @@ export function ToastWindow() {
     setContextMenu(null);
     await invoke('set_toast_position', {
       width: normalWidthRef.current + TOAST_BLEED * 2,
-      height: normalHeightRef.current
+      height: normalHeightRef.current,
     }).catch(console.error);
     await getCurrentWindow().setFocusable(false).catch(console.error);
 
@@ -524,9 +525,13 @@ export function ToastWindow() {
     }
   };
 
-
   useEffect(() => {
     document.documentElement.classList.add('toast-window');
+
+    const preventDefaultMenu = (e: MouseEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener('contextmenu', preventDefaultMenu);
 
     getVersion().then(setVersion).catch(console.error);
     invoke<Settings>('get_settings').then(setSettings).catch(console.error);
@@ -571,6 +576,7 @@ export function ToastWindow() {
       unlistenSettings.then((f) => f());
       unlistenFocus.then((f) => f());
       media.removeEventListener('change', onOsTheme);
+      window.removeEventListener('contextmenu', preventDefaultMenu);
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
     };
   }, []);
@@ -613,7 +619,8 @@ export function ToastWindow() {
     }
     if (clickAction === 'system_viewer' && toast && toast.clip_uuid) {
       const isImage = toast.clip_type === 'image';
-      const isText = toast.clip_type && ['text', 'code', 'html', 'rtf', 'url'].includes(toast.clip_type);
+      const isText =
+        toast.clip_type && ['text', 'code', 'html', 'rtf', 'url'].includes(toast.clip_type);
       if (isImage || isText) {
         invoke<any>('get_clip', { clipId: toast.clip_uuid })
           .then(async (clip) => {
@@ -661,6 +668,7 @@ export function ToastWindow() {
 
   const handleContextMenu = async (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (hideTimeoutRef.current) {
       clearTimeout(hideTimeoutRef.current);
       hideTimeoutRef.current = null;
@@ -683,27 +691,11 @@ export function ToastWindow() {
     // Resize window to allow context menu to render without being cut off
     await invoke('set_toast_position', {
       width: normalWidthRef.current + TOAST_BLEED * 2,
-      height: normalHeightRef.current + menuHeight
+      height: normalHeightRef.current + menuHeight,
     }).catch(console.error);
 
     const adjustedY = e.clientY + (isBottomEdge ? menuHeight : 0);
     setContextMenu({ x: e.clientX, y: adjustedY });
-  };
-
-  const getTooltip = () => {
-    let actionLabel: string;
-    if (clickAction === 'none') {
-      actionLabel = t('toasts.tooltipNone');
-    } else if (clickAction === 'close') {
-      actionLabel = t('toasts.tooltipClose');
-    } else if (clickAction === 'system_viewer') {
-      actionLabel = t('contextMenu.openInSystemViewer');
-    } else if (clickAction === 'toggle_pin') {
-      actionLabel = isPinned ? t('contextMenu.unpin') : t('contextMenu.pin');
-    } else {
-      actionLabel = t('toasts.tooltipOpen');
-    }
-    return t('toasts.tooltipWithContextMenu', { action: actionLabel });
   };
 
   const isTopEdge = settings?.toast_position?.startsWith('top-') ?? false;
@@ -711,9 +703,8 @@ export function ToastWindow() {
     settings?.toast_position === 'top-center' || settings?.toast_position === 'bottom-center';
   const originClass = isCentered ? 'origin-center' : 'origin-left';
 
-  const isBottomEdge = settings?.toast_position?.startsWith('bottom-') ?? (!isTopEdge);
-  const alignmentClass = isBottomEdge ? 'items-end' : (isTopEdge ? 'items-start' : 'items-center');
-  const tooltipPlacement = isBottomEdge ? 'top' : 'bottom';
+  const isBottomEdge = settings?.toast_position?.startsWith('bottom-') ?? !isTopEdge;
+  const alignmentClass = isBottomEdge ? 'items-end' : isTopEdge ? 'items-start' : 'items-center';
 
   const contextMenuOptions = [];
   const aiLabel = (custom: string | undefined, englishDefault: string, key: string) =>
@@ -743,11 +734,12 @@ export function ToastWindow() {
             }
           })
           .catch(console.error);
-      }
+      },
     });
 
     const isImage = toast.clip_type === 'image';
-    const isText = toast.clip_type && ['text', 'code', 'html', 'rtf', 'url'].includes(toast.clip_type);
+    const isText =
+      toast.clip_type && ['text', 'code', 'html', 'rtf', 'url'].includes(toast.clip_type);
 
     if (isImage || isText) {
       contextMenuOptions.push({
@@ -769,7 +761,7 @@ export function ToastWindow() {
           } catch (err) {
             console.error('Failed to open system viewer:', err);
           }
-        }
+        },
       });
     }
 
@@ -784,7 +776,7 @@ export function ToastWindow() {
         onClick: () => {
           emit('edit-clip', toast.clip_uuid).catch(console.error);
           closeToast();
-        }
+        },
       });
     }
 
@@ -834,11 +826,7 @@ export function ToastWindow() {
             },
           },
           {
-            label: aiLabel(
-              settings?.ai_title_fix_grammar,
-              'Fix Grammar',
-              'contextMenu.fixGrammar'
-            ),
+            label: aiLabel(settings?.ai_title_fix_grammar, 'Fix Grammar', 'contextMenu.fixGrammar'),
             icon: <CheckSquare className="h-3.5 w-3.5" />,
             onClick: () => {
               emit('ai-action-from-toast', {
@@ -858,7 +846,7 @@ export function ToastWindow() {
       icon: <Maximize2 className="h-3.5 w-3.5" />,
       onClick: () => {
         invoke('click_toast', { clipUuid: toast.clip_uuid }).catch(console.error);
-      }
+      },
     });
   }
 
@@ -867,187 +855,196 @@ export function ToastWindow() {
     icon: <X className="h-3.5 w-3.5" />,
     onClick: () => {
       closeToast();
-    }
+    },
   });
 
   return (
     <>
       <div
-        className={`pointer-events-none flex h-full w-full p-6 ${alignmentClass}`}
+        onContextMenu={(e) => e.preventDefault()}
+        className={`pointer-events-none flex h-full w-full px-2 py-1.5 ${alignmentClass}`}
       >
-        <Tooltip label={getTooltip()} placement={tooltipPlacement}>
-          <div
-            ref={toastCardRef}
-            onClick={handleToastClick}
-            onContextMenu={handleContextMenu}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-            className={`pointer-events-auto relative w-full overflow-hidden rounded-xl transition-all duration-300 ${containerClasses} ${isClickable ? 'cursor-pointer' : 'cursor-default'} ${isClosing ? 'translate-y-2 scale-95 opacity-0' : 'translate-y-0 scale-100 opacity-100'}`}
-            data-tauri-drag-region
-          >
-            {isWelcome ? (
-              <div className="flex items-center px-3.5 py-2.5 h-full w-full select-none">
-                {/* CyberSnap-like layout with the app logo on the left */}
-                <div className="shrink-0 flex items-center justify-center w-11 h-11 rounded-lg bg-white/5 border border-white/10 p-1 mr-3">
-                  <img src="/logo.png" alt="CyberPaste Logo" className="w-8 h-8 object-contain" />
-                </div>
-
-                <div className="flex flex-col flex-1 min-w-0 pr-6 justify-center">
-                  <h4
-                    className={`text-[12.75px] font-semibold leading-tight truncate ${tv.title}`}
-                    style={{ fontFamily: "'Segoe UI Variable Text', -apple-system, sans-serif" }}
-                  >
-                    {getWelcomeTitle(version, settings?.language)}
-                  </h4>
-                  <p
-                    className={`text-[11.5px] font-normal leading-normal mt-0.5 ${tv.body}`}
-                    style={{
-                      fontFamily: "'Segoe UI Variable Text', -apple-system, sans-serif",
-                      opacity: 0.72
-                    }}
-                  >
-                    {displayMessage}
-                  </p>
-                </div>
-
-                <div className="absolute right-2 top-2 flex items-center gap-0.5">
-                  <Tooltip label={t('toasts.configureNotifications')} placement="bottom">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openNotificationSettings();
-                      }}
-                      className={`flex h-5 w-5 items-center justify-center rounded-md p-0 transition-colors ${tv.closeBtn}`}
-                      aria-label={t('toasts.configureNotifications')}
-                    >
-                      <SettingsIcon className="h-3 w-3" />
-                    </button>
-                  </Tooltip>
-                  <Tooltip label={t('toasts.tooltipClose')} placement="bottom">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        closeToast();
-                      }}
-                      className={`flex h-5 w-5 items-center justify-center rounded-md p-0 transition-colors ${tv.closeBtn}`}
-                      aria-label={t('toasts.tooltipClose')}
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </Tooltip>
-                </div>
+        <div
+          ref={toastCardRef}
+          onClick={handleToastClick}
+          onContextMenu={handleContextMenu}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          className={`pointer-events-auto relative w-full overflow-hidden rounded-xl transition-all duration-300 ${containerClasses} ${isClickable ? 'cursor-pointer' : 'cursor-default'} ${isClosing ? 'translate-y-2 scale-95 opacity-0' : 'translate-y-0 scale-100 opacity-100'}`}
+          data-tauri-drag-region
+        >
+          {isWelcome ? (
+            <div className="flex h-full w-full select-none items-center px-3.5 py-2.5">
+              {/* CyberSnap-like layout with the app logo on the left */}
+              <div className="mr-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 p-1">
+                <img src="/logo.png" alt="CyberPaste Logo" className="h-8 w-8 object-contain" />
               </div>
-            ) : (
-              <div className="flex flex-col p-2.5 pb-3">
-                {/* Header Row: Source Program info or general Title */}
-                {toast.source_app ? (
-                  <div className={`flex min-w-0 items-center gap-1.5 border-b pb-1.5 mb-2 text-xs font-semibold pr-12 ${tv.headerBorder} ${tv.headerText}`}>
-                    <div className="shrink-0 flex items-center">
-                      {getHeaderClipIcon(toast.clip_type, toast.toast_type, tv.iconColor)}
-                    </div>
-                    <span className="truncate font-medium text-[11px]">{title}</span>
-                    <span className="text-[10px] font-normal text-neutral-500 lowercase px-0.5 shrink-0">{t('toasts.fromApp')}</span>
-                    {toast.source_icon ? (
-                      <img
-                        src={`data:image/png;base64,${toast.source_icon}`}
-                        alt=""
-                        className="w-3.5 h-3.5 object-contain rounded-sm shrink-0"
-                        onError={(e) => {
-                          (e.target as HTMLElement).style.display = 'none';
-                        }}
-                      />
-                    ) : null}
-                    <span className={`min-w-0 max-w-[110px] truncate text-[11px] ${tv.sourceAppText}`}>{toast.source_app}</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1.5 mb-2 pr-12">
-                    <div className="shrink-0 flex items-center">
-                      {getHeaderClipIcon(toast.clip_type, toast.toast_type, tv.iconColor)}
-                    </div>
-                    <h4 className={`text-sm font-semibold truncate ${tv.title}`}>{title}</h4>
-                  </div>
-                )}
 
-                {/* Content Row: Preview & Details */}
-                {toast.toast_type === 'duplicate' && (
-                  <p className={`mb-1.5 text-[9.5px] font-medium ${themeId === 'light' ? 'text-amber-700' : 'text-amber-300'}`}>
-                    {t('toasts.duplicateStatus')}
-                  </p>
-                )}
-                {hasImagePreview ? (
-                  <div className="flex justify-center w-full">
-                    <img
-                      src={`data:image/png;base64,${toast.image_preview}`}
-                      alt=""
-                      className={`max-h-12 max-w-[180px] rounded-md border object-contain shadow-md transition-transform duration-200 hover:scale-105 ${tv.imageBorder}`}
-                    />
+              <div className="flex min-w-0 flex-1 flex-col justify-center pr-6">
+                <h4
+                  className={`truncate text-[12.75px] font-semibold leading-tight ${tv.title}`}
+                  style={{ fontFamily: "'Segoe UI Variable Text', -apple-system, sans-serif" }}
+                >
+                  {getWelcomeTitle(version, settings?.language)}
+                </h4>
+                <p
+                  className={`mt-0.5 text-[11.5px] font-normal leading-normal ${tv.body}`}
+                  style={{
+                    fontFamily: "'Segoe UI Variable Text', -apple-system, sans-serif",
+                    opacity: 0.72,
+                  }}
+                >
+                  {displayMessage}
+                </p>
+              </div>
+
+              <div className="absolute right-2 top-2 flex items-center gap-0.5">
+                <Tooltip label={t('toasts.configureNotifications')} placement="bottom">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openNotificationSettings();
+                    }}
+                    className={`flex h-5 w-5 items-center justify-center rounded-md p-0 transition-colors ${tv.closeBtn}`}
+                    aria-label={t('toasts.configureNotifications')}
+                  >
+                    <SettingsIcon className="h-3 w-3" />
+                  </button>
+                </Tooltip>
+                <Tooltip label={t('toasts.tooltipClose')} placement="bottom">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      closeToast();
+                    }}
+                    className={`flex h-5 w-5 items-center justify-center rounded-md p-0 transition-colors ${tv.closeBtn}`}
+                    aria-label={t('toasts.tooltipClose')}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </Tooltip>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col p-2.5 pb-3">
+              {/* Header Row: Source Program info or general Title */}
+              {toast.source_app ? (
+                <div
+                  className={`mb-2 flex min-w-0 items-center gap-1.5 border-b pb-1.5 pr-12 text-xs font-semibold ${tv.headerBorder} ${tv.headerText}`}
+                >
+                  <div className="flex shrink-0 items-center">
+                    {getHeaderClipIcon(toast.clip_type, toast.toast_type, tv.iconColor)}
                   </div>
-                ) : (
-                  <div className="min-w-0 w-full">
-                    {toast.source_app ? (
-                      // When we have a source app, the message is the actual copied content.
+                  <span className="truncate text-[11px] font-medium">{title}</span>
+                  <span className="shrink-0 px-0.5 text-[10px] font-normal lowercase text-neutral-500">
+                    {t('toasts.fromApp')}
+                  </span>
+                  {toast.source_icon ? (
+                    <img
+                      src={`data:image/png;base64,${toast.source_icon}`}
+                      alt=""
+                      className="h-3.5 w-3.5 shrink-0 rounded-sm object-contain"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                  ) : null}
+                  <span
+                    className={`min-w-0 max-w-[110px] truncate text-[11px] ${tv.sourceAppText}`}
+                  >
+                    {toast.source_app}
+                  </span>
+                </div>
+              ) : (
+                <div className="mb-2 flex items-center gap-1.5 pr-12">
+                  <div className="flex shrink-0 items-center">
+                    {getHeaderClipIcon(toast.clip_type, toast.toast_type, tv.iconColor)}
+                  </div>
+                  <h4 className={`truncate text-sm font-semibold ${tv.title}`}>{title}</h4>
+                </div>
+              )}
+
+              {/* Content Row: Preview & Details */}
+              {toast.toast_type === 'duplicate' && (
+                <p
+                  className={`mb-1.5 text-[9.5px] font-medium ${themeId === 'light' ? 'text-amber-700' : 'text-amber-300'}`}
+                >
+                  {t('toasts.duplicateStatus')}
+                </p>
+              )}
+              {hasImagePreview ? (
+                <div className="flex w-full justify-center">
+                  <img
+                    src={`data:image/png;base64,${toast.image_preview}`}
+                    alt=""
+                    className={`max-h-12 max-w-[180px] rounded-md border object-contain shadow-md transition-transform duration-200 hover:scale-105 ${tv.imageBorder}`}
+                  />
+                </div>
+              ) : (
+                <div className="w-full min-w-0">
+                  {toast.source_app
+                    ? // When we have a source app, the message is the actual copied content.
                       // We style it as a preview card to separate it clearly from the header info.
                       displayMessage && (
-                        <div className={`rounded-lg border px-2.5 py-1.5 text-xs line-clamp-2 break-all font-mono whitespace-pre-wrap ${tv.previewBg} ${tv.previewBorder} ${tv.body}`}>
+                        <div
+                          className={`line-clamp-2 whitespace-pre-wrap break-all rounded-lg border px-2.5 py-1.5 font-mono text-xs ${tv.previewBg} ${tv.previewBorder} ${tv.body}`}
+                        >
                           {displayMessage}
                         </div>
                       )
-                    ) : (
-                      // When there is no source app, just render the message normally (e.g. system notification)
+                    : // When there is no source app, just render the message normally (e.g. system notification)
                       displayMessage && (
                         <p
                           className={`mt-0.5 break-words text-sm font-medium leading-snug ${tv.body}`}
                         >
                           {displayMessage}
                         </p>
-                      )
-                    )}
-                  </div>
-                )}
-
-                <div className="absolute right-2.5 top-2.5 flex items-center gap-0.5">
-                  <Tooltip label={t('toasts.configureNotifications')} placement="bottom">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openNotificationSettings();
-                      }}
-                      className={`flex h-5 w-5 items-center justify-center rounded-md p-0 transition-colors ${tv.closeBtn}`}
-                      aria-label={t('toasts.configureNotifications')}
-                    >
-                      <SettingsIcon className="h-3 w-3" />
-                    </button>
-                  </Tooltip>
-                  <Tooltip label={t('toasts.tooltipClose')} placement="bottom">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        closeToast();
-                      }}
-                      className={`flex h-5 w-5 items-center justify-center rounded-md p-0 transition-colors ${tv.closeBtn}`}
-                      aria-label={t('toasts.tooltipClose')}
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </Tooltip>
+                      )}
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Progress Bar */}
-            <div
-              className={`absolute ${isTopEdge ? 'top-0' : 'bottom-0'} left-0 h-[3px] w-full ${tv.track}`}
-            >
-              <div
-                id="toast-progress-bar"
-                className={`h-full w-full ${originClass}`}
-                style={{
-                  background: tv.progressColor,
-                }}
-              />
+              <div className="absolute right-2.5 top-2.5 flex items-center gap-0.5">
+                <Tooltip label={t('toasts.configureNotifications')} placement="bottom">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openNotificationSettings();
+                    }}
+                    className={`flex h-5 w-5 items-center justify-center rounded-md p-0 transition-colors ${tv.closeBtn}`}
+                    aria-label={t('toasts.configureNotifications')}
+                  >
+                    <SettingsIcon className="h-3 w-3" />
+                  </button>
+                </Tooltip>
+                <Tooltip label={t('toasts.tooltipClose')} placement="bottom">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      closeToast();
+                    }}
+                    className={`flex h-5 w-5 items-center justify-center rounded-md p-0 transition-colors ${tv.closeBtn}`}
+                    aria-label={t('toasts.tooltipClose')}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </Tooltip>
+              </div>
             </div>
+          )}
+
+          {/* Progress Bar */}
+          <div
+            className={`absolute ${isTopEdge ? 'top-0' : 'bottom-0'} left-0 h-[3px] w-full ${tv.track}`}
+          >
+            <div
+              id="toast-progress-bar"
+              className={`h-full w-full ${originClass}`}
+              style={{
+                background: tv.progressColor,
+              }}
+            />
           </div>
-        </Tooltip>
+        </div>
       </div>
       {contextMenu && (
         <ContextMenu

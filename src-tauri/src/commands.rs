@@ -4529,8 +4529,8 @@ pub async fn set_toast_position(app: AppHandle, width: f64, height: f64) -> Resu
                 height: h_px,
             }));
 
-            let margin_x = (8.0 * scale_factor) as i32;
-            let margin_y = (6.0 * scale_factor) as i32;
+            let margin_x = (4.0 * scale_factor) as i32;
+            let margin_y = (3.0 * scale_factor) as i32;
 
             let (target_x, target_y) = match position_setting.as_str() {
                 "top-right" => (

@@ -2,18 +2,24 @@ import { useEffect } from 'react';
 
 export function EnterGlyph({ compact = false }: { compact?: boolean }) {
   return (
-    <svg
-      className={`${compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} flex-none opacity-85`}
-      viewBox="0 0 20 20"
-      fill="none"
-      aria-hidden="true"
+    <span
+      className={`inline-flex ${
+        compact ? 'h-4 px-1 text-[9px]' : 'h-5 px-1.5 text-[10px]'
+      } items-center justify-center rounded-[4px] border border-current leading-tight opacity-85`}
     >
-      <path
-        d="M2 10.5 L7 5.2 L4.8 9 L14.6 9 L14.6 2.5 L17.4 2.5 L17.4 9 A2.8 2.8 0 0 1 14.6 11.8 L4.8 11.8 L7 15.8 Z"
-        fill="currentColor"
-        stroke="none"
-      />
-    </svg>
+      <svg
+        className={`${compact ? 'h-2.5 w-2.5' : 'h-3 w-3'} flex-none`}
+        viewBox="0 0 20 20"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M2 10.5 L7 5.2 L4.8 9 L14.6 9 L14.6 2.5 L17.4 2.5 L17.4 9 A2.8 2.8 0 0 1 14.6 11.8 L4.8 11.8 L7 15.8 Z"
+          fill="currentColor"
+          stroke="none"
+        />
+      </svg>
+    </span>
   );
 }
 
@@ -29,7 +35,13 @@ export function EscGlyph({ compact = false }: { compact?: boolean }) {
   );
 }
 
-export function SpaceGlyph({ label = 'Space', compact = false }: { label?: string; compact?: boolean }) {
+export function SpaceGlyph({
+  label = 'Space',
+  compact = false,
+}: {
+  label?: string;
+  compact?: boolean;
+}) {
   return (
     <span
       className={`inline-flex ${

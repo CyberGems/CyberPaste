@@ -337,12 +337,13 @@ export function TrayMenuWindow() {
               <TrayItem
                 icon={
                   state?.is_paused ? (
-                    <Play size={16} strokeWidth={1.75} />
+                    <Play size={16} strokeWidth={1.75} className="fill-amber-500/20" />
                   ) : (
                     <Pause size={16} strokeWidth={1.75} />
                   )
                 }
                 label={pauseLabel}
+                warning={Boolean(state?.is_paused)}
                 onClick={() => runAction('toggle_pause')}
               />
               {state?.lock_enabled && !state?.locked ? (
@@ -587,6 +588,7 @@ function TrayItem({
   compact,
   nav,
   danger,
+  warning,
   onClick,
 }: {
   icon: ReactNode;
@@ -596,6 +598,7 @@ function TrayItem({
   compact?: boolean;
   nav?: boolean;
   danger?: boolean;
+  warning?: boolean;
   onClick: () => void;
 }) {
   return (
@@ -616,9 +619,11 @@ function TrayItem({
             : 'min-h-[30px] px-2.5 py-1.5',
         danger
           ? 'hover:bg-rose-500/12 text-foreground/90 hover:text-foreground'
-          : compact
-            ? 'text-foreground/90 hover:bg-primary/10 hover:text-foreground'
-            : 'text-foreground/90 hover:translate-x-0.5 hover:bg-primary/10 hover:text-foreground',
+          : warning
+            ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500/15 hover:text-amber-400'
+            : compact
+              ? 'text-foreground/90 hover:bg-primary/10 hover:text-foreground'
+              : 'text-foreground/90 hover:translate-x-0.5 hover:bg-primary/10 hover:text-foreground',
         'active:scale-[0.98]'
       )}
     >
@@ -627,13 +632,19 @@ function TrayItem({
           'flex h-4 w-4 flex-shrink-0 items-center justify-center transition-transform duration-150 group-hover:scale-110',
           danger
             ? 'text-rose-400 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)] group-hover:text-rose-300'
-            : 'text-primary drop-shadow-[0_0_4px_rgba(var(--primary-rgb),0.45)]'
+            : warning
+              ? 'text-amber-500 drop-shadow-[0_0_5px_rgba(245,158,11,0.5)] group-hover:text-amber-400'
+              : 'text-primary drop-shadow-[0_0_4px_rgba(var(--primary-rgb),0.45)]'
         )}
       >
         {icon}
       </span>
       <span
-        className={clsx('min-w-0 flex-1 font-medium', compact ? 'text-[11.5px]' : 'text-[12.5px]')}
+        className={clsx(
+          'min-w-0 flex-1 font-medium',
+          warning && 'font-semibold text-amber-500',
+          compact ? 'text-[11.5px]' : 'text-[12.5px]'
+        )}
       >
         <span className={description ? 'block truncate' : undefined}>{label}</span>
         {description ? (
