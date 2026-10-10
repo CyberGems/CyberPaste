@@ -317,7 +317,7 @@ export function TitleBarMenu({
               <span>{t('common.donate')}</span>
             </button>
 
-            <div className="mx-1.5 my-0.5 h-px bg-border" />
+            <div role="separator" className="mx-2 my-1 h-px shrink-0 bg-foreground/15" />
 
             {onAddFolder && (
               <button
@@ -387,7 +387,7 @@ export function TitleBarMenu({
               </button>
             )}
 
-            <div className="mx-1.5 my-0.5 h-px bg-border" />
+            <div role="separator" className="mx-2 my-1 h-px shrink-0 bg-foreground/15" />
 
             <button
               type="button"
@@ -442,7 +442,7 @@ export function TitleBarMenu({
               <span>{t('titleBar.moreMenu.github')}</span>
             </button>
 
-            <div className="mx-1.5 my-0.5 h-px bg-border" />
+            <div role="separator" className="mx-2 my-1 h-px shrink-0 bg-foreground/15" />
 
             <button
               type="button"

@@ -1738,8 +1738,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
             {/* Footer */}
             <div
               className={cn(
-                'flex flex-shrink-0 items-center justify-between border-t border-border/40 bg-black/25 px-3 py-1.5 font-mono text-[9px] tracking-tighter text-muted-foreground/80 backdrop-blur-md transition-opacity',
-                entranceAnim && !mounted ? 'opacity-0' : 'opacity-70',
+                'flex flex-shrink-0 items-center justify-between border-t border-border/60 bg-secondary/40 px-3 py-1.5 font-mono text-[9px] tracking-tighter text-muted-foreground backdrop-blur-md transition-opacity dark:bg-black/25',
+                entranceAnim && !mounted ? 'opacity-0' : 'opacity-100',
                 isPeekVisible && 'blur-[3px]'
               )}
             >
@@ -2016,8 +2016,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
           {/* Footer */}
           <div
             className={cn(
-              'flex flex-shrink-0 items-center justify-between border-t border-border/40 bg-black/25 px-3 py-1.5 font-mono text-[9px] tracking-tighter text-muted-foreground/80 backdrop-blur-md transition-opacity',
-              entranceAnim && !mounted ? 'opacity-0' : 'opacity-70',
+              'flex flex-shrink-0 items-center justify-between border-t border-border/60 bg-secondary/40 px-3 py-1.5 font-mono text-[9px] tracking-tighter text-muted-foreground backdrop-blur-md transition-opacity dark:bg-black/25',
+              entranceAnim && !mounted ? 'opacity-0' : 'opacity-100',
               isPeekVisible && 'blur-[3px]'
             )}
           >
