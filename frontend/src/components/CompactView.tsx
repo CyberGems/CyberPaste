@@ -2565,7 +2565,7 @@ function CompactListRow({
     <div
       style={style}
       {...ariaAttributes}
-      className="box-border flex h-full items-center py-0.5 pl-2 pr-1"
+      className="box-border py-0.5 pl-2 pr-1"
       onMouseLeave={() => onRowMouseLeave?.()}
     >
       <ClipRow

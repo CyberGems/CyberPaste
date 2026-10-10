@@ -9,7 +9,6 @@ import {
   Book,
   ChevronLeft,
   ChevronRight,
-  Globe,
   Heart,
   HelpCircle,
   Info,
@@ -58,7 +57,14 @@ export interface TrayMenuState {
   locked?: boolean;
 }
 
-type TrayAction = 'show' | 'toggle_pause' | 'settings' | 'about' | 'check_updates' | 'quit' | 'lock';
+type TrayAction =
+  | 'show'
+  | 'toggle_pause'
+  | 'settings'
+  | 'about'
+  | 'check_updates'
+  | 'quit'
+  | 'lock';
 type TrayView = 'main' | 'help' | 'suite';
 
 const DONATE_URL = 'https://github.com/CyberGems/CyberPaste#%EF%B8%8F-donate';
@@ -87,7 +93,9 @@ export function TrayMenuWindow() {
     viewRef.current = next;
     setView(next);
     window.setTimeout(() => {
-      getCurrentWindow().setFocus().catch(() => {});
+      getCurrentWindow()
+        .setFocus()
+        .catch(() => {});
     }, 0);
   }, []);
 
@@ -276,7 +284,7 @@ export function TrayMenuWindow() {
       onContextMenu={(e) => e.preventDefault()}
     >
       <div
-        className="relative select-none overflow-hidden rounded-2xl border border-border bg-card/95 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150"
+        className="animate-in fade-in zoom-in-95 relative select-none overflow-hidden rounded-2xl border border-border bg-card/95 backdrop-blur-xl duration-150"
         style={{
           width: MENU_WIDTH,
           boxShadow:
@@ -419,7 +427,7 @@ export function TrayMenuWindow() {
               />
               <TrayItem
                 compact
-                icon={<Globe size={14} strokeWidth={1.75} />}
+                icon={<Gem size={14} strokeWidth={1.75} />}
                 label={t('tray.website', { defaultValue: 'Website' })}
                 onClick={() => hideThenOpen(WEBSITE_URL)}
               />
@@ -467,7 +475,9 @@ export function TrayMenuWindow() {
                 <TrayItem
                   key={app.slug}
                   compact
-                  icon={<img src={app.icon} alt="" className="h-4 w-4 rounded-[4px] object-contain" />}
+                  icon={
+                    <img src={app.icon} alt="" className="h-4 w-4 rounded-[4px] object-contain" />
+                  }
                   label={app.name}
                   description={app.short[suiteLocale]}
                   onClick={() => hideThenOpen(app.site)}
@@ -605,7 +615,7 @@ function TrayItem({
             ? 'min-h-[26px] px-2.5 py-1'
             : 'min-h-[30px] px-2.5 py-1.5',
         danger
-          ? 'text-foreground/90 hover:bg-rose-500/12 hover:text-foreground'
+          ? 'hover:bg-rose-500/12 text-foreground/90 hover:text-foreground'
           : compact
             ? 'text-foreground/90 hover:bg-primary/10 hover:text-foreground'
             : 'text-foreground/90 hover:translate-x-0.5 hover:bg-primary/10 hover:text-foreground',
@@ -623,10 +633,7 @@ function TrayItem({
         {icon}
       </span>
       <span
-        className={clsx(
-          'min-w-0 flex-1 font-medium',
-          compact ? 'text-[11.5px]' : 'text-[12.5px]'
-        )}
+        className={clsx('min-w-0 flex-1 font-medium', compact ? 'text-[11.5px]' : 'text-[12.5px]')}
       >
         <span className={description ? 'block truncate' : undefined}>{label}</span>
         {description ? (

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   MoreHorizontal,
   Heart,
-  Globe,
+  Gem,
   Tag,
   Github,
   Info,
@@ -300,21 +300,6 @@ export function TitleBarMenu({
                 to { opacity: 1; transform: translateY(0); }
               }
             `}</style>
-            {onAddFolder && (
-              <>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className={itemClass}
-                  onClick={() => closeAnd(onAddFolder)}
-                >
-                  <FolderPlus size={14} className={iconClass} />
-                  <span>{t('folders.newFolder')}</span>
-                </button>
-                <div className="mx-1.5 my-0.5 h-px bg-border" />
-              </>
-            )}
-
             <button
               type="button"
               role="menuitem"
@@ -331,6 +316,76 @@ export function TitleBarMenu({
               />
               <span>{t('common.donate')}</span>
             </button>
+
+            <div className="mx-1.5 my-0.5 h-px bg-border" />
+
+            {onAddFolder && (
+              <button
+                type="button"
+                role="menuitem"
+                className={itemClass}
+                onClick={() => closeAnd(onAddFolder)}
+              >
+                <FolderPlus size={14} className={iconClass} />
+                <span>{t('folders.newFolder')}</span>
+              </button>
+            )}
+
+            {variant === 'main' && lockEnabled && (
+              <button
+                type="button"
+                role="menuitem"
+                className={itemClass}
+                onClick={() =>
+                  closeAnd(() => {
+                    invoke('lock_app').catch(console.error);
+                  })
+                }
+              >
+                <Lock size={14} className={iconClass} />
+                <span>{t('titleBar.moreMenu.lock')}</span>
+              </button>
+            )}
+
+            {showClearHistory && (
+              <button
+                type="button"
+                role="menuitem"
+                className={itemClass}
+                onClick={() => closeAnd(handleResetWindowSize)}
+              >
+                <RotateCcw size={14} className={iconClass} />
+                <span>{t('common.resetWindowSize')}</span>
+              </button>
+            )}
+
+            {showClearHistory && (
+              <button
+                type="button"
+                role="menuitem"
+                className={itemClass}
+                onClick={confirmClearHistory}
+              >
+                <Trash2 size={14} className="shrink-0 text-destructive" />
+                <span>{t('settings.clearHistory')}</span>
+              </button>
+            )}
+
+            {showOpenSettings && (
+              <button
+                type="button"
+                role="menuitem"
+                className={itemClass}
+                onClick={() =>
+                  closeAnd(() => {
+                    invoke('open_settings').catch(console.error);
+                  })
+                }
+              >
+                <Settings size={14} className={iconClass} />
+                <span>{t('common.settings')}</span>
+              </button>
+            )}
 
             <div className="mx-1.5 my-0.5 h-px bg-border" />
 
@@ -357,7 +412,7 @@ export function TitleBarMenu({
                 })
               }
             >
-              <Globe size={14} className={iconClass} />
+              <Gem size={14} className={iconClass} />
               <span>{t('titleBar.moreMenu.website')}</span>
             </button>
             <button
@@ -386,73 +441,6 @@ export function TitleBarMenu({
               <Github size={14} className={iconClass} />
               <span>{t('titleBar.moreMenu.github')}</span>
             </button>
-
-            {variant === 'main' && lockEnabled && (
-              <>
-                <div className="mx-1.5 my-0.5 h-px bg-border" />
-                <button
-                  type="button"
-                  role="menuitem"
-                  className={itemClass}
-                  onClick={() =>
-                    closeAnd(() => {
-                      invoke('lock_app').catch(console.error);
-                    })
-                  }
-                >
-                  <Lock size={14} className={iconClass} />
-                  <span>{t('titleBar.moreMenu.lock')}</span>
-                </button>
-              </>
-            )}
-
-            {showClearHistory && (
-              <>
-                <div className="mx-1.5 my-0.5 h-px bg-border" />
-
-                <button
-                  type="button"
-                  role="menuitem"
-                  className={itemClass}
-                  onClick={() => closeAnd(handleResetWindowSize)}
-                >
-                  <RotateCcw size={14} className={iconClass} />
-                  <span>{t('common.resetWindowSize')}</span>
-                </button>
-
-                <div className="mx-1.5 my-0.5 h-px bg-border" />
-
-                <button
-                  type="button"
-                  role="menuitem"
-                  className={itemClass}
-                  onClick={confirmClearHistory}
-                >
-                  <Trash2 size={14} className="shrink-0 text-destructive" />
-                  <span>{t('settings.clearHistory')}</span>
-                </button>
-              </>
-            )}
-
-            {showOpenSettings && (
-              <>
-                <div className="mx-1.5 my-0.5 h-px bg-border" />
-
-                <button
-                  type="button"
-                  role="menuitem"
-                  className={itemClass}
-                  onClick={() =>
-                    closeAnd(() => {
-                      invoke('open_settings').catch(console.error);
-                    })
-                  }
-                >
-                  <Settings size={14} className={iconClass} />
-                  <span>{t('common.settings')}</span>
-                </button>
-              </>
-            )}
 
             <div className="mx-1.5 my-0.5 h-px bg-border" />
 

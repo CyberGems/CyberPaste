@@ -13,7 +13,7 @@ import {
   Copy,
   ExternalLink,
   Github,
-  Globe,
+  Gem,
   Heart,
   Info,
   Loader2,
@@ -544,7 +544,7 @@ export function AboutWindow() {
                         type="button"
                         onClick={() => openUrl(app.site).catch(console.error)}
                         aria-label={`${app.name}: ${app.tagline[suiteLang]}`}
-                        className="group flex h-11 w-11 items-center justify-center rounded-lg border border-border/80 bg-card p-1 transition-colors hover:border-primary/50 hover:bg-accent"
+                        className="group flex h-11 w-11 items-center justify-center rounded-lg border border-border/80 bg-card p-1 opacity-50 transition-all duration-200 hover:border-primary/50 hover:bg-accent hover:opacity-100"
                       >
                         <img
                           src={app.icon}
@@ -559,7 +559,7 @@ export function AboutWindow() {
                       type="button"
                       onClick={() => openUrl(SUITE_URL).catch(console.error)}
                       aria-label={t('settings.suiteMoreTooltip')}
-                      className="inline-flex h-11 items-center rounded-lg border border-transparent px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary/35 hover:bg-primary/[0.06] hover:text-primary"
+                      className="inline-flex h-11 items-center rounded-lg border border-transparent px-2 text-[11px] font-medium text-muted-foreground opacity-60 transition-all duration-200 hover:border-primary/35 hover:bg-primary/[0.06] hover:text-primary hover:opacity-100"
                     >
                       <span>{t('settings.suiteMore')}</span>
                     </button>
@@ -591,7 +591,7 @@ export function AboutWindow() {
                 onClick={() => openUrl(WEBSITE_URL).catch(console.error)}
                 className="flex h-[30px] w-[30px] items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
-                <Globe size={15} strokeWidth={1.5} />
+                <Gem size={15} strokeWidth={1.5} />
               </button>
             </Tooltip>
             <Tooltip label={t('settings.aboutDocsTooltip')} placement="top">
