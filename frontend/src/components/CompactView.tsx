@@ -1645,6 +1645,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                           return;
                         }
                         e.preventDefault();
+                        e.stopPropagation();
                         onSearchCommit(searchQuery);
                         const targetId =
                           selectedClipId && filteredClips.some((c) => c.id === selectedClipId)
@@ -1841,6 +1842,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                         return;
                       }
                       e.preventDefault();
+                      e.stopPropagation();
                       onSearchCommit(searchQuery);
                       const targetId =
                         selectedClipId && filteredClips.some((c) => c.id === selectedClipId)
