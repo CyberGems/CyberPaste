@@ -596,34 +596,6 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             onClick={() => onShowUpdate?.()}
             iconSize={15}
           />
-          {onTogglePin && (
-            <Tooltip
-              label={t('common.tooltipWithHotkey', {
-                label: isPinned ? t('common.unpinWindow') : t('common.pinWindow'),
-                hotkey: TITLEBAR_HOTKEYS.pin,
-              })}
-              placement="bottom"
-            >
-              <button
-                onClick={onTogglePin}
-                className={clsx(
-                  headerBtnClass,
-                  'focus:outline-none',
-                  isPinned &&
-                    'border-primary/30 bg-primary/20 text-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.4)]'
-                )}
-              >
-                <Pin
-                  size={15}
-                  className={clsx(
-                    'transition-transform duration-300',
-                    isPinned ? 'fill-primary text-primary' : 'rotate-45'
-                  )}
-                />
-              </button>
-            </Tooltip>
-          )}
-
           {lockEnabled && onLockNow && (
             <Tooltip label={t('common.lockNow')} placement="bottom">
               <button
@@ -682,6 +654,57 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             onAddFolder={onAddClick}
           />
 
+          {/* Divider between app actions and window controls */}
+          <div className="mx-1 h-4 w-px shrink-0 bg-foreground/15" aria-hidden="true" />
+
+          {onTogglePin && (
+            <Tooltip
+              label={t('common.tooltipWithHotkey', {
+                label: isPinned ? t('common.unpinWindow') : t('common.pinWindow'),
+                hotkey: TITLEBAR_HOTKEYS.pin,
+              })}
+              placement="bottom"
+            >
+              <button
+                onClick={onTogglePin}
+                className={clsx(
+                  headerBtnClass,
+                  'focus:outline-none',
+                  isPinned &&
+                    'border-primary/30 bg-primary/20 text-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.4)]'
+                )}
+              >
+                <Pin
+                  size={15}
+                  className={clsx(
+                    'transition-transform duration-300',
+                    isPinned ? 'fill-primary text-primary' : 'rotate-45'
+                  )}
+                />
+              </button>
+            </Tooltip>
+          )}
+
+          <Tooltip
+            label={t('common.tooltipWithHotkey', {
+              label: viewMode === 'full' ? t('common.switchToCompact') : t('common.switchToFull'),
+              hotkey: toggleModeHotkey,
+            })}
+            placement="bottom"
+          >
+            <button
+              onClick={onToggleMode}
+              className="group relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border border-transparent bg-transparent text-primary transition-all duration-200 hover:border-primary/50 hover:bg-primary/15 hover:shadow-[0_0_12px_rgba(var(--primary-rgb),0.35)] active:scale-[0.98]"
+            >
+              <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+              {viewMode === 'full' ? (
+                <ListIcon size={13} className="relative z-10 flex-shrink-0" />
+              ) : (
+                <LayoutGrid size={13} className="relative z-10 flex-shrink-0" />
+              )}
+            </button>
+          </Tooltip>
+
           <Tooltip
             label={t('common.tooltipWithHotkey', {
               label: isMaximized ? t('common.restore') : t('common.maximize'),
@@ -695,26 +718,6 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               className={headerBtnClass}
             >
               {isMaximized ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-            </button>
-          </Tooltip>
-
-          <Tooltip
-            label={t('common.tooltipWithHotkey', {
-              label: viewMode === 'full' ? t('common.switchToCompact') : t('common.switchToFull'),
-              hotkey: toggleModeHotkey,
-            })}
-            placement="bottom"
-          >
-            <button
-              onClick={onToggleMode}
-              className="group relative ml-1 flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border border-transparent bg-transparent text-primary transition-all duration-200 hover:border-primary/50 hover:bg-primary/15 hover:shadow-[0_0_12px_rgba(var(--primary-rgb),0.35)] active:scale-[0.98]"
-            >
-              <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
-              {viewMode === 'full' ? (
-                <ListIcon size={13} className="relative z-10 flex-shrink-0" />
-              ) : (
-                <LayoutGrid size={13} className="relative z-10 flex-shrink-0" />
-              )}
             </button>
           </Tooltip>
 

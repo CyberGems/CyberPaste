@@ -1306,33 +1306,6 @@ export const CompactView: React.FC<CompactViewProps> = ({
             onClick={() => onShowUpdate?.()}
             iconSize={14}
           />
-          {onTogglePin && (
-            <Tooltip
-              label={t('common.tooltipWithHotkey', {
-                label: isPinned ? t('common.unpinWindowShort') : t('common.pinWindowShort'),
-                hotkey: TITLEBAR_HOTKEYS.pin,
-              })}
-              placement="bottom"
-            >
-              <button
-                onClick={onTogglePin}
-                className={cn(
-                  'flex h-8 w-8 items-center justify-center rounded-lg border transition-all focus:outline-none',
-                  isPinned
-                    ? 'border-primary/30 bg-primary/20 text-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.4)]'
-                    : 'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
-                )}
-              >
-                <Pin
-                  size={14}
-                  className={cn(
-                    'transition-transform duration-300',
-                    isPinned ? 'fill-primary text-primary' : 'rotate-45'
-                  )}
-                />
-              </button>
-            </Tooltip>
-          )}
           {lockEnabled && onLockNow && (
             <Tooltip label={t('common.lockNow')} placement="bottom">
               <button
@@ -1409,6 +1382,55 @@ export const CompactView: React.FC<CompactViewProps> = ({
             onAddFolder={onAddFolder}
           />
 
+          {/* Divider between app actions and window controls */}
+          <div className="mx-1 h-4 w-px shrink-0 bg-foreground/15" aria-hidden="true" />
+
+          {onTogglePin && (
+            <Tooltip
+              label={t('common.tooltipWithHotkey', {
+                label: isPinned ? t('common.unpinWindowShort') : t('common.pinWindowShort'),
+                hotkey: TITLEBAR_HOTKEYS.pin,
+              })}
+              placement="bottom"
+            >
+              <button
+                onClick={onTogglePin}
+                className={cn(
+                  'flex h-8 w-8 items-center justify-center rounded-lg border transition-all focus:outline-none',
+                  isPinned
+                    ? 'border-primary/30 bg-primary/20 text-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.4)]'
+                    : 'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
+                )}
+              >
+                <Pin
+                  size={14}
+                  className={cn(
+                    'transition-transform duration-300',
+                    isPinned ? 'fill-primary text-primary' : 'rotate-45'
+                  )}
+                />
+              </button>
+            </Tooltip>
+          )}
+
+          {/* View-toggle — primary action pill */}
+          <Tooltip
+            label={t('common.tooltipWithHotkey', {
+              label: t('common.switchToFull'),
+              hotkey: toggleModeHotkey,
+            })}
+            placement="bottom"
+          >
+            <button
+              onClick={onToggleMode}
+              className="group relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border border-transparent bg-transparent text-primary transition-all duration-200 hover:border-primary/50 hover:bg-primary/15 hover:shadow-[0_0_12px_rgba(var(--primary-rgb),0.35)] active:scale-[0.98]"
+            >
+              {/* shimmer sweep */}
+              <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+              <LayoutGrid size={13} className="relative z-10 flex-shrink-0" />
+            </button>
+          </Tooltip>
+
           <Tooltip
             label={t('common.tooltipWithHotkey', {
               label: isMaximized ? t('common.restore') : t('common.maximize'),
@@ -1422,24 +1444,6 @@ export const CompactView: React.FC<CompactViewProps> = ({
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80"
             >
               {isMaximized ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-            </button>
-          </Tooltip>
-
-          {/* View-toggle — primary action pill */}
-          <Tooltip
-            label={t('common.tooltipWithHotkey', {
-              label: t('common.switchToFull'),
-              hotkey: toggleModeHotkey,
-            })}
-            placement="bottom"
-          >
-            <button
-              onClick={onToggleMode}
-              className="group relative ml-1 flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border border-transparent bg-transparent text-primary transition-all duration-200 hover:border-primary/50 hover:bg-primary/15 hover:shadow-[0_0_12px_rgba(var(--primary-rgb),0.35)] active:scale-[0.98]"
-            >
-              {/* shimmer sweep */}
-              <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
-              <LayoutGrid size={13} className="relative z-10 flex-shrink-0" />
             </button>
           </Tooltip>
 
