@@ -4,6 +4,7 @@ import { listen } from '@tauri-apps/api/event';
 import { useTranslation } from 'react-i18next';
 import { Activity, Award, CalendarDays, ShieldCheck, Trophy } from 'lucide-react';
 import { Settings, ProgressData } from '../types';
+import { Switch } from './ui/Switch';
 
 interface AchievementProgressPanelProps {
   settings: Settings;
@@ -150,8 +151,7 @@ export function AchievementProgressPanel({
                 {t('settings.progressCurrentStreak')}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                {formatNumber(progress?.current_streak ?? 0, locale)}{' '}
-                {t('settings.progressDays')}
+                {formatNumber(progress?.current_streak ?? 0, locale)} {t('settings.progressDays')}
               </p>
             </div>
           </div>
@@ -192,10 +192,11 @@ export function AchievementProgressPanel({
               ['html', progress.totals.captured_html],
               ['rtf', progress.totals.captured_rtf],
             ].map(([type, value]) => (
-              <div key={String(type)} className="flex items-center justify-between gap-2 px-2 py-1.5">
-                <span className="text-xs text-muted-foreground">
-                  {t(`clipType.${type}`)}
-                </span>
+              <div
+                key={String(type)}
+                className="flex items-center justify-between gap-2 px-2 py-1.5"
+              >
+                <span className="text-xs text-muted-foreground">{t(`clipType.${type}`)}</span>
                 <span className="font-mono text-xs font-semibold tabular-nums text-foreground">
                   {formatNumber(Number(value), locale)}
                 </span>
@@ -288,23 +289,11 @@ export function AchievementProgressPanel({
                 {t('settings.enableAchievementsDesc')}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() =>
-                onUpdate('achievements_enabled', !(settings.achievements_enabled ?? true))
-              }
-              className={`h-6 w-11 flex-shrink-0 rounded-full transition-colors ${
-                (settings.achievements_enabled ?? true) ? 'bg-primary' : 'bg-white/10'
-              }`}
+            <Switch
+              checked={settings.achievements_enabled ?? true}
+              onChange={(val) => onUpdate('achievements_enabled', val)}
               aria-label={t('settings.enableAchievements')}
-              aria-pressed={settings.achievements_enabled ?? true}
-            >
-              <span
-                className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                  (settings.achievements_enabled ?? true) ? 'translate-x-5' : 'translate-x-0.5'
-                }`}
-              />
-            </button>
+            />
           </div>
 
           <div className="flex items-center justify-between gap-4 rounded-[4px] border border-border bg-secondary p-3">
@@ -314,30 +303,11 @@ export function AchievementProgressPanel({
                 {t('settings.achievementNotificationsDesc')}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() =>
-                onUpdate(
-                  'achievement_notifications_enabled',
-                  !(settings.achievement_notifications_enabled ?? true)
-                )
-              }
-              className={`h-6 w-11 flex-shrink-0 rounded-full transition-colors ${
-                (settings.achievement_notifications_enabled ?? true)
-                  ? 'bg-primary'
-                  : 'bg-white/10'
-              }`}
+            <Switch
+              checked={settings.achievement_notifications_enabled ?? true}
+              onChange={(val) => onUpdate('achievement_notifications_enabled', val)}
               aria-label={t('settings.achievementNotifications')}
-              aria-pressed={settings.achievement_notifications_enabled ?? true}
-            >
-              <span
-                className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                  (settings.achievement_notifications_enabled ?? true)
-                    ? 'translate-x-5'
-                    : 'translate-x-0.5'
-                }`}
-              />
-            </button>
+            />
           </div>
 
           <div className="flex flex-col gap-3 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-between">

@@ -626,24 +626,17 @@
   }
 
   /* Toggles / Switcher styling */
+  .dark button[role='switch']:not(.bg-primary),
   .dark button.w-11.rounded-full:not(.bg-primary) {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
   }
 
+  .dark button[role='switch'].bg-primary,
   .dark button.w-11.rounded-full.bg-primary {
     background: hsl(var(--primary)) !important; /* Silver accent */
     border-color: hsl(var(--primary)) !important;
-  }
-
-  .dark button.w-11.rounded-full.bg-primary > div,
-  .dark button.w-11.rounded-full.bg-primary > span {
-    background: #141619 !important; /* switch active indicator matches background */
-  }
-
-  .dark button.w-11.rounded-full:not(.bg-primary) > div,
-  .dark button.w-11.rounded-full:not(.bg-primary) > span {
-    background: rgba(255, 255, 255, 0.8) !important;
+    box-shadow: 0 0 12px rgba(var(--primary-rgb), 0.35) !important;
   }
 
   /* Combobox dropdown menu elevation & contrast (CyberSnap Match) */

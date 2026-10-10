@@ -101,7 +101,7 @@ export interface Settings {
   full_show_type_icon?: boolean;
   full_show_number?: boolean;
   full_type_filter?: string; // 'all' | 'text' | 'code' | 'image' | 'url' | 'file'
-  compact_row_height?: number; // 36 | 44 | 52
+  compact_row_height?: number; // 34 | 40 | 48
   compact_type_filter?: string; // 'all' | 'text' | 'code' | 'image' | 'url' | 'file'
   compact_last_position_x?: number | null;
   compact_last_position_y?: number | null;

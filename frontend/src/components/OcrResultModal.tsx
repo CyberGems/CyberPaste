@@ -7,6 +7,7 @@ import { useTextFieldContextMenu } from '../hooks/useTextFieldContextMenu';
 import { isExportCancelled, saveTextToFile } from '../utils/export';
 import { EnterGlyph, EscGlyph, useModalKeys } from './ModalActions';
 import Tooltip from './Tooltip';
+import { Switch } from './ui/Switch';
 
 interface OcrResultModalProps {
   isOpen: boolean;
@@ -139,14 +140,11 @@ export const OcrResultModal: React.FC<OcrResultModalProps> = ({
 
         <div className="flex flex-shrink-0 flex-col items-stretch justify-between gap-3 border-t border-border bg-muted/30 px-5 py-3 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setAutoCopy((prev) => !prev)}
-              className={`flex h-6 w-11 items-center rounded-full px-0.5 transition-colors ${autoCopy ? 'bg-primary' : 'bg-zinc-700'}`}
-            >
-              <div
-                className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${autoCopy ? 'translate-x-5' : 'translate-x-0'}`}
-              />
-            </button>
+            <Switch
+              checked={autoCopy}
+              onChange={setAutoCopy}
+              aria-label={t('viewer.autoCopyOcr') || 'Auto-copy to clipboard immediately'}
+            />
             <span className="text-xs text-muted-foreground">
               {t('viewer.autoCopyOcr') || 'Auto-copy to clipboard immediately'}
             </span>

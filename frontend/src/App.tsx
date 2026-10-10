@@ -1937,7 +1937,7 @@ function App() {
 
   // Ctrl + wheel en área de clips del modo Compact: cambia densidad (36/44/52px)
   useEffect(() => {
-    const ROW_HEIGHTS = [36, 44, 52];
+    const ROW_HEIGHTS = [34, 40, 48];
     const handleCompactZoom = (e: WheelEvent) => {
       if (!e.ctrlKey && !e.metaKey) return;
       if (settingsRef.current?.view_mode !== 'compact') return;
@@ -1945,8 +1945,10 @@ function App() {
       // Solo si estamos sobre el área de clips (cualquier elemento dentro del div de la lista)
       if (!target.closest('[data-clip-list="true"]')) return;
       e.preventDefault();
-      const current = settingsRef.current?.compact_row_height ?? 44;
-      const idx = ROW_HEIGHTS.indexOf(current);
+      const rawCurrent = settingsRef.current?.compact_row_height ?? 40;
+      const current = rawCurrent === 44 ? 40 : rawCurrent;
+      let idx = ROW_HEIGHTS.indexOf(current);
+      if (idx === -1) idx = 1;
       const direction = e.deltaY < 0 ? 1 : -1;
       const nextIdx = Math.min(ROW_HEIGHTS.length - 1, Math.max(0, idx + direction));
       const next = ROW_HEIGHTS[nextIdx];
@@ -1958,9 +1960,9 @@ function App() {
       toast.info(
         t('settings.compactDensity') +
           ': ' +
-          (next === 36
+          (next <= 34
             ? t('compact.densitySmall')
-            : next === 44
+            : next <= 42
               ? t('compact.densityMedium')
               : t('compact.densityLarge'))
       );
@@ -3257,7 +3259,9 @@ function App() {
               }}
               searchFocusToken={searchFocusToken}
               clipNumbering={settings?.clip_numbering || 'positional'}
-              rowHeight={settings?.compact_row_height ?? 44}
+              rowHeight={
+                settings?.compact_row_height === 44 ? 40 : (settings?.compact_row_height ?? 40)
+              }
               selectedClipIds={selectedClipIds}
               onToggleClipSelect={handleToggleClipSelect}
               onClearSelection={handleClearBulkSelection}

@@ -654,7 +654,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   resetToken = 0,
   clipNumbering = 'positional',
   // NUEVO
-  rowHeight = 44,
+  rowHeight = 40,
   selectedClipIds,
   onToggleClipSelect,
   onClearSelection,
@@ -1375,6 +1375,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
             iconSize={14}
             hotkey={TITLEBAR_HOTKEYS.more}
             onResetSize={handleResetSize}
+            onAddFolder={onAddFolder}
           />
 
           <Tooltip
@@ -1463,98 +1464,104 @@ export const CompactView: React.FC<CompactViewProps> = ({
             ) : (
               <>
                 <div
-                  ref={folderScrollRef}
-                  onWheel={handleWheel}
-                  className="no-scrollbar flex h-full flex-col gap-1 overflow-y-auto py-2"
+                  className="flex h-full flex-col overflow-hidden"
                   style={{ width: SIDEBAR_EXPANDED_W }}
                 >
-                  <Tooltip label={t('common.folderNavHintCompact')} placement="right">
-                    <button
-                      onClick={() => onSelectFolder(null)}
-                      data-folder-id="clipboard"
-                      data-selected={highlightedFolderId === null}
-                      className={cn(
-                        'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2 py-1.5 text-[11px] font-medium transition-all focus:outline-none focus-visible:ring-0',
-                        isClipboardFlashing && 'folder-soft-flash',
-                        highlightedFolderId === null && dragTargetFolderId === undefined
-                          ? 'border-transparent bg-primary/15 font-semibold text-foreground'
-                          : dragTargetFolderId === null && isDragging
-                            ? 'border-transparent bg-primary/30 text-foreground'
-                            : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
-                      )}
-                      onMouseEnter={() => handleFolderHover(null)}
-                      onMouseLeave={onDragLeave}
-                    >
-                      <Clock size={11} className="flex-shrink-0" />
-                      <span className="min-w-0 flex-1 truncate text-left">
-                        {t('folders.clipboard')}
-                      </span>
-                      <span
-                        className={cn(
-                          'flex-shrink-0 text-[10px] tabular-nums opacity-35',
-                          selectedFolder === null && 'opacity-70'
-                        )}
-                      >
-                        ({totalClipCount})
-                      </span>
-                    </button>
-                  </Tooltip>
-                  {folders.map((folder) => {
-                    const isSelected = highlightedFolderId === folder.id;
-                    return (
-                      <React.Fragment key={folder.id}>
-                        {folderReorderTargetId === folder.id &&
-                          folderReorderTargetPosition === 'before' && (
-                            <div className="mx-2 h-0.5 flex-shrink-0 animate-pulse rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
-                          )}
-                        <CompactSidebarFolderItem
-                          folder={folder}
-                          isSelected={isSelected}
-                          isDragTarget={dragTargetFolderId === folder.id && isDragging}
-                          contextMenuFolderId={contextMenuFolderId}
-                          draggingFolderId={draggingFolderId}
-                          dragTargetFolderId={dragTargetFolderId}
-                          onMouseDown={handleFolderMouseDown}
-                          onMouseMove={handleFolderMouseMove}
-                          onMouseLeave={() => {
-                            handleFolderMouseLeave();
-                            onDragLeave();
-                          }}
-                          onClick={(id) => {
-                            if (wasFolderDraggingRef.current) return;
-                            onSelectFolder(id);
-                          }}
-                          onContextMenu={onFolderContextMenu}
-                          onMouseEnter={(id) => handleFolderHover(id)}
-                        />
-                        {folderReorderTargetId === folder.id &&
-                          folderReorderTargetPosition === 'after' && (
-                            <div className="mx-2 h-0.5 flex-shrink-0 animate-pulse rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
-                          )}
-                      </React.Fragment>
-                    );
-                  })}
-                  {onAddFolder && (
-                    <Tooltip label={t('folders.addFolderBtn')} placement="right">
+                  <div
+                    ref={folderScrollRef}
+                    onWheel={handleWheel}
+                    className="no-scrollbar flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto py-2"
+                  >
+                    <Tooltip label={t('common.folderNavHintCompact')} placement="right">
                       <button
-                        onClick={onAddFolder}
-                        className="mx-1.5 flex flex-row items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-dashed border-border bg-transparent px-2 py-1.5 text-[11px] font-medium text-muted-foreground/70 transition-all hover:border-muted hover:text-foreground"
+                        onClick={() => onSelectFolder(null)}
+                        data-folder-id="clipboard"
+                        data-selected={highlightedFolderId === null}
+                        className={cn(
+                          'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2 py-1.5 text-[11px] font-medium transition-all focus:outline-none focus-visible:ring-0',
+                          isClipboardFlashing && 'folder-soft-flash',
+                          highlightedFolderId === null && dragTargetFolderId === undefined
+                            ? 'border-transparent bg-primary/15 font-semibold text-foreground'
+                            : dragTargetFolderId === null && isDragging
+                              ? 'border-transparent bg-primary/30 text-foreground'
+                              : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
+                        )}
+                        onMouseEnter={() => handleFolderHover(null)}
+                        onMouseLeave={onDragLeave}
                       >
-                        <Plus size={11} />
+                        <Clock size={11} className="flex-shrink-0" />
                         <span className="min-w-0 flex-1 truncate text-left">
-                          {t('folders.newFolder')}
+                          {t('folders.clipboard')}
+                        </span>
+                        <span
+                          className={cn(
+                            'flex-shrink-0 text-[10px] tabular-nums opacity-35',
+                            selectedFolder === null && 'opacity-70'
+                          )}
+                        >
+                          ({totalClipCount})
                         </span>
                       </button>
                     </Tooltip>
-                  )}
-                  {folders.length === 0 && (
-                    <div className="mx-1.5 mt-6 flex flex-col items-center gap-2 rounded-lg border border-dashed border-border/40 bg-muted/20 px-3 py-5 text-center">
-                      <FolderIcon size={18} className="opacity-20" />
-                      <p className="text-[10px] leading-snug text-muted-foreground/60">
-                        {t('folders.noFoldersCreated', {
-                          defaultValue: 'No folders yet — drag clips to organize',
-                        })}
-                      </p>
+                    {folders.map((folder) => {
+                      const isSelected = highlightedFolderId === folder.id;
+                      return (
+                        <React.Fragment key={folder.id}>
+                          {folderReorderTargetId === folder.id &&
+                            folderReorderTargetPosition === 'before' && (
+                              <div className="mx-2 h-0.5 flex-shrink-0 animate-pulse rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
+                            )}
+                          <CompactSidebarFolderItem
+                            folder={folder}
+                            isSelected={isSelected}
+                            isDragTarget={dragTargetFolderId === folder.id && isDragging}
+                            contextMenuFolderId={contextMenuFolderId}
+                            draggingFolderId={draggingFolderId}
+                            dragTargetFolderId={dragTargetFolderId}
+                            onMouseDown={handleFolderMouseDown}
+                            onMouseMove={handleFolderMouseMove}
+                            onMouseLeave={() => {
+                              handleFolderMouseLeave();
+                              onDragLeave();
+                            }}
+                            onClick={(id) => {
+                              if (wasFolderDraggingRef.current) return;
+                              onSelectFolder(id);
+                            }}
+                            onContextMenu={onFolderContextMenu}
+                            onMouseEnter={(id) => handleFolderHover(id)}
+                          />
+                          {folderReorderTargetId === folder.id &&
+                            folderReorderTargetPosition === 'after' && (
+                              <div className="mx-2 h-0.5 flex-shrink-0 animate-pulse rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
+                            )}
+                        </React.Fragment>
+                      );
+                    })}
+                    {folders.length === 0 && (
+                      <div className="mx-1.5 mt-6 flex flex-col items-center gap-2 rounded-lg border border-dashed border-border/40 bg-muted/20 px-3 py-5 text-center">
+                        <FolderIcon size={18} className="opacity-20" />
+                        <p className="text-[10px] leading-snug text-muted-foreground/60">
+                          {t('folders.noFoldersCreated', {
+                            defaultValue: 'No folders yet — drag clips to organize',
+                          })}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  {onAddFolder && (
+                    <div className="flex-shrink-0 border-t border-sidebar-border/60 bg-sidebar p-1.5">
+                      <Tooltip label={t('folders.addFolderBtn')} placement="right">
+                        <button
+                          onClick={onAddFolder}
+                          className="flex w-full flex-row items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-dashed border-border bg-transparent px-2 py-1.5 text-[11px] font-medium text-muted-foreground/70 transition-all hover:border-muted hover:text-foreground"
+                        >
+                          <Plus size={11} />
+                          <span className="min-w-0 flex-1 truncate text-left">
+                            {t('folders.newFolder')}
+                          </span>
+                        </button>
+                      </Tooltip>
                     </div>
                   )}
                 </div>
@@ -1865,88 +1872,92 @@ export const CompactView: React.FC<CompactViewProps> = ({
               )}
             </div>
 
-            <div
-              ref={folderScrollRef}
-              onWheel={handleWheel}
-              className="no-scrollbar flex gap-1 overflow-x-auto scroll-smooth pb-1"
-            >
-              <Tooltip label={t('common.folderNavHintCompact')} placement="bottom">
-                <button
-                  onClick={() => onSelectFolder(null)}
-                  data-folder-id="clipboard"
-                  data-selected={highlightedFolderId === null}
-                  className={folderTabClass(
-                    highlightedFolderId === null,
-                    dragTargetFolderId === null,
-                    false,
-                    isClipboardFlashing
-                  )}
-                  onMouseEnter={() => handleFolderHover(null)}
-                  onMouseLeave={onDragLeave}
-                >
-                  <Clock size={11} />
-                  {t('folders.clipboard')}
-                  <span
-                    className={cn(
-                      'flex-shrink-0 text-[10px] tabular-nums opacity-35',
-                      selectedFolder === null && 'opacity-70'
-                    )}
-                  >
-                    ({totalClipCount})
-                  </span>
-                </button>
-              </Tooltip>
-              {folders.map((folder) => {
-                const isSelected = highlightedFolderId === folder.id;
-                return (
-                  <React.Fragment key={folder.id}>
-                    {folderReorderTargetId === folder.id &&
-                      folderReorderTargetPosition === 'before' && (
-                        <div
-                          className="mx-0.5 h-6 w-0.5 flex-shrink-0 animate-pulse rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]"
-                          style={{ alignSelf: 'center' }}
-                        />
-                      )}
-                    <CompactTopFolderItem
-                      folder={folder}
-                      isSelected={isSelected}
-                      isDragTarget={dragTargetFolderId === folder.id && isDragging}
-                      contextMenuFolderId={contextMenuFolderId}
-                      draggingFolderId={draggingFolderId}
-                      folderTabClass={folderTabClass}
-                      onMouseDown={handleFolderMouseDown}
-                      onMouseMove={handleFolderMouseMove}
-                      onMouseLeave={() => {
-                        handleFolderMouseLeave();
-                        onDragLeave();
-                      }}
-                      onClick={(id) => {
-                        if (wasFolderDraggingRef.current) return;
-                        onSelectFolder(id);
-                      }}
-                      onContextMenu={onFolderContextMenu}
-                      onMouseEnter={(id) => handleFolderHover(id)}
-                    />
-                    {folderReorderTargetId === folder.id &&
-                      folderReorderTargetPosition === 'after' && (
-                        <div
-                          className="mx-0.5 h-6 w-0.5 flex-shrink-0 animate-pulse rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]"
-                          style={{ alignSelf: 'center' }}
-                        />
-                      )}
-                  </React.Fragment>
-                );
-              })}
-              {onAddFolder && (
-                <Tooltip label={t('folders.addFolderBtn')} placement="bottom">
+            <div className="flex items-center gap-1">
+              <div
+                ref={folderScrollRef}
+                onWheel={handleWheel}
+                className="no-scrollbar flex min-w-0 flex-1 gap-1 overflow-x-auto scroll-smooth pb-1"
+              >
+                <Tooltip label={t('common.folderNavHintCompact')} placement="bottom">
                   <button
-                    onClick={onAddFolder}
-                    className="flex items-center gap-1.5 whitespace-nowrap rounded-md border border-dashed border-border bg-transparent px-2 py-1.5 text-[11px] font-medium text-muted-foreground/70 transition-all hover:border-muted hover:text-foreground"
+                    onClick={() => onSelectFolder(null)}
+                    data-folder-id="clipboard"
+                    data-selected={highlightedFolderId === null}
+                    className={folderTabClass(
+                      highlightedFolderId === null,
+                      dragTargetFolderId === null,
+                      false,
+                      isClipboardFlashing
+                    )}
+                    onMouseEnter={() => handleFolderHover(null)}
+                    onMouseLeave={onDragLeave}
                   >
-                    <Plus size={10} />
-                    {t('folders.new')}
+                    <Clock size={11} />
+                    {t('folders.clipboard')}
+                    <span
+                      className={cn(
+                        'flex-shrink-0 text-[10px] tabular-nums opacity-35',
+                        selectedFolder === null && 'opacity-70'
+                      )}
+                    >
+                      ({totalClipCount})
+                    </span>
                   </button>
                 </Tooltip>
+                {folders.map((folder) => {
+                  const isSelected = highlightedFolderId === folder.id;
+                  return (
+                    <React.Fragment key={folder.id}>
+                      {folderReorderTargetId === folder.id &&
+                        folderReorderTargetPosition === 'before' && (
+                          <div
+                            className="mx-0.5 h-6 w-0.5 flex-shrink-0 animate-pulse rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]"
+                            style={{ alignSelf: 'center' }}
+                          />
+                        )}
+                      <CompactTopFolderItem
+                        folder={folder}
+                        isSelected={isSelected}
+                        isDragTarget={dragTargetFolderId === folder.id && isDragging}
+                        contextMenuFolderId={contextMenuFolderId}
+                        draggingFolderId={draggingFolderId}
+                        folderTabClass={folderTabClass}
+                        onMouseDown={handleFolderMouseDown}
+                        onMouseMove={handleFolderMouseMove}
+                        onMouseLeave={() => {
+                          handleFolderMouseLeave();
+                          onDragLeave();
+                        }}
+                        onClick={(id) => {
+                          if (wasFolderDraggingRef.current) return;
+                          onSelectFolder(id);
+                        }}
+                        onContextMenu={onFolderContextMenu}
+                        onMouseEnter={(id) => handleFolderHover(id)}
+                      />
+                      {folderReorderTargetId === folder.id &&
+                        folderReorderTargetPosition === 'after' && (
+                          <div
+                            className="mx-0.5 h-6 w-0.5 flex-shrink-0 animate-pulse rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]"
+                            style={{ alignSelf: 'center' }}
+                          />
+                        )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+              {onAddFolder && (
+                <div className="flex-shrink-0 pb-1">
+                  <Tooltip label={t('folders.addFolderBtn')} placement="bottom">
+                    <button
+                      onClick={onAddFolder}
+                      className="flex items-center gap-1.5 whitespace-nowrap rounded-md border border-dashed border-border bg-transparent px-2 py-1.5 text-[11px] font-medium text-muted-foreground/70 transition-all hover:border-muted hover:text-foreground"
+                    >
+                      <Plus size={10} />
+                      {t('folders.new')}
+                    </button>
+                  </Tooltip>
+                </div>
               )}
             </div>
           </div>
@@ -2255,7 +2266,7 @@ const ClipRow = memo(function ClipRow({
         }}
         draggable="false"
         className={clsx(
-          'relative flex h-10 w-full cursor-pointer items-center gap-3 overflow-hidden rounded-lg border bg-card px-2 py-1.5 transition-colors',
+          'relative flex h-full w-full cursor-pointer items-center gap-3 overflow-hidden rounded-lg border bg-card px-2 py-1 transition-colors',
           !hoverLocked && 'group',
           isDeleting &&
             'clip-deleting-row pointer-events-none border-rose-500/70 bg-rose-950 shadow-[0_0_16px_rgba(244,63,94,0.35)]',
@@ -2317,7 +2328,7 @@ const ClipRow = memo(function ClipRow({
             {clip.clip_type === 'image' ? (
               <>
                 <div
-                  className="flex h-8 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-muted/40"
+                  className="flex h-7 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-muted/40"
                   onMouseEnter={(e) => {
                     e.stopPropagation();
                     onRowMouseEnter?.(clip, e);
@@ -2379,7 +2390,7 @@ const ClipRow = memo(function ClipRow({
         </div>
 
         <div
-          className="relative z-10 -my-1.5 flex flex-shrink-0 items-center gap-1 self-stretch py-1.5 pr-0.5"
+          className="relative z-10 -my-1 flex flex-shrink-0 items-center gap-1 self-stretch py-1 pr-0.5"
           onMouseOver={(e) => {
             e.stopPropagation();
             onClosePeek?.();
@@ -2554,7 +2565,7 @@ function CompactListRow({
     <div
       style={style}
       {...ariaAttributes}
-      className="box-border pl-2 pr-1"
+      className="box-border flex h-full items-center py-0.5 pl-2 pr-1"
       onMouseLeave={() => onRowMouseLeave?.()}
     >
       <ClipRow
@@ -2801,7 +2812,7 @@ function CompactClipList({
         className={cn('no-scrollbar', showScrollbar && 'compact-mode-scrollbar')}
         rowComponent={CompactListRow}
         rowCount={clips.length}
-        rowHeight={rowHeight ?? 44}
+        rowHeight={rowHeight ?? 40}
         rowProps={rowProps}
         listRef={listRef}
         style={{ height: Math.max(height, 1), width: '100%' }}

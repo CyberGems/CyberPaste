@@ -12,6 +12,7 @@ import {
   Settings,
   Lock,
   RotateCcw,
+  FolderPlus,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { openUrl } from '@tauri-apps/plugin-opener';
@@ -37,11 +38,13 @@ export function TitleBarMenu({
   variant = 'main',
   hotkey,
   onResetSize,
+  onAddFolder,
 }: {
   iconSize?: number;
   variant?: TitleBarMenuVariant;
   hotkey?: string;
   onResetSize?: () => void | Promise<void>;
+  onAddFolder?: () => void;
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -75,20 +78,12 @@ export function TitleBarMenu({
       const gap = 6;
       const viewportMargin = 8;
       const naturalHeight = menu?.scrollHeight ?? 0;
-      const spaceBelow = Math.max(
-        0,
-        window.innerHeight - anchorRect.bottom - gap - viewportMargin
-      );
+      const spaceBelow = Math.max(0, window.innerHeight - anchorRect.bottom - gap - viewportMargin);
       const spaceAbove = Math.max(0, anchorRect.top - gap - viewportMargin);
       const opensAbove = naturalHeight > spaceBelow && spaceAbove > spaceBelow;
       const availableHeight = Math.max(120, opensAbove ? spaceAbove : spaceBelow);
-      const maxHeight = Math.min(
-        naturalHeight || availableHeight,
-        availableHeight
-      );
-      const top = opensAbove
-        ? anchorRect.top - gap - maxHeight
-        : anchorRect.bottom + gap;
+      const maxHeight = Math.min(naturalHeight || availableHeight, availableHeight);
+      const top = opensAbove ? anchorRect.top - gap - maxHeight : anchorRect.bottom + gap;
 
       setPos({
         top,
@@ -131,11 +126,13 @@ export function TitleBarMenu({
       if (!event.payload) {
         setOpen(false);
       }
-    }).then((cleanup) => {
-      unlisten = cleanup;
-    }).catch((error) => {
-      console.error('Failed to listen for window visibility:', error);
-    });
+    })
+      .then((cleanup) => {
+        unlisten = cleanup;
+      })
+      .catch((error) => {
+        console.error('Failed to listen for window visibility:', error);
+      });
     return () => {
       unlisten?.();
       if (document.body.dataset.titlebarMenuOpen === 'true') {
@@ -303,6 +300,21 @@ export function TitleBarMenu({
                 to { opacity: 1; transform: translateY(0); }
               }
             `}</style>
+            {onAddFolder && (
+              <>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={itemClass}
+                  onClick={() => closeAnd(onAddFolder)}
+                >
+                  <FolderPlus size={14} className={iconClass} />
+                  <span>{t('folders.newFolder')}</span>
+                </button>
+                <div className="mx-1.5 my-0.5 h-px bg-border" />
+              </>
+            )}
+
             <button
               type="button"
               role="menuitem"

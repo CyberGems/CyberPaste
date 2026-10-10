@@ -28,6 +28,7 @@ import { Settings } from '../types';
 import { useLanguage } from '../hooks/useLanguage';
 import { useTheme } from '../hooks/useTheme';
 import { systemToast as toast } from '../utils/toast';
+import { Switch } from '../components/ui/Switch';
 import { IS_PORTABLE_BUILD } from '../utils/build';
 import {
   formatUpdaterError,
@@ -370,22 +371,11 @@ export function AboutWindow() {
                         {t('settings.autoCheckUpdatesDesc')}
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={updateAutoCheck}
+                    <Switch
+                      checked={settings.auto_check_updates ?? false}
+                      onChange={updateAutoCheck}
                       aria-label={t('settings.autoCheckUpdates')}
-                      className={`h-6 w-11 flex-shrink-0 rounded-full transition-colors ${
-                        (settings.auto_check_updates ?? false) ? 'bg-primary' : 'bg-white/10'
-                      }`}
-                    >
-                      <span
-                        className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                          (settings.auto_check_updates ?? false)
-                            ? 'translate-x-5'
-                            : 'translate-x-0.5'
-                        }`}
-                      />
-                    </button>
+                    />
                   </div>
 
                   <div className="h-px bg-border" />

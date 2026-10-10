@@ -280,7 +280,7 @@ impl Default for AppSettings {
             full_show_type_icon: true,
             full_show_number: true,
             full_type_filter: "all".to_string(),
-            compact_row_height: 44.0,
+            compact_row_height: 40.0,
             compact_type_filter: "all".to_string(),
             compact_last_position_x: None,
             compact_last_position_y: None,

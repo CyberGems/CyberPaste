@@ -194,38 +194,38 @@ const FolderTabButton: React.FC<FolderTabButtonProps> = ({
       label={t('common.tooltipWithHotkey', { label: folder.name, hotkey: 'Ctrl+←/→' })}
       placement="bottom"
     >
-    <button
-      data-folder-id={folder.id}
-      onMouseDown={(e) => onMouseDown(e, folder.id)}
-      onMouseMove={(e) => onMouseMove(e, folder.id)}
-      onMouseLeave={onMouseLeave}
-      onClick={() => onClick(folder.id)}
-      onContextMenu={(e) => onContextMenu(e, folder.id)}
-      onMouseEnter={() => onMouseEnter(folder.id)}
-      data-selected={isSelected}
-      className={clsx(
-        'flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2.5 text-[12px] font-medium transition-all focus:outline-none focus-visible:ring-0',
-        isFlashing && 'folder-double-flash',
-        isSelected && dragTargetFolderId === undefined
-          ? 'border-transparent bg-primary/15 font-semibold text-foreground'
-          : isDragTarget
-            ? 'border-transparent bg-primary/30 text-foreground'
-            : isMenuHighlighted
-              ? 'border-transparent bg-accent text-foreground'
-              : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground',
-        draggingFolderId === folder.id && 'pointer-events-none scale-95 opacity-40'
-      )}
-    >
-      <Icon
-        size={12}
-        style={{ color: folderColor }}
-        className={isSelected ? 'text-primary' : 'flex-shrink-0 text-muted-foreground/60'}
-      />
-      <span>{folder.name}</span>
-      <span className={clsx('text-[10px] tabular-nums opacity-35', isSelected && 'opacity-70')}>
-        ({folder.item_count || 0})
-      </span>
-    </button>
+      <button
+        data-folder-id={folder.id}
+        onMouseDown={(e) => onMouseDown(e, folder.id)}
+        onMouseMove={(e) => onMouseMove(e, folder.id)}
+        onMouseLeave={onMouseLeave}
+        onClick={() => onClick(folder.id)}
+        onContextMenu={(e) => onContextMenu(e, folder.id)}
+        onMouseEnter={() => onMouseEnter(folder.id)}
+        data-selected={isSelected}
+        className={clsx(
+          'flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2.5 text-[12px] font-medium transition-all focus:outline-none focus-visible:ring-0',
+          isFlashing && 'folder-double-flash',
+          isSelected && dragTargetFolderId === undefined
+            ? 'border-transparent bg-primary/15 font-semibold text-foreground'
+            : isDragTarget
+              ? 'border-transparent bg-primary/30 text-foreground'
+              : isMenuHighlighted
+                ? 'border-transparent bg-accent text-foreground'
+                : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground',
+          draggingFolderId === folder.id && 'pointer-events-none scale-95 opacity-40'
+        )}
+      >
+        <Icon
+          size={12}
+          style={{ color: folderColor }}
+          className={isSelected ? 'text-primary' : 'flex-shrink-0 text-muted-foreground/60'}
+        />
+        <span>{folder.name}</span>
+        <span className={clsx('text-[10px] tabular-nums opacity-35', isSelected && 'opacity-70')}>
+          ({folder.item_count || 0})
+        </span>
+      </button>
     </Tooltip>
   );
 };
@@ -538,12 +538,12 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           <Tooltip label={t('common.openAbout')} placement="bottom">
             <button
               type="button"
-              className="flex items-center gap-2 rounded-md px-1.5 py-1 -ml-1.5 transition-colors hover:bg-accent/60"
+              className="-ml-1.5 flex items-center gap-2 rounded-md px-1.5 py-1 transition-colors hover:bg-accent/60"
               aria-label={t('common.openAbout')}
               onClick={() => invoke('open_about').catch(console.error)}
             >
               <img src="/logo.png" alt="" className="h-5 w-5 object-contain" />
-              <span className="text-sm font-bold tracking-tight text-foreground leading-5">
+              <span className="text-sm font-bold leading-5 tracking-tight text-foreground">
                 CyberPaste
               </span>
             </button>
@@ -648,6 +648,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             iconSize={15}
             hotkey={TITLEBAR_HOTKEYS.more}
             onResetSize={onResetSize}
+            onAddFolder={onAddClick}
           />
 
           <Tooltip
@@ -760,33 +761,33 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               const isClipboardFlashing = useFolderFlash(null);
               return (
                 <Tooltip label={t('common.folderNavHintFull')} placement="bottom">
-                <button
-                  onClick={() => onSelectFolder(null)}
-                  onMouseEnter={() => isDragging && onDragHover(null)}
-                  onMouseLeave={onDragLeave}
-                  data-folder-id="clipboard"
-                  data-selected={highlightedFolderId === null}
-                  className={clsx(
-                    'flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2.5 text-[12px] font-medium transition-all focus:outline-none focus-visible:ring-0',
-                    isClipboardFlashing && 'folder-double-flash',
-                    highlightedFolderId === null && dragTargetFolderId === undefined
-                      ? 'border-transparent bg-primary/15 font-semibold text-foreground'
-                      : dragTargetFolderId === null && isDragging
-                        ? 'border-transparent bg-primary/30 text-foreground'
-                        : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
-                  )}
-                >
-                  <Clock size={12} className="flex-shrink-0" />
-                  <span>{t('folders.clipboard')}</span>
-                  <span
+                  <button
+                    onClick={() => onSelectFolder(null)}
+                    onMouseEnter={() => isDragging && onDragHover(null)}
+                    onMouseLeave={onDragLeave}
+                    data-folder-id="clipboard"
+                    data-selected={highlightedFolderId === null}
                     className={clsx(
-                      'text-[10px] tabular-nums opacity-35',
-                      highlightedFolderId === null && 'opacity-70'
+                      'flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2.5 text-[12px] font-medium transition-all focus:outline-none focus-visible:ring-0',
+                      isClipboardFlashing && 'folder-double-flash',
+                      highlightedFolderId === null && dragTargetFolderId === undefined
+                        ? 'border-transparent bg-primary/15 font-semibold text-foreground'
+                        : dragTargetFolderId === null && isDragging
+                          ? 'border-transparent bg-primary/30 text-foreground'
+                          : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
                     )}
                   >
-                    ({totalClipCount})
-                  </span>
-                </button>
+                    <Clock size={12} className="flex-shrink-0" />
+                    <span>{t('folders.clipboard')}</span>
+                    <span
+                      className={clsx(
+                        'text-[10px] tabular-nums opacity-35',
+                        highlightedFolderId === null && 'opacity-70'
+                      )}
+                    >
+                      ({totalClipCount})
+                    </span>
+                  </button>
                 </Tooltip>
               );
             })()}
@@ -836,16 +837,20 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                 </React.Fragment>
               );
             })}
-
-            <Tooltip label={t('folders.addFolderBtn') || 'Add Folder'} placement="bottom">
-              <button
-                onClick={onAddClick}
-                className="flex h-8 flex-shrink-0 items-center justify-center rounded-md border border-dashed border-border bg-transparent px-2 text-muted-foreground/70 transition-all hover:border-muted hover:text-foreground"
-              >
-                <Plus size={18} />
-              </button>
-            </Tooltip>
           </div>
+
+          {!showSearch && (
+            <div className="ml-1 flex-shrink-0">
+              <Tooltip label={t('folders.addFolderBtn') || 'Add Folder'} placement="bottom">
+                <button
+                  onClick={onAddClick}
+                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md border border-dashed border-border bg-transparent text-muted-foreground/70 transition-all hover:border-muted hover:text-foreground"
+                >
+                  <Plus size={16} />
+                </button>
+              </Tooltip>
+            </div>
+          )}
 
           {/* Search Bar Overlay */}
           {showSearch && (

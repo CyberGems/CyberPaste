@@ -52,6 +52,7 @@ import { getVersion } from '@tauri-apps/api/app';
 import { systemToast as toast } from '../utils/toast';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Select } from './ui/Select';
+import { Switch } from './ui/Switch';
 import { ThemeCard, ThemeMode } from './ThemeCard';
 import { useShortcutRecorder } from 'use-shortcut-recorder';
 import { clsx } from 'clsx';
@@ -1252,16 +1253,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         {t('settings.startupWithWindowsDesc')}
                       </p>
                     </div>
-                    <button
-                      onClick={() =>
-                        updateSetting('startup_with_windows', !settings.startup_with_windows)
-                      }
-                      className={`h-6 w-11 rounded-full transition-colors ${settings.startup_with_windows ? 'bg-primary' : 'bg-white/10'}`}
-                    >
-                      <div
-                        className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.startup_with_windows ? 'translate-x-5' : 'translate-x-0.5'}`}
-                      />
-                    </button>
+                    <Switch
+                      checked={settings.startup_with_windows}
+                      onChange={(val) => updateSetting('startup_with_windows', val)}
+                      aria-label={t('settings.startupWithWindows')}
+                    />
                   </div>
 
                   <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
@@ -1271,19 +1267,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         {t('settings.hideOnBlurDesc')}
                       </p>
                     </div>
-                    <Tooltip label={t('settings.hideOnBlur')} placement="top">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          updateSetting('hide_on_blur', settings.hide_on_blur === false)
-                        }
-                        className={`h-6 w-11 rounded-full transition-colors ${settings.hide_on_blur !== false ? 'bg-primary' : 'bg-white/10'}`}
-                      >
-                        <div
-                          className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.hide_on_blur !== false ? 'translate-x-5' : 'translate-x-0.5'}`}
-                        />
-                      </button>
-                    </Tooltip>
+                    <Switch
+                      checked={settings.hide_on_blur !== false}
+                      onChange={(val) => updateSetting('hide_on_blur', val)}
+                      aria-label={t('settings.hideOnBlur')}
+                    />
                   </div>
 
                   <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">
@@ -1321,28 +1309,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         </p>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        updateSetting(
-                          'show_app_recommendations',
-                          !(settings.show_app_recommendations ?? true)
-                        )
-                      }
-                      aria-pressed={settings.show_app_recommendations ?? true}
+                    <Switch
+                      checked={settings.show_app_recommendations ?? true}
+                      onChange={(val) => updateSetting('show_app_recommendations', val)}
                       aria-label={t('settings.showAppRecommendations')}
-                      className={`h-6 w-11 flex-shrink-0 rounded-full transition-colors ${
-                        (settings.show_app_recommendations ?? true) ? 'bg-primary' : 'bg-white/10'
-                      }`}
-                    >
-                      <div
-                        className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                          (settings.show_app_recommendations ?? true)
-                            ? 'translate-x-5'
-                            : 'translate-x-0.5'
-                        }`}
-                      />
-                    </button>
+                    />
                   </div>
 
                   {/* Clipboard & Capture */}
@@ -1508,14 +1479,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               {t('settings.pauseMonitoringDesc')}
                             </p>
                           </div>
-                          <button
-                            onClick={handleTogglePause}
-                            className={`h-6 w-11 rounded-full transition-colors ${isPaused ? 'bg-primary' : 'bg-white/10'}`}
-                          >
-                            <div
-                              className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${isPaused ? 'translate-x-5' : 'translate-x-0.5'}`}
-                            />
-                          </button>
+                          <Switch
+                            checked={isPaused}
+                            onChange={handleTogglePause}
+                            aria-label={t('settings.pauseMonitoring')}
+                          />
                         </div>
                       </div>
                       <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
@@ -1527,26 +1495,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             {t('settings.singleClickPasteDesc')}
                           </p>
                         </div>
-                        <button
-                          onClick={() =>
-                            updateSetting(
-                              'single_click_paste',
-                              !(settings.single_click_paste ?? true)
-                            )
-                          }
-                          aria-pressed={settings.single_click_paste ?? true}
-                          className={`h-6 w-11 shrink-0 rounded-full transition-colors ${
-                            (settings.single_click_paste ?? true) ? 'bg-primary' : 'bg-white/10'
-                          }`}
-                        >
-                          <div
-                            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                              (settings.single_click_paste ?? true)
-                                ? 'translate-x-5'
-                                : 'translate-x-0.5'
-                            }`}
-                          />
-                        </button>
+                        <Switch
+                          checked={settings.single_click_paste ?? true}
+                          onChange={(val) => updateSetting('single_click_paste', val)}
+                          aria-label={t('settings.singleClickPaste')}
+                        />
                       </div>
                       <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                         <div>
@@ -1555,20 +1508,16 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             {t('settings.autoPasteDesc')}
                           </p>
                         </div>
-                        <button
-                          onClick={() => {
-                            const enabled = !settings.auto_paste;
+                        <Switch
+                          checked={settings.auto_paste}
+                          onChange={(enabled) => {
                             updateSettings({
                               auto_paste: enabled,
                               ...(!enabled ? { auto_inject_paste: false } : {}),
                             });
                           }}
-                          className={`h-6 w-11 rounded-full transition-colors ${settings.auto_paste ? 'bg-primary' : 'bg-white/10'}`}
-                        >
-                          <div
-                            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.auto_paste ? 'translate-x-5' : 'translate-x-0.5'}`}
-                          />
-                        </button>
+                          aria-label={t('settings.autoPaste')}
+                        />
                       </div>
                       <div className="ml-4 flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                         <div className="min-w-0 flex-1 pr-4">
@@ -1579,27 +1528,12 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             {t('settings.autoInjectPasteDesc')}
                           </p>
                         </div>
-                        <button
+                        <Switch
                           disabled={!settings.auto_paste}
-                          onClick={() =>
-                            updateSetting('auto_inject_paste', !settings.auto_inject_paste)
-                          }
-                          className={`h-6 w-11 rounded-full transition-colors ${
-                            !settings.auto_paste
-                              ? 'cursor-not-allowed bg-white/5 opacity-40'
-                              : settings.auto_inject_paste
-                                ? 'bg-primary'
-                                : 'bg-white/10'
-                          }`}
-                        >
-                          <div
-                            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                              settings.auto_paste && settings.auto_inject_paste
-                                ? 'translate-x-5'
-                                : 'translate-x-0.5'
-                            }`}
-                          />
-                        </button>
+                          checked={settings.auto_paste && settings.auto_inject_paste}
+                          onChange={(val) => updateSetting('auto_inject_paste', val)}
+                          aria-label={t('settings.autoInjectPaste')}
+                        />
                       </div>
                       <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                         <div>
@@ -1608,16 +1542,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             {t('settings.typeToSearchDesc')}
                           </p>
                         </div>
-                        <button
-                          onClick={() =>
-                            updateSetting('type_to_search', !(settings.type_to_search ?? true))
-                          }
-                          className={`h-6 w-11 rounded-full transition-colors ${(settings.type_to_search ?? true) ? 'bg-primary' : 'bg-white/10'}`}
-                        >
-                          <span
-                            className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.type_to_search ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                          />
-                        </button>
+                        <Switch
+                          checked={settings.type_to_search ?? true}
+                          onChange={(val) => updateSetting('type_to_search', val)}
+                          aria-label={t('settings.typeToSearch')}
+                        />
                       </div>
 
                       <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
@@ -1629,16 +1558,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             {t('settings.resetViewOnPasteDesc')}
                           </p>
                         </div>
-                        <button
-                          onClick={() =>
-                            updateSetting('reset_view_on_paste', !settings.reset_view_on_paste)
-                          }
-                          className={`h-6 w-11 flex-shrink-0 rounded-full transition-colors ${settings.reset_view_on_paste ? 'bg-primary' : 'bg-white/10'}`}
-                        >
-                          <div
-                            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.reset_view_on_paste ? 'translate-x-5' : 'translate-x-0.5'}`}
-                          />
-                        </button>
+                        <Switch
+                          checked={settings.reset_view_on_paste}
+                          onChange={(val) => updateSetting('reset_view_on_paste', val)}
+                          aria-label={t('settings.resetViewOnPaste')}
+                        />
                       </div>
                       <div className="space-y-3">
                         <label className="block">
@@ -1683,20 +1607,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         {t('settings.titleBarAnimationDesc')}
                       </p>
                     </div>
-                    <button
-                      onClick={() =>
-                        updateSetting(
-                          'title_bar_animation_enabled',
-                          !(settings.title_bar_animation_enabled ?? true)
-                        )
-                      }
-                      className={`h-6 w-11 rounded-full transition-colors ${(settings.title_bar_animation_enabled ?? true) ? 'bg-primary' : 'bg-white/10'}`}
+                    <Switch
+                      checked={settings.title_bar_animation_enabled ?? true}
+                      onChange={(val) => updateSetting('title_bar_animation_enabled', val)}
                       aria-label={t('settings.titleBarAnimation')}
-                    >
-                      <div
-                        className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.title_bar_animation_enabled ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                      />
-                    </button>
+                    />
                   </div>
 
                   {/* Sounds */}
@@ -1716,19 +1631,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               {t('settings.clipboardSoundDesc')}
                             </p>
                           </div>
-                          <button
-                            onClick={() =>
-                              updateSetting(
-                                'clipboard_sound_enabled',
-                                !(settings.clipboard_sound_enabled ?? false)
-                              )
-                            }
-                            className={`h-6 w-11 rounded-full transition-colors ${(settings.clipboard_sound_enabled ?? false) ? 'bg-primary' : 'bg-white/10'}`}
-                          >
-                            <span
-                              className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.clipboard_sound_enabled ?? false) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                            />
-                          </button>
+                          <Switch
+                            checked={settings.clipboard_sound_enabled ?? false}
+                            onChange={(val) => updateSetting('clipboard_sound_enabled', val)}
+                            aria-label={t('settings.clipboardSound')}
+                          />
                         </div>
                         {(settings.clipboard_sound_enabled ?? false) && (
                           <div className="flex items-center gap-2 pt-1">
@@ -1801,19 +1708,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               {t('settings.startupSoundDesc')}
                             </p>
                           </div>
-                          <button
-                            onClick={() =>
-                              updateSetting(
-                                'startup_sound_enabled',
-                                !(settings.startup_sound_enabled ?? false)
-                              )
-                            }
-                            className={`h-6 w-11 rounded-full transition-colors ${(settings.startup_sound_enabled ?? false) ? 'bg-primary' : 'bg-white/10'}`}
-                          >
-                            <span
-                              className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.startup_sound_enabled ?? false) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                            />
-                          </button>
+                          <Switch
+                            checked={settings.startup_sound_enabled ?? false}
+                            onChange={(val) => updateSetting('startup_sound_enabled', val)}
+                            aria-label={t('settings.startupSound')}
+                          />
                         </div>
                         {(settings.startup_sound_enabled ?? false) && (
                           <div className="flex items-center gap-2 pt-1">
@@ -2039,20 +1938,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                 {t('settings.appLockOnHideDesc')}
                               </span>
                             </span>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                updateSetting(
-                                  'app_lock_on_hide',
-                                  !(settings.app_lock_on_hide ?? true)
-                                )
-                              }
-                              className={`h-6 w-11 shrink-0 rounded-full transition-colors ${(settings.app_lock_on_hide ?? true) ? 'bg-primary' : 'bg-white/10'}`}
-                            >
-                              <div
-                                className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.app_lock_on_hide ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                              />
-                            </button>
+                            <Switch
+                              checked={settings.app_lock_on_hide ?? true}
+                              onChange={(val) => updateSetting('app_lock_on_hide', val)}
+                              aria-label={t('settings.appLockOnHide')}
+                            />
                           </label>
                           <label className="flex items-center justify-between gap-3">
                             <span>
@@ -2063,20 +1953,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                 {t('settings.appLockOnWindowsLockDesc')}
                               </span>
                             </span>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                updateSetting(
-                                  'app_lock_on_windows_lock',
-                                  !(settings.app_lock_on_windows_lock ?? true)
-                                )
-                              }
-                              className={`h-6 w-11 shrink-0 rounded-full transition-colors ${(settings.app_lock_on_windows_lock ?? true) ? 'bg-primary' : 'bg-white/10'}`}
-                            >
-                              <div
-                                className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.app_lock_on_windows_lock ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                              />
-                            </button>
+                            <Switch
+                              checked={settings.app_lock_on_windows_lock ?? true}
+                              onChange={(val) => updateSetting('app_lock_on_windows_lock', val)}
+                              aria-label={t('settings.appLockOnWindowsLock')}
+                            />
                           </label>
                           <label className="block">
                             <span className="text-sm">{t('settings.appLockIdle')}</span>
@@ -2107,20 +1988,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                 {t('settings.appLockPauseCaptureDesc')}
                               </span>
                             </span>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                updateSetting(
-                                  'app_lock_pause_capture',
-                                  !settings.app_lock_pause_capture
-                                )
-                              }
-                              className={`h-6 w-11 shrink-0 rounded-full transition-colors ${settings.app_lock_pause_capture ? 'bg-primary' : 'bg-white/10'}`}
-                            >
-                              <div
-                                className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.app_lock_pause_capture ? 'translate-x-5' : 'translate-x-0.5'}`}
-                              />
-                            </button>
+                            <Switch
+                              checked={settings.app_lock_pause_capture ?? false}
+                              onChange={(val) => updateSetting('app_lock_pause_capture', val)}
+                              aria-label={t('settings.appLockPauseCapture')}
+                            />
                           </label>
 
                           <button
@@ -2416,19 +2288,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           {t('settings.wheelFolderNavigationDesc')}
                         </p>
                       </div>
-                      <button
-                        onClick={() =>
-                          updateSetting(
-                            'wheel_folder_navigation',
-                            !(settings.wheel_folder_navigation ?? false)
-                          )
-                        }
-                        className={`h-6 w-11 flex-shrink-0 rounded-full transition-colors ${(settings.wheel_folder_navigation ?? false) ? 'bg-primary' : 'bg-white/10'}`}
-                      >
-                        <div
-                          className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.wheel_folder_navigation ?? false) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                        />
-                      </button>
+                      <Switch
+                        checked={settings.wheel_folder_navigation ?? false}
+                        onChange={(val) => updateSetting('wheel_folder_navigation', val)}
+                        aria-label={t('settings.wheelFolderNavigation')}
+                      />
                     </div>
                   </section>
                 </>
@@ -2514,15 +2378,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               {t(`settings.${translationKey}Desc`)}
                             </p>
                           </div>
-                          <button
-                            onClick={() => updateSetting(key, !(settings[key] ?? true))}
-                            className={`h-6 w-11 rounded-full transition-colors ${(settings[key] ?? true) ? 'bg-primary' : 'bg-white/10'}`}
+                          <Switch
+                            checked={settings[key] ?? true}
+                            onChange={(val) => updateSetting(key, val)}
                             aria-label={t(`settings.${translationKey}`)}
-                          >
-                            <span
-                              className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings[key] ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                            />
-                          </button>
+                          />
                         </div>
                       ))}
                     </div>
@@ -2574,19 +2434,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                 {t('settings.compactSidebarCollapsedDesc')}
                               </p>
                             </div>
-                            <button
-                              onClick={() =>
-                                updateSetting(
-                                  'compact_sidebar_collapsed',
-                                  !(settings.compact_sidebar_collapsed ?? false)
-                                )
-                              }
-                              className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_sidebar_collapsed ?? false) ? 'bg-primary' : 'bg-white/10'}`}
-                            >
-                              <span
-                                className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.compact_sidebar_collapsed ?? false) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                              />
-                            </button>
+                            <Switch
+                              checked={settings.compact_sidebar_collapsed ?? false}
+                              onChange={(val) => updateSetting('compact_sidebar_collapsed', val)}
+                              aria-label={t('settings.compactSidebarCollapsed')}
+                            />
                           </div>
                         )}
                       </div>
@@ -2619,19 +2471,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             {t('settings.compactPeekEnabledDesc')}
                           </p>
                         </div>
-                        <button
-                          onClick={() =>
-                            updateSetting(
-                              'compact_peek_enabled',
-                              !(settings.compact_peek_enabled ?? true)
-                            )
-                          }
-                          className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_peek_enabled ?? true) ? 'bg-primary' : 'bg-white/10'}`}
-                        >
-                          <span
-                            className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.compact_peek_enabled ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                          />
-                        </button>
+                        <Switch
+                          checked={settings.compact_peek_enabled ?? true}
+                          onChange={(val) => updateSetting('compact_peek_enabled', val)}
+                          aria-label={t('settings.compactPeekEnabled')}
+                        />
                       </div>
                       <div className="space-y-3">
                         <label className="block">
@@ -2668,19 +2512,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             {t('settings.compactShowSourceIconDesc')}
                           </p>
                         </div>
-                        <button
-                          onClick={() =>
-                            updateSetting(
-                              'compact_show_source_icon',
-                              !(settings.compact_show_source_icon ?? true)
-                            )
-                          }
-                          className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_show_source_icon ?? true) ? 'bg-primary' : 'bg-white/10'}`}
-                        >
-                          <span
-                            className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.compact_show_source_icon ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                          />
-                        </button>
+                        <Switch
+                          checked={settings.compact_show_source_icon ?? true}
+                          onChange={(val) => updateSetting('compact_show_source_icon', val)}
+                          aria-label={t('settings.compactShowSourceIcon')}
+                        />
                       </div>
 
                       {/* Show Capture Time */}
@@ -2693,19 +2529,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             {t('settings.compactShowTimeDesc')}
                           </p>
                         </div>
-                        <button
-                          onClick={() =>
-                            updateSetting(
-                              'compact_show_time',
-                              !(settings.compact_show_time ?? true)
-                            )
-                          }
-                          className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_show_time ?? true) ? 'bg-primary' : 'bg-white/10'}`}
-                        >
-                          <span
-                            className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.compact_show_time ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                          />
-                        </button>
+                        <Switch
+                          checked={settings.compact_show_time ?? true}
+                          onChange={(val) => updateSetting('compact_show_time', val)}
+                          aria-label={t('settings.compactShowTime')}
+                        />
                       </div>
 
                       {/* Show Type Icon */}
@@ -2718,19 +2546,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             {t('settings.compactShowTypeIconDesc')}
                           </p>
                         </div>
-                        <button
-                          onClick={() =>
-                            updateSetting(
-                              'compact_show_type_icon',
-                              !(settings.compact_show_type_icon ?? true)
-                            )
-                          }
-                          className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_show_type_icon ?? true) ? 'bg-primary' : 'bg-white/10'}`}
-                        >
-                          <span
-                            className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.compact_show_type_icon ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                          />
-                        </button>
+                        <Switch
+                          checked={settings.compact_show_type_icon ?? true}
+                          onChange={(val) => updateSetting('compact_show_type_icon', val)}
+                          aria-label={t('settings.compactShowTypeIcon')}
+                        />
                       </div>
 
                       {/* Show Clip Number */}
@@ -2743,19 +2563,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             {t('settings.compactShowNumberDesc')}
                           </p>
                         </div>
-                        <button
-                          onClick={() =>
-                            updateSetting(
-                              'compact_show_number',
-                              !(settings.compact_show_number ?? true)
-                            )
-                          }
-                          className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_show_number ?? true) ? 'bg-primary' : 'bg-white/10'}`}
-                        >
-                          <span
-                            className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.compact_show_number ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                          />
-                        </button>
+                        <Switch
+                          checked={settings.compact_show_number ?? true}
+                          onChange={(val) => updateSetting('compact_show_number', val)}
+                          aria-label={t('settings.compactShowNumber')}
+                        />
                       </div>
 
                       {/* Show Scrollbar */}
@@ -2768,20 +2580,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             {t('settings.compactShowScrollbarDesc')}
                           </p>
                         </div>
-                        <button
-                          onClick={() =>
-                            updateSetting(
-                              'compact_show_scrollbar',
-                              !(settings.compact_show_scrollbar ?? true)
-                            )
-                          }
-                          className={`h-6 w-11 rounded-full transition-colors ${(settings.compact_show_scrollbar ?? true) ? 'bg-primary' : 'bg-white/10'}`}
+                        <Switch
+                          checked={settings.compact_show_scrollbar ?? true}
+                          onChange={(val) => updateSetting('compact_show_scrollbar', val)}
                           aria-label={t('settings.compactShowScrollbar')}
-                        >
-                          <span
-                            className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.compact_show_scrollbar ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                          />
-                        </button>
+                        />
                       </div>
                     </div>
                   </section>
@@ -3055,16 +2858,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         {t('settings.enableToastsDesc')}
                       </p>
                     </div>
-                    <button
-                      onClick={() =>
-                        updateSetting('toast_enabled', !(settings.toast_enabled ?? true))
-                      }
-                      className={`h-6 w-11 rounded-full transition-colors ${(settings.toast_enabled ?? true) ? 'bg-primary' : 'bg-white/10'}`}
-                    >
-                      <div
-                        className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.toast_enabled ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                      />
-                    </button>
+                    <Switch
+                      checked={settings.toast_enabled ?? true}
+                      onCheckedChange={(checked) => updateSetting('toast_enabled', checked)}
+                      ariaLabel={t('settings.enableToasts')}
+                    />
                   </div>
 
                   <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
@@ -3074,20 +2872,13 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         {t('settings.duplicateToastsDesc')}
                       </p>
                     </div>
-                    <button
-                      onClick={() =>
-                        updateSetting(
-                          'duplicate_toast_enabled',
-                          !(settings.duplicate_toast_enabled ?? true)
-                        )
+                    <Switch
+                      checked={settings.duplicate_toast_enabled ?? true}
+                      onCheckedChange={(checked) =>
+                        updateSetting('duplicate_toast_enabled', checked)
                       }
-                      className={`h-6 w-11 rounded-full transition-colors ${(settings.duplicate_toast_enabled ?? true) ? 'bg-primary' : 'bg-white/10'}`}
-                      aria-label={t('settings.duplicateToasts')}
-                    >
-                      <div
-                        className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(settings.duplicate_toast_enabled ?? true) ? 'translate-x-5' : 'translate-x-0.5'}`}
-                      />
-                    </button>
+                      ariaLabel={t('settings.duplicateToasts')}
+                    />
                   </div>
 
                   <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
@@ -3099,16 +2890,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         {t('settings.showActionMessagesDesc')}
                       </p>
                     </div>
-                    <button
-                      onClick={() =>
-                        updateSetting('show_action_messages', !settings.show_action_messages)
-                      }
-                      className={`h-6 w-11 rounded-full transition-colors ${settings.show_action_messages ? 'bg-primary' : 'bg-white/10'}`}
-                    >
-                      <div
-                        className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${settings.show_action_messages ? 'translate-x-5' : 'translate-x-0.5'}`}
-                      />
-                    </button>
+                    <Switch
+                      checked={settings.show_action_messages ?? false}
+                      onCheckedChange={(checked) => updateSetting('show_action_messages', checked)}
+                      ariaLabel={t('settings.showActionMessages')}
+                    />
                   </div>
 
                   <div className="rounded-[4px] border border-border bg-secondary p-3">
@@ -3126,27 +2912,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           </p>
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        disabled={!(settings.toast_enabled ?? true)}
-                        onClick={() =>
-                          updateSetting('quiet_hours_enabled', !settings.quiet_hours_enabled)
-                        }
-                        aria-label={t('settings.quietHoursTitle')}
-                        className={`h-6 w-11 flex-shrink-0 rounded-full transition-colors ${
+                      <Switch
+                        checked={Boolean(
                           settings.quiet_hours_enabled && (settings.toast_enabled ?? true)
-                            ? 'bg-primary'
-                            : 'bg-white/10'
-                        }`}
-                      >
-                        <div
-                          className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                            settings.quiet_hours_enabled && (settings.toast_enabled ?? true)
-                              ? 'translate-x-5'
-                              : 'translate-x-0.5'
-                          }`}
-                        />
-                      </button>
+                        )}
+                        disabled={!(settings.toast_enabled ?? true)}
+                        onCheckedChange={(checked) => updateSetting('quiet_hours_enabled', checked)}
+                        ariaLabel={t('settings.quietHoursTitle')}
+                      />
                     </div>
 
                     <div
@@ -3593,26 +3366,13 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               {t('settings.autoBackupDesc')}
                             </p>
                           </div>
-                          <button
-                            onClick={() =>
-                              updateSetting(
-                                'auto_backup_enabled',
-                                !(settings.auto_backup_enabled ?? true)
-                              )
+                          <Switch
+                            checked={settings.auto_backup_enabled ?? true}
+                            onCheckedChange={(checked) =>
+                              updateSetting('auto_backup_enabled', checked)
                             }
-                            className={`h-6 w-11 flex-shrink-0 rounded-full transition-colors ${
-                              (settings.auto_backup_enabled ?? true) ? 'bg-primary' : 'bg-white/10'
-                            }`}
-                            aria-label={t('settings.autoBackupTitle')}
-                          >
-                            <div
-                              className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                                (settings.auto_backup_enabled ?? true)
-                                  ? 'translate-x-5'
-                                  : 'translate-x-0.5'
-                              }`}
-                            />
-                          </button>
+                            ariaLabel={t('settings.autoBackupTitle')}
+                          />
                         </div>
                         <div className="h-px bg-border/60" />
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
