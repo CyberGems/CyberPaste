@@ -211,7 +211,7 @@ impl Default for AppSettings {
             round_corners: true,
             view_mode: "compact".to_string(),
             scroll_direction: "vertical".to_string(),
-            compact_folder_layout: "vertical".to_string(),
+            compact_folder_layout: "horizontal".to_string(),
             compact_sidebar_collapsed: true,
             clipboard_sound_enabled: true,
             clipboard_sound_path: "".to_string(),

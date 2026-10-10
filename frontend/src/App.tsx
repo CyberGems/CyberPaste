@@ -3059,8 +3059,9 @@ function App() {
   const handleToggleCompactLayout = useCallback(async () => {
     if (!settings || settings.view_mode !== 'compact') return;
 
+    const currentLayout = settings.compact_folder_layout || 'horizontal';
     const newLayout: 'horizontal' | 'vertical' =
-      settings.compact_folder_layout === 'vertical' ? 'horizontal' : 'vertical';
+      currentLayout === 'horizontal' ? 'vertical' : 'horizontal';
     const newSettings = { ...settings, compact_folder_layout: newLayout };
 
     try {
@@ -3249,7 +3250,7 @@ function App() {
               reorderTargetClipId={reorderTargetClipId}
               reorderTargetPosition={reorderTargetPosition}
               reorderEnabled={true}
-              compactFolderLayout={settings?.compact_folder_layout || 'vertical'}
+              compactFolderLayout={settings?.compact_folder_layout || 'horizontal'}
               compactSidebarCollapsed={settings?.compact_sidebar_collapsed ?? false}
               onToggleSidebar={async () => {
                 if (!settings) return;

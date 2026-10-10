@@ -2417,14 +2417,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           </p>
                         </label>
                         <Select
-                          value={settings.compact_folder_layout || 'vertical'}
+                          value={settings.compact_folder_layout || 'horizontal'}
                           onChange={(val) => updateSetting('compact_folder_layout', val)}
                           options={[
                             { value: 'horizontal', label: t('settings.scrollHorizontal') },
                             { value: 'vertical', label: t('settings.scrollVertical') },
                           ]}
                         />
-                        {(settings.compact_folder_layout || 'vertical') === 'vertical' && (
+                        {(settings.compact_folder_layout || 'horizontal') === 'vertical' && (
                           <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
                             <div>
                               <span className="text-sm font-medium">
@@ -3448,9 +3448,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             role="status"
                             className={`rounded-md border px-3 py-2 text-xs ${
                               autoBackupStatus.state === 'success'
-                                ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300'
+                                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300'
                                 : autoBackupStatus.state === 'error'
-                                  ? 'border-red-500/25 bg-red-500/10 text-red-300'
+                                  ? 'border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300'
                                   : 'border-primary/20 bg-primary/10 text-primary'
                             }`}
                           >
