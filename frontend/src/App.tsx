@@ -186,9 +186,11 @@ function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showCloseWindowDialog, setShowCloseWindowDialog] = useState(false);
   const [deletedStack, setDeletedStack] = useState<{ ids: string[] }[]>([]);
-  const [deleteGeneration, setDeleteGeneration] = useState(0);
-  const [undoWarningSeenGeneration, setUndoWarningSeenGeneration] = useState(0);
   const [showUndoWarning, setShowUndoWarning] = useState(false);
+  const [undoWarningAttentionTrigger, setUndoWarningAttentionTrigger] = useState(0);
+  const triggerUndoWarningAttention = useCallback(() => {
+    setUndoWarningAttentionTrigger((prev) => prev + 1);
+  }, []);
   const [pendingDeleteModal, setPendingDeleteModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -620,8 +622,12 @@ function App() {
   }, []);
 
   const requestCloseWindow = useCallback(async () => {
-    if (deletedStack.length > 0 && deleteGeneration > undoWarningSeenGeneration) {
-      setUndoWarningSeenGeneration(deleteGeneration);
+    if (showUndoWarning) {
+      triggerUndoWarningAttention();
+      return;
+    }
+
+    if (deletedStack.length > 0) {
       setShowCloseWindowDialog(false);
       setShowUndoWarning(true);
       return;
@@ -637,7 +643,7 @@ function App() {
     } catch (error) {
       console.error('Failed to request window close:', error);
     }
-  }, [deleteGeneration, deletedStack.length, handleCloseChoice, undoWarningSeenGeneration]);
+  }, [deletedStack.length, handleCloseChoice, showUndoWarning, triggerUndoWarningAttention]);
 
   useEffect(() => {
     const unlisten = listen('close-requested', () => {
@@ -648,14 +654,49 @@ function App() {
     };
   }, [requestCloseWindow]);
 
+  useEffect(() => {
+    if (showUndoWarning) {
+      invoke('set_prevent_hide', { prevent: true }).catch(console.error);
+    } else {
+      invoke('set_prevent_hide', { prevent: false }).catch(console.error);
+    }
+    return () => {
+      invoke('set_prevent_hide', { prevent: false }).catch(console.error);
+    };
+  }, [showUndoWarning]);
+
+  useEffect(() => {
+    const hasUndos = deletedStack.length > 0;
+    invoke('set_has_pending_undos', { has: hasUndos }).catch(console.error);
+  }, [deletedStack.length]);
+
+  useEffect(() => {
+    const unlisten = listen('window-hide-blocked', () => {
+      triggerUndoWarningAttention();
+    });
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, [triggerUndoWarningAttention]);
+
   const handleKeepUndoWarningOpen = useCallback(() => {
     setShowUndoWarning(false);
   }, []);
 
-  const handleContinueAfterUndoWarning = useCallback(() => {
+  const handleContinueAfterUndoWarning = useCallback(async () => {
     setShowUndoWarning(false);
-    setShowCloseWindowDialog(true);
-  }, []);
+    setDeletedStack([]);
+    try {
+      const action = await invoke<'prompt' | 'minimize' | 'quit'>('request_close');
+      if (action === 'prompt') {
+        setShowCloseWindowDialog(true);
+      } else {
+        await handleCloseChoice(action, false);
+      }
+    } catch (error) {
+      console.error('Failed to apply close choice after discard:', error);
+    }
+  }, [handleCloseChoice]);
 
   useEffect(() => {
     if (IS_PORTABLE_BUILD) return;
@@ -1729,10 +1770,10 @@ function App() {
 
   const executeDelete = useCallback(
     async (clipId: string) => {
-      triggerDeleteFlash(clipId, 320);
+      triggerDeleteFlash(clipId, 240);
       try {
         const deletePromise = invoke('delete_clip', { id: clipId, hardDelete: false });
-        const animPromise = new Promise((resolve) => setTimeout(resolve, 320));
+        const animPromise = new Promise((resolve) => setTimeout(resolve, 240));
         await Promise.all([deletePromise, animPromise]);
 
         setClips((prevClips) => prevClips.filter((c) => c.id !== clipId));
@@ -1746,7 +1787,6 @@ function App() {
 
         // Add to temporary Undo stack (max 50 recent actions)
         setDeletedStack((prev) => [...prev.slice(-49), { ids: [clipId] }]);
-        setDeleteGeneration((prev) => prev + 1);
 
         // Refresh counts
         loadFolders();
@@ -2141,10 +2181,10 @@ function App() {
   const executeBulkDelete = useCallback(
     async (ids: string[]) => {
       if (ids.length === 0) return;
-      triggerDeleteFlash(ids, 320);
+      triggerDeleteFlash(ids, 240);
       try {
         const deletePromise = invoke('delete_clips', { ids });
-        const animPromise = new Promise((resolve) => setTimeout(resolve, 320));
+        const animPromise = new Promise((resolve) => setTimeout(resolve, 240));
         await Promise.all([deletePromise, animPromise]);
 
         const idsSet = new Set(ids);
@@ -2153,7 +2193,6 @@ function App() {
 
         // Add to temporary Undo stack
         setDeletedStack((prev) => [...prev.slice(-49), { ids }]);
-        setDeleteGeneration((prev) => prev + 1);
 
         loadFolders();
         refreshTotalCount();
@@ -3361,6 +3400,8 @@ function App() {
                 updateVersion={updateAvailable?.version}
                 onShowUpdate={handleShowUpdate}
                 onRequestClose={requestCloseWindow}
+                canUndo={deletedStack.length > 0}
+                onUndo={handleUndoDelete}
               />
 
               {/* Type filter chips (Full mode) */}
@@ -3560,6 +3601,7 @@ function App() {
           count={deletedStack.length}
           onKeepOpen={handleKeepUndoWarningOpen}
           onContinue={handleContinueAfterUndoWarning}
+          attentionTrigger={undoWarningAttentionTrigger}
         />
 
         <CloseWindowDialog

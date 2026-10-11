@@ -50,7 +50,6 @@ import {
   Share2,
   Smile,
   Sun,
-  Undo2,
   LayoutGrid,
   MoveHorizontal,
   MoveVertical,
@@ -80,6 +79,7 @@ import Tooltip from './Tooltip';
 import { SEARCH_HISTORY_EVENT, SearchHistoryMenu } from './SearchHistoryMenu';
 import { TitleBarMenu } from './TitleBarMenu';
 import { TitleBarUpdateButton } from './TitleBarUpdateButton';
+import { UndoButton } from './UndoButton';
 import { TITLEBAR_HOTKEYS } from '../hooks/useKeyboard';
 import { de, enUS, es, fr, ja, zhCN } from 'date-fns/locale';
 import { List, useListRef, type RowComponentProps } from 'react-window';
@@ -1435,6 +1435,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
             hotkey={TITLEBAR_HOTKEYS.more}
             onResetSize={handleResetSize}
             onAddFolder={onAddFolder}
+            canUndo={canUndo}
+            onUndo={onUndo}
           />
 
           {/* Divider between app actions and window controls */}
@@ -1760,21 +1762,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     </button>
                   </Tooltip>
                 )}
-                {canUndo && onUndo && (
-                  <Tooltip
-                    label={t('common.undoDelete') || t('contextMenu.undo') || 'Undo'}
-                    placement="bottom"
-                  >
-                    <button
-                      type="button"
-                      onClick={onUndo}
-                      className="flex h-8 shrink-0 items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 text-xs font-medium text-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.15)] transition-all hover:border-amber-500/70 hover:bg-amber-500/20 active:scale-95"
-                    >
-                      <Undo2 size={13} className="shrink-0" />
-                      <span className="hidden text-[11px] sm:inline">{t('contextMenu.undo')}</span>
-                    </button>
-                  </Tooltip>
-                )}
+                <UndoButton canUndo={canUndo} onUndo={onUndo} size="compact" />
                 {onTypeFilterChange && (
                   <TypeFilterDropdown
                     value={typeFilter}
@@ -1957,21 +1945,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   </button>
                 </Tooltip>
               )}
-              {canUndo && onUndo && (
-                <Tooltip
-                  label={t('common.undoDelete') || t('contextMenu.undo') || 'Undo'}
-                  placement="bottom"
-                >
-                  <button
-                    type="button"
-                    onClick={onUndo}
-                    className="flex h-8 shrink-0 items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 text-xs font-medium text-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.15)] transition-all hover:border-amber-500/70 hover:bg-amber-500/20 active:scale-95"
-                  >
-                    <Undo2 size={13} className="shrink-0" />
-                    <span className="hidden text-[11px] sm:inline">{t('contextMenu.undo')}</span>
-                  </button>
-                </Tooltip>
-              )}
+              <UndoButton canUndo={canUndo} onUndo={onUndo} size="compact" />
               {onTypeFilterChange && (
                 <TypeFilterDropdown
                   value={typeFilter}
@@ -2423,7 +2397,7 @@ const ClipRow = memo(function ClipRow({
           'relative flex h-full w-full cursor-pointer items-center gap-3 overflow-hidden rounded-lg border bg-card px-2 py-1 transition-colors',
           !hoverLocked && 'group',
           isDeleting &&
-            'clip-deleting-row pointer-events-none border-rose-500/70 bg-rose-950 shadow-[0_0_16px_rgba(244,63,94,0.35)]',
+            'clip-deleting-row pointer-events-none border-destructive/60 bg-destructive/15 shadow-[0_0_12px_rgba(239,68,68,0.2)]',
           isSelected
             ? 'border-primary text-foreground shadow-[0_0_12px_rgba(var(--primary-rgb),0.25)] ring-1 ring-primary/40'
             : isNavigationSelected

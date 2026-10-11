@@ -157,6 +157,8 @@ interface ControlBarProps {
   updateVersion?: string;
   onShowUpdate?: () => void;
   onRequestClose?: () => void;
+  canUndo?: boolean;
+  onUndo?: () => void;
 }
 
 interface FolderTabButtonProps {
@@ -279,6 +281,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   updateVersion,
   onShowUpdate,
   onRequestClose,
+  canUndo = false,
+  onUndo,
 }) => {
   const foldersRef = React.useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
@@ -699,6 +703,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             hotkey={TITLEBAR_HOTKEYS.more}
             onResetSize={onResetSize}
             onAddFolder={onAddClick}
+            canUndo={canUndo}
+            onUndo={onUndo}
           />
 
           {/* Divider between app actions and window controls */}

@@ -1,12 +1,15 @@
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { clsx } from 'clsx';
 import { EnterGlyph, EscGlyph, useModalKeys } from './ModalActions';
-import Tooltip from './Tooltip';
+import Tooltip, { dismissAllTooltips } from './Tooltip';
 
 interface UndoWarningDialogProps {
   isOpen: boolean;
   count: number;
   onKeepOpen: () => void;
   onContinue: () => void | Promise<void>;
+  attentionTrigger?: number;
 }
 
 export function UndoWarningDialog({
@@ -14,8 +17,34 @@ export function UndoWarningDialog({
   count,
   onKeepOpen,
   onContinue,
+  attentionTrigger,
 }: UndoWarningDialogProps) {
   const { t } = useTranslation();
+  const [isShaking, setIsShaking] = useState(false);
+  const shakeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useLayoutEffect(() => {
+    if (isOpen) {
+      dismissAllTooltips();
+    }
+  }, [isOpen]);
+
+  const triggerShake = useCallback(() => {
+    setIsShaking(false);
+    if (shakeTimeoutRef.current) clearTimeout(shakeTimeoutRef.current);
+    requestAnimationFrame(() => {
+      setIsShaking(true);
+      shakeTimeoutRef.current = setTimeout(() => {
+        setIsShaking(false);
+      }, 450);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (attentionTrigger && attentionTrigger > 0) {
+      triggerShake();
+    }
+  }, [attentionTrigger, triggerShake]);
 
   useModalKeys({
     enabled: isOpen,
@@ -26,12 +55,22 @@ export function UndoWarningDialog({
   if (!isOpen) return null;
 
   return (
-    <div className="animate-in fade-in fixed inset-0 z-[115] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm duration-200">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          triggerShake();
+        }
+      }}
+      className="animate-in fade-in fixed inset-0 z-[115] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm duration-200"
+    >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="undo-warning-dialog-title"
-        className="animate-in zoom-in-95 w-full max-w-[650px] rounded-lg border border-border bg-background p-7 shadow-2xl duration-200"
+        className={clsx(
+          'animate-in zoom-in-95 w-full max-w-[650px] rounded-lg border border-border bg-background p-7 shadow-2xl duration-200 transition-all',
+          isShaking && 'animate-modal-attention border-primary ring-2 ring-primary/60 shadow-[0_0_24px_rgba(var(--primary-rgb),0.35)]'
+        )}
       >
         <h2 id="undo-warning-dialog-title" className="text-xl font-semibold text-foreground">
           {t('undoWarning.title')}

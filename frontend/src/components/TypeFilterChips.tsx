@@ -11,7 +11,6 @@ import {
   ZoomOut,
   PanelRightClose,
   PanelRightOpen,
-  Undo2,
   Eye,
   EyeOff,
 } from 'lucide-react';
@@ -19,6 +18,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { clsx } from 'clsx';
 import Tooltip from './Tooltip';
+import { UndoButton } from './UndoButton';
 import { TITLEBAR_HOTKEYS } from '../hooks/useKeyboard';
 
 export type FullTypeFilter = 'all' | 'text' | 'code' | 'image' | 'url' | 'file';
@@ -131,21 +131,7 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
       </div>
 
       <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-        {canUndo && onUndo && (
-          <Tooltip
-            label={t('common.undoDelete') || t('contextMenu.undo') || 'Undo'}
-            placement="bottom"
-          >
-            <button
-              type="button"
-              onClick={onUndo}
-              className="flex h-7 shrink-0 items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 text-[11px] font-medium text-amber-500 transition-all hover:border-amber-500/70 hover:bg-amber-500/20 active:scale-95 shadow-[0_0_10px_rgba(245,158,11,0.15)]"
-            >
-              <Undo2 size={13} className="shrink-0" />
-              <span className="hidden sm:inline font-medium">{t('contextMenu.undo')}</span>
-            </button>
-          </Tooltip>
-        )}
+        <UndoButton canUndo={canUndo} onUndo={onUndo} size="full" />
 
         {onTogglePeek && (
           <Tooltip

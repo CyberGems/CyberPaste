@@ -88,8 +88,8 @@
   "undoWarning": {
     "title": "Acciones de deshacer pendientes",
     "message": "Tienes {{count}} acciones de borrado que todavía puedes deshacer. Si cierras esta ventana, perderás estas acciones de deshacer.",
-    "keepOpen": "Seguir",
-    "continue": "Salir"
+    "keepOpen": "Regresar",
+    "continue": "Descartar"
   },
   "bulk": {
     "selectedSingle": "seleccionado",

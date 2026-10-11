@@ -88,8 +88,8 @@
   "undoWarning": {
     "title": "Pending undo actions",
     "message": "You have {{count}} deletion action(s) that can still be undone. If you close this window, these undo actions will be lost.",
-    "keepOpen": "Stay",
-    "continue": "Leave"
+    "keepOpen": "Back",
+    "continue": "Discard"
   },
   "bulk": {
     "selectedSingle": "selected",

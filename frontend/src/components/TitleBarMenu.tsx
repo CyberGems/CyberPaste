@@ -15,6 +15,7 @@ import {
   FolderPlus,
   Pause,
   Play,
+  Undo2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { openUrl } from '@tauri-apps/plugin-opener';
@@ -42,12 +43,16 @@ export function TitleBarMenu({
   hotkey,
   onResetSize,
   onAddFolder,
+  onUndo,
+  canUndo = false,
 }: {
   iconSize?: number;
   variant?: TitleBarMenuVariant;
   hotkey?: string;
   onResetSize?: () => void | Promise<void>;
   onAddFolder?: () => void;
+  onUndo?: () => void;
+  canUndo?: boolean;
 }) {
   const { t } = useTranslation();
   const { isPaused, toggleMonitoring } = useClipboardMonitoring();
@@ -356,6 +361,27 @@ export function TitleBarMenu({
                     ? t('common.resumeMonitoring', { defaultValue: 'Reanudar monitoreo' })
                     : t('common.pauseMonitoring', { defaultValue: 'Pausar monitoreo' })}
                 </span>
+              </button>
+            )}
+
+            {variant === 'main' && (
+              <button
+                type="button"
+                role="menuitem"
+                disabled={!canUndo}
+                className={clsx(
+                  itemClass,
+                  !canUndo &&
+                    'cursor-not-allowed opacity-40 hover:bg-transparent hover:text-foreground/90'
+                )}
+                onClick={() => {
+                  if (!canUndo || !onUndo) return;
+                  closeAnd(onUndo);
+                }}
+              >
+                <Undo2 size={14} className={iconClass} />
+                <span className="flex-1">{t('contextMenu.undo')}</span>
+                <span className="text-[11px] text-muted-foreground/70">Ctrl+Z</span>
               </button>
             )}
 

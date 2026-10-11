@@ -2715,6 +2715,14 @@ pub async fn get_folders(db: tauri::State<'_, Arc<Database>>) -> Result<Vec<Fold
 #[tauri::command]
 pub fn hide_window(window: tauri::WebviewWindow, skip_lock: Option<bool>) -> Result<(), String> {
     if window.label() == "main" {
+        if crate::is_window_hide_blocked() {
+            let _ = window.emit("window-hide-blocked", ());
+            return Ok(());
+        }
+        if crate::has_pending_undos() {
+            let _ = window.emit("close-requested", ());
+            return Ok(());
+        }
         if skip_lock.unwrap_or(false) {
             crate::skip_lock_on_next_hide();
         }
@@ -2723,6 +2731,16 @@ pub fn hide_window(window: tauri::WebviewWindow, skip_lock: Option<bool>) -> Res
     } else {
         window.hide().map_err(|e| e.to_string())
     }
+}
+
+#[tauri::command]
+pub fn set_prevent_hide(prevent: bool) {
+    crate::set_window_hide_blocked(prevent);
+}
+
+#[tauri::command]
+pub fn set_has_pending_undos(has: bool) {
+    crate::set_has_pending_undos(has);
 }
 
 #[tauri::command]
@@ -3005,6 +3023,16 @@ pub async fn register_global_shortcut(
                 if win_clone.is_visible().unwrap_or(false)
                     && win_clone.is_focused().unwrap_or(false)
                 {
+                    if crate::is_window_hide_blocked() {
+                        let _ = win_clone.set_focus();
+                        let _ = win_clone.emit("window-hide-blocked", ());
+                        return;
+                    }
+                    if crate::has_pending_undos() {
+                        let _ = win_clone.set_focus();
+                        let _ = win_clone.emit("close-requested", ());
+                        return;
+                    }
                     crate::animate_window_hide(&win_clone, None);
                 } else {
                     // Capture the foreground window before showing CyberPaste

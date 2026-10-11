@@ -104,6 +104,12 @@ function ContextMenuItem({
     setSubPos({ left: newLeft, right: newRight, top: newTop });
   }, [isOpen]);
 
+  useEffect(() => {
+    if (focused && containerRef.current) {
+      containerRef.current.scrollIntoView({ block: 'nearest' });
+    }
+  }, [focused]);
+
   return (
     <div
       ref={containerRef}
@@ -142,7 +148,7 @@ function ContextMenuItem({
           }
         }}
         className={clsx(
-          'flex w-full items-center rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors group',
+          'flex w-full items-center rounded-lg px-2.5 py-1.5 text-left text-[13px] font-medium transition-colors group',
           option.disabled ? 'pointer-events-none opacity-40' : '',
           option.danger
             ? clsx('text-foreground/90 hover:bg-red-500/10', focused && 'bg-red-500/10')
@@ -171,7 +177,7 @@ function ContextMenuItem({
       {hasSubMenu && isOpen && (
         <div
           ref={subMenuRef}
-          className="absolute z-[210] min-w-[180px] rounded-xl border border-border bg-popover/95 p-1.5 shadow-2xl backdrop-blur-md"
+          className="custom-scrollbar absolute z-[210] min-w-[180px] max-h-[calc(100vh-16px)] overflow-y-auto overflow-x-hidden rounded-xl border border-border bg-popover/95 p-1 shadow-2xl backdrop-blur-md"
           style={
             subMenuPlacement === 'below'
               ? {
@@ -233,12 +239,18 @@ export function ContextMenu({
     if (!el) return;
 
     const { width, height } = el.getBoundingClientRect();
-    const pad = 5;
+    const pad = 8;
     let left = x;
     let top = y;
 
     if (left + width > window.innerWidth - pad) left = x - width;
-    if (top + height > window.innerHeight - pad) top = y - height;
+    if (top + height > window.innerHeight - pad) {
+      if (y - height >= pad) {
+        top = y - height;
+      } else {
+        top = window.innerHeight - height - pad;
+      }
+    }
 
     left = Math.max(pad, Math.min(left, window.innerWidth - width - pad));
     top = Math.max(pad, Math.min(top, window.innerHeight - height - pad));
@@ -396,7 +408,7 @@ export function ContextMenu({
   return (
     <div
       ref={menuRef}
-      className="fixed z-[200] min-w-[180px] rounded-xl border border-border bg-popover/95 p-1.5 shadow-2xl backdrop-blur-md"
+      className="custom-scrollbar fixed z-[200] min-w-[180px] max-h-[calc(100vh-16px)] overflow-y-auto overflow-x-hidden rounded-xl border border-border bg-popover/95 p-1 shadow-2xl backdrop-blur-md"
       style={{
         left: x,
         top: y,

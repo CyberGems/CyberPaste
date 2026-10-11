@@ -41,53 +41,96 @@
     opacity: 1;
     transform: scale(1);
   }
-  20% {
-    opacity: 1;
-    transform: scale(1.02);
-  }
   100% {
     opacity: 0;
-    transform: scale(0.88);
-    filter: blur(2px);
+    transform: scale(0.92);
   }
 }
 .clip-deleting-card {
-  animation: clip-delete-card 0.32s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: clip-delete-card 0.22s cubic-bezier(0.2, 0, 0, 1) forwards;
   pointer-events: none !important;
 }
 
 @keyframes clip-delete-row {
   0% {
     opacity: 1;
-    transform: scale(1) translateX(0);
-  }
-  20% {
-    opacity: 1;
-    transform: scale(1.01) translateX(-2px);
+    transform: translateX(0) scale(1);
   }
   100% {
     opacity: 0;
-    transform: scale(0.95) translateX(12px);
-    filter: blur(2px);
+    transform: translateX(18px) scale(0.98);
   }
 }
 .clip-deleting-row {
-  animation: clip-delete-row 0.32s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: clip-delete-row 0.22s cubic-bezier(0.2, 0, 0, 1) forwards;
   pointer-events: none !important;
 }
 
-@keyframes clip-delete-overlay {
+@keyframes undo-pop-in {
   0% {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.5);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(1.12);
   }
   100% {
     opacity: 1;
     transform: scale(1);
   }
 }
-.animate-clip-delete-overlay {
-  animation: clip-delete-overlay 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+@keyframes undo-pop-out {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+}
+
+@keyframes undo-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(245, 158, 11, 0.5), inset 0 0 6px rgba(245, 158, 11, 0.2);
+  }
+}
+
+.animate-undo-pop-in {
+  animation: undo-pop-in 0.26s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-undo-pop-out {
+  animation: undo-pop-out 0.18s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  pointer-events: none;
+}
+
+.animate-undo-glow {
+  animation: undo-glow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes modal-attention {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-7px);
+  }
+  40%,
+  80% {
+    transform: translateX(7px);
+  }
+}
+
+.animate-modal-attention {
+  animation: modal-attention 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
 @keyframes folder-double-flash {

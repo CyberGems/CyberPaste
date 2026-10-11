@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const DEFAULT_DELETE_MS = 320;
+const DEFAULT_DELETE_MS = 240;
 const deletingUntil = new Map<string, number>();
 const subscribers = new Set<() => void>();
 

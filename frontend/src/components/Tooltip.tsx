@@ -55,6 +55,54 @@ export function formatTooltipLabel(label: ReactNode): ReactNode {
   return <span className="tooltip-label-with-shortcuts">{parts}</span>;
 }
 
+export function dismissAllTooltips() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('cyberpaste:hide-all-tooltips'));
+  }
+}
+
+function isAnyModalOpen(): boolean {
+  if (typeof document === 'undefined') return false;
+  return Boolean(
+    document.querySelector('[role="dialog"], [aria-modal="true"]') ||
+    document.body.dataset.titlebarMenuOpen === 'true' ||
+    document.body.dataset.searchHistoryOpen === 'true'
+  );
+}
+
+if (typeof window !== 'undefined') {
+  const modalObserver = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      if (mutation.addedNodes.length > 0) {
+        for (const node of mutation.addedNodes) {
+          if (node instanceof HTMLElement) {
+            if (
+              node.getAttribute('role') === 'dialog' ||
+              node.getAttribute('aria-modal') === 'true' ||
+              node.querySelector?.('[role="dialog"], [aria-modal="true"]')
+            ) {
+              dismissAllTooltips();
+              return;
+            }
+          }
+        }
+      }
+    }
+  });
+
+  const initModalObserver = () => {
+    if (document.body) {
+      modalObserver.observe(document.body, { childList: true, subtree: true });
+    }
+  };
+
+  if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', initModalObserver);
+  } else {
+    initModalObserver();
+  }
+}
+
 // Tooltip elegante y reutilizable (mismo estilo que las pestañas del editor).
 // Clona al hijo y le añade los handlers de hover sin envolverlo en otro nodo,
 // de modo que no altera los layouts flex existentes. Se reposiciona para no
@@ -72,6 +120,31 @@ export default function Tooltip({
   const cardRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ left: number; top: number; arrow: CSSProperties } | null>(null);
   const delayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tooltipId = useRef(`tip-${Math.random()}`);
+
+  useEffect(() => {
+    const hideMe = () => {
+      if (delayTimer.current) {
+        clearTimeout(delayTimer.current);
+        delayTimer.current = null;
+      }
+      setAnchorEl(null);
+    };
+
+    const onOtherTooltipActive = (event: Event) => {
+      const activeId = (event as CustomEvent<{ id?: string }>).detail?.id;
+      if (activeId !== tooltipId.current) {
+        hideMe();
+      }
+    };
+
+    window.addEventListener('cyberpaste:hide-all-tooltips', hideMe);
+    window.addEventListener('cyberpaste:tooltip-active', onOtherTooltipActive);
+    return () => {
+      window.removeEventListener('cyberpaste:hide-all-tooltips', hideMe);
+      window.removeEventListener('cyberpaste:tooltip-active', onOtherTooltipActive);
+    };
+  }, []);
 
   useEffect(() => {
     if (disabled) {
@@ -225,10 +298,8 @@ export default function Tooltip({
 
   const show = (e: ReactMouseEvent<HTMLElement>): void => {
     child.props.onMouseEnter?.(e);
-    if (
-      document.body.dataset.titlebarMenuOpen === 'true' ||
-      document.body.dataset.searchHistoryOpen === 'true'
-    ) {
+    if (isAnyModalOpen()) {
+      setAnchorEl(null);
       return;
     }
     if (delayTimer.current) {
@@ -251,6 +322,13 @@ export default function Tooltip({
       setAnchorEl(null);
     } else if (label) {
       delayTimer.current = setTimeout(() => {
+        if (isAnyModalOpen()) {
+          setAnchorEl(null);
+          return;
+        }
+        window.dispatchEvent(
+          new CustomEvent('cyberpaste:tooltip-active', { detail: { id: tooltipId.current } })
+        );
         setAnchorEl(currentTarget);
       }, 300);
     }
@@ -273,10 +351,7 @@ export default function Tooltip({
   };
   const handleMouseMove = (e: ReactMouseEvent<HTMLElement>): void => {
     child.props.onMouseMove?.(e);
-    if (
-      document.body.dataset.titlebarMenuOpen === 'true' ||
-      document.body.dataset.searchHistoryOpen === 'true'
-    ) {
+    if (isAnyModalOpen()) {
       if (delayTimer.current) {
         clearTimeout(delayTimer.current);
         delayTimer.current = null;

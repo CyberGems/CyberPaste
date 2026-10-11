@@ -16,8 +16,26 @@ static IS_ANIMATING: AtomicBool = AtomicBool::new(false);
 static LAST_SHOW_TIME: AtomicI64 = AtomicI64::new(0);
 static STARTUP_FOCUS_GRACE_UNTIL: AtomicI64 = AtomicI64::new(0);
 static SKIP_LOCK_ON_NEXT_HIDE: AtomicBool = AtomicBool::new(false);
+static BLOCK_WINDOW_HIDE: AtomicBool = AtomicBool::new(false);
+static HAS_PENDING_UNDOS: AtomicBool = AtomicBool::new(false);
 static NATIVE_DIALOG_DEPTH: AtomicUsize = AtomicUsize::new(0);
 static NATIVE_DIALOG_SUPPRESS_UNTIL: AtomicI64 = AtomicI64::new(0);
+
+pub fn set_window_hide_blocked(blocked: bool) {
+    BLOCK_WINDOW_HIDE.store(blocked, Ordering::SeqCst);
+}
+
+pub fn is_window_hide_blocked() -> bool {
+    BLOCK_WINDOW_HIDE.load(Ordering::SeqCst)
+}
+
+pub fn set_has_pending_undos(has: bool) {
+    HAS_PENDING_UNDOS.store(has, Ordering::SeqCst);
+}
+
+pub fn has_pending_undos() -> bool {
+    HAS_PENDING_UNDOS.load(Ordering::SeqCst)
+}
 /// WebView2 can reject concurrent controller creation when several windows share
 /// the default user-data folder. Serialize secondary-window creation on Windows.
 pub(crate) static WEBVIEW_CREATE_LOCK: Mutex<()> = Mutex::new(());
@@ -89,7 +107,7 @@ fn start_main_window_outside_click_watcher(app: tauri::AppHandle) {
                 let Some(settings) = settings else {
                     continue;
                 };
-                if !settings.hide_on_blur || settings.pinned || native_dialog_is_open() {
+                if !settings.hide_on_blur || settings.pinned || is_window_hide_blocked() || has_pending_undos() || native_dialog_is_open() {
                     continue;
                 }
                 let now = chrono::Local::now().timestamp_millis();
@@ -387,7 +405,7 @@ pub fn run_app() {
                     if !focused {
                         let label = window.label();
                         if label == "main" {
-                            if native_dialog_is_open() {
+                            if is_window_hide_blocked() || has_pending_undos() || native_dialog_is_open() {
                                 return;
                             }
 
@@ -582,7 +600,15 @@ pub fn run_app() {
                                 if win.is_visible().unwrap_or(false)
                                     && win.is_focused().unwrap_or(false)
                                 {
-                                    crate::animate_window_hide(&win, None);
+                                    if crate::is_window_hide_blocked() {
+                                        let _ = win.set_focus();
+                                        let _ = win.emit("window-hide-blocked", ());
+                                    } else if crate::has_pending_undos() {
+                                        let _ = win.set_focus();
+                                        let _ = win.emit("close-requested", ());
+                                    } else {
+                                        crate::animate_window_hide(&win, None);
+                                    }
                                 } else {
                                     position_window_at_bottom(&win);
                                 }
@@ -698,6 +724,16 @@ pub fn run_app() {
                             return;
                         }
                         if win_clone.is_visible().unwrap_or(false) && win_clone.is_focused().unwrap_or(false) {
+                            if crate::is_window_hide_blocked() {
+                                let _ = win_clone.set_focus();
+                                let _ = win_clone.emit("window-hide-blocked", ());
+                                return;
+                            }
+                            if crate::has_pending_undos() {
+                                let _ = win_clone.set_focus();
+                                let _ = win_clone.emit("close-requested", ());
+                                return;
+                            }
                             crate::animate_window_hide(&win_clone, None);
                         } else {
                             // Capture the foreground window before showing CyberPaste
@@ -830,6 +866,8 @@ pub fn run_app() {
             settings_commands::skip_update_version,
             settings_commands::save_settings,
             commands::hide_window,
+            commands::set_prevent_hide,
+            commands::set_has_pending_undos,
             commands::request_close,
             commands::handle_close_choice,
             commands::get_clipboard_history_size,
