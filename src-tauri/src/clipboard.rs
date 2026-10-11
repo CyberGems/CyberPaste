@@ -267,6 +267,28 @@ fn clipboard_has_files() -> bool {
         .unwrap_or(false)
 }
 
+pub fn normalize_file_path(p: &str) -> String {
+    let trimmed = p.trim();
+    if trimmed.is_empty() {
+        return String::new();
+    }
+    let path = std::path::Path::new(trimmed);
+    if let Ok(canonical) = std::fs::canonicalize(path) {
+        let mut s = canonical.to_string_lossy().to_string();
+        if let Some(stripped) = s.strip_prefix(r"\\?\") {
+            s = stripped.to_string();
+        }
+        return s;
+    }
+    let normalized = trimmed.replace('/', "\\");
+    if normalized.len() >= 2 && normalized.as_bytes()[1] == b':' {
+        let drive = normalized.chars().next().unwrap().to_ascii_uppercase();
+        format!("{}{}", drive, &normalized[1..])
+    } else {
+        normalized
+    }
+}
+
 /// Canonical pixel identity: version prefix + width + height + RGBA8.
 /// `DynamicImage::as_bytes()` is not unique across color types or dimensions
 /// (e.g. 100×100 RGB and 50×200 RGB with the same byte sequence collide).
@@ -429,7 +451,13 @@ async fn process_clipboard_change(
             // 1. Try Files (CF_HDROP) — must be before text: Explorer sets both
             if ctx.has(ContentFormat::Files) {
                 if let Ok(files) = ctx.get_files() {
-                    let files: Vec<String> = files.into_iter().collect();
+                    let mut files: Vec<String> = files
+                        .into_iter()
+                        .map(|f| normalize_file_path(&f))
+                        .filter(|f| !f.is_empty())
+                        .collect();
+                    files.sort();
+                    files.dedup();
                     if !files.is_empty() {
                         let content = serde_json::to_vec(&files).unwrap_or_default();
                         clip_hash = calculate_hash(&content);
@@ -975,7 +1003,12 @@ async fn process_clipboard_change(
             };
             let _ = crate::commands::play_clipboard_sound(sound_path);
         }
-        if settings.toast_enabled && (!was_existing || settings.duplicate_toast_enabled) {
+        let should_show_toast = if was_existing {
+            settings.duplicate_toast_enabled
+        } else {
+            settings.toast_enabled
+        };
+        if should_show_toast {
             let msg = if clip_preview.is_empty() {
                 "".to_string()
             } else if clip_preview.len() > 50 {
@@ -2136,5 +2169,34 @@ mod tests {
         let (w, h, bytes) = validated_rgba8(1, 1, vec![1, 2, 3, 255]).expect("valid");
         assert_eq!((w, h), (1, 1));
         assert_eq!(bytes, vec![1, 2, 3, 255]);
+    }
+
+    #[test]
+    fn normalize_file_path_handles_casing_and_slashes() {
+        let p1 = normalize_file_path("c:/test/folder/file.txt");
+        let p2 = normalize_file_path("C:\\test\\folder\\file.txt");
+        assert_eq!(p1, "C:\\test\\folder\\file.txt");
+        assert_eq!(p1, p2);
+    }
+
+    #[test]
+    fn file_hash_is_deterministic_regardless_of_order() {
+        let list1 = vec![
+            normalize_file_path("C:/path/b.txt"),
+            normalize_file_path("C:/path/a.txt"),
+        ];
+        let mut sorted1 = list1.clone();
+        sorted1.sort();
+
+        let list2 = vec![
+            normalize_file_path("c:\\path\\a.txt"),
+            normalize_file_path("c:\\path\\b.txt"),
+        ];
+        let mut sorted2 = list2.clone();
+        sorted2.sort();
+
+        let content1 = serde_json::to_vec(&sorted1).unwrap();
+        let content2 = serde_json::to_vec(&sorted2).unwrap();
+        assert_eq!(calculate_hash(&content1), calculate_hash(&content2));
     }
 }

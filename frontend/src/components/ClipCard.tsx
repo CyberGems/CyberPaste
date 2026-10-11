@@ -220,7 +220,7 @@ export const ClipCard = memo(
       } else if (clip.clip_type === 'file') {
         return (
           <div className="flex h-full w-full select-none flex-col items-center justify-center gap-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-yellow-400/70">
+            <span className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
               {t('common.files')}
             </span>
             <span className="max-w-full truncate px-3 text-center text-xs text-muted-foreground/60">

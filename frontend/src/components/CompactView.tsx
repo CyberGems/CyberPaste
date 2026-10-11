@@ -2489,7 +2489,7 @@ const ClipRow = memo(function ClipRow({
               </>
             ) : clip.clip_type === 'file' ? (
               <span className="flex items-center gap-2 truncate">
-                <span className="flex-shrink-0 text-[10px] font-bold uppercase text-yellow-400/70">
+                <span className="flex-shrink-0 text-[10px] font-bold uppercase text-amber-700 dark:text-amber-400">
                   {t('common.file')}
                 </span>
                 <span className="truncate py-0.5 text-xs leading-normal text-muted-foreground/80">

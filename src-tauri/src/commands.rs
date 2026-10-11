@@ -4412,12 +4412,27 @@ async fn dispatch_toast(app: AppHandle, payload: ToastPayload) -> Result<(), Str
     use crate::settings_manager::SettingsManager;
     use std::sync::Arc;
     let manager = app.state::<Arc<SettingsManager>>();
-    if !manager.get().toast_enabled {
-        return Ok(());
+    let settings = manager.get();
+    let is_duplicate = payload.toast_type == "duplicate";
+    let is_action_message = payload.toast_type != "update"
+        && (payload.clip_type.is_none()
+            || payload.clip_type.as_deref() == Some("welcome")
+            || payload.clip_type.as_deref() == Some("content_limit")
+            || payload.clip_type.as_deref() == Some("image_limit")
+            || payload.clip_type.as_deref() == Some("storage_quota"));
+
+    if is_duplicate {
+        if !settings.duplicate_toast_enabled {
+            return Ok(());
+        }
+    } else if !is_action_message && payload.toast_type != "update" {
+        if !settings.toast_enabled {
+            return Ok(());
+        }
     }
 
     let payload = payload;
-    if crate::quiet_hours::is_active(&manager.get())
+    if crate::quiet_hours::is_active(&settings)
         && payload.toast_type != "error"
         && !payload.bypass_quiet_hours
     {
@@ -4436,13 +4451,7 @@ async fn dispatch_toast(app: AppHandle, payload: ToastPayload) -> Result<(), Str
         }
     }
 
-    let is_action_message = payload.toast_type != "update"
-        && (payload.clip_type.is_none()
-            || payload.clip_type.as_deref() == Some("welcome")
-            || payload.clip_type.as_deref() == Some("content_limit")
-            || payload.clip_type.as_deref() == Some("image_limit")
-            || payload.clip_type.as_deref() == Some("storage_quota"));
-    if is_action_message && !manager.get().show_action_messages {
+    if is_action_message && !settings.show_action_messages {
         return Ok(());
     }
 
