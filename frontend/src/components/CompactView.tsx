@@ -1061,7 +1061,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
 
   // Auto-scroll selected folder into view
   useEffect(() => {
-    const selectedBtn = folderScrollRef.current?.querySelector('[data-selected="true"]');
+    const targetIdAttr = selectedFolder === null ? 'clipboard' : selectedFolder;
+    const selectedBtn = folderScrollRef.current?.querySelector(
+      `[data-folder-id="${targetIdAttr}"]`
+    );
     if (selectedBtn) {
       selectedBtn.scrollIntoView({
         behavior: 'smooth',

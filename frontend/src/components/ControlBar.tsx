@@ -532,7 +532,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
 
   // Auto-scroll selected folder into view
   React.useEffect(() => {
-    const selectedBtn = foldersRef.current?.querySelector('[data-selected="true"]');
+    const targetIdAttr = selectedFolder === null ? 'clipboard' : selectedFolder;
+    const selectedBtn = foldersRef.current?.querySelector(`[data-folder-id="${targetIdAttr}"]`);
     if (selectedBtn) {
       selectedBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
     }

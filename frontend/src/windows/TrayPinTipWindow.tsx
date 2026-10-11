@@ -6,7 +6,6 @@ import { ChevronUp, X } from 'lucide-react';
 import { useLanguage } from '../hooks/useLanguage';
 import { useTheme } from '../hooks/useTheme';
 import type { Settings } from '../types';
-import { ModalIcon } from '../components/ModalIcon';
 
 type TaskbarEdge = 'bottom' | 'top' | 'left' | 'right';
 
@@ -48,9 +47,7 @@ export function TrayPinTipWindow() {
       (root as HTMLElement).style.overflow = 'hidden';
     }
 
-    invoke<Settings>('get_settings')
-      .then(setSettings)
-      .catch(console.error);
+    invoke<Settings>('get_settings').then(setSettings).catch(console.error);
     invoke<string>('get_tray_pin_tip_edge')
       .then((value) => setEdge(parseEdge(value)))
       .catch(console.error);
@@ -121,18 +118,21 @@ export function TrayPinTipWindow() {
       >
         {tailFirst ? <TipTail edge={edge} /> : null}
         <div
-          className="rounded-xl border border-border bg-card p-4"
+          className="rounded-xl border border-border bg-background p-4"
           style={{
             width: CARD_WIDTH,
             boxShadow:
-              '0 6px 20px rgba(0,0,0,0.42), 0 1px 4px rgba(0,0,0,0.28), 0 0 0 1px rgba(255,255,255,0.04)',
+              '0 6px 20px rgba(0,0,0,0.28), 0 1px 4px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.06)',
           }}
         >
-          <div className="flex items-start gap-2">
-            <div className="flex min-w-0 flex-1 items-center gap-2">
-              <ModalIcon>
-                <img src="/logo.png" alt="" draggable={false} className="h-5 w-5 object-contain" />
-              </ModalIcon>
+          <div className="flex items-start gap-2.5">
+            <div className="flex min-w-0 flex-1 items-center gap-2.5">
+              <img
+                src="/logo.png"
+                alt=""
+                draggable={false}
+                className="h-7 w-7 shrink-0 object-contain drop-shadow-sm"
+              />
               <h1 className="text-[14px] font-semibold leading-snug text-foreground">
                 {t('trayPinTip.title')}
               </h1>
@@ -214,15 +214,13 @@ function TipTail({ edge }: { edge: TaskbarEdge }) {
           ? '0,0 10,9 0,18'
           : '0,0 9,10 18,0';
   const size =
-    edge === 'left' || edge === 'right'
-      ? { width: TAIL, height: 18 }
-      : { width: 18, height: TAIL };
+    edge === 'left' || edge === 'right' ? { width: TAIL, height: 18 } : { width: 18, height: TAIL };
   return (
     <svg
       width={size.width}
       height={size.height}
       viewBox={edge === 'left' || edge === 'right' ? '0 0 10 18' : '0 0 18 10'}
-      className="shrink-0 text-card"
+      className="shrink-0 text-background"
       aria-hidden
     >
       <polygon points={points} fill="currentColor" />

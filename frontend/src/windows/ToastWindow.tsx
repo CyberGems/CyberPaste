@@ -226,19 +226,19 @@ function toastThemeVars(theme: 'cyberpaste' | 'dark' | 'light', gradient: string
   if (theme === 'light') {
     return {
       container:
-        'bg-white border border-black/10 text-neutral-900 shadow-[0_3px_18px_rgba(0,0,0,0.18)]',
+        'bg-[#DFE2EA] border border-[#CBD1DE] text-neutral-900 shadow-[0_4px_20px_rgba(0,0,0,0.14)]',
       title: 'text-neutral-900',
       body: 'text-neutral-700',
-      closeBtn: 'text-neutral-400 hover:bg-black/10 hover:text-neutral-700',
-      track: 'bg-black/10',
+      closeBtn: 'text-neutral-500 hover:bg-[#D6DAE5] hover:text-neutral-800',
+      track: 'bg-[#CBD1DE]/50',
       progressColor: 'linear-gradient(90deg, #0078D7, #00A8FF, #7A00FF)',
       iconColor: '#0078D7',
-      previewBg: 'bg-neutral-100/80',
-      previewBorder: 'border-neutral-200',
-      headerBorder: 'border-black/5',
-      headerText: 'text-neutral-500',
+      previewBg: 'bg-[#ECEFF6]',
+      previewBorder: 'border-[#CBD1DE]',
+      headerBorder: 'border-[#CBD1DE]/60',
+      headerText: 'text-neutral-600',
       sourceAppText: 'text-neutral-800',
-      imageBorder: 'border-black/10',
+      imageBorder: 'border-[#CBD1DE]',
     };
   }
   if (theme === 'dark') {
