@@ -928,7 +928,10 @@
     "deletePinnedTitle": "¿Eliminar clip fijado?",
     "deletePinnedMessage": "Este clip está fijado. ¿Estás seguro de que deseas eliminarlo?",
     "deletePinnedBulkTitle": "¿Eliminar clips fijados?",
-    "deletePinnedBulkMessage": "La selección contiene clips fijados. ¿Estás seguro de que deseas eliminarlos?"
+    "deletePinnedBulkMessage": "La selección contiene clips fijados. ¿Estás seguro de que deseas eliminarlos?",
+    "deleteFolderTitle": "¿Eliminar carpeta?",
+    "deleteFolderEmptyMessage": "¿Estás seguro de que deseas eliminar la carpeta \"{{name}}\"?",
+    "deleteFolderWithClipsMessage": "La carpeta \"{{name}}\" contiene {{count}} clips. Al eliminarla, sus clips se conservarán en el portapapeles principal. ¿Deseas continuar?"
   },
   "viewer": {
     "title": "Visor de imágenes",

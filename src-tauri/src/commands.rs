@@ -2462,6 +2462,15 @@ pub async fn delete_folder(
     let pool = &db.pool;
 
     let folder_id: i64 = id.parse().map_err(|_| "Invalid folder ID")?;
+
+    // Move any clips in this folder back to main clipboard (folder_id = NULL)
+    // to preserve clips and prevent SQLite foreign key constraint violation
+    sqlx::query(r#"UPDATE clips SET folder_id = NULL WHERE folder_id = ?"#)
+        .bind(folder_id)
+        .execute(pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
     sqlx::query(r#"DELETE FROM folders WHERE id = ?"#)
         .bind(folder_id)
         .execute(pool)

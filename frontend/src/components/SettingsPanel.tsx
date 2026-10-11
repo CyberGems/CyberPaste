@@ -49,7 +49,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { emit, listen } from '@tauri-apps/api/event';
 import { getCurrentWindow, availableMonitors } from '@tauri-apps/api/window';
 import { getVersion } from '@tauri-apps/api/app';
-import { systemToast as toast } from '../utils/toast';
+import { toast } from '../utils/toast';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Select } from './ui/Select';
 import { Switch } from './ui/Switch';
@@ -903,6 +903,23 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     } catch (e) {
       toast.error(t('settings.failedToDeleteFolder', { error: e }));
     }
+  };
+
+  const requestDeleteFolder = (folder: FolderItem) => {
+    const message =
+      (folder.item_count ?? 0) > 0
+        ? t('confirm.deleteFolderWithClipsMessage', {
+            name: folder.name,
+            count: folder.item_count,
+          })
+        : t('confirm.deleteFolderEmptyMessage', { name: folder.name });
+
+    setConfirmDialog({
+      isOpen: true,
+      title: t('confirm.deleteFolderTitle'),
+      message,
+      action: () => handleDeleteFolder(folder.id),
+    });
   };
 
   const startRenameFolder = (folder: FolderItem) => {
@@ -2258,7 +2275,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                       </Tooltip>
                                       <Tooltip label={t('common.delete')} placement="top">
                                         <button
-                                          onClick={() => handleDeleteFolder(folder.id)}
+                                          onClick={() => requestDeleteFolder(folder)}
                                           className="rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                                         >
                                           <Trash2 size={13} />

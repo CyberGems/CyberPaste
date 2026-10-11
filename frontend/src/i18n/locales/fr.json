@@ -237,7 +237,10 @@
     "deletePinnedTitle": "Supprimer l'élément épinglé ?",
     "deletePinnedMessage": "Cet élément est épinglé. Êtes-vous sûr de vouloir le supprimer ?",
     "deletePinnedBulkTitle": "Supprimer les éléments épinglés ?",
-    "deletePinnedBulkMessage": "La sélection contient des éléments épinglés. Êtes-vous sûr de vouloir les supprimer ?"
+    "deletePinnedBulkMessage": "La sélection contient des éléments épinglés. Êtes-vous sûr de vouloir les supprimer ?",
+    "deleteFolderTitle": "Supprimer le dossier ?",
+    "deleteFolderEmptyMessage": "Êtes-vous sûr de vouloir supprimer le dossier \"{{name}}\" ?",
+    "deleteFolderWithClipsMessage": "Le dossier \"{{name}}\" contient {{count}} clips. En le supprimant, ses clips seront conservés dans le presse-papiers principal. Voulez-vous continuer ?"
   },
   "viewer": {
     "openOcrText": "Afficher le texte extrait",

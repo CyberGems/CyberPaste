@@ -239,7 +239,10 @@
     "deletePinnedTitle": "删除固定剪贴？",
     "deletePinnedMessage": "此剪贴已被固定。确定要删除吗？",
     "deletePinnedBulkTitle": "删除固定剪贴？",
-    "deletePinnedBulkMessage": "选中的剪贴中包含固定项目。确定要删除吗？"
+    "deletePinnedBulkMessage": "选中的剪贴中包含固定项目。确定要删除吗？",
+    "deleteFolderTitle": "删除文件夹？",
+    "deleteFolderEmptyMessage": "确定要删除文件夹“{{name}}”吗？",
+    "deleteFolderWithClipsMessage": "文件夹“{{name}}”包含 {{count}} 个剪贴。删除后，其剪贴将保留在主剪贴板中。是否继续？"
   },
   "viewer": {
     "openOcrText": "显示提取的文本",

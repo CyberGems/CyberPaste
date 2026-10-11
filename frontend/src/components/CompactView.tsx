@@ -949,8 +949,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
       if (activeBtn) {
         activeBtn.scrollIntoView({
           behavior: 'smooth',
-          block: isVertical ? 'nearest' : 'center',
-          inline: isVertical ? 'center' : 'center',
+          block: 'nearest',
+          inline: 'nearest',
         });
       }
     }, 0);
@@ -1065,8 +1065,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
     if (selectedBtn) {
       selectedBtn.scrollIntoView({
         behavior: 'smooth',
-        block: isVertical ? 'nearest' : 'center',
-        inline: isVertical ? 'center' : 'center',
+        block: 'nearest',
+        inline: 'nearest',
       });
     }
   }, [selectedFolder, isVertical]);
@@ -1991,8 +1991,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
                       className={cn(
                         'flex h-7 w-5 items-center justify-center rounded-md border transition-all',
                         canScrollLeft
-                          ? 'border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer'
-                          : 'border-transparent bg-transparent text-muted-foreground/30 opacity-40 cursor-default pointer-events-none'
+                          ? 'cursor-pointer border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
+                          : 'pointer-events-none cursor-default border-transparent bg-transparent text-muted-foreground/30 opacity-40'
                       )}
                     >
                       <ChevronLeft size={13} strokeWidth={2.2} />
@@ -2076,7 +2076,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
               </div>
               {hasOverflow && (
                 <div className="flex-shrink-0 pb-1">
-                  <Tooltip label={canScrollRight ? t('folders.scrollForward') : ''} placement="bottom">
+                  <Tooltip
+                    label={canScrollRight ? t('folders.scrollForward') : ''}
+                    placement="bottom"
+                  >
                     <button
                       type="button"
                       disabled={!canScrollRight}
@@ -2085,8 +2088,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
                       className={cn(
                         'flex h-7 w-5 items-center justify-center rounded-md border transition-all',
                         canScrollRight
-                          ? 'border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer'
-                          : 'border-transparent bg-transparent text-muted-foreground/30 opacity-40 cursor-default pointer-events-none'
+                          ? 'cursor-pointer border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
+                          : 'pointer-events-none cursor-default border-transparent bg-transparent text-muted-foreground/30 opacity-40'
                       )}
                     >
                       <ChevronRight size={13} strokeWidth={2.2} />

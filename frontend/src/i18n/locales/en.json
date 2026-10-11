@@ -928,7 +928,10 @@
     "deletePinnedTitle": "Delete pinned clip?",
     "deletePinnedMessage": "This clip is pinned. Are you sure you want to delete it?",
     "deletePinnedBulkTitle": "Delete pinned clips?",
-    "deletePinnedBulkMessage": "The selection contains pinned clips. Are you sure you want to delete them?"
+    "deletePinnedBulkMessage": "The selection contains pinned clips. Are you sure you want to delete them?",
+    "deleteFolderTitle": "Delete folder?",
+    "deleteFolderEmptyMessage": "Are you sure you want to delete the folder \"{{name}}\"?",
+    "deleteFolderWithClipsMessage": "The folder \"{{name}}\" contains {{count}} clips. If deleted, its clips will be kept in the main clipboard. Do you want to continue?"
   },
   "viewer": {
     "title": "Image Viewer",

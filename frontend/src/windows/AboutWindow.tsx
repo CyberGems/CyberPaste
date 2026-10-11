@@ -27,7 +27,7 @@ import { useTranslation } from 'react-i18next';
 import { Settings } from '../types';
 import { useLanguage } from '../hooks/useLanguage';
 import { useTheme } from '../hooks/useTheme';
-import { systemToast as toast } from '../utils/toast';
+import { toast } from '../utils/toast';
 import { Switch } from '../components/ui/Switch';
 import { IS_PORTABLE_BUILD } from '../utils/build';
 import {

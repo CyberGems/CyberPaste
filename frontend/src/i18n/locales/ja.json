@@ -237,7 +237,10 @@
     "deletePinnedTitle": "ピン留めされたクリップを削除しますか？",
     "deletePinnedMessage": "このクリップはピン留めされています。本当に削除しますか？",
     "deletePinnedBulkTitle": "ピン留めされたクリップを削除しますか？",
-    "deletePinnedBulkMessage": "選択したクリップにピン留めされた項目が含まれています。本当に削除しますか？"
+    "deletePinnedBulkMessage": "選択したクリップにピン留めされた項目が含まれています。本当に削除しますか？",
+    "deleteFolderTitle": "フォルダーを削除しますか？",
+    "deleteFolderEmptyMessage": "フォルダー「{{name}}」を削除してもよろしいですか？",
+    "deleteFolderWithClipsMessage": "フォルダー「{{name}}」には{{count}}個のクリップが含まれています。削除してもクリップはメインクリップボードに保持されます。続行しますか？"
   },
   "viewer": {
     "openOcrText": "抽出されたテキストを表示",

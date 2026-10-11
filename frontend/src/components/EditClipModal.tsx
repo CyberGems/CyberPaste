@@ -7,7 +7,7 @@ import { clsx } from 'clsx';
 import Tooltip from './Tooltip';
 import { ModalIcon } from './ModalIcon';
 import { EnterGlyph, EscGlyph, useModalKeys } from './ModalActions';
-import { systemToast as toast } from '../utils/toast';
+import { toast } from '../utils/toast';
 import { isExportCancelled, saveTextToFile } from '../utils/export';
 
 interface EditClipModalProps {

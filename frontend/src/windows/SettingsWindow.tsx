@@ -7,6 +7,8 @@ import { SettingsPanel } from '../components/SettingsPanel';
 import { useLanguage } from '../hooks/useLanguage';
 import { useTheme } from '../hooks/useTheme';
 
+import { Toaster } from 'sonner';
+
 export function SettingsWindow() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const settingsRef = useRef<Settings | null>(null);
@@ -107,6 +109,12 @@ export function SettingsWindow() {
       <div className="h-full overflow-hidden bg-background text-foreground">
         <SettingsPanel settings={settings} onClose={handleClose} />
       </div>
+      <Toaster
+        position="bottom-center"
+        richColors
+        closeButton
+        theme={settings?.theme === 'light' ? 'light' : 'dark'}
+      />
     </div>
   );
 }

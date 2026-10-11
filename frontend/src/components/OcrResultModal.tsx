@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { X, Copy, Download, Check, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { systemToast as toast } from '../utils/toast';
+import { toast } from '../utils/toast';
 import { ContextMenu } from './ContextMenu';
 import { useTextFieldContextMenu } from '../hooks/useTextFieldContextMenu';
 import { isExportCancelled, saveTextToFile } from '../utils/export';

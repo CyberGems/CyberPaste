@@ -23,7 +23,7 @@ import { emit, listen } from '@tauri-apps/api/event';
 import { clsx } from 'clsx';
 import Tooltip from './Tooltip';
 import { ConfirmDialog } from './ConfirmDialog';
-import { systemToast as toast } from '../utils/toast';
+import { toast } from '../utils/toast';
 import { useClipboardMonitoring } from '../hooks/useClipboardMonitoring';
 
 const DONATE_URL = 'https://github.com/CyberGems/CyberPaste#%EF%B8%8F-donate';

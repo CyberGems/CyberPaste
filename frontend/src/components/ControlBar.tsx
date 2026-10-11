@@ -431,7 +431,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         activeBtn.scrollIntoView({
           behavior: 'smooth',
           block: 'nearest',
-          inline: 'center',
+          inline: 'nearest',
         });
       }
     }, 0);
@@ -534,7 +534,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   React.useEffect(() => {
     const selectedBtn = foldersRef.current?.querySelector('[data-selected="true"]');
     if (selectedBtn) {
-      selectedBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      selectedBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
     }
   }, [selectedFolder]);
 
@@ -837,8 +837,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                   className={clsx(
                     'flex h-8 w-5 items-center justify-center rounded-md border transition-all',
                     canScrollLeft
-                      ? 'border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer'
-                      : 'border-transparent bg-transparent text-muted-foreground/30 opacity-40 cursor-default pointer-events-none'
+                      ? 'cursor-pointer border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
+                      : 'pointer-events-none cursor-default border-transparent bg-transparent text-muted-foreground/30 opacity-40'
                   )}
                 >
                   <ChevronLeft size={14} strokeWidth={2.2} />
@@ -952,8 +952,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                   className={clsx(
                     'flex h-8 w-5 items-center justify-center rounded-md border transition-all',
                     canScrollRight
-                      ? 'border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer'
-                      : 'border-transparent bg-transparent text-muted-foreground/30 opacity-40 cursor-default pointer-events-none'
+                      ? 'cursor-pointer border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
+                      : 'pointer-events-none cursor-default border-transparent bg-transparent text-muted-foreground/30 opacity-40'
                   )}
                 >
                   <ChevronRight size={14} strokeWidth={2.2} />

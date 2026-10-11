@@ -39,7 +39,8 @@ import { triggerPinFlash } from './hooks/usePinFlash';
 import { triggerFolderFlash } from './hooks/useFolderFlash';
 import { triggerDeleteFlash, cancelDeleteFlash } from './hooks/useDeleteFlash';
 import { useTranslation } from 'react-i18next';
-import { systemToast as toast } from './utils/toast';
+import { toast } from './utils/toast';
+import { Toaster } from 'sonner';
 import { exportClip, isExportCancelled } from './utils/export';
 import { IS_PORTABLE_BUILD } from './utils/build';
 import { isSkippedUpdateVersion } from './utils/updater';
@@ -199,6 +200,7 @@ function App() {
     message: '',
     ids: [],
   });
+  const [folderToDelete, setFolderToDelete] = useState<FolderItem | null>(null);
   const settingsRef = useRef<Settings | null>(null);
   const recentSearchesRef = useRef<string[]>([]);
   const searchHistoryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -2902,7 +2904,14 @@ function App() {
             label: t('contextMenu.delete'),
             icon: <Trash2 size={14} />,
             danger: true,
-            onClick: () => handleDeleteFolder(itemId),
+            onClick: () => {
+              const folder = foldersRef.current.find((f) => f.id === itemId);
+              if (folder) {
+                setFolderToDelete(folder);
+              } else {
+                handleDeleteFolder(itemId);
+              }
+            },
           },
         ];
       }
@@ -3568,6 +3577,40 @@ function App() {
           onConfirm={handleConfirmPendingDelete}
           onCancel={() => setPendingDeleteModal((prev) => ({ ...prev, isOpen: false }))}
           variant="danger"
+        />
+
+        <ConfirmDialog
+          isOpen={folderToDelete !== null}
+          title={t('confirm.deleteFolderTitle')}
+          message={
+            (folderToDelete?.item_count ?? 0) > 0
+              ? t('confirm.deleteFolderWithClipsMessage', {
+                  name: folderToDelete?.name,
+                  count: folderToDelete?.item_count,
+                })
+              : t('confirm.deleteFolderEmptyMessage', { name: folderToDelete?.name })
+          }
+          confirmText={t('common.delete')}
+          cancelText={t('common.cancel')}
+          onConfirm={async () => {
+            if (folderToDelete) {
+              const id = folderToDelete.id;
+              setFolderToDelete(null);
+              await handleDeleteFolder(id);
+            }
+          }}
+          onCancel={() => setFolderToDelete(null)}
+          variant="danger"
+        />
+
+        <Toaster
+          position="bottom-center"
+          richColors
+          closeButton
+          theme={theme === 'light' ? 'light' : 'dark'}
+          toastOptions={{
+            className: 'font-sans text-xs sm:text-sm shadow-xl',
+          }}
         />
 
         {/* Floating Mobile-Style Card Drag Preview */}

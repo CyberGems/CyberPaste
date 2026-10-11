@@ -1,6 +1,6 @@
 import { X, Copy, Download, Check } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { systemToast as toast } from '../utils/toast';
+import { toast } from '../utils/toast';
 import { useTranslation } from 'react-i18next';
 import { isExportCancelled, saveTextToFile } from '../utils/export';
 

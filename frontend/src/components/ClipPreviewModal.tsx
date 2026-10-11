@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { clsx } from 'clsx';
 import Tooltip from './Tooltip';
 import type { ClipboardItem } from '../types';
-import { systemToast as toast } from '../utils/toast';
+import { toast } from '../utils/toast';
 import { exportClip, isExportCancelled } from '../utils/export';
 
 interface ClipPreviewModalProps {
