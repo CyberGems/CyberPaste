@@ -53,6 +53,8 @@ import {
   Keyboard,
   Pause,
   Play,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { FolderItem } from '../types';
 import { CONTEXT_MENU_EVENT, type ContextMenuEventDetail } from '../utils/contextMenuEvents';
@@ -307,6 +309,47 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   const wheelResetTimeoutRef = useRef<any>(null);
 
   const [contextMenuFolderId, setContextMenuFolderId] = useState<string | null>(null);
+
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollState = React.useCallback(() => {
+    const el = foldersRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setCanScrollLeft(scrollLeft > 2);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 2);
+  }, []);
+
+  const scrollFolders = React.useCallback((direction: 'left' | 'right') => {
+    const el = foldersRef.current;
+    if (!el) return;
+    const distance = Math.max(el.clientWidth * 0.65, 160);
+    el.scrollBy({
+      left: direction === 'left' ? -distance : distance,
+      behavior: 'smooth',
+    });
+  }, []);
+
+  useEffect(() => {
+    const el = foldersRef.current;
+    if (!el) return;
+
+    updateScrollState();
+
+    const ro = new ResizeObserver(() => {
+      updateScrollState();
+    });
+    ro.observe(el);
+
+    const handleResize = () => updateScrollState();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [updateScrollState, folders, totalClipCount, showSearch]);
 
   useEffect(() => {
     const onMenu = (e: Event) => {
@@ -780,9 +823,24 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         <div className="mx-0.5 h-5 w-px shrink-0 bg-border/50" />
 
         <div className="relative flex h-full min-w-0 flex-1 items-center">
+          {!showSearch && canScrollLeft && (
+            <div className="mr-1 flex-shrink-0">
+              <Tooltip label={t('folders.scrollBack')} placement="bottom">
+                <button
+                  type="button"
+                  onClick={() => scrollFolders('left')}
+                  className="flex h-8 w-5 items-center justify-center rounded-md border border-border/40 bg-muted/30 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                >
+                  <ChevronLeft size={14} strokeWidth={2.2} />
+                </button>
+              </Tooltip>
+            </div>
+          )}
+
           {/* Folders List - Cybernetic Transition */}
           <div
             ref={foldersRef}
+            onScroll={updateScrollState}
             className={clsx(
               'no-scrollbar flex flex-1 items-center gap-1 overflow-x-auto transition-all duration-500 ease-in-out',
               showSearch
@@ -872,6 +930,20 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               );
             })}
           </div>
+
+          {!showSearch && canScrollRight && (
+            <div className="ml-1 flex-shrink-0">
+              <Tooltip label={t('folders.scrollForward')} placement="bottom">
+                <button
+                  type="button"
+                  onClick={() => scrollFolders('right')}
+                  className="flex h-8 w-5 items-center justify-center rounded-md border border-border/40 bg-muted/30 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                >
+                  <ChevronRight size={14} strokeWidth={2.2} />
+                </button>
+              </Tooltip>
+            </div>
+          )}
 
           {!showSearch && (
             <div className="ml-1 flex-shrink-0">

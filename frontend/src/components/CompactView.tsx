@@ -698,8 +698,56 @@ export const CompactView: React.FC<CompactViewProps> = ({
     return () => clearInterval(timer);
   }, [isWindowActive, footerHints.length]);
   const folderScrollRef = useRef<HTMLDivElement>(null);
-  const clipListApiRef = useListRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
   const isVertical = compactFolderLayout === 'vertical';
+
+  const updateScrollState = useCallback(() => {
+    if (isVertical) {
+      setCanScrollLeft(false);
+      setCanScrollRight(false);
+      return;
+    }
+    const el = folderScrollRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setCanScrollLeft(scrollLeft > 2);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 2);
+  }, [isVertical]);
+
+  const scrollFolders = useCallback((direction: 'left' | 'right') => {
+    const el = folderScrollRef.current;
+    if (!el) return;
+    const distance = Math.max(el.clientWidth * 0.65, 140);
+    el.scrollBy({
+      left: direction === 'left' ? -distance : distance,
+      behavior: 'smooth',
+    });
+  }, []);
+
+  useEffect(() => {
+    if (isVertical) return;
+    const el = folderScrollRef.current;
+    if (!el) return;
+
+    updateScrollState();
+
+    const ro = new ResizeObserver(() => {
+      updateScrollState();
+    });
+    ro.observe(el);
+
+    const handleResize = () => updateScrollState();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [updateScrollState, isVertical, folders, totalClipCount]);
+
+  const clipListApiRef = useListRef(null);
   const isClipboardFlashing = useFolderFlash(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const didFocusRef = useRef(false);
@@ -1928,9 +1976,23 @@ export const CompactView: React.FC<CompactViewProps> = ({
             </div>
 
             <div className="flex items-center gap-1">
+              {canScrollLeft && (
+                <div className="flex-shrink-0 pb-1">
+                  <Tooltip label={t('folders.scrollBack')} placement="bottom">
+                    <button
+                      type="button"
+                      onClick={() => scrollFolders('left')}
+                      className="flex h-7 w-5 items-center justify-center rounded-md border border-border/40 bg-muted/30 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                    >
+                      <ChevronLeft size={13} strokeWidth={2.2} />
+                    </button>
+                  </Tooltip>
+                </div>
+              )}
               <div
                 ref={folderScrollRef}
                 onWheel={handleWheel}
+                onScroll={updateScrollState}
                 className="no-scrollbar flex min-w-0 flex-1 gap-1 overflow-x-auto scroll-smooth pb-1"
               >
                 <Tooltip label={t('common.folderNavHintCompact')} placement="bottom">
@@ -2001,15 +2063,28 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   );
                 })}
               </div>
+              {canScrollRight && (
+                <div className="flex-shrink-0 pb-1">
+                  <Tooltip label={t('folders.scrollForward')} placement="bottom">
+                    <button
+                      type="button"
+                      onClick={() => scrollFolders('right')}
+                      className="flex h-7 w-5 items-center justify-center rounded-md border border-border/40 bg-muted/30 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                    >
+                      <ChevronRight size={13} strokeWidth={2.2} />
+                    </button>
+                  </Tooltip>
+                </div>
+              )}
               {onAddFolder && (
                 <div className="flex-shrink-0 pb-1">
                   <Tooltip label={t('folders.addFolderBtn')} placement="bottom">
                     <button
+                      type="button"
                       onClick={onAddFolder}
-                      className="flex items-center gap-1.5 whitespace-nowrap rounded-md border border-dashed border-border bg-transparent px-2 py-1.5 text-[11px] font-medium text-muted-foreground/70 transition-all hover:border-muted hover:text-foreground"
+                      className="flex h-7 w-7 items-center justify-center rounded-md border border-dashed border-border bg-transparent text-muted-foreground/70 transition-all hover:border-muted hover:text-foreground"
                     >
-                      <Plus size={10} />
-                      {t('folders.new')}
+                      <Plus size={13} strokeWidth={2.2} />
                     </button>
                   </Tooltip>
                 </div>
