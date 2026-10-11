@@ -901,7 +901,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
         if (isVertical) {
           folderScrollRef.current.scrollTop += e.deltaY;
         } else {
-          folderScrollRef.current.scrollLeft += e.deltaY;
+          folderScrollRef.current.scrollLeft += e.deltaY * 1.5;
         }
       }
       return;
@@ -2007,7 +2007,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 ref={folderScrollRef}
                 onWheel={handleWheel}
                 onScroll={updateScrollState}
-                className="no-scrollbar flex min-w-0 flex-1 gap-1 overflow-x-auto scroll-smooth pb-1"
+                className="no-scrollbar flex min-w-0 flex-1 gap-1 overflow-x-auto pb-1"
               >
                 <Tooltip label={t('common.folderNavHintCompact')} placement="bottom">
                   <button

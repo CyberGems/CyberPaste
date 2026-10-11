@@ -154,13 +154,15 @@ function getClipTitle(
 function getHeaderClipIcon(
   clipType: string | null | undefined,
   toastType: string | undefined,
-  color: string
+  color: string,
+  isLight = false
 ): React.ReactNode {
   const cls = 'h-3.5 w-3.5';
-  const pink = '#FF00D0';
+  const pink = isLight ? '#C026D3' : '#FF00D0';
+  const duplicateColor = isLight ? '#D97706' : '#F6C453';
 
   if (toastType === 'duplicate') {
-    return <DuplicateIcon className={cls} style={{ color: '#F6C453' }} />;
+    return <DuplicateIcon className={cls} style={{ color: duplicateColor }} />;
   }
   if (toastType === 'cut') {
     return <ScissorsIcon className={cls} style={{ color: pink }} />;
@@ -633,7 +635,9 @@ export function ToastWindow() {
   // distinguishable from CyberSnap's toast, which owns the purple->magenta half.
   const gradient =
     toast.toast_type === 'duplicate'
-      ? 'linear-gradient(90deg, #F6C453, #FF9F43, #00C2C7)'
+      ? themeId === 'light'
+        ? 'linear-gradient(90deg, #D97706, #EA580C, #0284C7)'
+        : 'linear-gradient(90deg, #F6C453, #FF9F43, #00C2C7)'
       : 'linear-gradient(90deg, #00F2FF, #00A8FF, #7A00FF)';
   const tv = toastThemeVars(themeId, gradient);
 
@@ -975,7 +979,12 @@ export function ToastWindow() {
                   className={`mb-2 flex min-w-0 items-center gap-1.5 border-b pb-1.5 pr-12 text-xs font-semibold ${tv.headerBorder} ${tv.headerText}`}
                 >
                   <div className="flex shrink-0 items-center">
-                    {getHeaderClipIcon(toast.clip_type, toast.toast_type, tv.iconColor)}
+                    {getHeaderClipIcon(
+                      toast.clip_type,
+                      toast.toast_type,
+                      tv.iconColor,
+                      themeId === 'light'
+                    )}
                   </div>
                   <span className="truncate text-[11px] font-medium">{title}</span>
                   <span className="shrink-0 px-0.5 text-[10px] font-normal lowercase text-neutral-500">
@@ -1000,7 +1009,12 @@ export function ToastWindow() {
               ) : (
                 <div className="mb-2 flex items-center gap-1.5 pr-12">
                   <div className="flex shrink-0 items-center">
-                    {getHeaderClipIcon(toast.clip_type, toast.toast_type, tv.iconColor)}
+                    {getHeaderClipIcon(
+                      toast.clip_type,
+                      toast.toast_type,
+                      tv.iconColor,
+                      themeId === 'light'
+                    )}
                   </div>
                   <h4 className={`truncate text-sm font-semibold ${tv.title}`}>{title}</h4>
                 </div>
@@ -1009,7 +1023,7 @@ export function ToastWindow() {
               {/* Content Row: Preview & Details */}
               {toast.toast_type === 'duplicate' && (
                 <p
-                  className={`mb-1.5 text-[9.5px] font-medium ${themeId === 'light' ? 'text-amber-700' : 'text-amber-300'}`}
+                  className={`mb-1.5 text-[9.5px] font-semibold ${themeId === 'light' ? 'text-amber-800' : 'text-amber-300'}`}
                 >
                   {toast.source_app || toast.clip_type
                     ? t('toasts.duplicateInHistory')
