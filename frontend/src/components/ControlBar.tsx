@@ -310,6 +310,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
 
   const [contextMenuFolderId, setContextMenuFolderId] = useState<string | null>(null);
 
+  const [hasOverflow, setHasOverflow] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
@@ -317,8 +318,10 @@ export const ControlBar: React.FC<ControlBarProps> = ({
     const el = foldersRef.current;
     if (!el) return;
     const { scrollLeft, scrollWidth, clientWidth } = el;
-    setCanScrollLeft(scrollLeft > 2);
-    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 2);
+    const overflow = scrollWidth > clientWidth + 2;
+    setHasOverflow(overflow);
+    setCanScrollLeft(overflow && scrollLeft > 2);
+    setCanScrollRight(overflow && scrollLeft + clientWidth < scrollWidth - 2);
   }, []);
 
   const scrollFolders = React.useCallback((direction: 'left' | 'right') => {
@@ -823,13 +826,20 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         <div className="mx-0.5 h-5 w-px shrink-0 bg-border/50" />
 
         <div className="relative flex h-full min-w-0 flex-1 items-center">
-          {!showSearch && canScrollLeft && (
+          {!showSearch && hasOverflow && (
             <div className="mr-1 flex-shrink-0">
-              <Tooltip label={t('folders.scrollBack')} placement="bottom">
+              <Tooltip label={canScrollLeft ? t('folders.scrollBack') : ''} placement="bottom">
                 <button
                   type="button"
+                  disabled={!canScrollLeft}
                   onClick={() => scrollFolders('left')}
-                  className="flex h-8 w-5 items-center justify-center rounded-md border border-border/40 bg-muted/30 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                  aria-label={t('folders.scrollBack')}
+                  className={clsx(
+                    'flex h-8 w-5 items-center justify-center rounded-md border transition-all',
+                    canScrollLeft
+                      ? 'border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer'
+                      : 'border-transparent bg-transparent text-muted-foreground/30 opacity-40 cursor-default pointer-events-none'
+                  )}
                 >
                   <ChevronLeft size={14} strokeWidth={2.2} />
                 </button>
@@ -931,13 +941,20 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             })}
           </div>
 
-          {!showSearch && canScrollRight && (
+          {!showSearch && hasOverflow && (
             <div className="ml-1 flex-shrink-0">
-              <Tooltip label={t('folders.scrollForward')} placement="bottom">
+              <Tooltip label={canScrollRight ? t('folders.scrollForward') : ''} placement="bottom">
                 <button
                   type="button"
+                  disabled={!canScrollRight}
                   onClick={() => scrollFolders('right')}
-                  className="flex h-8 w-5 items-center justify-center rounded-md border border-border/40 bg-muted/30 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                  aria-label={t('folders.scrollForward')}
+                  className={clsx(
+                    'flex h-8 w-5 items-center justify-center rounded-md border transition-all',
+                    canScrollRight
+                      ? 'border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer'
+                      : 'border-transparent bg-transparent text-muted-foreground/30 opacity-40 cursor-default pointer-events-none'
+                  )}
                 >
                   <ChevronRight size={14} strokeWidth={2.2} />
                 </button>
