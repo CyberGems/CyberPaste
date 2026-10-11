@@ -160,7 +160,7 @@ export const FolderModal: React.FC<FolderModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-white/10"
+              className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               <X size={18} />
             </button>
@@ -170,7 +170,9 @@ export const FolderModal: React.FC<FolderModalProps> = ({
         <div className="custom-scrollbar flex-1 space-y-6 overflow-y-auto p-5">
           {/* Name Input */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-white/40">{t('folders.folderName')}</label>
+            <label className="text-xs font-bold text-muted-foreground">
+              {t('folders.folderName')}
+            </label>
             <input
               ref={nameInputRef}
               autoFocus
@@ -179,7 +181,7 @@ export const FolderModal: React.FC<FolderModalProps> = ({
               onChange={handleChange}
               onContextMenu={onContextMenu}
               placeholder={t('folders.folderNamePlaceholder')}
-              className="w-full rounded-xl border border-border bg-background/50 p-3 text-foreground transition-all focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
+              className="w-full rounded-xl border border-border bg-background p-3 text-foreground transition-all placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
             />
           </div>
 
@@ -187,17 +189,19 @@ export const FolderModal: React.FC<FolderModalProps> = ({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <label className="text-xs font-bold text-white/40">{t('folders.iconLabel')}</label>
-                <p className="text-[11px] text-muted-foreground/50">{t('folders.iconHelper')}</p>
+                <label className="text-xs font-bold text-muted-foreground">
+                  {t('folders.iconLabel')}
+                </label>
+                <p className="text-[11px] text-muted-foreground">{t('folders.iconHelper')}</p>
               </div>
-              <div className="flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-2 py-0.5">
+              <div className="flex items-center gap-2 rounded-full border border-border bg-muted/60 px-2.5 py-1">
                 {selectedIcon &&
                   IconMap[selectedIcon] &&
                   React.createElement(IconMap[selectedIcon], {
                     size: 14,
                     style: { color: selectedColor || undefined },
                   })}
-                <span className="max-w-[120px] truncate font-mono text-[10px] text-white/60">
+                <span className="max-w-[120px] truncate font-mono text-[10px] text-foreground/80">
                   {name.trim() ||
                     (selectedIcon === 'Folder' ? t('folders.defaultIcon') : selectedIcon)}
                 </span>
@@ -219,8 +223,8 @@ export const FolderModal: React.FC<FolderModalProps> = ({
                       className={clsx(
                         'flex h-8 w-8 items-center justify-center rounded-lg border transition-all hover:scale-110',
                         selectedIcon === item.id && selectedColor === item.color
-                          ? 'border-cyan-500/50 bg-cyan-500/20 shadow-[0_0_10px_rgba(6,182,212,0.2)]'
-                          : 'border-white/5 bg-white/5 hover:border-white/20'
+                          ? 'border-cyan-500/60 bg-cyan-500/20 shadow-[0_0_10px_rgba(6,182,212,0.25)]'
+                          : 'border-border/60 bg-muted/40 hover:border-primary/40 hover:bg-muted'
                       )}
                     >
                       <Icon size={16} style={{ color: item.color }} />
@@ -243,8 +247,8 @@ export const FolderModal: React.FC<FolderModalProps> = ({
                       className={clsx(
                         'flex h-8 w-8 items-center justify-center rounded-lg border transition-all hover:scale-110',
                         selectedIcon === iconName && !selectedColor
-                          ? 'border-white/40 bg-white/20'
-                          : 'border-white/5 bg-white/5 text-white/60 hover:border-white/20'
+                          ? 'border-primary/60 bg-primary/20 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.2)]'
+                          : 'border-border/60 bg-muted/40 text-muted-foreground hover:border-primary/40 hover:bg-muted hover:text-foreground'
                       )}
                     >
                       <Icon size={16} />
@@ -262,7 +266,7 @@ export const FolderModal: React.FC<FolderModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex items-center gap-2 rounded-lg border border-border bg-transparent px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-white/5"
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
             >
               {t('common.cancel')}
               <EscGlyph />

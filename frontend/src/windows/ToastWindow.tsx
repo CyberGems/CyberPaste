@@ -84,21 +84,21 @@ function getClipTitle(
   if (toastType === 'duplicate') {
     switch (clipType) {
       case 'image':
-        return t('toasts.titles.image_copied');
+        return t('toasts.titles.image_duplicate');
       case 'text':
-        return t('toasts.titles.text_copied');
+        return t('toasts.titles.text_duplicate');
       case 'code':
-        return t('toasts.titles.code_copied');
+        return t('toasts.titles.code_duplicate');
       case 'html':
-        return t('toasts.titles.html_copied');
+        return t('toasts.titles.html_duplicate');
       case 'rtf':
-        return t('toasts.titles.rtf_copied');
+        return t('toasts.titles.rtf_duplicate');
       case 'file':
-        return t('toasts.titles.file_copied');
+        return t('toasts.titles.file_duplicate');
       case 'url':
-        return t('toasts.titles.url_copied');
+        return t('toasts.titles.url_duplicate');
       default:
-        return t('toasts.titles.fallback_copied');
+        return t('toasts.titles.fallback_duplicate');
     }
   }
   if (toastType === 'cut') {
@@ -278,6 +278,49 @@ function toastThemeVars(theme: 'cyberpaste' | 'dark' | 'light', gradient: string
   };
 }
 
+function computeAdaptiveToastWidth(
+  toast: ToastPayload | null,
+  title: string,
+  fromAppLabel: string
+): number {
+  if (!toast) return 300;
+  if (toast.clip_type === 'welcome') return 340;
+
+  const MIN_WIDTH = 300;
+  const MAX_WIDTH = 420;
+
+  if (!toast.source_app) {
+    if (title && title.length > 25) {
+      const needed = 20 + title.length * 7.5 + 48 + 24;
+      return Math.min(Math.max(Math.ceil(needed), MIN_WIDTH), MAX_WIDTH);
+    }
+    return MIN_WIDTH;
+  }
+
+  let titlePx = title.length * 6.8;
+  let appPx = toast.source_app.length * 7.2;
+  let fromPx = fromAppLabel.length * 6.2;
+
+  try {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.font =
+        '500 11px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      titlePx = ctx.measureText(title).width;
+      appPx = ctx.measureText(toast.source_app).width;
+      ctx.font =
+        '400 10px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      fromPx = ctx.measureText(fromAppLabel).width;
+    }
+  } catch {
+    // fallback
+  }
+
+  const neededWidth = Math.ceil(136 + titlePx + fromPx + appPx + 16);
+  return Math.min(Math.max(neededWidth, MIN_WIDTH), MAX_WIDTH);
+}
+
 export function ToastWindow() {
   const [toast, setToast] = useState<ToastPayload | null>(null);
   const toastRef = useRef<ToastPayload | null>(null);
@@ -291,6 +334,7 @@ export function ToastWindow() {
   const [isPinned, setIsPinnedState] = useState(false);
   const isPinnedRef = useRef(false);
   const toastCardRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage(settings?.language);
 
   const setIsPinned = (val: boolean) => {
     isPinnedRef.current = val;
@@ -312,8 +356,8 @@ export function ToastWindow() {
         const rect = toastCardRef.current.getBoundingClientRect();
         const measuredHeight = Math.ceil(rect.height);
         if (measuredHeight > 0) {
-          const isWelcome = toast.clip_type === 'welcome';
-          const width = isWelcome ? 340 : 300;
+          const currentTitle = getClipTitle(toast.clip_type, toast.toast_type, t);
+          const width = computeAdaptiveToastWidth(toast, currentTitle, t('toasts.fromApp'));
           const windowHeight = measuredHeight + TOAST_VERTICAL_BLEED;
           normalWidthRef.current = width;
           normalHeightRef.current = windowHeight;
@@ -329,9 +373,7 @@ export function ToastWindow() {
       measureAndResize();
     });
     return () => cancelAnimationFrame(frameId);
-  }, [toast]);
-
-  const { t } = useLanguage(settings?.language);
+  }, [toast, t]);
   const displayMessage = (() => {
     if (!toast) return '';
     if (toast.clip_type === 'content_limit') {
@@ -422,10 +464,10 @@ export function ToastWindow() {
 
     setIsPinned(false); // Reset pin state synchronously to prevent carryover
 
-    const isWelcome = payload.clip_type === 'welcome';
-    const width = isWelcome ? 340 : 300;
+    const initialTitle = getClipTitle(payload.clip_type, payload.toast_type, t);
+    const width = computeAdaptiveToastWidth(payload, initialTitle, t('toasts.fromApp'));
     const isDupImage = payload.clip_type === 'image' && payload.toast_type === 'duplicate';
-    const height = isWelcome ? 80 : isDupImage ? 120 : 110;
+    const height = payload.clip_type === 'welcome' ? 80 : isDupImage ? 120 : 110;
     const windowHeight = height + TOAST_VERTICAL_BLEED;
     normalWidthRef.current = width;
     normalHeightRef.current = windowHeight;
@@ -950,7 +992,7 @@ export function ToastWindow() {
                     />
                   ) : null}
                   <span
-                    className={`min-w-0 max-w-[110px] truncate text-[11px] ${tv.sourceAppText}`}
+                    className={`min-w-0 max-w-[220px] truncate text-[11px] ${tv.sourceAppText}`}
                   >
                     {toast.source_app}
                   </span>
@@ -969,7 +1011,9 @@ export function ToastWindow() {
                 <p
                   className={`mb-1.5 text-[9.5px] font-medium ${themeId === 'light' ? 'text-amber-700' : 'text-amber-300'}`}
                 >
-                  {t('toasts.duplicateStatus')}
+                  {toast.source_app || toast.clip_type
+                    ? t('toasts.duplicateInHistory')
+                    : t('toasts.duplicateInFolder')}
                 </p>
               )}
               {hasImagePreview ? (
