@@ -7,5 +7,12 @@ export type ContextMenuEventDetail = {
 };
 
 export function dispatchContextMenuEvent(detail: ContextMenuEventDetail) {
+  if (typeof document !== 'undefined' && document.body) {
+    if (detail.open) {
+      document.body.dataset.contextMenuOpen = 'true';
+    } else {
+      delete document.body.dataset.contextMenuOpen;
+    }
+  }
   window.dispatchEvent(new CustomEvent(CONTEXT_MENU_EVENT, { detail }));
 }

@@ -28,6 +28,7 @@ import { check } from '@tauri-apps/plugin-updater';
 import { UpdateModal } from './components/UpdateModal';
 import { CloseWindowDialog } from './components/CloseWindowDialog';
 import { UndoWarningDialog } from './components/UndoWarningDialog';
+import { dismissAllTooltips } from './components/Tooltip';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { AppLockScreen } from './components/AppLockScreen';
 import { TITLEBAR_HOTKEYS, useKeyboard } from './hooks/useKeyboard';
@@ -1770,6 +1771,7 @@ function App() {
 
   const executeDelete = useCallback(
     async (clipId: string) => {
+      dismissAllTooltips();
       triggerDeleteFlash(clipId, 240);
       try {
         const deletePromise = invoke('delete_clip', { id: clipId, hardDelete: false });
@@ -2181,6 +2183,7 @@ function App() {
   const executeBulkDelete = useCallback(
     async (ids: string[]) => {
       if (ids.length === 0) return;
+      dismissAllTooltips();
       triggerDeleteFlash(ids, 240);
       try {
         const deletePromise = invoke('delete_clips', { ids });

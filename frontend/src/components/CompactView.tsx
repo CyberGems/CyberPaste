@@ -62,7 +62,6 @@ import {
   Link,
   File as LucideFile,
   Image as ImageIcon,
-  Trash2,
   Eye,
   EyeOff,
   Pause,
@@ -75,7 +74,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { convertFileSrc } from '@tauri-apps/api/core';
-import Tooltip from './Tooltip';
+import Tooltip, { dismissAllTooltips } from './Tooltip';
 import { SEARCH_HISTORY_EVENT, SearchHistoryMenu } from './SearchHistoryMenu';
 import { TitleBarMenu } from './TitleBarMenu';
 import { TitleBarUpdateButton } from './TitleBarUpdateButton';
@@ -2317,11 +2316,11 @@ const ClipRow = memo(function ClipRow({
   menuHighlightRef.current = menuHighlight;
   const isNavigationSelected = selectedClipId === clip.id && !(isPeekVisible && index === 0);
   const pointerHover = hovered && !hoverLocked && !foreignMenuOpenRef.current;
-  const showHover = menuHighlight || isNavigationSelected || pointerHover;
-  const showActions = menuHighlight || pointerHover || isNavigationSelected;
+  const isDeleting = useDeleteFlash(clip.id);
+  const showHover = !isDeleting && (menuHighlight || isNavigationSelected || pointerHover);
+  const showActions = !isDeleting && (menuHighlight || pointerHover || isNavigationSelected);
   const shouldBlurForPeek = isPeekVisible && peekClipId !== clip.id;
   const pinFlash = usePinFlash(clip.id);
-  const isDeleting = useDeleteFlash(clip.id);
 
   useEffect(() => {
     const onMenu = (e: Event) => {
@@ -2397,7 +2396,7 @@ const ClipRow = memo(function ClipRow({
           'relative flex h-full w-full cursor-pointer items-center gap-3 overflow-hidden rounded-lg border bg-card px-2 py-1 transition-colors',
           !hoverLocked && 'group',
           isDeleting &&
-            'clip-deleting-row pointer-events-none border-destructive/60 bg-destructive/15 shadow-[0_0_12px_rgba(239,68,68,0.2)]',
+            'clip-deleting-row pointer-events-none border-destructive/70 bg-destructive/15 shadow-[0_0_16px_rgba(239,68,68,0.25)]',
           isSelected
             ? 'border-primary text-foreground shadow-[0_0_12px_rgba(var(--primary-rgb),0.25)] ring-1 ring-primary/40'
             : isNavigationSelected
@@ -2421,18 +2420,6 @@ const ClipRow = memo(function ClipRow({
 
         {pinFlash && (
           <div className="clip-pin-flash pointer-events-none absolute inset-0 z-20 rounded-lg bg-primary/30 shadow-[inset_0_0_0_1px_rgba(var(--primary-rgb),0.75),0_0_16px_rgba(var(--primary-rgb),0.35)]" />
-        )}
-
-        {isDeleting && (
-          <div className="animate-clip-delete-overlay pointer-events-none absolute inset-0 z-30 flex items-center justify-between rounded-lg border border-rose-500/70 bg-background/90 px-3 shadow-[0_0_16px_rgba(244,63,94,0.4),inset_0_0_8px_rgba(244,63,94,0.2)] backdrop-blur-md">
-            <div className="flex items-center gap-2 text-xs font-semibold text-rose-300">
-              <Trash2 size={13} className="animate-pulse text-rose-400" />
-              <span>{t('notifications.clipDeleted')}</span>
-            </div>
-            <div className="h-1.5 w-12 overflow-hidden rounded-full bg-rose-500/20">
-              <div className="h-full w-full animate-pulse bg-rose-500" />
-            </div>
-          </div>
         )}
         <div
           className="relative z-10 flex min-w-0 flex-1 items-center gap-3"
@@ -2554,7 +2541,7 @@ const ClipRow = memo(function ClipRow({
                           ? LucideFile
                           : FileText;
                 return (
-                  <Tooltip label={typeLabel} placement="top" disabled={isPeekVisible}>
+                  <Tooltip label={typeLabel} placement="top" disabled={isPeekVisible || isDeleting}>
                     <span className="flex items-center justify-center">
                       <TypeIcon
                         size={11}
@@ -2565,7 +2552,7 @@ const ClipRow = memo(function ClipRow({
                 );
               })()}
             {compactShowSourceIcon && clip.source_icon && (
-              <Tooltip label={clip.source_app || 'App'} placement="top" disabled={isPeekVisible}>
+              <Tooltip label={clip.source_app || 'App'} placement="top" disabled={isPeekVisible || isDeleting}>
                 <img
                   src={`data:image/png;base64,${clip.source_icon}`}
                   alt=""
@@ -2575,7 +2562,7 @@ const ClipRow = memo(function ClipRow({
               </Tooltip>
             )}
             {compactShowTime && (
-              <Tooltip label={absoluteTimeLabel} placement="left" disabled={isPeekVisible}>
+              <Tooltip label={absoluteTimeLabel} placement="left" disabled={isPeekVisible || isDeleting}>
                 <span
                   className="flex shrink-0 items-center gap-1 overflow-hidden tabular-nums"
                   style={timeColWidth > 0 ? { width: timeColWidth } : undefined}
@@ -2593,19 +2580,24 @@ const ClipRow = memo(function ClipRow({
               showActions ? 'opacity-100' : 'pointer-events-none opacity-0'
             )}
           >
-            <Tooltip label={t('common.moreActionsHint')} placement="left" disabled={isPeekVisible}>
+            <Tooltip label={t('common.moreActionsHint')} placement="left" disabled={isPeekVisible || isDeleting}>
               <button
                 type="button"
                 aria-label={t('common.moreActionsHint')}
                 aria-keyshortcuts="Space Shift+F10"
-                onMouseDown={(e) => e.stopPropagation()}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  dismissAllTooltips();
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
+                  dismissAllTooltips();
                   onContextMenu?.(e, clip.id);
                 }}
                 onContextMenu={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
+                  dismissAllTooltips();
                   onContextMenu?.(e, clip.id);
                 }}
                 className="flex h-6 w-5 items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:bg-white/10 hover:text-foreground active:scale-95"

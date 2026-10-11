@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { clsx } from 'clsx';
 import { ChevronRight } from 'lucide-react';
+import { dismissAllTooltips } from './Tooltip';
 
 export interface ContextMenuOption {
   label: string;
@@ -233,6 +234,10 @@ export function ContextMenu({
   subActiveIndexRef.current = subActiveIndex;
   optionsRef.current = options;
   onCloseRef.current = onClose;
+
+  useLayoutEffect(() => {
+    dismissAllTooltips();
+  }, [openSubIndex]);
 
   useLayoutEffect(() => {
     const el = menuRef.current;

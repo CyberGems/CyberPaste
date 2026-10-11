@@ -1,6 +1,7 @@
 import { forwardRef, useCallback, useImperativeHandle, useState } from 'react';
 import { ContextMenu, ContextMenuOption } from './ContextMenu';
 import { dispatchContextMenuEvent } from '../utils/contextMenuEvents';
+import { dismissAllTooltips } from './Tooltip';
 
 export interface ContextMenuOpenPayload {
   x: number;
@@ -36,6 +37,7 @@ export const ContextMenuHost = forwardRef<ContextMenuHostHandle>(
       ref,
       () => ({
         open: (payload: ContextMenuOpenPayload) => {
+          dismissAllTooltips();
           dispatchContextMenuEvent({
             open: true,
             highlightId: payload.highlightId ?? null,

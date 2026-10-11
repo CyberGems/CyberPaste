@@ -17,7 +17,7 @@ import {
   Pin,
   Zap,
 } from 'lucide-react';
-import Tooltip from './Tooltip';
+import Tooltip, { dismissAllTooltips } from './Tooltip';
 import { formatDistanceToNow } from 'date-fns';
 import { de, enUS, es, fr, ja, zhCN } from 'date-fns/locale';
 import { CONTEXT_MENU_EVENT, type ContextMenuEventDetail } from '../utils/contextMenuEvents';
@@ -301,6 +301,7 @@ export const ClipCard = memo(
 
     const handleContextMenu = (e: React.MouseEvent) => {
       e.preventDefault();
+      dismissAllTooltips();
       setMenuHighlight(true);
       setHovered(true);
       onContextMenu?.(e);

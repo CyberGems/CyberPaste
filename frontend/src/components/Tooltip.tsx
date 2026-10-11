@@ -61,25 +61,27 @@ export function dismissAllTooltips() {
   }
 }
 
-function isAnyModalOpen(): boolean {
+function isAnyMenuOrModalOpen(): boolean {
   if (typeof document === 'undefined') return false;
   return Boolean(
-    document.querySelector('[role="dialog"], [aria-modal="true"]') ||
+    document.querySelector('[role="dialog"], [aria-modal="true"], [role="menu"]') ||
     document.body.dataset.titlebarMenuOpen === 'true' ||
-    document.body.dataset.searchHistoryOpen === 'true'
+    document.body.dataset.searchHistoryOpen === 'true' ||
+    document.body.dataset.contextMenuOpen === 'true'
   );
 }
 
 if (typeof window !== 'undefined') {
-  const modalObserver = new MutationObserver((mutations) => {
+  const menuOrModalObserver = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
       if (mutation.addedNodes.length > 0) {
         for (const node of mutation.addedNodes) {
           if (node instanceof HTMLElement) {
             if (
               node.getAttribute('role') === 'dialog' ||
+              node.getAttribute('role') === 'menu' ||
               node.getAttribute('aria-modal') === 'true' ||
-              node.querySelector?.('[role="dialog"], [aria-modal="true"]')
+              node.querySelector?.('[role="dialog"], [aria-modal="true"], [role="menu"]')
             ) {
               dismissAllTooltips();
               return;
@@ -90,17 +92,25 @@ if (typeof window !== 'undefined') {
     }
   });
 
-  const initModalObserver = () => {
+  const initObserver = () => {
     if (document.body) {
-      modalObserver.observe(document.body, { childList: true, subtree: true });
+      menuOrModalObserver.observe(document.body, { childList: true, subtree: true });
     }
   };
 
   if (document.readyState === 'loading') {
-    window.addEventListener('DOMContentLoaded', initModalObserver);
+    window.addEventListener('DOMContentLoaded', initObserver);
   } else {
-    initModalObserver();
+    initObserver();
   }
+
+  // Dismiss tooltips immediately on any right click / contextmenu event
+  window.addEventListener('contextmenu', () => dismissAllTooltips(), true);
+  window.addEventListener('cyberpaste:context-menu', (event: Event) => {
+    const detail = (event as CustomEvent<{ open?: boolean }>).detail;
+    if (detail?.open) dismissAllTooltips();
+  });
+  window.addEventListener('cyberpaste:titlebar-menu-open', () => dismissAllTooltips());
 }
 
 // Tooltip elegante y reutilizable (mismo estilo que las pestañas del editor).
@@ -235,19 +245,28 @@ export default function Tooltip({
     };
   }, [anchorEl]);
 
-  // A titlebar menu is rendered in a portal and must suppress every tooltip
-  // behind it, not only the tooltip attached to the menu button.
+  // A titlebar menu or context menu is rendered in a portal/overlay and must suppress every tooltip
+  // behind it, not only the tooltip attached to the trigger button.
   useEffect(() => {
-    const hideForTitleBarMenu = () => {
+    const hideForMenuOrModal = () => {
       if (delayTimer.current) {
         clearTimeout(delayTimer.current);
         delayTimer.current = null;
       }
       setAnchorEl(null);
     };
-    window.addEventListener('cyberpaste:titlebar-menu-open', hideForTitleBarMenu);
+    const onContextMenuEvent = (event: Event) => {
+      const detail = (event as CustomEvent<{ open?: boolean }>).detail;
+      if (detail?.open) hideForMenuOrModal();
+    };
+
+    window.addEventListener('cyberpaste:titlebar-menu-open', hideForMenuOrModal);
+    window.addEventListener('cyberpaste:context-menu', onContextMenuEvent);
+    window.addEventListener('contextmenu', hideForMenuOrModal, true);
     return () => {
-      window.removeEventListener('cyberpaste:titlebar-menu-open', hideForTitleBarMenu);
+      window.removeEventListener('cyberpaste:titlebar-menu-open', hideForMenuOrModal);
+      window.removeEventListener('cyberpaste:context-menu', onContextMenuEvent);
+      window.removeEventListener('contextmenu', hideForMenuOrModal, true);
     };
   }, []);
 
@@ -298,7 +317,7 @@ export default function Tooltip({
 
   const show = (e: ReactMouseEvent<HTMLElement>): void => {
     child.props.onMouseEnter?.(e);
-    if (isAnyModalOpen()) {
+    if (isAnyMenuOrModalOpen()) {
       setAnchorEl(null);
       return;
     }
@@ -322,7 +341,7 @@ export default function Tooltip({
       setAnchorEl(null);
     } else if (label) {
       delayTimer.current = setTimeout(() => {
-        if (isAnyModalOpen()) {
+        if (isAnyMenuOrModalOpen()) {
           setAnchorEl(null);
           return;
         }
@@ -351,7 +370,7 @@ export default function Tooltip({
   };
   const handleMouseMove = (e: ReactMouseEvent<HTMLElement>): void => {
     child.props.onMouseMove?.(e);
-    if (isAnyModalOpen()) {
+    if (isAnyMenuOrModalOpen()) {
       if (delayTimer.current) {
         clearTimeout(delayTimer.current);
         delayTimer.current = null;
@@ -376,6 +395,13 @@ export default function Tooltip({
     } else if (label) {
       if (!anchorEl && !delayTimer.current) {
         delayTimer.current = setTimeout(() => {
+          if (isAnyMenuOrModalOpen()) {
+            setAnchorEl(null);
+            return;
+          }
+          window.dispatchEvent(
+            new CustomEvent('cyberpaste:tooltip-active', { detail: { id: tooltipId.current } })
+          );
           setAnchorEl(currentTarget);
         }, 300);
       }

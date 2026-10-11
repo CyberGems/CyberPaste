@@ -22,7 +22,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { invoke } from '@tauri-apps/api/core';
 import { emit, listen } from '@tauri-apps/api/event';
 import { clsx } from 'clsx';
-import Tooltip from './Tooltip';
+import Tooltip, { dismissAllTooltips } from './Tooltip';
 import { ConfirmDialog } from './ConfirmDialog';
 import { toast } from '../utils/toast';
 import { useClipboardMonitoring } from '../hooks/useClipboardMonitoring';
@@ -121,6 +121,7 @@ export function TitleBarMenu({
       return;
     }
 
+    dismissAllTooltips();
     document.body.dataset.titlebarMenuOpen = 'true';
     window.dispatchEvent(new Event(TITLE_BAR_MENU_OPEN_EVENT));
     const frame = requestAnimationFrame(() => {
@@ -251,8 +252,14 @@ export function TitleBarMenu({
           aria-expanded={open}
           aria-label={moreLabel}
           aria-keyshortcuts={hotkey}
-          onClick={() => setOpen((v) => !v)}
-          onMouseDown={(e) => e.stopPropagation()}
+          onClick={() => {
+            dismissAllTooltips();
+            setOpen((v) => !v);
+          }}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            dismissAllTooltips();
+          }}
           className={clsx(
             'flex h-8 w-8 items-center justify-center rounded-lg border transition-all',
             open
