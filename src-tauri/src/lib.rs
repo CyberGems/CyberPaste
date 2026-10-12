@@ -860,6 +860,7 @@ pub fn run_app() {
             commands::delete_folder,
             commands::search_clips,
             commands::get_folders,
+            commands::get_source_apps,
             settings_commands::get_settings,
             settings_commands::record_search_history,
             settings_commands::clear_search_history,

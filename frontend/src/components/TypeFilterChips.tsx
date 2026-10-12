@@ -20,6 +20,8 @@ import { clsx } from 'clsx';
 import Tooltip from './Tooltip';
 import { UndoButton } from './UndoButton';
 import { TITLEBAR_HOTKEYS } from '../hooks/useKeyboard';
+import { AppFilterDropdown } from './AppFilterDropdown';
+import type { SourceAppItem } from '../types';
 
 export type FullTypeFilter = 'all' | 'text' | 'code' | 'image' | 'url' | 'file';
 
@@ -40,6 +42,9 @@ interface TypeFilterChipRowProps {
   value: FullTypeFilter;
   onChange: (v: FullTypeFilter) => void;
   counts: Partial<Record<FullTypeFilter, number>>;
+  appFilter?: string | null;
+  onAppFilterChange?: (app: string | null) => void;
+  sourceApps?: SourceAppItem[];
   gridScale?: number;
   onGridScaleChange?: (next: number) => void;
   detailPanelOpen?: boolean;
@@ -55,6 +60,9 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
   value,
   onChange,
   counts,
+  appFilter,
+  onAppFilterChange,
+  sourceApps,
   gridScale,
   onGridScaleChange,
   detailPanelOpen = false,
@@ -69,11 +77,17 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
   const isActive = value !== 'all';
 
   return (
-    <div
-      data-el="type-filter-row"
-      className="flex w-full items-center gap-2 px-4 pb-1.5 pt-2.5"
-    >
-      <div className="min-w-0 flex-1" aria-hidden />
+    <div data-el="type-filter-row" className="flex w-full items-center gap-2 px-4 pb-1.5 pt-2.5">
+      <div className="flex min-w-0 flex-1 items-center gap-1.5">
+        {onAppFilterChange && sourceApps && sourceApps.length > 0 && (
+          <AppFilterDropdown
+            value={appFilter ?? null}
+            onChange={onAppFilterChange}
+            apps={sourceApps}
+            variant="full"
+          />
+        )}
+      </div>
 
       <div className="no-scrollbar flex min-w-0 max-w-[60%] items-center justify-center gap-0.5 overflow-x-auto">
         {FULL_TYPE_FILTER_OPTIONS.map((opt) => {
@@ -99,7 +113,7 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
                 {typeof count === 'number' && (
                   <span
                     className={clsx(
-                      'font-mono text-[10px] leading-normal tabular-nums',
+                      'font-mono text-[10px] tabular-nums leading-normal',
                       selected ? 'opacity-70' : 'opacity-40'
                     )}
                   >
@@ -122,7 +136,7 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
               'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full transition-colors',
               isActive
                 ? 'text-muted-foreground/70 hover:text-foreground'
-                : 'invisible pointer-events-none'
+                : 'pointer-events-none invisible'
             )}
           >
             <X size={12} />

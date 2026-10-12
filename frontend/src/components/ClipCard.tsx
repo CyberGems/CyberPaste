@@ -73,6 +73,7 @@ interface ClipCardProps {
   singleClickPaste?: boolean;
   onCardMouseEnter?: (e: React.MouseEvent, clip: ClipboardItem) => void;
   onCardMouseLeave?: () => void;
+  onFilterByApp?: (app: string) => void;
 }
 
 export const ClipCard = memo(
@@ -99,6 +100,7 @@ export const ClipCard = memo(
       singleClickPaste = true,
       onCardMouseEnter,
       onCardMouseLeave,
+      onFilterByApp,
     }: ClipCardProps,
     ref
   ) {
@@ -324,11 +326,11 @@ export const ClipCard = memo(
         >
           {/* Drop indicator - before (left edge vertical bar in grid) */}
           {reorderEnabled && reorderDropIndicator === 'before' && (
-            <div className="pointer-events-none absolute -left-1 top-0 bottom-0 z-40 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_16px_rgba(34,211,238,1)] ring-2 ring-cyan-300/50 animate-pulse" />
+            <div className="pointer-events-none absolute -left-1 bottom-0 top-0 z-40 w-1.5 animate-pulse rounded-full bg-cyan-400 shadow-[0_0_16px_rgba(34,211,238,1)] ring-2 ring-cyan-300/50" />
           )}
           {/* Drop indicator - after (right edge vertical bar in grid) */}
           {reorderEnabled && reorderDropIndicator === 'after' && (
-            <div className="pointer-events-none absolute -right-1 top-0 bottom-0 z-40 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_16px_rgba(34,211,238,1)] ring-2 ring-cyan-300/50 animate-pulse" />
+            <div className="pointer-events-none absolute -right-1 bottom-0 top-0 z-40 w-1.5 animate-pulse rounded-full bg-cyan-400 shadow-[0_0_16px_rgba(34,211,238,1)] ring-2 ring-cyan-300/50" />
           )}
           <div
             data-el="clip-card-inner"
@@ -442,15 +444,39 @@ export const ClipCard = memo(
                     hovered || isBulkSelected ? 'pointer-events-none opacity-0' : 'opacity-100'
                   )}
                 >
-                  <Tooltip label={clip.source_app || 'App'} placement="top">
-                    <div className="flex items-center justify-center rounded-sm border border-border bg-muted/40 p-0.5">
+                  <Tooltip
+                    label={
+                      clip.source_app
+                        ? t('compact.filterByApp', {
+                            app: clip.source_app,
+                            defaultValue: `Filter by app: ${clip.source_app}`,
+                          })
+                        : 'App'
+                    }
+                    placement="top"
+                  >
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        if (clip.source_app && onFilterByApp) {
+                          e.stopPropagation();
+                          onFilterByApp(clip.source_app);
+                        }
+                      }}
+                      className={clsx(
+                        'flex items-center justify-center rounded-sm border border-border bg-muted/40 p-0.5 transition-colors focus:outline-none',
+                        clip.source_app &&
+                          onFilterByApp &&
+                          'cursor-pointer hover:border-primary/50 hover:bg-primary/10'
+                      )}
+                    >
                       <img
                         src={`data:image/png;base64,${clip.source_icon}`}
                         alt=""
                         draggable="false"
                         className="h-3.5 w-3.5 object-contain"
                       />
-                    </div>
+                    </button>
                   </Tooltip>
                 </div>
               )}
@@ -465,7 +491,26 @@ export const ClipCard = memo(
                 <span className="select-none font-mono text-[9px] opacity-20">#{clipIndex}</span>
               )}
               <div className="relative flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
-                <span className="min-w-0 flex-1 truncate whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.1em] text-secondary-foreground">
+                <span
+                  onClick={(e) => {
+                    if (clip.source_app && onFilterByApp) {
+                      e.stopPropagation();
+                      onFilterByApp(clip.source_app);
+                    }
+                  }}
+                  title={
+                    clip.source_app && onFilterByApp
+                      ? t('compact.filterByApp', {
+                          app: clip.source_app,
+                          defaultValue: `Filter by app: ${clip.source_app}`,
+                        })
+                      : undefined
+                  }
+                  className={clsx(
+                    'min-w-0 flex-1 truncate whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.1em] text-secondary-foreground transition-colors',
+                    clip.source_app && onFilterByApp && 'cursor-pointer hover:text-primary'
+                  )}
+                >
                   {title}
                 </span>
                 {showTime && (

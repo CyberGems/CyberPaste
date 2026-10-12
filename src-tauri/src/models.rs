@@ -440,3 +440,11 @@ pub struct FolderItem {
     pub is_system: bool,
     pub item_count: i64,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SourceAppItem {
+    pub app: String,
+    pub icon: Option<String>,
+    pub count: i64,
+}
+

@@ -512,6 +512,14 @@ impl Database {
 
         sqlx::query(
             r#"
+            CREATE INDEX IF NOT EXISTS idx_clips_source_app ON clips(source_app);
+        "#,
+        )
+        .execute(&self.pool)
+        .await?;
+
+        sqlx::query(
+            r#"
             CREATE TABLE IF NOT EXISTS settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL

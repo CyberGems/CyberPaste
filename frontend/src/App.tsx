@@ -11,7 +11,13 @@ import { emit, listen } from '@tauri-apps/api/event';
 import { EditClipModal } from './components/EditClipModal';
 import { MoveToFolderModal } from './components/MoveToFolderModal';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { ClipboardItem as AppClipboardItem, FolderItem, Settings, AppLockStatus } from './types';
+import {
+  ClipboardItem as AppClipboardItem,
+  FolderItem,
+  SourceAppItem,
+  Settings,
+  AppLockStatus,
+} from './types';
 import { ClipList } from './components/ClipList';
 import { ControlBar } from './components/ControlBar';
 import { TypeFilterChipRow, type FullTypeFilter } from './components/TypeFilterChips';
@@ -72,6 +78,7 @@ import {
   ChevronsUp,
   ChevronsDown,
   Download,
+  Filter,
 } from 'lucide-react';
 
 const base64ToBlob = (base64: string, mimeType: string = 'image/png'): Blob => {
@@ -321,6 +328,12 @@ function App() {
   const [reorderTargetPosition, setReorderTargetPosition] = useState<'before' | 'after' | null>(
     null
   );
+
+  // App filter state
+  const [appFilter, setAppFilter] = useState<string | null>(null);
+  const [sourceApps, setSourceApps] = useState<SourceAppItem[]>([]);
+  const appFilterRef = useRef<string | null>(null);
+  appFilterRef.current = appFilter;
 
   // Add Folder Modal State
   const [showAddFolderModal, setShowAddFolderModal] = useState(false);
@@ -825,7 +838,8 @@ function App() {
       append: boolean = false,
       searchQuery: string = '',
       limit: number = 20,
-      typeFilter: FullTypeFilter = 'all'
+      typeFilter: FullTypeFilter = 'all',
+      appFilterOverride?: string | null
     ) => {
       const perfId = ++loadPerfIdRef.current;
       const requestId = ++latestLoadRequestRef.current;
@@ -836,6 +850,8 @@ function App() {
       // Type filter only applies server-side in full mode; compact filters client-side
       const effectiveTypeFilter = settingsRef.current?.view_mode === 'compact' ? 'all' : typeFilter;
       const typeFilterParam = effectiveTypeFilter === 'all' ? null : effectiveTypeFilter;
+      const effectiveAppFilter =
+        appFilterOverride !== undefined ? appFilterOverride : appFilterRef.current;
 
       try {
         if (isLockedRef.current) {
@@ -857,6 +873,7 @@ function App() {
             limit,
             offset: currentOffset,
             typeFilter: typeFilterParam,
+            appFilter: effectiveAppFilter || undefined,
           });
           if (perfLogEnabled) invokeEnd = performance.now();
         } else {
@@ -867,6 +884,7 @@ function App() {
             offset: currentOffset,
             previewOnly: true,
             typeFilter: typeFilterParam,
+            appFilter: effectiveAppFilter || undefined,
           });
           if (perfLogEnabled) invokeEnd = performance.now();
         }
@@ -952,6 +970,21 @@ function App() {
     [clips.length]
   );
 
+  const loadSourceApps = useCallback(async () => {
+    if (isLockedRef.current) {
+      setSourceApps([]);
+      return;
+    }
+    try {
+      const data = await invoke<SourceAppItem[]>('get_source_apps', {
+        filterId: selectedFolderRef.current,
+      });
+      setSourceApps(data);
+    } catch (error) {
+      console.error('Failed to load source apps:', error);
+    }
+  }, []);
+
   const loadFolders = useCallback(async () => {
     if (isLockedRef.current) {
       setFolders([]);
@@ -961,15 +994,17 @@ function App() {
       const data = await invoke<FolderItem[]>('get_folders');
 
       setFolders(data);
+      void loadSourceApps();
     } catch (error) {
       console.error('Failed to load folders:', error);
     }
-  }, []);
+  }, [loadSourceApps]);
 
   const refreshCurrentFolder = useCallback(() => {
     const clipLimit = settingsRef.current?.view_mode === 'compact' ? 9999 : 20;
-    loadClips(selectedFolderRef.current, false, searchQuery, clipLimit, fullTypeFilter);
-  }, [loadClips, searchQuery, fullTypeFilter]);
+    loadClips(selectedFolderRef.current, false, searchQuery, clipLimit, fullTypeFilter, appFilter);
+    void loadSourceApps();
+  }, [loadClips, searchQuery, fullTypeFilter, appFilter, loadSourceApps]);
 
   const handleSearch = useCallback(
     (query: string) => {
@@ -1009,7 +1044,7 @@ function App() {
     // Load all clips for compact view, paginate for full view
     const clipLimit = settings?.view_mode === 'compact' ? 9999 : 20;
     const loadTimer = window.setTimeout(() => {
-      loadClips(selectedFolder, false, searchQuery, clipLimit, fullTypeFilter);
+      loadClips(selectedFolder, false, searchQuery, clipLimit, fullTypeFilter, appFilter);
     }, 120);
     return () => window.clearTimeout(loadTimer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1019,6 +1054,7 @@ function App() {
     clipListResetToken,
     settings?.view_mode,
     fullTypeFilter,
+    appFilter,
     lockReady,
     isLocked,
   ]);
@@ -2827,6 +2863,21 @@ function App() {
           },
         });
 
+        if (clip?.source_app) {
+          opts.push({
+            label: t('contextMenu.filterByApp', {
+              app: clip.source_app,
+              defaultValue: `Filter by ${clip.source_app}`,
+            }),
+            icon: <Filter size={14} />,
+            onClick: () => {
+              setAppFilter((prev) =>
+                prev?.toLowerCase() === clip.source_app?.toLowerCase() ? null : clip.source_app
+              );
+            },
+          });
+        }
+
         const pinLatestDisabled =
           isLiveMainListClip(itemId, clipsRef.current, selectedFolderRef.current) &&
           !clip?.is_pinned;
@@ -3325,6 +3376,9 @@ function App() {
                   setSettings(newSettings);
                 }
               }}
+              appFilter={appFilter}
+              onAppFilterChange={setAppFilter}
+              sourceApps={sourceApps}
               searchFocusToken={searchFocusToken}
               clipNumbering={settings?.clip_numbering || 'positional'}
               rowHeight={
@@ -3420,6 +3474,9 @@ function App() {
                   });
                 }}
                 counts={typeFilterCounts}
+                appFilter={appFilter}
+                onAppFilterChange={setAppFilter}
+                sourceApps={sourceApps}
                 gridScale={settings?.full_grid_scale ?? 1}
                 onGridScaleChange={handleGridScaleChange}
                 detailPanelOpen={detailPanelOpen}
@@ -3445,6 +3502,7 @@ function App() {
                   onLoadMore={loadMore}
                   onDragStart={startDrag}
                   onCardContextMenu={(e, clipId) => handleContextMenu(e, 'card', clipId)}
+                  onFilterByApp={setAppFilter}
                   scrollDirection="vertical"
                   reorderTargetClipId={reorderTargetClipId}
                   reorderTargetPosition={reorderTargetPosition}

@@ -48,6 +48,7 @@ interface ClipListProps {
   onToggleBulkSelect?: (id: string) => void;
   onRequestOcr?: (id: string) => void;
   onColumnsChange?: (columns: number) => void;
+  onFilterByApp?: (app: string) => void;
 }
 
 const BASE_CARD_WIDTH = 230;
@@ -63,6 +64,7 @@ export const ClipList: React.FC<ClipListProps> = ({
   onDragStart,
   selectedClipId,
   onCardContextMenu,
+  onFilterByApp,
   resetToken = 0,
   scrollDirection = 'vertical',
   reorderTargetClipId,
@@ -120,9 +122,13 @@ export const ClipList: React.FC<ClipListProps> = ({
   }, []);
   const { armedRef: peekArmedRef, notePointer: notePeekPointer } = usePeekPointerArm(closePeek);
 
-  useEffect(() => subscribeListHoverLock((locked) => {
-    if (locked) closePeek();
-  }), [closePeek]);
+  useEffect(
+    () =>
+      subscribeListHoverLock((locked) => {
+        if (locked) closePeek();
+      }),
+    [closePeek]
+  );
 
   useEffect(() => {
     const handleSearchHistory = (event: Event) => {
@@ -398,6 +404,7 @@ export const ClipList: React.FC<ClipListProps> = ({
           singleClickPaste={singleClickPaste}
           onCardMouseEnter={handleCardMouseEnter}
           onCardMouseLeave={handleCardMouseLeave}
+          onFilterByApp={onFilterByApp}
         />
       </div>
     );
@@ -441,7 +448,8 @@ export const ClipList: React.FC<ClipListProps> = ({
             {emptyLabel ?? t('clipList.empty')}
           </h3>
           <p className="max-w-xs text-sm text-gray-500">
-            {emptyDescription ?? (emptyLabel ? t('clipList.noResultsDesc') : t('clipList.emptyDesc'))}
+            {emptyDescription ??
+              (emptyLabel ? t('clipList.noResultsDesc') : t('clipList.emptyDesc'))}
           </p>
         </div>
       ) : (

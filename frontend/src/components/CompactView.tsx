@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useMemo, useState, memo, useCallback } from 'react';
-import { ClipboardItem as AppClip, FolderItem } from '../types';
+import { ClipboardItem as AppClip, FolderItem, SourceAppItem } from '../types';
 import {
   Search,
   Maximize2,
@@ -79,6 +79,7 @@ import { SEARCH_HISTORY_EVENT, SearchHistoryMenu } from './SearchHistoryMenu';
 import { TitleBarMenu } from './TitleBarMenu';
 import { TitleBarUpdateButton } from './TitleBarUpdateButton';
 import { UndoButton } from './UndoButton';
+import { AppFilterDropdown } from './AppFilterDropdown';
 import { TITLEBAR_HOTKEYS } from '../hooks/useKeyboard';
 import { de, enUS, es, fr, ja, zhCN } from 'date-fns/locale';
 import { List, useListRef, type RowComponentProps } from 'react-window';
@@ -411,6 +412,9 @@ interface CompactViewProps {
   onReorderFolder?: (folderId: string, targetId: string, position: 'before' | 'after') => void;
   typeFilter?: CompactTypeFilter;
   onTypeFilterChange?: (v: CompactTypeFilter) => void;
+  appFilter?: string | null;
+  onAppFilterChange?: (app: string | null) => void;
+  sourceApps?: SourceAppItem[];
   searchFocusToken?: number;
   resetToken?: number;
   clipNumbering?: 'positional' | 'countdown';
@@ -652,6 +656,9 @@ export const CompactView: React.FC<CompactViewProps> = ({
   onReorderFolder,
   typeFilter = 'all',
   onTypeFilterChange,
+  appFilter = null,
+  onAppFilterChange,
+  sourceApps = [],
   searchFocusToken,
   resetToken = 0,
   clipNumbering = 'positional',
@@ -829,14 +836,18 @@ export const CompactView: React.FC<CompactViewProps> = ({
     }
   }, [searchQuery]);
 
-  const filteredClips = useMemo(
-    () =>
+  const filteredClips = useMemo(() => {
+    let res =
       typeFilter === 'all'
         ? clips
-        : clips.filter((c) => matchesTypeFilter(c.clip_type, typeFilter)),
-    [clips, typeFilter]
-  );
-  const isFiltering = typeFilter !== 'all';
+        : clips.filter((c) => matchesTypeFilter(c.clip_type, typeFilter));
+    if (appFilter) {
+      const q = appFilter.toLowerCase();
+      res = res.filter((c) => c.source_app?.toLowerCase() === q);
+    }
+    return res;
+  }, [clips, typeFilter, appFilter]);
+  const isFiltering = typeFilter !== 'all' || Boolean(appFilter);
 
   // NUEVO: selección múltiple
   const selectedCount = selectedClipIds?.size ?? 0;
@@ -1770,6 +1781,14 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     counts={filterCounts}
                   />
                 )}
+                {onAppFilterChange && sourceApps && sourceApps.length > 0 && (
+                  <AppFilterDropdown
+                    value={appFilter}
+                    onChange={onAppFilterChange}
+                    apps={sourceApps}
+                    variant="compact"
+                  />
+                )}
               </div>
             </div>
 
@@ -1819,6 +1838,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 rowHeight={rowHeight}
                 onRowMouseEnter={handleRowMouseEnter}
                 onRowMouseLeave={handleRowMouseLeave}
+                appFilter={appFilter}
+                onAppFilterChange={onAppFilterChange}
               />
             </div>
 
@@ -1951,6 +1972,14 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   onChange={onTypeFilterChange}
                   t={t}
                   counts={filterCounts}
+                />
+              )}
+              {onAppFilterChange && sourceApps && sourceApps.length > 0 && (
+                <AppFilterDropdown
+                  value={appFilter}
+                  onChange={onAppFilterChange}
+                  apps={sourceApps}
+                  variant="compact"
                 />
               )}
             </div>
@@ -2137,6 +2166,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
               compactShowTypeIcon={compactShowTypeIcon}
               compactShowNumber={compactShowNumber}
               showScrollbar={compactShowScrollbar}
+              appFilter={appFilter}
+              onAppFilterChange={onAppFilterChange}
             />
           </div>
 
@@ -2237,6 +2268,8 @@ const ClipRow = memo(function ClipRow({
   compactShowTypeIcon = true,
   compactShowNumber = true,
   timeColWidth = 0,
+  appFilter = null,
+  onAppFilterChange,
 }: {
   clip: AppClip;
   index: number;
@@ -2253,7 +2286,7 @@ const ClipRow = memo(function ClipRow({
   reorderTargetClipId?: string | null;
   reorderTargetPosition?: 'before' | 'after' | null;
   getClipImageSrc: (content: string) => string;
-  t: (key: string) => string;
+  t: (key: string, opts?: any) => string;
   isDragging?: boolean;
   clipNumbering?: 'positional' | 'countdown';
   isSelected?: boolean;
@@ -2268,6 +2301,8 @@ const ClipRow = memo(function ClipRow({
   compactShowTypeIcon?: boolean;
   compactShowNumber?: boolean;
   timeColWidth?: number;
+  appFilter?: string | null;
+  onAppFilterChange?: (app: string | null) => void;
 }) {
   const { i18n } = useTranslation();
   const typeLabel = useMemo(() => {
@@ -2552,17 +2587,52 @@ const ClipRow = memo(function ClipRow({
                 );
               })()}
             {compactShowSourceIcon && clip.source_icon && (
-              <Tooltip label={clip.source_app || 'App'} placement="top" disabled={isPeekVisible || isDeleting}>
-                <img
-                  src={`data:image/png;base64,${clip.source_icon}`}
-                  alt=""
-                  draggable="false"
-                  className="h-3.5 w-3.5 object-contain opacity-80 transition-opacity group-hover:opacity-100"
-                />
+              <Tooltip
+                label={
+                  clip.source_app
+                    ? t('compact.filterByApp', {
+                        app: clip.source_app,
+                        defaultValue: `Filter by app: ${clip.source_app}`,
+                      })
+                    : 'App'
+                }
+                placement="top"
+                disabled={isPeekVisible || isDeleting}
+              >
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (clip.source_app && onAppFilterChange) {
+                      onAppFilterChange(
+                        appFilter?.toLowerCase() === clip.source_app.toLowerCase()
+                          ? null
+                          : clip.source_app
+                      );
+                    }
+                  }}
+                  className={cn(
+                    'flex items-center justify-center rounded p-0.5 transition-all focus:outline-none',
+                    clip.source_app &&
+                      onAppFilterChange &&
+                      'hover:scale-115 cursor-pointer active:scale-95'
+                  )}
+                >
+                  <img
+                    src={`data:image/png;base64,${clip.source_icon}`}
+                    alt=""
+                    draggable="false"
+                    className="h-3.5 w-3.5 object-contain opacity-80 transition-opacity group-hover:opacity-100"
+                  />
+                </button>
               </Tooltip>
             )}
             {compactShowTime && (
-              <Tooltip label={absoluteTimeLabel} placement="left" disabled={isPeekVisible || isDeleting}>
+              <Tooltip
+                label={absoluteTimeLabel}
+                placement="left"
+                disabled={isPeekVisible || isDeleting}
+              >
                 <span
                   className="flex shrink-0 items-center gap-1 overflow-hidden tabular-nums"
                   style={timeColWidth > 0 ? { width: timeColWidth } : undefined}
@@ -2580,7 +2650,11 @@ const ClipRow = memo(function ClipRow({
               showActions ? 'opacity-100' : 'pointer-events-none opacity-0'
             )}
           >
-            <Tooltip label={t('common.moreActionsHint')} placement="left" disabled={isPeekVisible || isDeleting}>
+            <Tooltip
+              label={t('common.moreActionsHint')}
+              placement="left"
+              disabled={isPeekVisible || isDeleting}
+            >
               <button
                 type="button"
                 aria-label={t('common.moreActionsHint')}
@@ -2644,6 +2718,8 @@ type CompactListRowProps = {
   compactShowTypeIcon?: boolean;
   compactShowNumber?: boolean;
   timeColWidth?: number;
+  appFilter?: string | null;
+  onAppFilterChange?: (app: string | null) => void;
 };
 
 function CompactListRow({
@@ -2678,6 +2754,8 @@ function CompactListRow({
   compactShowTypeIcon,
   compactShowNumber,
   timeColWidth,
+  appFilter,
+  onAppFilterChange,
 }: RowComponentProps<CompactListRowProps>) {
   const clip = clips[index];
   if (!clip) return null;
@@ -2719,6 +2797,8 @@ function CompactListRow({
         compactShowTypeIcon={compactShowTypeIcon}
         compactShowNumber={compactShowNumber}
         timeColWidth={timeColWidth}
+        appFilter={appFilter}
+        onAppFilterChange={onAppFilterChange}
       />
     </div>
   );
@@ -2759,6 +2839,8 @@ function CompactClipList({
   compactShowTypeIcon = true,
   compactShowNumber = true,
   showScrollbar = true,
+  appFilter = null,
+  onAppFilterChange,
 }: {
   clips: AppClip[];
   listRef: React.RefObject<import('react-window').ListImperativeAPI>;
@@ -2775,7 +2857,7 @@ function CompactClipList({
   reorderTargetClipId?: string | null;
   reorderTargetPosition?: 'before' | 'after' | null;
   getClipImageSrc: (content: string) => string;
-  t: (key: string) => string;
+  t: (key: string, opts?: any) => string;
   draggingClipId?: string | null;
   clipNumbering?: 'positional' | 'countdown';
   isLoading: boolean;
@@ -2798,6 +2880,8 @@ function CompactClipList({
   compactShowTypeIcon?: boolean;
   compactShowNumber?: boolean;
   showScrollbar?: boolean;
+  appFilter?: string | null;
+  onAppFilterChange?: (app: string | null) => void;
 }) {
   const { i18n } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -2885,6 +2969,8 @@ function CompactClipList({
       compactShowTypeIcon,
       compactShowNumber,
       timeColWidth,
+      appFilter,
+      onAppFilterChange,
     }),
     [
       clips,
@@ -2915,6 +3001,8 @@ function CompactClipList({
       compactShowTypeIcon,
       compactShowNumber,
       timeColWidth,
+      appFilter,
+      onAppFilterChange,
     ]
   );
 

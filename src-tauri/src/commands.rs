@@ -5,7 +5,7 @@ use tauri_plugin_clipboard_x::{
 
 use crate::ai::{self, AiAction, AiConfig};
 use crate::database::Database;
-use crate::models::{AppSettings, Clip, ClipboardItem, Folder, FolderItem};
+use crate::models::{AppSettings, Clip, ClipboardItem, Folder, FolderItem, SourceAppItem};
 use crate::settings_manager::SettingsManager;
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use sqlx::{Row, SqlitePool};
@@ -831,6 +831,7 @@ pub async fn get_clips(
     offset: i64,
     preview_only: Option<bool>,
     type_filter: Option<ClipTypeFilter>,
+    app_filter: Option<String>,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<Vec<ClipboardItem>, String> {
     crate::app_lock::require_unlocked()?;
@@ -839,10 +840,11 @@ pub async fn get_clips(
     let started = Instant::now();
 
     log::info!(
-        "get_clips called with filter_id: {:?}, preview_only: {}, type_filter: {:?}",
+        "get_clips called with filter_id: {:?}, preview_only: {}, type_filter: {:?}, app_filter: {:?}",
         filter_id,
         preview_only,
-        type_filter.as_ref().map(|_| "set")
+        type_filter.as_ref().map(|_| "set"),
+        app_filter
     );
 
     let type_clause = type_matches_filter(&type_filter);
@@ -856,6 +858,13 @@ pub async fn get_clips(
         String::new()
     };
 
+    let app_filter_clean = app_filter.as_deref().map(|s| s.trim()).filter(|s| !s.is_empty());
+    let app_clause = if app_filter_clean.is_some() {
+        "AND (source_app = ? OR source_app LIKE ? ESCAPE '\\')"
+    } else {
+        ""
+    };
+
     let sql_started = Instant::now();
     let clips: Vec<Clip> = match filter_id.as_deref() {
         Some(id) => {
@@ -864,15 +873,21 @@ pub async fn get_clips(
                 log::info!("Querying for folder_id: {}", numeric_id);
                 let sql = format!(
                     r#"
-                    SELECT * FROM clips WHERE is_deleted = 0 AND folder_id = ? {}
+                    SELECT * FROM clips WHERE is_deleted = 0 AND folder_id = ? {} {}
                     {} LIMIT ? OFFSET ?
                 "#,
                     in_placeholders,
+                    app_clause,
                     clips_order_by_clause()
                 );
                 let mut q = sqlx::query_as(&sql).bind(numeric_id);
                 for t in &type_clause {
                     q = q.bind(t);
+                }
+                if let Some(app) = app_filter_clean {
+                    let escaped_app = app.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_");
+                    let app_pattern = format!("%{}%", escaped_app);
+                    q = q.bind(app).bind(app_pattern);
                 }
                 q.bind(limit)
                     .bind(offset)
@@ -888,15 +903,21 @@ pub async fn get_clips(
             log::info!("Querying for items, offset: {}, limit: {}", offset, limit);
             let sql = format!(
                 r#"
-                SELECT * FROM clips WHERE is_deleted = 0 AND folder_id IS NULL {}
+                SELECT * FROM clips WHERE is_deleted = 0 AND folder_id IS NULL {} {}
                 {} LIMIT ? OFFSET ?
             "#,
                 in_placeholders,
+                app_clause,
                 clips_order_by_clause()
             );
             let mut q = sqlx::query_as(&sql);
             for t in &type_clause {
                 q = q.bind(t);
+            }
+            if let Some(app) = app_filter_clean {
+                let escaped_app = app.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_");
+                let app_pattern = format!("%{}%", escaped_app);
+                q = q.bind(app).bind(app_pattern);
             }
             q.bind(limit)
                 .bind(offset)
@@ -2522,6 +2543,63 @@ pub async fn rename_folder(
     Ok(())
 }
 
+fn tokenize_search_query(raw: &str) -> Vec<String> {
+    let mut tokens = Vec::new();
+    let mut current = String::new();
+    let mut in_quotes = false;
+
+    for ch in raw.chars() {
+        if ch == '"' {
+            in_quotes = !in_quotes;
+            current.push(ch);
+        } else if ch.is_whitespace() && !in_quotes {
+            if !current.is_empty() {
+                tokens.push(current);
+                current = String::new();
+            }
+        } else {
+            current.push(ch);
+        }
+    }
+    if !current.is_empty() {
+        tokens.push(current);
+    }
+    tokens
+}
+
+fn parse_search_query(raw_query: &str, explicit_app: Option<String>) -> (String, Option<String>) {
+    let raw = raw_query.trim();
+    if let Some(app) = explicit_app.map(|s| s.trim().to_string()).filter(|s| !s.is_empty()) {
+        return (raw.to_string(), Some(app));
+    }
+
+    let tokens = tokenize_search_query(raw);
+    let mut detected_app = None;
+    let mut remaining = Vec::new();
+
+    for token in tokens {
+        if detected_app.is_none() {
+            if let Some(app) = token.strip_prefix("app:") {
+                let trimmed = app.trim_matches('"').trim();
+                if !trimmed.is_empty() {
+                    detected_app = Some(trimmed.to_string());
+                    continue;
+                }
+            } else if let Some(app) = token.strip_prefix('@') {
+                let trimmed = app.trim_matches('"').trim();
+                if !trimmed.is_empty() {
+                    detected_app = Some(trimmed.to_string());
+                    continue;
+                }
+            }
+        }
+        remaining.push(token);
+    }
+
+    let text_query = remaining.join(" ").trim().to_string();
+    (text_query, detected_app)
+}
+
 #[tauri::command]
 pub async fn search_clips(
     query: String,
@@ -2529,17 +2607,14 @@ pub async fn search_clips(
     limit: i64,
     offset: i64,
     type_filter: Option<ClipTypeFilter>,
+    app_filter: Option<String>,
     db: tauri::State<'_, Arc<Database>>,
 ) -> Result<Vec<ClipboardItem>, String> {
     crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
     let started = Instant::now();
 
-    let escaped_query = query
-        .replace('\\', "\\\\")
-        .replace('%', "\\%")
-        .replace('_', "\\_");
-    let search_pattern = format!("%{}%", escaped_query);
+    let (text_query, effective_app) = parse_search_query(&query, app_filter);
 
     let type_clause = type_matches_filter(&type_filter);
     let has_type_filter = !type_clause.is_empty();
@@ -2552,6 +2627,58 @@ pub async fn search_clips(
         String::new()
     };
 
+    let (search_condition, bind_app_exact, bind_app_like, bind_text_pattern, bind_text_app_pattern) =
+        match (effective_app, text_query.is_empty()) {
+            (Some(app), true) => {
+                let escaped_app = app
+                    .replace('\\', "\\\\")
+                    .replace('%', "\\%")
+                    .replace('_', "\\_");
+                let app_pattern = format!("%{}%", escaped_app);
+                (
+                    "AND (source_app = ? OR source_app LIKE ? ESCAPE '\\')",
+                    Some(app),
+                    Some(app_pattern),
+                    None,
+                    None,
+                )
+            }
+            (Some(app), false) => {
+                let escaped_app = app
+                    .replace('\\', "\\\\")
+                    .replace('%', "\\%")
+                    .replace('_', "\\_");
+                let app_pattern = format!("%{}%", escaped_app);
+                let escaped_text = text_query
+                    .replace('\\', "\\\\")
+                    .replace('%', "\\%")
+                    .replace('_', "\\_");
+                let text_pattern = format!("%{}%", escaped_text);
+                (
+                    "AND (source_app = ? OR source_app LIKE ? ESCAPE '\\') AND (text_preview LIKE ? ESCAPE '\\' OR content LIKE ? ESCAPE '\\')",
+                    Some(app),
+                    Some(app_pattern),
+                    Some(text_pattern),
+                    None,
+                )
+            }
+            (None, false) => {
+                let escaped_text = text_query
+                    .replace('\\', "\\\\")
+                    .replace('%', "\\%")
+                    .replace('_', "\\_");
+                let text_pattern = format!("%{}%", escaped_text);
+                (
+                    "AND (text_preview LIKE ? ESCAPE '\\' OR content LIKE ? ESCAPE '\\' OR source_app LIKE ? ESCAPE '\\')",
+                    None,
+                    None,
+                    Some(text_pattern.clone()),
+                    Some(text_pattern),
+                )
+            }
+            (None, true) => ("", None, None, None, None),
+        };
+
     let sql_started = Instant::now();
     let clips: Vec<Clip> = match filter_id.as_deref() {
         Some(id) => {
@@ -2559,16 +2686,26 @@ pub async fn search_clips(
             if let Some(numeric_id) = folder_id_num {
                 let sql = format!(
                     r#"
-                    SELECT * FROM clips WHERE is_deleted = 0 AND folder_id = ? AND (text_preview LIKE ? ESCAPE '\' OR content LIKE ? ESCAPE '\') {}
+                    SELECT * FROM clips WHERE is_deleted = 0 AND folder_id = ? {} {}
                     {} LIMIT ? OFFSET ?
                 "#,
+                    search_condition,
                     in_placeholders,
                     clips_order_by_clause()
                 );
-                let mut q = sqlx::query_as(&sql)
-                    .bind(numeric_id)
-                    .bind(&search_pattern)
-                    .bind(&search_pattern);
+                let mut q = sqlx::query_as(&sql).bind(numeric_id);
+                if let Some(ref a) = bind_app_exact {
+                    q = q.bind(a);
+                }
+                if let Some(ref a) = bind_app_like {
+                    q = q.bind(a);
+                }
+                if let Some(ref t) = bind_text_pattern {
+                    q = q.bind(t).bind(t);
+                }
+                if let Some(ref a) = bind_text_app_pattern {
+                    q = q.bind(a);
+                }
                 for t in &type_clause {
                     q = q.bind(t);
                 }
@@ -2584,15 +2721,26 @@ pub async fn search_clips(
         None => {
             let sql = format!(
                 r#"
-                SELECT * FROM clips WHERE is_deleted = 0 AND folder_id IS NULL AND (text_preview LIKE ? ESCAPE '\' OR content LIKE ? ESCAPE '\') {}
+                SELECT * FROM clips WHERE is_deleted = 0 AND folder_id IS NULL {} {}
                 {} LIMIT ? OFFSET ?
             "#,
+                search_condition,
                 in_placeholders,
                 clips_order_by_clause()
             );
-            let mut q = sqlx::query_as(&sql)
-                .bind(&search_pattern)
-                .bind(&search_pattern);
+            let mut q = sqlx::query_as(&sql);
+            if let Some(ref a) = bind_app_exact {
+                q = q.bind(a);
+            }
+            if let Some(ref a) = bind_app_like {
+                q = q.bind(a);
+            }
+            if let Some(ref t) = bind_text_pattern {
+                q = q.bind(t).bind(t);
+            }
+            if let Some(ref a) = bind_text_app_pattern {
+                q = q.bind(a);
+            }
             for t in &type_clause {
                 q = q.bind(t);
             }
@@ -2667,6 +2815,57 @@ pub async fn search_clips(
     );
 
     Ok(items)
+}
+
+#[tauri::command]
+pub async fn get_source_apps(
+    filter_id: Option<String>,
+    db: tauri::State<'_, Arc<Database>>,
+) -> Result<Vec<SourceAppItem>, String> {
+    crate::app_lock::require_unlocked()?;
+    let pool = &db.pool;
+
+    let rows: Vec<(String, Option<String>, i64)> = match filter_id.as_deref() {
+        Some(id) => {
+            let folder_id_num = id.parse::<i64>().ok();
+            if let Some(numeric_id) = folder_id_num {
+                sqlx::query_as(
+                    r#"
+                    SELECT source_app, MAX(source_icon) as source_icon, COUNT(*) as count
+                    FROM clips
+                    WHERE is_deleted = 0 AND folder_id = ? AND source_app IS NOT NULL AND TRIM(source_app) != ''
+                    GROUP BY source_app
+                    ORDER BY count DESC, MAX(created_at) DESC
+                    "#,
+                )
+                .bind(numeric_id)
+                .fetch_all(pool)
+                .await
+                .map_err(|e| e.to_string())?
+            } else {
+                Vec::new()
+            }
+        }
+        None => {
+            sqlx::query_as(
+                r#"
+                SELECT source_app, MAX(source_icon) as source_icon, COUNT(*) as count
+                FROM clips
+                WHERE is_deleted = 0 AND folder_id IS NULL AND source_app IS NOT NULL AND TRIM(source_app) != ''
+                GROUP BY source_app
+                ORDER BY count DESC, MAX(created_at) DESC
+                "#,
+            )
+            .fetch_all(pool)
+            .await
+            .map_err(|e| e.to_string())?
+        }
+    };
+
+    Ok(rows
+        .into_iter()
+        .map(|(app, icon, count)| SourceAppItem { app, icon, count })
+        .collect())
 }
 
 #[tauri::command]

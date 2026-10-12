@@ -23,6 +23,12 @@ export interface FolderItem {
   item_count: number;
 }
 
+export interface SourceAppItem {
+  app: string;
+  icon: string | null;
+  count: number;
+}
+
 export interface Settings {
   max_items: number;
   max_clipboard_text_bytes?: number;
