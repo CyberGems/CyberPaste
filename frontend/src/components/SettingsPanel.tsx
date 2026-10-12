@@ -580,6 +580,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         full_peek_enabled: 'settings.fullPeekEnabled',
         full_show_hud: 'settings.fullShowHud',
         full_grid_scale: 'settings.fullGridScale',
+        full_card_format: 'settings.fullCardFormat',
         full_grid_columns: 'settings.fullGridColumns',
         full_show_scrollbar: 'settings.fullShowScrollbar',
         full_show_source_icon: 'settings.fullShowSourceIcon',
@@ -2340,6 +2341,24 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             { value: '1.25', label: '125%' },
                             { value: '1.5', label: '150%' },
                             { value: '1.75', label: '175%' },
+                          ]}
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-sm font-medium">
+                            {t('settings.fullCardFormat')}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.fullCardFormatDesc')}
+                          </p>
+                        </label>
+                        <Select
+                          value={settings.full_card_format ?? 'square'}
+                          onChange={(value) => updateSetting('full_card_format', value)}
+                          options={[
+                            { value: 'square', label: t('settings.fullCardFormatSquare') },
+                            { value: 'panoramic', label: t('settings.fullCardFormatPanoramic') },
                           ]}
                         />
                       </div>

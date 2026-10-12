@@ -76,6 +76,7 @@ interface ClipCardProps {
   onFilterByApp?: (app: string) => void;
   onFilterByType?: (type: ClipFilterCategory) => void;
   typeFilter?: string;
+  cardFormat?: 'square' | 'panoramic';
 }
 
 export const ClipCard = memo(
@@ -105,6 +106,7 @@ export const ClipCard = memo(
       onFilterByApp,
       onFilterByType,
       typeFilter,
+      cardFormat = 'square',
     }: ClipCardProps,
     ref
   ) {
@@ -186,7 +188,12 @@ export const ClipCard = memo(
     const renderedContent = useMemo(() => {
       if (clip.clip_type === 'image') {
         return (
-          <div className="flex h-full w-full select-none items-center justify-center pb-6">
+          <div
+            className={clsx(
+              'flex h-full w-full select-none items-center justify-center',
+              cardFormat === 'panoramic' ? 'pb-5' : 'pb-6'
+            )}
+          >
             {clip.content ? (
               <img
                 src={imageSrc ?? undefined}
@@ -407,7 +414,10 @@ export const ClipCard = memo(
 
             <div
               data-el="clip-card-header"
-              className="relative z-10 flex flex-shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2.5 py-2 backdrop-blur-sm"
+              className={clsx(
+                'relative z-10 flex flex-shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2.5 backdrop-blur-sm',
+                cardFormat === 'panoramic' ? 'py-1.5' : 'py-2'
+              )}
             >
               {clipIndex === 1 && (
                 <Tooltip label={t('common.latest')} placement="top">
@@ -509,7 +519,12 @@ export const ClipCard = memo(
             >
               {renderedContent}
               {clip.clip_type !== 'image' && (
-                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-card/100 to-card/30" />
+                <div
+                  className={clsx(
+                    'pointer-events-none absolute bottom-0 left-0 right-0 bg-gradient-to-t from-card/100 to-card/30',
+                    cardFormat === 'panoramic' ? 'h-7' : 'h-12'
+                  )}
+                />
               )}
             </div>
 

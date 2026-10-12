@@ -13,6 +13,8 @@ import {
   PanelRightOpen,
   Eye,
   EyeOff,
+  Square,
+  RectangleHorizontal,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -54,6 +56,8 @@ interface TypeFilterChipRowProps {
   peekHotkey?: string;
   canUndo?: boolean;
   onUndo?: () => void;
+  cardFormat?: 'square' | 'panoramic';
+  onToggleCardFormat?: () => void;
 }
 
 export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
@@ -72,6 +76,8 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
   peekHotkey = TITLEBAR_HOTKEYS.peek,
   canUndo = false,
   onUndo,
+  cardFormat = 'square',
+  onToggleCardFormat,
 }) => {
   const { t } = useTranslation();
   const isActive = value !== 'all';
@@ -210,6 +216,35 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
               </button>
             </Tooltip>
           </div>
+        )}
+
+        {onToggleCardFormat && cardFormat && (
+          <Tooltip
+            label={
+              cardFormat === 'panoramic'
+                ? `${t('settings.fullCardFormat')}: ${t('settings.fullCardFormatPanoramic')}`
+                : `${t('settings.fullCardFormat')}: ${t('settings.fullCardFormatSquare')}`
+            }
+            placement="bottom"
+          >
+            <button
+              type="button"
+              onClick={onToggleCardFormat}
+              aria-label={`${t('settings.fullCardFormat')}: ${cardFormat === 'panoramic' ? t('settings.fullCardFormatPanoramic') : t('settings.fullCardFormatSquare')}`}
+              className={clsx(
+                'flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition-colors',
+                cardFormat === 'panoramic'
+                  ? 'border-primary/40 bg-primary/15 text-primary'
+                  : 'border-border bg-secondary/40 text-muted-foreground hover:bg-secondary/70 hover:text-primary'
+              )}
+            >
+              {cardFormat === 'panoramic' ? (
+                <RectangleHorizontal size={13} />
+              ) : (
+                <Square size={12} />
+              )}
+            </button>
+          </Tooltip>
         )}
 
         {onToggleDetailPanel && (

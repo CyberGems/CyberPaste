@@ -2512,6 +2512,17 @@ function App() {
     });
   }, []);
 
+  const handleToggleCardFormat = useCallback(() => {
+    setSettings((prev) => {
+      if (!prev) return prev;
+      const nextFormat: 'square' | 'panoramic' =
+        prev.full_card_format === 'panoramic' ? 'square' : 'panoramic';
+      const newSettings = { ...prev, full_card_format: nextFormat };
+      invoke('save_settings', { settings: newSettings }).catch(console.error);
+      return newSettings;
+    });
+  }, []);
+
   // Toggle the HUD strip (persisted so it survives restarts)
   // Removed: HUD toggle is now controlled only from the Settings panel.
 
@@ -3492,6 +3503,8 @@ function App() {
                 sourceApps={sourceApps}
                 gridScale={settings?.full_grid_scale ?? 1}
                 onGridScaleChange={handleGridScaleChange}
+                cardFormat={settings?.full_card_format ?? 'square'}
+                onToggleCardFormat={handleToggleCardFormat}
                 detailPanelOpen={detailPanelOpen}
                 onToggleDetailPanel={() => setDetailPanelOpen((prev) => !prev)}
                 fullPeekEnabled={settings?.full_peek_enabled ?? true}
@@ -3533,6 +3546,7 @@ function App() {
                   reorderEnabled={true}
                   draggingClipId={draggingClipId}
                   clipNumbering={settings?.clip_numbering || 'positional'}
+                  cardFormat={settings?.full_card_format ?? 'square'}
                   gridScale={settings?.full_grid_scale ?? 1}
                   gridColumns={settings?.full_grid_columns ?? 0}
                   showSourceIcon={settings?.full_show_source_icon ?? true}

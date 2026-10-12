@@ -51,9 +51,11 @@ interface ClipListProps {
   onFilterByApp?: (app: string) => void;
   onFilterByType?: (type: ClipFilterCategory) => void;
   typeFilter?: string;
+  cardFormat?: 'square' | 'panoramic';
 }
 
 const BASE_CARD_WIDTH = 230;
+const BASE_CARD_WIDTH_PANORAMIC = 250;
 const BASE_ROW_HEIGHT = 230;
 const MIN_COLUMNS = 2;
 const MAX_COLUMNS = 12;
@@ -69,6 +71,7 @@ export const ClipList: React.FC<ClipListProps> = ({
   onFilterByApp,
   onFilterByType,
   typeFilter,
+  cardFormat = 'square',
   resetToken = 0,
   scrollDirection = 'vertical',
   reorderTargetClipId,
@@ -297,10 +300,10 @@ export const ClipList: React.FC<ClipListProps> = ({
     };
   }, [isLoading, clips.length]);
 
-  // Adaptive column count: fit as many ~CARD_WIDTH columns as the container allows.
+  // Adaptive column count: fit as many columns as the container allows.
   // In horizontal mode, every clip is its own column (single scrollable row).
-  const effectiveCardWidth = BASE_CARD_WIDTH * gridScale;
-  const effectiveRowHeight = Math.round(BASE_ROW_HEIGHT * gridScale);
+  const isPanoramic = cardFormat === 'panoramic';
+  const effectiveCardWidth = (isPanoramic ? BASE_CARD_WIDTH_PANORAMIC : BASE_CARD_WIDTH) * gridScale;
   const columnCount = isVertical
     ? gridColumns > 0
       ? Math.min(MAX_COLUMNS, Math.max(MIN_COLUMNS, gridColumns))
@@ -310,7 +313,16 @@ export const ClipList: React.FC<ClipListProps> = ({
         )
     : clips.length;
 
+  const SIDE_PADDING = 16; // Align with search and close buttons
+  const usableWidth = containerWidth - SIDE_PADDING;
+
   const rowCount = isVertical ? Math.ceil(clips.length / columnCount) : 1;
+  const calculatedColumnWidth = isVertical ? usableWidth / columnCount : effectiveCardWidth;
+  const effectiveRowHeight = isVertical
+    ? isPanoramic
+      ? Math.max(120, Math.min(420, Math.round(calculatedColumnWidth * (9 / 16))))
+      : Math.round(BASE_ROW_HEIGHT * gridScale)
+    : Math.round((isPanoramic ? 145 : 180) * gridScale);
 
   useEffect(() => {
     onColumnsChange?.(columnCount);
@@ -350,7 +362,7 @@ export const ClipList: React.FC<ClipListProps> = ({
     if (gridRef.current?.element) {
       gridRef.current.element.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     }
-  }, [resetToken, isVertical]);
+  }, [resetToken, isVertical, cardFormat]);
 
   const handleCellsRendered = (visibleCells: any) => {
     const lastIndex = isVertical
@@ -360,9 +372,6 @@ export const ClipList: React.FC<ClipListProps> = ({
       onLoadMore();
     }
   };
-
-  const SIDE_PADDING = 16; // Align with search and close buttons
-  const usableWidth = containerWidth - SIDE_PADDING;
 
   const Cell = ({ columnIndex, rowIndex, style }: CellComponentProps) => {
     const index = isVertical ? rowIndex * columnCount + columnIndex : columnIndex;
@@ -387,6 +396,7 @@ export const ClipList: React.FC<ClipListProps> = ({
       >
         <ClipCard
           clip={clip}
+          cardFormat={cardFormat}
           clipIndex={clipNumbering === 'positional' ? index + 1 : clips.length - index}
           isSelected={selectedClipId === clip.id}
           isBulkSelected={bulkSelectedIds?.has(clip.id)}
@@ -474,9 +484,9 @@ export const ClipList: React.FC<ClipListProps> = ({
           defaultWidth={containerWidth}
           gridRef={gridRef}
           rowCount={rowCount}
-          rowHeight={isVertical ? effectiveRowHeight : Math.round(180 * gridScale)}
+          rowHeight={effectiveRowHeight}
           columnCount={columnCount}
-          columnWidth={isVertical ? usableWidth / columnCount : effectiveCardWidth}
+          columnWidth={calculatedColumnWidth}
           overscanCount={4}
           onCellsRendered={handleCellsRendered}
         />

@@ -12,6 +12,10 @@ fn default_backup_retention() -> i64 {
     3
 }
 
+fn default_full_card_format() -> String {
+    "square".to_string()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct AppSettings {
@@ -111,6 +115,8 @@ pub struct AppSettings {
     pub full_grid_scale: f64,
     pub full_grid_columns: i64,
     pub full_scroll_direction: String,
+    #[serde(default = "default_full_card_format")]
+    pub full_card_format: String,
     #[serde(default = "default_true")]
     pub full_show_scrollbar: bool,
     #[serde(default = "default_true")]
@@ -273,6 +279,7 @@ impl Default for AppSettings {
             full_grid_scale: 1.0,
             full_grid_columns: 0,
             full_scroll_direction: "vertical".to_string(),
+            full_card_format: "square".to_string(),
             full_show_scrollbar: true,
             full_peek_enabled: true,
             full_show_source_icon: true,
