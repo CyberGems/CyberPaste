@@ -847,12 +847,31 @@ export const CompactView: React.FC<CompactViewProps> = ({
         ? clips
         : clips.filter((c) => matchesTypeFilter(c.clip_type, typeFilter));
     if (appFilter) {
-      const q = appFilter.toLowerCase();
-      res = res.filter((c) => c.source_app?.toLowerCase() === q);
+      if (appFilter === '__unknown__' || appFilter.toLowerCase() === 'unknown') {
+        res = res.filter((c) => !c.source_app || !c.source_app.trim());
+      } else {
+        const q = appFilter.toLowerCase();
+        res = res.filter((c) => c.source_app?.toLowerCase() === q);
+      }
     }
     return res;
   }, [clips, typeFilter, appFilter]);
   const isFiltering = typeFilter !== 'all' || Boolean(appFilter);
+
+  const activeFilterText = useMemo(() => {
+    const typeKey = `compact.filter${typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}`;
+    const typeText = t(typeKey) === typeKey ? typeFilter : t(typeKey);
+    const appText = appFilter
+      ? appFilter === '__unknown__' || appFilter.toLowerCase() === 'unknown'
+        ? t('compact.unknownApp', { defaultValue: 'Sin aplicación detectada' })
+        : appFilter
+      : null;
+
+    if (appText) {
+      return `${typeText} + ${appText}`;
+    }
+    return typeText;
+  }, [typeFilter, appFilter, t]);
 
   // NUEVO: selección múltiple
   const selectedCount = selectedClipIds?.size ?? 0;
@@ -1864,7 +1883,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
               <span className="min-w-0 truncate px-2 text-center">
                 {isFiltering || searchQuery || selectedFolder ? (
                   isFiltering ? (
-                    `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: t(`compact.filter${typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}`) })}`
+                    `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: activeFilterText })}`
                   ) : (
                     t('compact.footerTotalClips', { count: filteredClips.length })
                   )
@@ -2194,7 +2213,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
             <span className="min-w-0 truncate px-2 text-center">
               {isFiltering || searchQuery || selectedFolder ? (
                 isFiltering ? (
-                  `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: t(`compact.filter${typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}`) })}`
+                  `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: activeFilterText })}`
                 ) : (
                   t('compact.footerTotalClips', { count: filteredClips.length })
                 )
