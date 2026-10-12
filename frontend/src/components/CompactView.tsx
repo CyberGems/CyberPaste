@@ -1870,17 +1870,17 @@ export const CompactView: React.FC<CompactViewProps> = ({
             {/* Footer */}
             <div
               className={cn(
-                'flex flex-shrink-0 items-center justify-between border-t border-border/60 bg-secondary/40 px-3 py-1.5 font-mono text-[9px] tracking-tighter text-muted-foreground backdrop-blur-md transition-opacity dark:bg-black/25',
+                'flex flex-shrink-0 items-center justify-between border-t border-border/60 bg-secondary/40 px-3 py-1.5 text-[10px] font-medium tracking-normal text-muted-foreground/80 backdrop-blur-md transition-opacity dark:bg-black/25',
                 entranceAnim && !mounted ? 'opacity-0' : 'opacity-100',
                 isPeekVisible && 'blur-[3px]'
               )}
             >
-              <span>
+              <span className="flex-shrink-0 select-none">
                 {hasSelection
                   ? t('compact.footerWithSelection', { count: selectedCount })
                   : t('compact.enterToPaste')}
               </span>
-              <span className="min-w-0 truncate px-2 text-center">
+              <span className="min-w-0 truncate px-2 text-center tabular-nums">
                 {isFiltering || searchQuery || selectedFolder ? (
                   isFiltering ? (
                     `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: activeFilterText })}`
@@ -1897,7 +1897,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   </span>
                 )}
               </span>
-              <span>{t('compact.escToHide')}</span>
+              <span className="flex-shrink-0 select-none">{t('compact.escToHide')}</span>
             </div>
           </div>
         </div>
@@ -2200,17 +2200,17 @@ export const CompactView: React.FC<CompactViewProps> = ({
           {/* Footer */}
           <div
             className={cn(
-              'flex flex-shrink-0 items-center justify-between border-t border-border/60 bg-secondary/40 px-3 py-1.5 font-mono text-[9px] tracking-tighter text-muted-foreground backdrop-blur-md transition-opacity dark:bg-black/25',
+              'flex flex-shrink-0 items-center justify-between border-t border-border/60 bg-secondary/40 px-3 py-1.5 text-[10px] font-medium tracking-normal text-muted-foreground/80 backdrop-blur-md transition-opacity dark:bg-black/25',
               entranceAnim && !mounted ? 'opacity-0' : 'opacity-100',
               isPeekVisible && 'blur-[3px]'
             )}
           >
-            <span>
+            <span className="flex-shrink-0 select-none">
               {hasSelection
                 ? t('compact.footerWithSelection', { count: selectedCount })
                 : t('compact.enterToPaste')}
             </span>
-            <span className="min-w-0 truncate px-2 text-center">
+            <span className="min-w-0 truncate px-2 text-center tabular-nums">
               {isFiltering || searchQuery || selectedFolder ? (
                 isFiltering ? (
                   `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: activeFilterText })}`
@@ -2227,7 +2227,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 </span>
               )}
             </span>
-            <span>{t('compact.escToHide')}</span>
+            <span className="flex-shrink-0 select-none">{t('compact.escToHide')}</span>
           </div>
         </>
       )}
