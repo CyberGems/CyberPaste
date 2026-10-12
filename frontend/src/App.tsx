@@ -3579,6 +3579,7 @@ function App() {
                   singleClickPaste={settings?.single_click_paste ?? true}
                   onRequestPreview={handleOpenPreview}
                   bulkSelectedIds={selectedClipIds}
+                  onBulkSelectChange={setSelectedClipIds}
                   onClipClick={handleClipClick}
                   onToggleBulkSelect={handleClipToggleSelect}
                   onRequestOcr={handleOcrRequest}

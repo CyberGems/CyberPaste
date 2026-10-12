@@ -44,6 +44,7 @@ interface ClipListProps {
   singleClickPaste?: boolean;
   onRequestPreview?: (id: string) => void;
   bulkSelectedIds?: Set<string>;
+  onBulkSelectChange?: (ids: Set<string>) => void;
   onClipClick?: (id: string, e: React.MouseEvent) => void;
   onToggleBulkSelect?: (id: string) => void;
   onRequestOcr?: (id: string) => void;
@@ -93,6 +94,7 @@ export const ClipList: React.FC<ClipListProps> = ({
   singleClickPaste = true,
   onRequestPreview,
   bulkSelectedIds,
+  onBulkSelectChange,
   onClipClick,
   onToggleBulkSelect,
   onRequestOcr,
@@ -117,6 +119,40 @@ export const ClipList: React.FC<ClipListProps> = ({
   const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const peekOriginMousePosRef = useRef<{ x: number; y: number } | null>(null);
   const searchHistoryOpenRef = useRef(false);
+
+  // Marquee Selection State for dead-zone dragging
+  const onBulkSelectChangeRef = useRef(onBulkSelectChange);
+  useEffect(() => {
+    onBulkSelectChangeRef.current = onBulkSelectChange;
+  }, [onBulkSelectChange]);
+
+  const bulkSelectedIdsRef = useRef(bulkSelectedIds);
+  useEffect(() => {
+    bulkSelectedIdsRef.current = bulkSelectedIds;
+  }, [bulkSelectedIds]);
+
+  const marqueeStateRef = useRef<{
+    active: boolean;
+    hasDragged: boolean;
+    startX: number;
+    startY: number;
+    initialSelectedIds: Set<string>;
+    isAdditive: boolean;
+  }>({
+    active: false,
+    hasDragged: false,
+    startX: 0,
+    startY: 0,
+    initialSelectedIds: new Set(),
+    isAdditive: false,
+  });
+
+  const [marqueeBox, setMarqueeBox] = useState<{
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  } | null>(null);
 
   const closePeek = useCallback(() => {
     setPeekClip(null);
@@ -244,6 +280,139 @@ export const ClipList: React.FC<ClipListProps> = ({
       window.removeEventListener('mousedown', onWindowMouseDown);
     };
   }, [peekClip, closePeek]);
+
+  // Global mousemove and mouseup listeners for marquee drag selection
+  useEffect(() => {
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      const state = marqueeStateRef.current;
+      if (!state.active) return;
+
+      const dx = e.clientX - state.startX;
+      const dy = e.clientY - state.startY;
+      const dist = Math.hypot(dx, dy);
+
+      if (!state.hasDragged && dist < 5) {
+        return;
+      }
+
+      if (!state.hasDragged) {
+        state.hasDragged = true;
+        closePeek();
+      }
+
+      const left = Math.min(state.startX, e.clientX);
+      const top = Math.min(state.startY, e.clientY);
+      const width = Math.abs(dx);
+      const height = Math.abs(dy);
+
+      setMarqueeBox({ left, top, width, height });
+
+      const container = containerRef.current;
+      if (!container) return;
+
+      const boxRect = {
+        left,
+        top,
+        right: left + width,
+        bottom: top + height,
+      };
+
+      const cardElements = container.querySelectorAll<HTMLElement>('[data-clip-id]');
+      const nextSelected = new Set<string>(state.initialSelectedIds);
+
+      cardElements.forEach((cardEl) => {
+        const clipId = cardEl.getAttribute('data-clip-id');
+        if (!clipId) return;
+
+        const cardRect = cardEl.getBoundingClientRect();
+        const intersects = !(
+          boxRect.left > cardRect.right ||
+          boxRect.right < cardRect.left ||
+          boxRect.top > cardRect.bottom ||
+          boxRect.bottom < cardRect.top
+        );
+
+        if (intersects) {
+          nextSelected.add(clipId);
+        } else if (!state.isAdditive) {
+          nextSelected.delete(clipId);
+        }
+      });
+
+      onBulkSelectChangeRef.current?.(nextSelected);
+
+      // Auto-scroll when dragging near top/bottom edges of the grid
+      const scrollable = container.querySelector<HTMLElement>('.no-scrollbar');
+      if (scrollable) {
+        const cRect = container.getBoundingClientRect();
+        if (e.clientY > cRect.bottom - 20) {
+          scrollable.scrollTop += 10;
+        } else if (e.clientY < cRect.top + 20) {
+          scrollable.scrollTop -= 10;
+        }
+      }
+    };
+
+    const handleGlobalMouseUp = () => {
+      const state = marqueeStateRef.current;
+      if (!state.active) return;
+
+      if (!state.hasDragged) {
+        // Single click in dead-zone without dragging -> clear bulk selection
+        if (!state.isAdditive) {
+          onBulkSelectChangeRef.current?.(new Set());
+        }
+      }
+
+      state.active = false;
+      state.hasDragged = false;
+      state.initialSelectedIds = new Set();
+      setMarqueeBox(null);
+    };
+
+    window.addEventListener('mousemove', handleGlobalMouseMove);
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleGlobalMouseMove);
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [closePeek]);
+
+  const handleContainerMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    const container = containerRef.current;
+    if (!container) return;
+
+    // If click is inside an actual card face, only allow marquee if Shift key is pressed
+    const cardInner = target.closest('[data-el="clip-card-inner"]');
+    if (cardInner && !e.shiftKey) {
+      return;
+    }
+
+    // Ignore scrollbar track clicks at the right edge
+    const containerRect = container.getBoundingClientRect();
+    if (e.clientX >= containerRect.right - 14) {
+      return;
+    }
+
+    // Ignore interactive elements
+    if (target.closest('input, textarea, button, select, [role="menu"]')) {
+      return;
+    }
+
+    const isAdditive = e.ctrlKey || e.metaKey || e.shiftKey;
+    const currentSelected = bulkSelectedIdsRef.current;
+    marqueeStateRef.current = {
+      active: true,
+      hasDragged: false,
+      startX: e.clientX,
+      startY: e.clientY,
+      initialSelectedIds: isAdditive && currentSelected ? new Set(currentSelected) : new Set(),
+      isAdditive,
+    };
+    closePeek();
+  };
 
   const isVertical = scrollDirection === 'vertical';
 
@@ -448,8 +617,9 @@ export const ClipList: React.FC<ClipListProps> = ({
     <div
       ref={containerRef}
       data-clip-list="true"
-      className="h-full w-full flex-1 overflow-hidden"
+      className="h-full w-full flex-1 overflow-hidden select-none"
       onWheel={handleWheel}
+      onMouseDown={handleContainerMouseDown}
     >
       {showLoading ? (
         <div className="flex h-full w-full items-center justify-center">
@@ -499,6 +669,23 @@ export const ClipList: React.FC<ClipListProps> = ({
         resolveImageSrc={resolveImageSrc}
         onClose={closePeek}
       />
+
+      {/* Marquee Selection Rectangle Overlay */}
+      {marqueeBox && (
+        <div
+          data-el="marquee-selection-box"
+          style={{
+            position: 'fixed',
+            left: marqueeBox.left,
+            top: marqueeBox.top,
+            width: marqueeBox.width,
+            height: marqueeBox.height,
+            pointerEvents: 'none',
+            zIndex: 9999,
+          }}
+          className="rounded-[4px] border border-cyan-400/80 bg-cyan-500/15 shadow-[0_0_14px_rgba(34,211,238,0.3)] backdrop-blur-[0.5px]"
+        />
+      )}
     </div>
   );
 };

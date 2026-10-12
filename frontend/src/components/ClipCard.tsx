@@ -321,8 +321,8 @@ export const ClipCard = memo(
           <div
             data-el="clip-card-inner"
             onMouseDown={(e) => {
-              // Left button only — right-click must not arm drag / grabbing cursor
-              if (e.button === 0) {
+              // Left button only — right-click and shift-drag must not arm card reorder
+              if (e.button === 0 && !e.shiftKey) {
                 onDragStart(clip.id, e.clientX, e.clientY);
               }
             }}
