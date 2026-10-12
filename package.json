@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "format": "prettier --write \"frontend/src/**/*.{ts,tsx,css}\"",
-    "format:check": "prettier --check \"frontend/src/**/*.{ts,tsx,css}\""
+    "format:check": "prettier --check \"frontend/src/**/*.{ts,tsx,css}\"",
+    "installer-graphics": "node scripts/generate-installer-graphics.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.10.1",
@@ -44,6 +45,7 @@
     "postcss": "^8.4.32",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
+    "sharp": "^0.35.5",
     "tailwindcss": "^3.3.6",
     "typescript": "^5.3.3",
     "vite": "^5.0.8"

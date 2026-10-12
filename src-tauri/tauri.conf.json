@@ -1,79 +1,83 @@
 {
-    "$schema":  "https://schema.tauri.app/config/2.0.0",
-    "productName":  "CyberPaste",
-    "version":  "1.23.0",
-    "identifier":  "me.cybergems.cyberpaste",
-    "build":  {
-                  "beforeDevCommand":  "npm run dev",
-                  "devUrl":  "http://localhost:1420",
-                  "beforeBuildCommand":  "npm run build",
-                  "frontendDist":  "../dist"
-              },
-    "app":  {
-                "windows":  [
-                                {
-                                    "title":  "CyberPaste",
-                                    "width":  1920,
-                                    "height":  540,
-                                    "minWidth":  600,
-                                    "minHeight":  280,
-                                    "resizable":  true,
-                                    "fullscreen":  false,
-                                    "decorations":  false,
-                                    "transparent":  true,
-                                    "shadow":  false,
-                                    "visible":  false,
-                                    "center":  false,
-                                    "skipTaskbar":  true,
-                                    "label":  "main"
-                                }
-                            ],
-                "security":  {
-                                 "csp":  null,
-                                 "assetProtocol":  {
-                                                       "enable":  true,
-                                                       "scope":  [
-                                                                     "$DATA/CyberPaste/images/**",
-                                                                     "$LOCALDATA/CyberPaste/images/**"
-                                                                 ]
-                                                   },
-                                 "capabilities":  [
-                                                      "default"
-                                                  ]
-                             },
-                "withGlobalTauri":  true
-            },
-    "bundle":  {
-                   "active":  true,
-                   "targets":  [
-                                   "nsis"
-                               ],
-                   "publisher":  "CyberGems",
-                   "icon":  [
-                                "icons/32x32.png",
-                                "icons/128x128.png",
-                                "icons/128x128@2x.png",
-                                "icons/icon.icns",
-                                "icons/icon.ico"
-                            ],
-                   "createUpdaterArtifacts":  true,
-                   "windows":  {
-                                   "nsis":  {
-                                                "installMode":  "both",
-                                                "displayLanguageSelector":  false
-                                            },
-                                   "webviewInstallMode":  {
-                                                              "type":  "downloadBootstrapper",
-                                                              "silent":  true
-                                                          }
-                               }
-               },
-    "plugins":  {
-                    "updater":  {
-                                    "endpoints":  [
-                                                      "https://github.com/CyberGems/CyberPaste/releases/latest/download/latest.json"
-                                                  ],
-                                    "pubkey":  "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IERDRjI2OTg0QzEwREJCMkQKUldRdHV3M0JoR255M0p1MkRWbGQ3K2V6VkZza0Nkck53UE5JYUdmQklSbnhFQW00eVZKN21BM0QK"
-                                }
-                }
+  "$schema": "https://schema.tauri.app/config/2.0.0",
+  "productName": "CyberPaste",
+  "version": "1.23.0",
+  "identifier": "me.cybergems.cyberpaste",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "CyberPaste",
+        "width": 1920,
+        "height": 540,
+        "minWidth": 600,
+        "minHeight": 280,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": false,
+        "transparent": true,
+        "shadow": false,
+        "visible": false,
+        "center": false,
+        "skipTaskbar": true,
+        "label": "main"
+      }
+    ],
+    "security": {
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "$DATA/CyberPaste/images/**",
+          "$LOCALDATA/CyberPaste/images/**"
+        ]
+      },
+      "capabilities": [
+        "default"
+      ]
+    },
+    "withGlobalTauri": true
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis"
+    ],
+    "publisher": "CyberGems",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "createUpdaterArtifacts": true,
+    "windows": {
+      "nsis": {
+        "installMode": "both",
+        "displayLanguageSelector": false,
+        "sidebarImage": "icons/installerSidebar.bmp",
+        "headerImage": "icons/installerHeader.bmp",
+        "installerIcon": "icons/icon.ico",
+        "uninstallerIcon": "icons/icon.ico"
+      },
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper",
+        "silent": true
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/CyberGems/CyberPaste/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IERDRjI2OTg0QzEwREJCMkQKUldRdHV3M0JoR255M0p1MkRWbGQ3K2V6VkZza0Nkck53UE5JYUdmQklSbnhFQW00eVZKN21BM0QK"
+    }
+  }
 }
