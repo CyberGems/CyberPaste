@@ -173,6 +173,10 @@ function App() {
   const [fullTypeFilter, setFullTypeFilter] = useState<FullTypeFilter>('all');
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [selectedClipIds, setSelectedClipIds] = useState<Set<string>>(new Set());
+  const selectedClipIdsRef = useRef<Set<string>>(selectedClipIds);
+  useEffect(() => {
+    selectedClipIdsRef.current = selectedClipIds;
+  }, [selectedClipIds]);
   const [detailPanelOpen, setDetailPanelOpen] = useState(false);
   const [clipListResetToken, setClipListResetToken] = useState(0);
   const [gridColumns, setGridColumns] = useState(3);
@@ -2258,10 +2262,10 @@ function App() {
   );
 
   const handleBulkDelete = useCallback(async () => {
-    const ids = Array.from(selectedClipIds);
+    const ids = Array.from(selectedClipIdsRef.current);
     if (ids.length === 0) return;
 
-    const selectedClips = clipsRef.current.filter((c) => selectedClipIds.has(c.id));
+    const selectedClips = clipsRef.current.filter((c) => selectedClipIdsRef.current.has(c.id));
     const hasPinned = selectedClips.some((c) => c.is_pinned);
 
     if (hasPinned) {
@@ -2278,7 +2282,7 @@ function App() {
       return;
     }
     await executeBulkDelete(ids);
-  }, [selectedClipIds, executeBulkDelete, t]);
+  }, [executeBulkDelete, t]);
 
   const handleConfirmPendingDelete = useCallback(async () => {
     const ids = pendingDeleteModal.ids;
@@ -2765,6 +2769,9 @@ function App() {
       let options: ContextMenuOption[] = [];
 
       if (type === 'card') {
+        const isBulk =
+          selectedClipIdsRef.current.has(itemId) && selectedClipIdsRef.current.size > 1;
+        const bulkCount = selectedClipIdsRef.current.size;
         const clip = clipsRef.current.find((c) => c.id === itemId);
         const opts: ContextMenuOption[] = [];
 
@@ -2997,10 +3004,21 @@ function App() {
         }
 
         opts.push({
-          label: t('contextMenu.delete'),
+          label: isBulk
+            ? t('contextMenu.deleteCount', {
+                count: bulkCount,
+                defaultValue: `Delete (${bulkCount})`,
+              })
+            : t('contextMenu.delete'),
           icon: <Trash2 size={14} />,
           danger: true,
-          onClick: () => handleDelete(itemId),
+          onClick: () => {
+            if (isBulk) {
+              handleBulkDelete();
+            } else {
+              handleDelete(itemId);
+            }
+          },
         });
 
         options = opts;
@@ -3050,6 +3068,7 @@ function App() {
       handleToggleClipPin,
       handleMoveClipToEdge,
       handleDelete,
+      handleBulkDelete,
       handleDeleteFolder,
       detailPanelOpen,
     ]

@@ -265,6 +265,7 @@
     "paste": "Pegar",
     "selectAll": "Seleccionar todo",
     "delete": "Eliminar",
+    "deleteCount": "Eliminar ({{count}})",
     "rename": "Renombrar",
     "moveToFolder": "Mover a carpeta...",
     "copyToFolder": "Copiar a carpeta...",

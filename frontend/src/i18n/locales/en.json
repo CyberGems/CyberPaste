@@ -265,6 +265,7 @@
     "paste": "Paste",
     "selectAll": "Select All",
     "delete": "Delete",
+    "deleteCount": "Delete ({{count}})",
     "rename": "Rename",
     "moveToFolder": "Move to Folder...",
     "copyToFolder": "Copy to Folder...",
