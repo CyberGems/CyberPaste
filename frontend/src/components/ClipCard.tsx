@@ -488,7 +488,7 @@ export const ClipCard = memo(
                     }
                   }}
                   className={clsx(
-                    'min-w-0 flex-1 truncate whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.1em] text-secondary-foreground transition-colors',
+                    'min-w-0 flex-1 truncate whitespace-nowrap text-[10px] font-bold uppercase tracking-normal text-secondary-foreground transition-colors',
                     clip.source_app && onFilterByApp && 'cursor-pointer hover:text-primary'
                   )}
                 >
