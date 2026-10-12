@@ -2382,7 +2382,9 @@ const ClipRow = memo(function ClipRow({
   const isNavigationSelected = selectedClipId === clip.id && !(isPeekVisible && index === 0);
   const pointerHover = hovered && !hoverLocked && !foreignMenuOpenRef.current;
   const isDeleting = useDeleteFlash(clip.id);
-  const showHover = !isDeleting && (menuHighlight || isNavigationSelected || pointerHover);
+  const isActiveTarget =
+    !isDeleting && (isNavigationSelected || (!selectedClipId && index === 0) || menuHighlight);
+  const isHovered = !isDeleting && pointerHover && !isActiveTarget && !isSelected;
   const showActions = !isDeleting && (menuHighlight || pointerHover || isNavigationSelected);
   const shouldBlurForPeek = isPeekVisible && peekClipId !== clip.id;
   const pinFlash = usePinFlash(clip.id);
@@ -2458,17 +2460,19 @@ const ClipRow = memo(function ClipRow({
         }}
         draggable="false"
         className={clsx(
-          'relative flex h-full w-full cursor-pointer items-center gap-3 overflow-hidden rounded-lg border bg-card px-2 py-1 transition-colors',
+          'relative flex h-full w-full cursor-pointer items-center gap-3 overflow-hidden rounded-lg border bg-card px-2 py-1 transition-all',
           !hoverLocked && 'group',
           isDeleting &&
             'clip-deleting-row pointer-events-none border-destructive/70 bg-destructive/15 shadow-[0_0_16px_rgba(239,68,68,0.25)]',
           isSelected
             ? 'border-primary text-foreground shadow-[0_0_12px_rgba(var(--primary-rgb),0.25)] ring-1 ring-primary/40'
-            : isNavigationSelected
-              ? 'border-primary/40 text-foreground shadow-[0_0_12px_rgba(var(--primary-rgb),0.12)]'
-              : showHover
-                ? 'border-primary/30 text-foreground'
-                : 'border-border text-foreground/90',
+            : isActiveTarget
+              ? pointerHover
+                ? 'border-primary/75 text-foreground shadow-[0_0_12px_rgba(var(--primary-rgb),0.2)] ring-1 ring-primary/35'
+                : 'border-primary/55 text-foreground shadow-[0_0_10px_rgba(var(--primary-rgb),0.14)] ring-1 ring-primary/25'
+              : isHovered
+                ? 'border-border/80 text-foreground shadow-sm'
+                : 'border-border/50 text-foreground/90',
           shouldBlurForPeek && 'blur-[3px]',
           reorderEnabled && !isDragging && 'cursor-grab',
           isDragging && 'pointer-events-none scale-95 cursor-grabbing opacity-40'
@@ -2476,11 +2480,21 @@ const ClipRow = memo(function ClipRow({
       >
         {/* Solid base layer state tints (layered on top of opaque bg-card) */}
         {isSelected && <div className="pointer-events-none absolute inset-0 z-0 bg-primary/20" />}
-        {isNavigationSelected && !isSelected && (
-          <div className="pointer-events-none absolute inset-0 z-0 bg-primary/10" />
+        {isActiveTarget && !isSelected && (
+          <div
+            className={clsx(
+              'pointer-events-none absolute inset-0 z-0 transition-colors',
+              pointerHover ? 'bg-primary/16 dark:bg-primary/20' : 'dark:bg-primary/14 bg-primary/10'
+            )}
+          />
         )}
-        {showHover && !isSelected && (
-          <div className="pointer-events-none absolute inset-0 z-0 bg-accent" />
+        {isHovered && !isSelected && (
+          <div className="pointer-events-none absolute inset-0 z-0 bg-accent/60 dark:bg-accent/40" />
+        )}
+
+        {/* Selected target left accent bar (subtle yet distinctive identifier for active target item) */}
+        {(isActiveTarget || isSelected) && (
+          <div className="pointer-events-none absolute bottom-1.5 left-0 top-1.5 z-10 w-[3px] rounded-r-full bg-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.6)]" />
         )}
 
         {pinFlash && (
@@ -2499,7 +2513,16 @@ const ClipRow = memo(function ClipRow({
         >
           {compactShowNumber && (
             <div className="flex w-8 flex-shrink-0 items-center justify-center">
-              <span className="font-mono text-[10px] opacity-30">
+              <span
+                className={clsx(
+                  'font-mono text-[10px] transition-all',
+                  isActiveTarget || isSelected
+                    ? 'font-bold text-primary opacity-85'
+                    : isHovered
+                      ? 'text-foreground/70 opacity-60'
+                      : 'opacity-30'
+                )}
+              >
                 #{clipNumbering === 'positional' ? index + 1 : totalCount - index}
               </span>
             </div>
