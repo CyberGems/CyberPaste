@@ -216,3 +216,13 @@ export const CLIP_TYPE_ICONS: Record<ClipType, string> = {
   url: 'Link',
   code: 'Braces',
 };
+
+export type ClipFilterCategory = 'text' | 'code' | 'image' | 'url' | 'file';
+
+export function getFilterForClipType(clipType: string): ClipFilterCategory {
+  if (clipType === 'image') return 'image';
+  if (clipType === 'code' || clipType === 'html' || clipType === 'rtf') return 'code';
+  if (clipType === 'url') return 'url';
+  if (clipType === 'file') return 'file';
+  return 'text';
+}

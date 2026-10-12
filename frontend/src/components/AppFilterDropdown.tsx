@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Boxes, ChevronDown, Check, X, Search, Layers } from 'lucide-react';
+import { Boxes, ChevronDown, Check, X, Search, Layers, HelpCircle } from 'lucide-react';
+import { listen } from '@tauri-apps/api/event';
 import { useTranslation } from 'react-i18next';
 import { clsx } from 'clsx';
 import Tooltip from './Tooltip';
@@ -39,8 +40,39 @@ export const AppFilterDropdown: React.FC<AppFilterDropdownProps> = ({
   const filteredApps = useMemo(() => {
     if (!searchFilter.trim()) return apps;
     const q = searchFilter.trim().toLowerCase();
-    return apps.filter((a) => a.app.toLowerCase().includes(q));
-  }, [apps, searchFilter]);
+    return apps.filter((a) => {
+      const appName =
+        a.app === '__unknown__'
+          ? t('compact.unknownApp', { defaultValue: 'Sin aplicación detectada' })
+          : a.app;
+      return appName.toLowerCase().includes(q) || a.app.toLowerCase().includes(q);
+    });
+  }, [apps, searchFilter, t]);
+
+  // Close dropdown on window hide
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    listen<boolean>('window-visibility', (event) => {
+      if (!event.payload) {
+        setIsOpen(false);
+      }
+    })
+      .then((cleanup) => {
+        unlisten = cleanup;
+      })
+      .catch(console.error);
+
+    return () => {
+      unlisten?.();
+    };
+  }, []);
+
+  // Close dropdown on reset view trigger
+  useEffect(() => {
+    const handleReset = () => setIsOpen(false);
+    window.addEventListener('cyberpaste-reset-view', handleReset);
+    return () => window.removeEventListener('cyberpaste-reset-view', handleReset);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) {
@@ -87,7 +119,9 @@ export const AppFilterDropdown: React.FC<AppFilterDropdownProps> = ({
 
   const isActive = Boolean(value);
   const displayLabel = value
-    ? selectedAppItem?.app || value
+    ? value === '__unknown__'
+      ? t('compact.unknownApp', { defaultValue: 'Sin aplicación detectada' })
+      : selectedAppItem?.app || value
     : t('compact.filterAppTitle', { defaultValue: 'Filter by app' });
 
   // Tooltip
@@ -115,7 +149,9 @@ export const AppFilterDropdown: React.FC<AppFilterDropdownProps> = ({
             isOpen && 'border-primary/60 bg-primary/15 text-primary'
           )}
         >
-          {isActive && selectedAppItem?.icon ? (
+          {isActive && value === '__unknown__' ? (
+            <HelpCircle size={12} className="shrink-0 text-primary" />
+          ) : isActive && selectedAppItem?.icon ? (
             <img
               src={`data:image/png;base64,${selectedAppItem.icon}`}
               alt=""
@@ -123,7 +159,7 @@ export const AppFilterDropdown: React.FC<AppFilterDropdownProps> = ({
               className="h-3.5 w-3.5 object-contain"
             />
           ) : (
-            <Boxes size={variant === 'compact' ? 12 : 12} className="shrink-0" />
+            <Boxes size={12} className="shrink-0" />
           )}
 
           {isActive ? (
@@ -232,7 +268,12 @@ export const AppFilterDropdown: React.FC<AppFilterDropdownProps> = ({
                       : 'text-foreground/75 hover:bg-accent hover:text-foreground'
                   )}
                 >
-                  {item.icon ? (
+                  {item.app === '__unknown__' ? (
+                    <HelpCircle
+                      size={13}
+                      className={clsx(isSel ? 'text-primary' : 'text-muted-foreground/80')}
+                    />
+                  ) : item.icon ? (
                     <img
                       src={`data:image/png;base64,${item.icon}`}
                       alt=""
@@ -245,8 +286,17 @@ export const AppFilterDropdown: React.FC<AppFilterDropdownProps> = ({
                       className={clsx(isSel ? 'text-primary' : 'text-muted-foreground/80')}
                     />
                   )}
-                  <span className="flex-1 truncate text-left" title={item.app}>
-                    {item.app}
+                  <span
+                    className="flex-1 truncate text-left"
+                    title={
+                      item.app === '__unknown__'
+                        ? t('compact.unknownApp', { defaultValue: 'Sin aplicación detectada' })
+                        : item.app
+                    }
+                  >
+                    {item.app === '__unknown__'
+                      ? t('compact.unknownApp', { defaultValue: 'Sin aplicación detectada' })
+                      : item.app}
                   </span>
                   <span
                     className={clsx(

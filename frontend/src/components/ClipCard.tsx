@@ -1,4 +1,4 @@
-import { ClipboardItem } from '../types';
+import { ClipboardItem, getFilterForClipType, type ClipFilterCategory } from '../types';
 import { clsx } from 'clsx';
 import { useMemo, memo, useState, forwardRef, useEffect, useRef } from 'react';
 import { convertFileSrc } from '@tauri-apps/api/core';
@@ -74,6 +74,8 @@ interface ClipCardProps {
   onCardMouseEnter?: (e: React.MouseEvent, clip: ClipboardItem) => void;
   onCardMouseLeave?: () => void;
   onFilterByApp?: (app: string) => void;
+  onFilterByType?: (type: ClipFilterCategory) => void;
+  typeFilter?: string;
 }
 
 export const ClipCard = memo(
@@ -101,6 +103,8 @@ export const ClipCard = memo(
       onCardMouseEnter,
       onCardMouseLeave,
       onFilterByApp,
+      onFilterByType,
+      typeFilter,
     }: ClipCardProps,
     ref
   ) {
@@ -599,8 +603,8 @@ export const ClipCard = memo(
               {showTypeIcon && (
                 <div
                   className={clsx(
-                    'absolute bottom-1.5 right-3 flex items-center text-primary transition-opacity',
-                    showHover ? 'opacity-100' : 'opacity-65'
+                    'absolute bottom-1.5 right-3 flex items-center transition-opacity',
+                    showHover ? 'opacity-100' : 'opacity-70'
                   )}
                 >
                   {(() => {
@@ -616,11 +620,36 @@ export const ClipCard = memo(
                             : clip.clip_type === 'file'
                               ? LucideFile
                               : FileText;
+                    const filterCategory = getFilterForClipType(clip.clip_type);
+                    const isFilterActive = typeFilter === filterCategory;
+                    const tooltipText = isFilterActive
+                      ? t('compact.clearTypeFilter', { defaultValue: 'Quitar filtro de tipo' })
+                      : t('compact.filterByType', {
+                          type: typeLabel,
+                          defaultValue: `Filtrar por ${typeLabel}`,
+                        });
                     return (
-                      <Tooltip label={typeLabel} placement="top">
-                        <span className="flex items-center justify-center">
+                      <Tooltip label={tooltipText} placement="top">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            if (onFilterByType) {
+                              e.stopPropagation();
+                              onFilterByType(filterCategory);
+                            }
+                          }}
+                          className={clsx(
+                            'flex items-center justify-center rounded p-0.5 transition-all focus:outline-none',
+                            onFilterByType &&
+                              'cursor-pointer hover:scale-110 hover:text-primary active:scale-95',
+                            isFilterActive
+                              ? 'bg-primary/20 text-primary ring-1 ring-primary/40'
+                              : 'text-primary/75 hover:text-primary'
+                          )}
+                          aria-label={tooltipText}
+                        >
                           <TypeIcon size={12} />
-                        </span>
+                        </button>
                       </Tooltip>
                     );
                   })()}

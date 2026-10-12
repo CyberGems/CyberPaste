@@ -1,5 +1,10 @@
 import React, { useRef, useEffect, useMemo, useState, memo, useCallback } from 'react';
-import { ClipboardItem as AppClip, FolderItem, SourceAppItem } from '../types';
+import {
+  ClipboardItem as AppClip,
+  FolderItem,
+  SourceAppItem,
+  getFilterForClipType,
+} from '../types';
 import {
   Search,
   Maximize2,
@@ -2168,6 +2173,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
               showScrollbar={compactShowScrollbar}
               appFilter={appFilter}
               onAppFilterChange={onAppFilterChange}
+              typeFilter={typeFilter}
+              onTypeFilterChange={onTypeFilterChange}
             />
           </div>
 
@@ -2270,6 +2277,8 @@ const ClipRow = memo(function ClipRow({
   timeColWidth = 0,
   appFilter = null,
   onAppFilterChange,
+  typeFilter,
+  onTypeFilterChange,
 }: {
   clip: AppClip;
   index: number;
@@ -2303,6 +2312,8 @@ const ClipRow = memo(function ClipRow({
   timeColWidth?: number;
   appFilter?: string | null;
   onAppFilterChange?: (app: string | null) => void;
+  typeFilter?: CompactTypeFilter;
+  onTypeFilterChange?: (v: CompactTypeFilter) => void;
 }) {
   const { i18n } = useTranslation();
   const typeLabel = useMemo(() => {
@@ -2575,14 +2586,40 @@ const ClipRow = memo(function ClipRow({
                         : clip.clip_type === 'file'
                           ? LucideFile
                           : FileText;
+                const filterCategory = getFilterForClipType(clip.clip_type);
+                const isFilterActive = typeFilter === filterCategory;
+                const tooltipText = isFilterActive
+                  ? t('compact.clearTypeFilter', { defaultValue: 'Quitar filtro de tipo' })
+                  : t('compact.filterByType', {
+                      type: typeLabel,
+                      defaultValue: `Filtrar por ${typeLabel}`,
+                    });
                 return (
-                  <Tooltip label={typeLabel} placement="top" disabled={isPeekVisible || isDeleting}>
-                    <span className="flex items-center justify-center">
-                      <TypeIcon
-                        size={11}
-                        className="text-primary opacity-75 transition-opacity group-hover:opacity-100"
-                      />
-                    </span>
+                  <Tooltip
+                    label={tooltipText}
+                    placement="top"
+                    disabled={isPeekVisible || isDeleting}
+                  >
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        if (onTypeFilterChange) {
+                          e.stopPropagation();
+                          onTypeFilterChange(isFilterActive ? 'all' : filterCategory);
+                        }
+                      }}
+                      className={clsx(
+                        'flex items-center justify-center rounded p-0.5 transition-all focus:outline-none',
+                        onTypeFilterChange &&
+                          'cursor-pointer hover:scale-110 hover:text-primary active:scale-95',
+                        isFilterActive
+                          ? 'bg-primary/20 text-primary ring-1 ring-primary/40'
+                          : 'text-primary/75 hover:text-primary'
+                      )}
+                      aria-label={tooltipText}
+                    >
+                      <TypeIcon size={11} className="transition-opacity group-hover:opacity-100" />
+                    </button>
                   </Tooltip>
                 );
               })()}
@@ -2720,6 +2757,8 @@ type CompactListRowProps = {
   timeColWidth?: number;
   appFilter?: string | null;
   onAppFilterChange?: (app: string | null) => void;
+  typeFilter?: CompactTypeFilter;
+  onTypeFilterChange?: (v: CompactTypeFilter) => void;
 };
 
 function CompactListRow({
@@ -2756,6 +2795,8 @@ function CompactListRow({
   timeColWidth,
   appFilter,
   onAppFilterChange,
+  typeFilter,
+  onTypeFilterChange,
 }: RowComponentProps<CompactListRowProps>) {
   const clip = clips[index];
   if (!clip) return null;
@@ -2799,6 +2840,8 @@ function CompactListRow({
         timeColWidth={timeColWidth}
         appFilter={appFilter}
         onAppFilterChange={onAppFilterChange}
+        typeFilter={typeFilter}
+        onTypeFilterChange={onTypeFilterChange}
       />
     </div>
   );
@@ -2841,6 +2884,8 @@ function CompactClipList({
   showScrollbar = true,
   appFilter = null,
   onAppFilterChange,
+  typeFilter,
+  onTypeFilterChange,
 }: {
   clips: AppClip[];
   listRef: React.RefObject<import('react-window').ListImperativeAPI>;
@@ -2882,6 +2927,8 @@ function CompactClipList({
   showScrollbar?: boolean;
   appFilter?: string | null;
   onAppFilterChange?: (app: string | null) => void;
+  typeFilter?: CompactTypeFilter;
+  onTypeFilterChange?: (v: CompactTypeFilter) => void;
 }) {
   const { i18n } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -2971,6 +3018,8 @@ function CompactClipList({
       timeColWidth,
       appFilter,
       onAppFilterChange,
+      typeFilter,
+      onTypeFilterChange,
     }),
     [
       clips,
@@ -3003,6 +3052,8 @@ function CompactClipList({
       timeColWidth,
       appFilter,
       onAppFilterChange,
+      typeFilter,
+      onTypeFilterChange,
     ]
   );
 

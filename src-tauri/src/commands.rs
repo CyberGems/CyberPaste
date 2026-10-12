@@ -859,7 +859,10 @@ pub async fn get_clips(
     };
 
     let app_filter_clean = app_filter.as_deref().map(|s| s.trim()).filter(|s| !s.is_empty());
-    let app_clause = if app_filter_clean.is_some() {
+    let is_unknown_app = app_filter_clean.map(|s| s == "__unknown__" || s.eq_ignore_ascii_case("unknown")).unwrap_or(false);
+    let app_clause = if is_unknown_app {
+        "AND (source_app IS NULL OR TRIM(source_app) = '')"
+    } else if app_filter_clean.is_some() {
         "AND (source_app = ? OR source_app LIKE ? ESCAPE '\\')"
     } else {
         ""
@@ -884,7 +887,9 @@ pub async fn get_clips(
                 for t in &type_clause {
                     q = q.bind(t);
                 }
-                if let Some(app) = app_filter_clean {
+                if is_unknown_app {
+                    // No binds for IS NULL
+                } else if let Some(app) = app_filter_clean {
                     let escaped_app = app.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_");
                     let app_pattern = format!("%{}%", escaped_app);
                     q = q.bind(app).bind(app_pattern);
@@ -914,7 +919,9 @@ pub async fn get_clips(
             for t in &type_clause {
                 q = q.bind(t);
             }
-            if let Some(app) = app_filter_clean {
+            if is_unknown_app {
+                // No binds for IS NULL
+            } else if let Some(app) = app_filter_clean {
                 let escaped_app = app.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_");
                 let app_pattern = format!("%{}%", escaped_app);
                 q = q.bind(app).bind(app_pattern);
@@ -2629,6 +2636,27 @@ pub async fn search_clips(
 
     let (search_condition, bind_app_exact, bind_app_like, bind_text_pattern, bind_text_app_pattern) =
         match (effective_app, text_query.is_empty()) {
+            (Some(ref app), true) if app == "__unknown__" || app.eq_ignore_ascii_case("unknown") => (
+                "AND (source_app IS NULL OR TRIM(source_app) = '')",
+                None,
+                None,
+                None,
+                None,
+            ),
+            (Some(ref app), false) if app == "__unknown__" || app.eq_ignore_ascii_case("unknown") => {
+                let escaped_text = text_query
+                    .replace('\\', "\\\\")
+                    .replace('%', "\\%")
+                    .replace('_', "\\_");
+                let text_pattern = format!("%{}%", escaped_text);
+                (
+                    "AND (source_app IS NULL OR TRIM(source_app) = '') AND (text_preview LIKE ? ESCAPE '\\' OR content LIKE ? ESCAPE '\\')",
+                    None,
+                    None,
+                    Some(text_pattern),
+                    None,
+                )
+            }
             (Some(app), true) => {
                 let escaped_app = app
                     .replace('\\', "\\\\")
@@ -2831,11 +2859,14 @@ pub async fn get_source_apps(
             if let Some(numeric_id) = folder_id_num {
                 sqlx::query_as(
                     r#"
-                    SELECT source_app, MAX(source_icon) as source_icon, COUNT(*) as count
+                    SELECT 
+                        CASE WHEN source_app IS NULL OR TRIM(source_app) = '' THEN '__unknown__' ELSE source_app END as source_app,
+                        MAX(source_icon) as source_icon,
+                        COUNT(*) as count
                     FROM clips
-                    WHERE is_deleted = 0 AND folder_id = ? AND source_app IS NOT NULL AND TRIM(source_app) != ''
-                    GROUP BY source_app
-                    ORDER BY count DESC, MAX(created_at) DESC
+                    WHERE is_deleted = 0 AND folder_id = ?
+                    GROUP BY (CASE WHEN source_app IS NULL OR TRIM(source_app) = '' THEN '__unknown__' ELSE source_app END)
+                    ORDER BY (CASE WHEN source_app IS NULL OR TRIM(source_app) = '' THEN 1 ELSE 0 END) ASC, count DESC, MAX(created_at) DESC
                     "#,
                 )
                 .bind(numeric_id)
@@ -2849,11 +2880,14 @@ pub async fn get_source_apps(
         None => {
             sqlx::query_as(
                 r#"
-                SELECT source_app, MAX(source_icon) as source_icon, COUNT(*) as count
+                SELECT 
+                    CASE WHEN source_app IS NULL OR TRIM(source_app) = '' THEN '__unknown__' ELSE source_app END as source_app,
+                    MAX(source_icon) as source_icon,
+                    COUNT(*) as count
                 FROM clips
-                WHERE is_deleted = 0 AND folder_id IS NULL AND source_app IS NOT NULL AND TRIM(source_app) != ''
-                GROUP BY source_app
-                ORDER BY count DESC, MAX(created_at) DESC
+                WHERE is_deleted = 0 AND folder_id IS NULL
+                GROUP BY (CASE WHEN source_app IS NULL OR TRIM(source_app) = '' THEN '__unknown__' ELSE source_app END)
+                ORDER BY (CASE WHEN source_app IS NULL OR TRIM(source_app) = '' THEN 1 ELSE 0 END) ASC, count DESC, MAX(created_at) DESC
                 "#,
             )
             .fetch_all(pool)

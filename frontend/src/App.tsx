@@ -1767,10 +1767,12 @@ function App() {
     setSelectedFolder(null);
     setCompactTypeFilter('all');
     setFullTypeFilter('all');
+    setAppFilter(null);
     setSelectedClipId(null);
     setSelectedClipIds(new Set());
     setDetailPanelOpen(false);
     setClipListResetToken((prev) => prev + 1);
+    window.dispatchEvent(new CustomEvent('cyberpaste-reset-view'));
   }, []);
 
   // Reset search and view (if enabled) when the window closes or reopens.
@@ -1944,7 +1946,9 @@ function App() {
           setShowSearch(false);
           setCompactTypeFilter('all');
           setFullTypeFilter('all');
+          setAppFilter(null);
           handleSelectFolder(null);
+          window.dispatchEvent(new CustomEvent('cyberpaste-reset-view'));
         } else {
           refreshCurrentFolder();
         }
@@ -3503,6 +3507,17 @@ function App() {
                   onDragStart={startDrag}
                   onCardContextMenu={(e, clipId) => handleContextMenu(e, 'card', clipId)}
                   onFilterByApp={setAppFilter}
+                  onFilterByType={(type) => {
+                    const next = fullTypeFilter === type ? 'all' : type;
+                    setFullTypeFilter(next);
+                    setSettings((prev) => {
+                      if (!prev) return prev;
+                      const s = { ...prev, full_type_filter: next };
+                      invoke('save_settings', { settings: s }).catch(console.error);
+                      return s;
+                    });
+                  }}
+                  typeFilter={fullTypeFilter}
                   scrollDirection="vertical"
                   reorderTargetClipId={reorderTargetClipId}
                   reorderTargetPosition={reorderTargetPosition}

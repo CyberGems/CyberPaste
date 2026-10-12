@@ -5,7 +5,7 @@ import { listen } from '@tauri-apps/api/event';
 import { ClipCard } from './ClipCard';
 import { FullPeek } from './FullPeek';
 import { resolveImageSrc } from '../utils/image';
-import { ClipboardItem } from '../types';
+import { ClipboardItem, type ClipFilterCategory } from '../types';
 import { LAYOUT } from '../constants';
 import { clsx } from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -49,6 +49,8 @@ interface ClipListProps {
   onRequestOcr?: (id: string) => void;
   onColumnsChange?: (columns: number) => void;
   onFilterByApp?: (app: string) => void;
+  onFilterByType?: (type: ClipFilterCategory) => void;
+  typeFilter?: string;
 }
 
 const BASE_CARD_WIDTH = 230;
@@ -65,6 +67,8 @@ export const ClipList: React.FC<ClipListProps> = ({
   selectedClipId,
   onCardContextMenu,
   onFilterByApp,
+  onFilterByType,
+  typeFilter,
   resetToken = 0,
   scrollDirection = 'vertical',
   reorderTargetClipId,
@@ -405,6 +409,8 @@ export const ClipList: React.FC<ClipListProps> = ({
           onCardMouseEnter={handleCardMouseEnter}
           onCardMouseLeave={handleCardMouseLeave}
           onFilterByApp={onFilterByApp}
+          onFilterByType={onFilterByType}
+          typeFilter={typeFilter}
         />
       </div>
     );
