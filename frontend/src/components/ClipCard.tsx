@@ -171,30 +171,6 @@ export const ClipCard = memo(
       }
     }, [clip.clip_type, clip.metadata]);
 
-    const ocrTooltip = useMemo(() => {
-      if (clip.clip_type !== 'image' || !clip.metadata) return null;
-      try {
-        const parsed = JSON.parse(clip.metadata) as { ocr_text?: string };
-        if (parsed && parsed.ocr_text) {
-          const ocrText = parsed.ocr_text.trim();
-          if (ocrText) {
-            const firstLine = ocrText.split('\n')[0] || '';
-            const hasMoreLines = ocrText.includes('\n');
-            if (firstLine.length > 80) {
-              return firstLine.substring(0, 80) + '...';
-            }
-            if (hasMoreLines) {
-              return firstLine + '...';
-            }
-            return firstLine;
-          }
-        }
-      } catch {
-        // Ignore
-      }
-      return null;
-    }, [clip.clip_type, clip.metadata]);
-
     // OCR is available when the clip has a cached ocr_text in metadata
     const hasOcr = useMemo(() => {
       if (clip.clip_type !== 'image' || !clip.metadata) return false;
@@ -326,7 +302,6 @@ export const ClipCard = memo(
             position: 'relative',
           }}
           className="flex-shrink-0"
-          title={ocrTooltip || undefined}
         >
           {/* Drop indicator - before (left edge vertical bar in grid) */}
           {reorderEnabled && reorderDropIndicator === 'before' && (
@@ -502,14 +477,6 @@ export const ClipCard = memo(
                       onFilterByApp(clip.source_app);
                     }
                   }}
-                  title={
-                    clip.source_app && onFilterByApp
-                      ? t('compact.filterByApp', {
-                          app: clip.source_app,
-                          defaultValue: `Filter by app: ${clip.source_app}`,
-                        })
-                      : undefined
-                  }
                   className={clsx(
                     'min-w-0 flex-1 truncate whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.1em] text-secondary-foreground transition-colors',
                     clip.source_app && onFilterByApp && 'cursor-pointer hover:text-primary'

@@ -22,7 +22,7 @@ export const AppFilterDropdown: React.FC<AppFilterDropdownProps> = ({
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [searchFilter, setSearchFilter] = useState('');
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  const buttonRef = useRef<HTMLElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number; width: number }>({
     top: 0,
@@ -131,67 +131,91 @@ export const AppFilterDropdown: React.FC<AppFilterDropdownProps> = ({
 
   return (
     <>
-      <Tooltip label={tooltipLabel} placement="bottom">
-        <button
-          ref={buttonRef}
-          type="button"
-          onClick={() => (isOpen ? setIsOpen(false) : openMenu())}
+      {isActive ? (
+        <div
+          ref={buttonRef as React.RefObject<HTMLDivElement>}
           className={clsx(
-            'flex flex-shrink-0 items-center gap-1.5 font-medium transition-all focus:outline-none focus-visible:ring-0',
+            'flex flex-shrink-0 items-center font-medium transition-all',
             variant === 'compact'
-              ? 'h-[30px] rounded-lg border px-2 text-[11px]'
-              : 'h-7 rounded-full px-2.5 text-[11px] leading-normal',
-            isActive
-              ? 'border-primary/40 bg-primary/15 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.18)]'
-              : variant === 'compact'
-                ? 'border-border bg-secondary/40 text-muted-foreground hover:border-border hover:bg-secondary/70 hover:text-foreground'
-                : 'text-muted-foreground/75 hover:text-foreground',
-            isOpen && 'border-primary/60 bg-primary/15 text-primary'
+              ? 'h-[30px] rounded-lg border text-[11px]'
+              : 'h-7 rounded-full text-[11px] leading-normal',
+            'border-primary/40 bg-primary/15 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.18)]',
+            isOpen && 'border-primary/60 ring-1 ring-primary/40'
           )}
         >
-          {isActive && value === '__unknown__' ? (
-            <HelpCircle size={12} className="shrink-0 text-primary" />
-          ) : isActive && selectedAppItem?.icon ? (
-            <img
-              src={`data:image/png;base64,${selectedAppItem.icon}`}
-              alt=""
-              draggable="false"
-              className="h-3.5 w-3.5 object-contain"
-            />
-          ) : (
-            <Boxes size={12} className="shrink-0" />
-          )}
+          <Tooltip label={tooltipLabel} placement="bottom">
+            <button
+              type="button"
+              onClick={() => (isOpen ? setIsOpen(false) : openMenu())}
+              className={clsx(
+                'flex items-center gap-1.5 focus:outline-none focus-visible:ring-0',
+                variant === 'compact' ? 'h-full pl-2 pr-1' : 'h-full pl-2.5 pr-1'
+              )}
+            >
+              {value === '__unknown__' ? (
+                <HelpCircle size={12} className="shrink-0 text-primary" />
+              ) : selectedAppItem?.icon ? (
+                <img
+                  src={`data:image/png;base64,${selectedAppItem.icon}`}
+                  alt=""
+                  draggable="false"
+                  className="h-3.5 w-3.5 object-contain"
+                />
+              ) : (
+                <Boxes size={12} className="shrink-0" />
+              )}
+              <span className="max-w-[80px] truncate whitespace-nowrap">{displayLabel}</span>
+            </button>
+          </Tooltip>
 
-          {isActive ? (
-            <span className="max-w-[80px] truncate whitespace-nowrap">{displayLabel}</span>
-          ) : variant === 'full' ? (
-            <span className="whitespace-nowrap">
-              {t('compact.allApps', { defaultValue: 'Apps' })}
-            </span>
-          ) : null}
-
-          {isActive ? (
-            <span
-              role="button"
-              tabIndex={0}
+          <Tooltip
+            label={t('compact.clearAppFilter', { defaultValue: 'Quitar filtro de app' })}
+            placement="bottom"
+          >
+            <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onChange(null);
                 setIsOpen(false);
               }}
-              className="ml-0.5 rounded-full p-0.5 opacity-70 hover:bg-primary/20 hover:opacity-100"
-              title={t('compact.clearAppFilter', { defaultValue: 'Clear app filter' })}
+              className="mr-1 flex items-center justify-center rounded-full p-1 text-primary/70 transition-colors hover:bg-primary/20 hover:text-primary focus:outline-none"
+              aria-label={t('compact.clearAppFilter', { defaultValue: 'Quitar filtro de app' })}
             >
               <X size={10} />
-            </span>
-          ) : (
+            </button>
+          </Tooltip>
+        </div>
+      ) : (
+        <Tooltip label={tooltipLabel} placement="bottom">
+          <button
+            ref={buttonRef as React.RefObject<HTMLButtonElement>}
+            type="button"
+            onClick={() => (isOpen ? setIsOpen(false) : openMenu())}
+            className={clsx(
+              'flex flex-shrink-0 items-center gap-1.5 font-medium transition-all focus:outline-none focus-visible:ring-0',
+              variant === 'compact'
+                ? 'h-[30px] rounded-lg border px-2 text-[11px]'
+                : 'h-7 rounded-full px-2.5 text-[11px] leading-normal',
+              variant === 'compact'
+                ? 'border-border bg-secondary/40 text-muted-foreground hover:border-border hover:bg-secondary/70 hover:text-foreground'
+                : 'text-muted-foreground/75 hover:text-foreground',
+              isOpen && 'border-primary/60 bg-primary/15 text-primary'
+            )}
+          >
+            <Boxes size={12} className="shrink-0" />
+            {variant === 'full' && (
+              <span className="whitespace-nowrap">
+                {t('compact.allApps', { defaultValue: 'Apps' })}
+              </span>
+            )}
             <ChevronDown
               size={11}
               className={clsx('opacity-70 transition-transform', isOpen && 'rotate-180')}
             />
-          )}
-        </button>
-      </Tooltip>
+          </button>
+        </Tooltip>
+      )}
 
       {isOpen && (
         <div
@@ -286,14 +310,7 @@ export const AppFilterDropdown: React.FC<AppFilterDropdownProps> = ({
                       className={clsx(isSel ? 'text-primary' : 'text-muted-foreground/80')}
                     />
                   )}
-                  <span
-                    className="flex-1 truncate text-left"
-                    title={
-                      item.app === '__unknown__'
-                        ? t('compact.unknownApp', { defaultValue: 'Sin aplicación detectada' })
-                        : item.app
-                    }
-                  >
+                  <span className="flex-1 truncate text-left">
                     {item.app === '__unknown__'
                       ? t('compact.unknownApp', { defaultValue: 'Sin aplicación detectada' })
                       : item.app}
