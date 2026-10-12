@@ -960,7 +960,13 @@ async fn process_clipboard_change(
         .await;
     }
 
-    // Prune history in background to avoid blocking the clipboard loop
+    // If max_items limit is active, prune oldest unpinned clips before emitting
+    // so the database count never exceeds max_items and frontend counts stay perfectly in sync.
+    if settings.max_items > 0 {
+        let _ = crate::commands::prune_history(&db.pool, settings.max_items).await;
+    }
+
+    // Enforce background expiration and storage quota policies
     let app_for_policy = app.clone();
     let database_for_policy = db.clone();
     let settings_for_policy = settings.clone();

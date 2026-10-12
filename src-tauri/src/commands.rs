@@ -651,8 +651,11 @@ pub async fn enforce_storage_policy(
     .await?;
     deleted_count += quota_result.deleted_count;
 
-    if quota_result.deleted_count > 0 || quota_result.over_quota {
+    if deleted_count > 0 || quota_result.over_quota {
         let _ = app.emit("clipboard-change", ());
+    }
+
+    if quota_result.deleted_count > 0 || quota_result.over_quota {
         let quota_bytes =
             crate::content_limits::normalize_storage_quota_bytes(settings.storage_quota_bytes)
                 as usize;

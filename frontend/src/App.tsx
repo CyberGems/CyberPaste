@@ -917,6 +917,15 @@ function App() {
           });
         } else {
           setClips(data);
+          if (
+            folderId === null &&
+            !normalizedQuery &&
+            effectiveTypeFilter === 'all' &&
+            !effectiveAppFilter &&
+            settingsRef.current?.view_mode === 'compact'
+          ) {
+            setTotalClipCount(data.length);
+          }
           if (data.length > 0) {
             if (normalizedQuery) {
               setSelectedClipId(data[0].id);
