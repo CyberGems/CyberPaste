@@ -1182,7 +1182,7 @@ export function ImageViewerWindow() {
               >
                 CyberPaste
               </span>
-              <span className="inline-flex shrink-0 items-center justify-center rounded border border-cyan-500/30 bg-cyan-500/10 px-1 py-px text-[8px] font-semibold uppercase leading-none tracking-wide text-cyan-400 shadow-[0_0_8px_rgba(0,242,255,0.15)]">
+              <span className="inline-flex shrink-0 items-center justify-center rounded border border-primary/30 bg-primary/10 px-1 py-px text-[8px] font-semibold uppercase leading-none tracking-wide text-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.15)]">
                 {t('viewer.badge', 'VISOR')}
               </span>
             </button>
@@ -2019,8 +2019,10 @@ export function ImageViewerWindow() {
 
       {/* Footer Info & Metrics — styled with Compact mode typography */}
       <div
-        className={`flex select-none items-center justify-between gap-3 border-t px-3 py-1.5 text-[10px] font-medium tracking-normal text-muted-foreground/80 backdrop-blur-md ${
-          isDark ? 'border-white/5 bg-black/25' : 'border-border/60 bg-secondary/40'
+        className={`flex select-none items-center justify-between gap-3 border-t px-3 py-1.5 text-[10px] font-medium tracking-normal backdrop-blur-md ${
+          isDark
+            ? 'border-white/5 bg-black/25 text-muted-foreground/80'
+            : 'border-border/70 bg-zinc-100/90 text-zinc-700'
         }`}
         onMouseDown={(e) => e.preventDefault()}
       >
@@ -2028,20 +2030,20 @@ export function ImageViewerWindow() {
           {/* Tipo de captura */}
           <div className="flex shrink-0 items-center gap-1.5 font-medium text-foreground">
             {isImageClip ? (
-              <ImageIcon size={13} className="shrink-0 text-cyan-400" />
+              <ImageIcon size={13} className={`shrink-0 ${isDark ? 'text-cyan-400' : 'text-blue-600'}`} />
             ) : isCodeClip ? (
-              <Code size={13} className="shrink-0 text-indigo-400" />
+              <Code size={13} className={`shrink-0 ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`} />
             ) : isUrlClip ? (
-              <Globe size={13} className="shrink-0 text-emerald-400" />
+              <Globe size={13} className={`shrink-0 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
             ) : isFileClip ? (
-              <LucideFile size={13} className="shrink-0 text-amber-400" />
+              <LucideFile size={13} className={`shrink-0 ${isDark ? 'text-amber-400' : 'text-amber-600'}`} />
             ) : colorInfo ? (
               <span
-                className="h-3 w-3 shrink-0 rounded-full border border-white/20"
+                className="h-3 w-3 shrink-0 rounded-full border border-black/15 dark:border-white/20"
                 style={{ backgroundColor: colorInfo.hex }}
               />
             ) : (
-              <FileText size={13} className="shrink-0 text-cyan-400" />
+              <FileText size={13} className={`shrink-0 ${isDark ? 'text-cyan-400' : 'text-blue-600'}`} />
             )}
             <span className="truncate">
               {detectedLang
@@ -2050,12 +2052,12 @@ export function ImageViewerWindow() {
             </span>
           </div>
 
-          <span className="shrink-0 text-muted-foreground/40">·</span>
+          <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
 
           {/* Origen de la captura (source_app + source_icon) */}
           {clip.source_app && (
             <>
-              <div className="flex shrink-0 items-center gap-1.5 text-foreground/85">
+              <div className="flex shrink-0 items-center gap-1.5 font-medium text-foreground">
                 {clip.source_icon && (
                   <img
                     src={
@@ -2069,28 +2071,30 @@ export function ImageViewerWindow() {
                 )}
                 <span className="max-w-[160px] truncate">{clip.source_app}</span>
               </div>
-              <span className="shrink-0 text-muted-foreground/40">·</span>
+              <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
             </>
           )}
 
           {/* Fecha relativa */}
           {friendlyDate && (
-            <span className="shrink-0 text-muted-foreground/90">{friendlyDate}</span>
+            <span className={`shrink-0 ${isDark ? 'text-muted-foreground/90' : 'text-zinc-600'}`}>
+              {friendlyDate}
+            </span>
           )}
 
           {/* Métricas contextuales */}
           {isImageClip ? (
             <>
               {(dimsLabel || sizeLabel) && (
-                <span className="shrink-0 text-muted-foreground/40">·</span>
+                <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
               )}
               {dimsLabel && <span className="shrink-0 tabular-nums">{dimsLabel}</span>}
               {dimsLabel && sizeLabel && (
-                <span className="shrink-0 text-muted-foreground/40">·</span>
+                <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
               )}
               {sizeLabel && <span className="shrink-0 tabular-nums">{sizeLabel}</span>}
-              <span className="shrink-0 text-muted-foreground/40">·</span>
-              <span className="shrink-0 tabular-nums text-cyan-400">
+              <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
+              <span className={`shrink-0 tabular-nums font-medium ${isDark ? 'text-cyan-400' : 'text-blue-600'}`}>
                 {zoomPercent}%
                 {isFitMode
                   ? ` · ${t('viewer.fitShort')}`
@@ -2101,18 +2105,18 @@ export function ImageViewerWindow() {
             </>
           ) : isCodeClip || (!isImageClip && !isFileClip && !isUrlClip && !isHtmlClip) ? (
             <>
-              <span className="shrink-0 text-muted-foreground/40">·</span>
+              <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
               <span className="shrink-0 tabular-nums">
                 {t('viewer.linesCount', { count: textStats.lines })}
               </span>
-              <span className="shrink-0 text-muted-foreground/40">·</span>
+              <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
               <span className="shrink-0 tabular-nums">
                 {t('viewer.wordsCount', { count: textStats.words })}
               </span>
-              <span className="shrink-0 text-muted-foreground/40">·</span>
+              <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
               <span className="shrink-0 tabular-nums">{sizeLabel || `${textStats.chars} B`}</span>
-              <span className="shrink-0 text-muted-foreground/40">·</span>
-              <span className="shrink-0 tabular-nums text-cyan-400">
+              <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
+              <span className={`shrink-0 tabular-nums font-medium ${isDark ? 'text-cyan-400' : 'text-blue-600'}`}>
                 {fontSize}px{wrapLines ? ` · ${t('viewer.toggleWrap')}` : ''}
               </span>
             </>
@@ -2120,24 +2124,26 @@ export function ImageViewerWindow() {
             <>
               {urlObj && (
                 <>
-                  <span className="shrink-0 text-muted-foreground/40">·</span>
-                  <span className="max-w-[180px] truncate text-cyan-400">{urlObj.hostname}</span>
+                  <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
+                  <span className={`max-w-[180px] truncate font-semibold ${isDark ? 'text-cyan-400' : 'text-blue-600'}`}>
+                    {urlObj.hostname}
+                  </span>
                 </>
               )}
-              <span className="shrink-0 text-muted-foreground/40">·</span>
+              <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
               <span className="shrink-0 tabular-nums">
                 {t('viewer.charsCount', { count: (clip.content || '').length })}
               </span>
             </>
           ) : isFileClip ? (
             <>
-              <span className="shrink-0 text-muted-foreground/40">·</span>
-              <span className="max-w-[200px] truncate">
+              <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
+              <span className="max-w-[200px] truncate font-medium text-foreground">
                 {(clip.preview || clip.content || '').split(/[\\/]/).pop()}
               </span>
               {sizeLabel && (
                 <>
-                  <span className="shrink-0 text-muted-foreground/40">·</span>
+                  <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
                   <span className="shrink-0 tabular-nums">{sizeLabel}</span>
                 </>
               )}
@@ -2148,11 +2154,11 @@ export function ImageViewerWindow() {
         {/* Global Position Counter */}
         <div className="flex shrink-0 items-center gap-2">
           {clipIds.length > 0 && currentClipIndex >= 0 && (
-            <span className="rounded bg-muted/40 px-2 py-0.5 text-[10px] font-medium tabular-nums text-foreground/80">
+            <span className="rounded border border-border/40 bg-muted/80 px-2 py-0.5 text-[10px] font-medium tabular-nums text-foreground">
               {currentClipIndex + 1}/{clipIds.length}
             </span>
           )}
-          {editHint && <span className="max-w-[200px] truncate text-rose-400">{editHint}</span>}
+          {editHint && <span className="max-w-[200px] truncate font-medium text-rose-500 dark:text-rose-400">{editHint}</span>}
         </div>
       </div>
 
