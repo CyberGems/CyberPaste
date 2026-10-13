@@ -549,6 +549,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
     { keys: 'Enter', action: t('contextMenu.paste') },
     { keys: 'Del', action: t('common.delete') },
     { keys: 'Ctrl+P', action: t('contextMenu.pin') },
+    { keys: t('common.ctrlWheelHint', 'Ctrl+Rueda'), action: t('common.zoomShort', 'Zoom') },
     { keys: 'I', action: t('detailPanel.title') },
     { keys: 'Esc', action: t('common.close') },
   ];
@@ -608,7 +609,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         {showHud && (
           <div className="z-10 mx-3 hidden min-w-0 flex-1 items-center justify-center gap-2 sm:flex">
             <Tooltip label={t('common.keyboardShortcuts')} placement="bottom">
-              <div className="flex w-[150px] items-center justify-center gap-1.5 rounded-lg border border-border/60 bg-secondary/20 px-2 py-1 text-[10px] text-muted-foreground/70">
+              <div className="flex w-[156px] items-center justify-center gap-1.5 rounded-lg border border-border/60 bg-secondary/20 px-2 py-1 text-[10px] text-muted-foreground/70">
                 <Keyboard size={11} className="flex-shrink-0 text-muted-foreground/50" />
                 <div
                   key={hintIndex}

@@ -217,7 +217,7 @@ npm run tauri build
 | `Shift+F10` / Context Menu key | Open the selected clip's context menu |
 | `Delete` | Delete selected item |
 | `Escape` | Clear search / close modal or window |
-| `Ctrl+Wheel` | Adjust grid zoom in Full mode (0.6x – 1.75x) |
+| `Ctrl+Wheel` | Adjust grid zoom in Full mode (0.6x – 1.75x) or row density in Compact mode (Small / Medium / Large) |
 
 ### Editor
 

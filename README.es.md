@@ -214,7 +214,7 @@ npm run tauri build
 | `Mayús+F10` / tecla Menú contextual | Abrir el menú contextual del clip seleccionado |
 | `Supr` | Eliminar el elemento seleccionado |
 | `Escape` | Limpiar la búsqueda / cerrar la ventana o el modal |
-| `Ctrl+Rueda` | Ajustar el zoom de la cuadrícula en el Modo Completo (0,6x – 1,75x) |
+| `Ctrl+Rueda` | Ajustar el zoom de la cuadrícula en el Modo Completo (0,6x – 1,75x) o la densidad de filas en el Modo Compacto (Pequeño / Mediano / Grande) |
 
 ### Editor
 

@@ -700,7 +700,12 @@ export const CompactView: React.FC<CompactViewProps> = ({
   const { t } = useTranslation();
   const { isPaused, toggleMonitoring } = useClipboardMonitoring();
   const footerHints = useMemo(
-    () => [t('compact.typeToSearch'), t('compact.arrowsFolders'), t('compact.peekHint')],
+    () => [
+      t('compact.typeToSearch'),
+      t('compact.arrowsFolders'),
+      t('compact.peekHint'),
+      t('compact.densityHint'),
+    ],
     [t]
   );
   const [footerHintIndex, setFooterHintIndex] = useState(0);
