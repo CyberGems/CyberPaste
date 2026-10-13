@@ -276,7 +276,7 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
                     type="button"
                     onClick={handleSkipVersion}
                     disabled={skipBusy}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-border bg-transparent px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:bg-accent hover:text-foreground disabled:cursor-wait disabled:opacity-60"
+                    className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white/5 px-4 py-2 text-sm font-medium text-foreground/85 transition-all hover:bg-accent hover:text-foreground disabled:cursor-wait disabled:opacity-60"
                   >
                     {skipBusy && <Loader2 size={14} className="animate-spin" />}
                     {t('settings.updatesSkipVersion')}
@@ -286,7 +286,7 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
                   <button
                     type="button"
                     onClick={onClose}
-                    className="rounded-md border border-border bg-white/5 px-4 py-2 text-sm font-medium text-foreground/85 transition-all hover:bg-accent hover:text-foreground"
+                    className="inline-flex items-center rounded-md border border-border bg-white/5 px-4 py-2 text-sm font-medium text-foreground/85 transition-all hover:bg-accent hover:text-foreground"
                   >
                     {t('settings.updatesLater')}
                   </button>
