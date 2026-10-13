@@ -4940,18 +4940,18 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
         window_label,
         tauri::WebviewUrl::App(format!("index.html?clip_id={}", clip_id).into()),
     )
-    .title("Image Viewer")
+    .title("CyberPaste Viewer")
     .inner_size(settings.viewer_window_width, settings.viewer_window_height)
     .min_inner_size(300.0, 200.0)
     .decorations(false)
-    .transparent(true)
+    .transparent(false)
     .always_on_top(false)
-    .shadow(true)
-    .maximized(settings.viewer_window_maximized)
     .visible(false);
 
     if let (Some(x), Some(y)) = (settings.viewer_window_x, settings.viewer_window_y) {
         builder = builder.position(x as f64, y as f64);
+    } else {
+        builder = builder.center();
     }
 
     let webview_create_guard = crate::WEBVIEW_CREATE_LOCK
@@ -4959,23 +4959,10 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
         .map_err(|_| "WebView creation lock poisoned".to_string())?;
     let result = builder.build();
     drop(webview_create_guard);
-    let win = result.map_err(|e| {
+    let _win = result.map_err(|e| {
         log::error!("Failed to build image-viewer window: {}", e);
         e.to_string()
     })?;
-
-    // Apply theme and effects immediately to avoid white flash
-    let mica_effect = crate::effect_for_theme(&settings.theme).to_string();
-    let current_theme = if settings.theme == "dark" || settings.theme == "cyberpaste" {
-        tauri::Theme::Dark
-    } else if settings.theme == "light" {
-        tauri::Theme::Light
-    } else {
-        // Default to dark for the viewer if system theme is uncertain during build
-        tauri::Theme::Dark
-    };
-    let round_corners = settings.round_corners;
-    crate::apply_window_effect(&win, &mica_effect, &current_theme, round_corners);
 
     // Dismiss main first. The viewer reveals itself from frontend once mounted and themed.
     if let Some(main) = app.get_webview_window("main") {

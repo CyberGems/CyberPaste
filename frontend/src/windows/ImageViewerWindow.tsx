@@ -196,6 +196,8 @@ export function ImageViewerWindow() {
   const [showRawText, setShowRawText] = useState(false);
   const [viewModeHtml, setViewModeHtml] = useState<'rendered' | 'source'>('rendered');
 
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const hasRevealedRef = useRef(false);
   const appWindow = getCurrentWebviewWindow();
   const settingsRef = useRef<Settings | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -397,12 +399,14 @@ export function ImageViewerWindow() {
     invoke<Settings>('get_settings')
       .then((s) => {
         settingsRef.current = s;
+        setSettings(s);
         applyTheme(s.theme);
       })
       .catch(console.error);
 
     const unlistenSettings = listen<Settings>('settings-changed', (event) => {
       settingsRef.current = event.payload;
+      setSettings(event.payload);
       applyTheme(event.payload.theme);
     });
 
@@ -474,10 +478,14 @@ export function ImageViewerWindow() {
     };
   }, [loadClip, applyTheme]);
 
-  // Reveal window smoothly after clip & theme paint
+  // Reveal window smoothly once clip, settings & theme paint
   useEffect(() => {
-    if (clip) {
+    if (clip && settings && !hasRevealedRef.current) {
+      hasRevealedRef.current = true;
       const timer = setTimeout(() => {
+        if (settings.viewer_window_maximized) {
+          appWindow.maximize().catch(() => {});
+        }
         appWindow
           .show()
           .then(() => {
@@ -487,7 +495,7 @@ export function ImageViewerWindow() {
       }, 50);
       return () => clearTimeout(timer);
     }
-  }, [clip?.id, appWindow]);
+  }, [clip, settings, appWindow]);
 
   const handleClose = useCallback(() => {
     appWindow.close();
