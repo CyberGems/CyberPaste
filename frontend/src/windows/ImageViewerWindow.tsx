@@ -1,7 +1,8 @@
-import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { invoke, convertFileSrc } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import {
   X,
   ExternalLink,
@@ -10,6 +11,7 @@ import {
   Maximize2,
   Minimize2,
   Minus,
+  Plus,
   ScanText,
   Loader2,
   Check,
@@ -23,10 +25,18 @@ import {
   ZoomOut,
   Image as ImageIcon,
   Info,
+  Code,
+  FileText,
+  Globe,
+  FolderOpen,
+  File as LucideFile,
+  WrapText,
+  Eye,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
 import { de, enUS, es, fr, ja, zhCN } from 'date-fns/locale';
+import { clsx } from 'clsx';
 import type { ClipboardItem, Settings } from '../types';
 import { ContextMenu } from '../components/ContextMenu';
 import Tooltip from '../components/Tooltip';
@@ -36,9 +46,9 @@ import { exportClip, isExportCancelled } from '../utils/export';
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 8;
 const ZOOM_STEP = 1.15;
-const OCR_DRAWER_MIN = 220;
-const OCR_DRAWER_MAX = 560;
-const OCR_DRAWER_DEFAULT = 320;
+const DRAWER_MIN = 240;
+const DRAWER_MAX = 560;
+const DRAWER_DEFAULT = 340;
 
 const localeMap: Record<string, typeof enUS> = {
   de,
@@ -154,41 +164,56 @@ export function ImageViewerWindow() {
   const [switching, setSwitching] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
-  const [showOcrDrawer, setShowOcrDrawer] = useState(false);
+
+  // Drawer & OCR
+  const [showDrawer, setShowDrawer] = useState(false);
+  const [drawerWidth, setDrawerWidth] = useState(DRAWER_DEFAULT);
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrError, setOcrError] = useState<string | null>(null);
   const [ocrTextCopied, setOcrTextCopied] = useState(false);
+
+  // Common UI states
   const [copied, setCopied] = useState(false);
   const [editHint, setEditHint] = useState<string | null>(null);
   const [alwaysOnTop, setAlwaysOnTop] = useState(false);
   const [isDark, setIsDark] = useState(true);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [clipIds, setClipIds] = useState<string[]>([]);
+
+  // Image Canvas states
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [naturalSize, setNaturalSize] = useState({ w: 0, h: 0 });
   const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
   const [isPanning, setIsPanning] = useState(false);
-  const [imageIds, setImageIds] = useState<string[]>([]);
-  const [ocrDrawerWidth, setOcrDrawerWidth] = useState(OCR_DRAWER_DEFAULT);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  // Text / Code / HTML states
+  const [highlightedHtml, setHighlightedHtml] = useState<string | null>(null);
+  const [detectedLang, setDetectedLang] = useState<string | null>(null);
+  const [isHighlighting, setIsHighlighting] = useState(false);
+  const [wrapLines, setWrapLines] = useState(false);
+  const [fontSize, setFontSize] = useState(13);
+  const [showRawText, setShowRawText] = useState(false);
+  const [viewModeHtml, setViewModeHtml] = useState<'rendered' | 'source'>('rendered');
 
   const appWindow = getCurrentWebviewWindow();
   const settingsRef = useRef<Settings | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const panStartRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
-  const resizeOcrRef = useRef<{ startX: number; startW: number } | null>(null);
+  const resizeDrawerRef = useRef<{ startX: number; startW: number } | null>(null);
   const scaleRef = useRef(scale);
   const panRef = useRef(pan);
   const clipRef = useRef(clip);
-  const showOcrDrawerRef = useRef(showOcrDrawer);
-  const imageIdsRef = useRef(imageIds);
+  const showDrawerRef = useRef(showDrawer);
+  const clipIdsRef = useRef(clipIds);
   const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingFitRef = useRef(true);
 
   scaleRef.current = scale;
   panRef.current = pan;
   clipRef.current = clip;
-  showOcrDrawerRef.current = showOcrDrawer;
-  imageIdsRef.current = imageIds;
+  showDrawerRef.current = showDrawer;
+  clipIdsRef.current = clipIds;
 
   const showStatus = useCallback((msg: string, ms = 1800) => {
     setStatusMessage(msg);
@@ -277,15 +302,39 @@ export function ImageViewerWindow() {
         setEditHint(null);
         setLoading(false);
         setSwitching(false);
+
+        // Fetch syntax highlighting for text/code clips
+        const isTextual = !['image', 'file'].includes(clipData.clip_type);
+        if (isTextual && (clipData.content || clipData.preview)) {
+          setIsHighlighting(true);
+          invoke<{ content_html: string; detected_language: string }>('get_highlighted_clip', {
+            clipId: clipData.id,
+          })
+            .then((res) => {
+              setHighlightedHtml(res.content_html);
+              setDetectedLang(res.detected_language);
+            })
+            .catch((err) => {
+              console.warn('Highlight unavailable, raw view used:', err);
+              setHighlightedHtml(null);
+              setDetectedLang(null);
+            })
+            .finally(() => setIsHighlighting(false));
+        } else {
+          setHighlightedHtml(null);
+          setDetectedLang(null);
+          setIsHighlighting(false);
+        }
       })
       .catch((err) => {
-        console.error('Failed to load viewer data:', err);
+        console.error('Failed to load viewer clip:', err);
         setLoading(false);
         setSwitching(false);
       });
   }, []);
 
-  const loadImageIds = useCallback(async (current: ClipboardItem) => {
+  // Load all clips in the current folder / list for carousel navigation
+  const loadClipIds = useCallback(async (current: ClipboardItem) => {
     try {
       const filterId = current.folder_id ?? null;
       const data = await invoke<ClipboardItem[]>('get_clips', {
@@ -294,20 +343,20 @@ export function ImageViewerWindow() {
         offset: 0,
         previewOnly: true,
       });
-      setImageIds(data.filter((c) => c.clip_type === 'image').map((c) => c.id));
+      setClipIds(data.map((c) => c.id));
     } catch (err) {
-      console.error('Failed to load image list:', err);
-      setImageIds([current.id]);
+      console.error('Failed to load clips list:', err);
+      setClipIds([current.id]);
     }
   }, []);
 
   useEffect(() => {
     if (clip) {
-      loadImageIds(clip);
+      loadClipIds(clip);
     }
-  }, [clip?.id, clip?.folder_id, loadImageIds]);
+  }, [clip?.id, clip?.folder_id, loadClipIds]);
 
-  // Fit once when both natural size and container are ready for a new clip
+  // Fit once when natural size & container are ready for an image clip
   useEffect(() => {
     if (!pendingFitRef.current) return;
     if (naturalSize.w > 0 && containerSize.w > 0) {
@@ -405,7 +454,7 @@ export function ImageViewerWindow() {
           }).catch(() => {});
         }
       } catch {
-        // Window might have closed during debounce
+        // Window closed during debounce
       }
     }, 1000);
 
@@ -425,7 +474,7 @@ export function ImageViewerWindow() {
     };
   }, [loadClip, applyTheme]);
 
-  // Reveal window smoothly after clip & theme paint to prevent white flash
+  // Reveal window smoothly after clip & theme paint
   useEffect(() => {
     if (clip) {
       const timer = setTimeout(() => {
@@ -440,16 +489,12 @@ export function ImageViewerWindow() {
     }
   }, [clip?.id, appWindow]);
 
-  const canEdit = !!clip;
-
   const handleClose = useCallback(() => {
     appWindow.close();
   }, [appWindow]);
 
   const handleMinimize = useCallback(() => {
-    appWindow.minimize().catch((err) => {
-      console.error('Failed to minimize viewer:', err);
-    });
+    appWindow.minimize().catch(console.error);
   }, [appWindow]);
 
   const handleMaximize = useCallback(async () => {
@@ -479,7 +524,6 @@ export function ImageViewerWindow() {
       await appWindow.setAlwaysOnTop(next);
       setAlwaysOnTop(next);
       showStatus(next ? t('viewer.pinnedOnTop') : t('viewer.unpinnedOnTop'));
-      // Confirm asynchronously; some platforms lag on isAlwaysOnTop()
       appWindow
         .isAlwaysOnTop()
         .then(setAlwaysOnTop)
@@ -490,32 +534,25 @@ export function ImageViewerWindow() {
     }
   }, [alwaysOnTop, appWindow, showStatus, t]);
 
-  const handleEdit = useCallback(async () => {
-    const current = clipRef.current;
-    if (!current) return;
-    try {
-      await invoke('open_image_in_system_viewer', { clipId: current.id });
-    } catch (err) {
-      console.error('Failed to open image in system viewer:', err);
-      setEditHint(t('viewer.noImagePath'));
-      showStatus(t('viewer.noImagePath'), 2800);
-    }
-  }, [showStatus, t]);
-
   const handleCopy = useCallback(async () => {
     const current = clipRef.current;
     if (!current) return;
     try {
-      if (current.content) {
-        try {
-          const mime = mimeFromPath(current.image_path) || 'image/png';
-          const blob = base64ToBlob(current.content, mime.includes('png') ? 'image/png' : mime);
-          // Standard browser ClipboardItem prefers image/png for image writes
-          const pngBlob = blob.type === 'image/png' ? blob : base64ToBlob(current.content, 'image/png');
-          await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
-        } catch (e) {
-          console.warn('Frontend navigator.clipboard.write fallback:', e);
+      if (current.clip_type === 'image') {
+        if (current.content) {
+          try {
+            const mime = mimeFromPath(current.image_path) || 'image/png';
+            const blob = base64ToBlob(current.content, mime.includes('png') ? 'image/png' : mime);
+            const pngBlob =
+              blob.type === 'image/png' ? blob : base64ToBlob(current.content, 'image/png');
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
+          } catch (e) {
+            console.warn('Frontend navigator.clipboard.write fallback:', e);
+          }
         }
+      } else {
+        const textToCopy = current.content || current.preview || '';
+        await navigator.clipboard.writeText(textToCopy);
       }
       await invoke('copy_clip', { clipId: current.id });
       setCopied(true);
@@ -534,12 +571,62 @@ export function ImageViewerWindow() {
       showStatus(t('export.saved'));
     } catch (err) {
       if (!isExportCancelled(err)) {
-        console.error('Failed to export image:', err);
+        console.error('Failed to export clip:', err);
         showStatus(t('export.failed'), 2800);
       }
     }
   }, [showStatus, t]);
 
+  // Contextual actions
+  const handleOpenExternal = useCallback(async () => {
+    const current = clipRef.current;
+    if (!current) return;
+    try {
+      if (current.clip_type === 'image') {
+        await invoke('open_image_in_system_viewer', { clipId: current.id });
+      } else if (current.clip_type === 'url' && current.content) {
+        await openUrl(current.content.trim());
+      } else if (current.clip_type === 'file' && (current.image_path || current.content)) {
+        const targetPath = (current.image_path || current.content).split('\n')[0].trim();
+        await invoke('open_with', { appPath: '', filePath: targetPath });
+      } else {
+        await invoke('open_text_in_system_viewer', { text: current.content || current.preview });
+      }
+    } catch (err) {
+      console.error('Failed to open external item:', err);
+      showStatus(String(err), 2800);
+    }
+  }, [showStatus]);
+
+  const handleShowInFolder = useCallback(async () => {
+    const current = clipRef.current;
+    if (!current) return;
+    const targetPath = (current.image_path || current.content || current.preview || '')
+      .split('\n')[0]
+      .trim();
+    if (!targetPath) return;
+    try {
+      await invoke('show_item_in_folder', { path: targetPath });
+    } catch (err) {
+      console.error('Failed to show in folder:', err);
+      showStatus(String(err), 2800);
+    }
+  }, [showStatus]);
+
+  const handleCopyPath = useCallback(async () => {
+    const current = clipRef.current;
+    if (!current) return;
+    const targetPath = (current.image_path || current.content || current.preview || '').trim();
+    if (!targetPath) return;
+    try {
+      await navigator.clipboard.writeText(targetPath);
+      showStatus(t('viewer.copiedPath'));
+    } catch (err) {
+      console.error('Failed to copy path:', err);
+    }
+  }, [showStatus, t]);
+
+  // OCR Drawer controls
   const ocrText = useMemo(() => {
     if (!clip || !clip.metadata) return null;
     try {
@@ -550,35 +637,14 @@ export function ImageViewerWindow() {
     }
   }, [clip]);
 
-  const imageMeta = useMemo(() => {
-    let width = naturalSize.w;
-    let height = naturalSize.h;
-    let sizeBytes = 0;
-    if (clip?.metadata) {
-      try {
-        const parsed = JSON.parse(clip.metadata) as {
-          width?: number;
-          height?: number;
-          size_bytes?: number;
-        };
-        if (!width && parsed.width) width = parsed.width;
-        if (!height && parsed.height) height = parsed.height;
-        sizeBytes = parsed.size_bytes || 0;
-      } catch {
-        // ignore
-      }
-    }
-    return { width, height, sizeBytes };
-  }, [clip, naturalSize]);
-
   const handleRunOcr = useCallback(() => {
     const current = clipRef.current;
-    if (!current) return;
+    if (!current || current.clip_type !== 'image') return;
     if (ocrText) {
-      setShowOcrDrawer((v) => !v);
+      setShowDrawer((v) => !v);
       return;
     }
-    setShowOcrDrawer(true);
+    setShowDrawer(true);
     setOcrLoading(true);
     setOcrError(null);
     invoke<string>('run_ocr_for_clip', { clipId: current.id })
@@ -604,13 +670,14 @@ export function ImageViewerWindow() {
     }
   };
 
-  const currentImageIndex = clip ? imageIds.indexOf(clip.id) : -1;
-  const hasPrev = currentImageIndex > 0;
-  const hasNext = currentImageIndex >= 0 && currentImageIndex < imageIds.length - 1;
+  // Carousel navigation
+  const currentClipIndex = clip ? clipIds.indexOf(clip.id) : -1;
+  const hasPrev = currentClipIndex > 0;
+  const hasNext = currentClipIndex >= 0 && currentClipIndex < clipIds.length - 1;
 
-  const navigateImage = useCallback(
+  const navigateClip = useCallback(
     (dir: -1 | 1) => {
-      const ids = imageIdsRef.current;
+      const ids = clipIdsRef.current;
       const current = clipRef.current;
       if (!current || ids.length === 0) return;
       const idx = ids.indexOf(current.id);
@@ -620,6 +687,77 @@ export function ImageViewerWindow() {
     },
     [loadClip]
   );
+
+  // Metadata and stats
+  const imageMeta = useMemo(() => {
+    let width = naturalSize.w;
+    let height = naturalSize.h;
+    let sizeBytes = 0;
+    if (clip?.metadata) {
+      try {
+        const parsed = JSON.parse(clip.metadata) as {
+          width?: number;
+          height?: number;
+          size_bytes?: number;
+        };
+        if (!width && parsed.width) width = parsed.width;
+        if (!height && parsed.height) height = parsed.height;
+        sizeBytes = parsed.size_bytes || 0;
+      } catch {
+        // ignore
+      }
+    }
+    return { width, height, sizeBytes };
+  }, [clip, naturalSize]);
+
+  // Color detection helper
+  const colorInfo = useMemo(() => {
+    if (!clip || clip.clip_type === 'image') return null;
+    const str = (clip.content || clip.preview || '').trim();
+    const hexMatch = str.match(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/);
+    const rgbMatch = str.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)$/i);
+    if (hexMatch) {
+      let hex = hexMatch[1];
+      if (hex.length === 3) {
+        hex = hex
+          .split('')
+          .map((c) => c + c)
+          .join('');
+      }
+      const r = parseInt(hex.slice(0, 2), 16);
+      const g = parseInt(hex.slice(2, 4), 16);
+      const b = parseInt(hex.slice(4, 6), 16);
+      return { hex: `#${hex}`, rgb: `rgb(${r}, ${g}, ${b})`, r, g, b };
+    }
+    if (rgbMatch) {
+      const r = parseInt(rgbMatch[1], 10);
+      const g = parseInt(rgbMatch[2], 10);
+      const b = parseInt(rgbMatch[3], 10);
+      const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+      return { hex, rgb: `rgb(${r}, ${g}, ${b})`, r, g, b };
+    }
+    return null;
+  }, [clip]);
+
+  // URL parsing helper
+  const urlObj = useMemo(() => {
+    if (!clip || (clip.clip_type !== 'url' && !clip.content?.startsWith('http'))) return null;
+    try {
+      return new URL(clip.content.trim());
+    } catch {
+      return null;
+    }
+  }, [clip]);
+
+  // Text statistics
+  const textStats = useMemo(() => {
+    if (!clip || clip.clip_type === 'image') return { lines: 0, words: 0, chars: 0 };
+    const text = clip.content || clip.preview || '';
+    const chars = text.length;
+    const lines = text ? text.split('\n').length : 0;
+    const words = text ? text.trim().split(/\s+/).filter(Boolean).length : 0;
+    return { lines, words, chars };
+  }, [clip]);
 
   const isFitMode =
     naturalSize.w > 0 && Math.abs(scale - fitScale) / Math.max(fitScale, 0.0001) < 0.02;
@@ -638,8 +776,8 @@ export function ImageViewerWindow() {
 
       if (e.key === 'Escape') {
         e.preventDefault();
-        if (showOcrDrawerRef.current) {
-          setShowOcrDrawer(false);
+        if (showDrawerRef.current) {
+          setShowDrawer(false);
         } else {
           handleClose();
         }
@@ -648,33 +786,47 @@ export function ImageViewerWindow() {
 
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
-        navigateImage(-1);
+        navigateClip(-1);
         return;
       }
       if (e.key === 'ArrowRight') {
         e.preventDefault();
-        navigateImage(1);
+        navigateClip(1);
         return;
       }
 
+      const isImg = clipRef.current?.clip_type === 'image';
+
       if (e.key === '+' || e.key === '=') {
         e.preventDefault();
-        zoomBy(ZOOM_STEP);
+        if (isImg) {
+          zoomBy(ZOOM_STEP);
+        } else {
+          setFontSize((prev) => Math.min(24, prev + 1));
+        }
         return;
       }
       if (e.key === '-' || e.key === '_') {
         e.preventDefault();
-        zoomBy(1 / ZOOM_STEP);
+        if (isImg) {
+          zoomBy(1 / ZOOM_STEP);
+        } else {
+          setFontSize((prev) => Math.max(10, prev - 1));
+        }
         return;
       }
       if (e.key === '0') {
         e.preventDefault();
-        resetViewToFit();
+        if (isImg) {
+          resetViewToFit();
+        } else {
+          setFontSize(13);
+        }
         return;
       }
       if (e.key === '1') {
         e.preventDefault();
-        setOriginalSize();
+        if (isImg) setOriginalSize();
         return;
       }
 
@@ -682,19 +834,20 @@ export function ImageViewerWindow() {
       if (key === 'c' && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
         handleCopy();
-      } else if (key === 'f') {
+      } else if (key === 'f' && isImg) {
         e.preventDefault();
         if (isFitMode) setOriginalSize();
         else resetViewToFit();
+      } else if (key === 'w' && !isImg) {
+        e.preventDefault();
+        setWrapLines((prev) => !prev);
       } else if (key === 'o') {
         e.preventDefault();
-        handleRunOcr();
+        if (isImg) handleRunOcr();
+        else setShowDrawer((v) => !v);
       } else if (key === 's') {
         e.preventDefault();
         handleExport();
-      } else if (key === 'e') {
-        e.preventDefault();
-        handleEdit();
       } else if (key === 'p') {
         e.preventDefault();
         handleToggleAlwaysOnTop();
@@ -707,20 +860,19 @@ export function ImageViewerWindow() {
     handleClose,
     handleCopy,
     handleExport,
-    handleEdit,
     handleRunOcr,
     handleToggleAlwaysOnTop,
-    navigateImage,
+    navigateClip,
     zoomBy,
     resetViewToFit,
     setOriginalSize,
     isFitMode,
   ]);
 
-  // Wheel zoom
+  // Wheel zoom for images
   useEffect(() => {
     const el = containerRef.current;
-    if (!el) return;
+    if (!el || clip?.clip_type !== 'image') return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       const factor = e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
@@ -730,8 +882,9 @@ export function ImageViewerWindow() {
     return () => el.removeEventListener('wheel', onWheel);
   }, [zoomBy, clip, loading]);
 
+  // Pointer panning for images
   const handlePointerDown = (e: React.PointerEvent) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || clip?.clip_type !== 'image') return;
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
     setIsPanning(true);
     panStartRef.current = {
@@ -743,7 +896,7 @@ export function ImageViewerWindow() {
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!panStartRef.current) return;
+    if (!panStartRef.current || clip?.clip_type !== 'image') return;
     const dx = e.clientX - panStartRef.current.x;
     const dy = e.clientY - panStartRef.current.y;
     setPan({
@@ -762,25 +915,23 @@ export function ImageViewerWindow() {
     }
   };
 
-  const handleOcrResizeStart = (e: React.PointerEvent) => {
+  // Drawer resize
+  const handleDrawerResizeStart = (e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    resizeOcrRef.current = { startX: e.clientX, startW: ocrDrawerWidth };
+    resizeDrawerRef.current = { startX: e.clientX, startW: drawerWidth };
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
   };
 
-  const handleOcrResizeMove = (e: React.PointerEvent) => {
-    if (!resizeOcrRef.current) return;
-    const dx = resizeOcrRef.current.startX - e.clientX;
-    const next = Math.min(
-      OCR_DRAWER_MAX,
-      Math.max(OCR_DRAWER_MIN, resizeOcrRef.current.startW + dx)
-    );
-    setOcrDrawerWidth(next);
+  const handleDrawerResizeMove = (e: React.PointerEvent) => {
+    if (!resizeDrawerRef.current) return;
+    const dx = resizeDrawerRef.current.startX - e.clientX;
+    const next = Math.min(DRAWER_MAX, Math.max(DRAWER_MIN, resizeDrawerRef.current.startW + dx));
+    setDrawerWidth(next);
   };
 
-  const handleOcrResizeEnd = (e: React.PointerEvent) => {
-    resizeOcrRef.current = null;
+  const handleDrawerResizeEnd = (e: React.PointerEvent) => {
+    resizeDrawerRef.current = null;
     try {
       (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
     } catch {
@@ -793,6 +944,7 @@ export function ImageViewerWindow() {
     setContextMenu({ x: e.clientX, y: e.clientY });
   };
 
+  // Styling tokens
   const shellBg = isDark ? 'bg-zinc-950/95' : 'bg-zinc-100/95';
   const shellBorder = isDark ? 'border-[#7A00FF]/30' : 'border-indigo-300/50';
   const headerBg = isDark ? 'bg-zinc-900/90 border-white/5' : 'bg-white/90 border-zinc-200';
@@ -846,48 +998,80 @@ export function ImageViewerWindow() {
       : 'ClipboardImage.png';
 
   const friendlyDate = getRelativeTime(clip.created_at, i18n.language);
-  const imageSrc = getImageSrc(clip);
+  const imageSrc = clip.clip_type === 'image' ? getImageSrc(clip) : '';
   const zoomPercent = Math.round(scale * 100);
-  const sizeLabel = formatBytes(imageMeta.sizeBytes);
+  const sizeLabel = formatBytes(imageMeta.sizeBytes || clip.content_length);
   const dimsLabel =
     imageMeta.width && imageMeta.height ? `${imageMeta.width}×${imageMeta.height}` : '';
+
+  const isImageClip = clip.clip_type === 'image';
+  const isCodeClip = clip.clip_type === 'code';
+  const isUrlClip = clip.clip_type === 'url' || Boolean(urlObj);
+  const isFileClip = clip.clip_type === 'file';
+  const isHtmlClip = clip.clip_type === 'html' || clip.clip_type === 'rtf';
 
   return (
     <div
       className={`flex h-screen w-screen flex-col overflow-hidden ${isMaximized ? 'rounded-none border-0' : 'rounded-lg border'} shadow-2xl ${shellBg} ${shellBorder}`}
       onContextMenu={handleContextMenu}
     >
+      {/* Context Menu */}
       {contextMenu && (
         <ContextMenu
           x={contextMenu.x}
           y={contextMenu.y}
           onClose={() => setContextMenu(null)}
           options={[
-            {
-              label: isFitMode ? t('viewer.originalSize') : t('viewer.fitToWindow'),
-              icon: isFitMode ? <Expand size={14} /> : <Scan size={14} />,
-              onClick: () => (isFitMode ? setOriginalSize() : resetViewToFit()),
-            },
-            {
-              label: t('viewer.zoomIn'),
-              icon: <ZoomIn size={14} />,
-              onClick: () => zoomBy(ZOOM_STEP),
-            },
-            {
-              label: t('viewer.zoomOut'),
-              icon: <ZoomOut size={14} />,
-              onClick: () => zoomBy(1 / ZOOM_STEP),
-            },
-            {
-              label: t('viewer.extractText'),
-              icon: <ScanText size={14} />,
-              onClick: handleRunOcr,
-            },
-            {
-              label: t('viewer.edit'),
-              icon: <ExternalLink size={14} />,
-              onClick: handleEdit,
-            },
+            ...(isImageClip
+              ? [
+                  {
+                    label: isFitMode ? t('viewer.originalSize') : t('viewer.fitToWindow'),
+                    icon: isFitMode ? <Expand size={14} /> : <Scan size={14} />,
+                    onClick: () => (isFitMode ? setOriginalSize() : resetViewToFit()),
+                  },
+                  {
+                    label: t('viewer.zoomIn'),
+                    icon: <ZoomIn size={14} />,
+                    onClick: () => zoomBy(ZOOM_STEP),
+                  },
+                  {
+                    label: t('viewer.zoomOut'),
+                    icon: <ZoomOut size={14} />,
+                    onClick: () => zoomBy(1 / ZOOM_STEP),
+                  },
+                  {
+                    label: t('viewer.extractText'),
+                    icon: <ScanText size={14} />,
+                    onClick: handleRunOcr,
+                  },
+                  {
+                    label: t('viewer.openExternalViewer'),
+                    icon: <ExternalLink size={14} />,
+                    onClick: handleOpenExternal,
+                  },
+                ]
+              : [
+                  {
+                    label: t('viewer.toggleWrap'),
+                    icon: <WrapText size={14} />,
+                    onClick: () => setWrapLines((prev) => !prev),
+                  },
+                  {
+                    label: t('viewer.increaseFontSize'),
+                    icon: <Plus size={14} />,
+                    onClick: () => setFontSize((prev) => Math.min(24, prev + 1)),
+                  },
+                  {
+                    label: t('viewer.decreaseFontSize'),
+                    icon: <Minus size={14} />,
+                    onClick: () => setFontSize((prev) => Math.max(10, prev - 1)),
+                  },
+                  {
+                    label: t('viewer.clipInfo'),
+                    icon: <Info size={14} />,
+                    onClick: () => setShowDrawer((v) => !v),
+                  },
+                ]),
             {
               label: t('viewer.copy'),
               icon: <Copy size={14} />,
@@ -906,9 +1090,7 @@ export function ImageViewerWindow() {
             {
               label: t('settings.about', 'About...'),
               icon: <Info size={14} />,
-              onClick: () => {
-                invoke('open_about').catch(console.error);
-              },
+              onClick: () => invoke('open_about').catch(console.error),
             },
             {
               label: t('common.close', 'Close'),
@@ -920,17 +1102,17 @@ export function ImageViewerWindow() {
         />
       )}
 
-      {/* Header — branding opens About; title sits in leftover space so it never overlaps the toolbar */}
+      {/* Header Bar */}
       <div
         data-tauri-drag-region
-        className={`relative z-10 flex select-none cursor-default items-center gap-2 border-b px-4 py-3 ${headerBg}`}
+        className={`relative z-10 flex cursor-default select-none items-center gap-2 border-b px-4 py-2.5 ${headerBg}`}
       >
-        <div className="z-10 flex min-w-0 shrink-0 select-none cursor-default items-center">
+        {/* Branding with requested Compact-style VISOR badge */}
+        <div className="z-10 flex min-w-0 shrink-0 cursor-default select-none items-center">
           <Tooltip label={t('common.openAbout')} placement="bottom">
             <button
               type="button"
-              className="no-drag flex min-w-0 items-center gap-3 rounded-md px-1.5 py-1 -ml-1.5 transition-colors hover:bg-accent/60"
-              aria-label={t('common.openAbout')}
+              className="flex items-center gap-2 rounded-lg p-1 text-left transition-opacity hover:opacity-80"
               onClick={(e) => {
                 e.stopPropagation();
                 invoke('open_about').catch(console.error);
@@ -944,37 +1126,77 @@ export function ImageViewerWindow() {
                 draggable={false}
               />
               <span
-                className={`shrink-0 select-none text-[18px] font-bold tracking-tight ${textPrimary}`}
+                className={`shrink-0 select-none text-[17px] font-bold tracking-tight ${textPrimary}`}
               >
                 CyberPaste
+              </span>
+              <span className="inline-flex shrink-0 items-center justify-center rounded border border-cyan-500/30 bg-cyan-500/10 px-1 py-px text-[8px] font-semibold uppercase leading-none tracking-wide text-cyan-400 shadow-[0_0_8px_rgba(0,242,255,0.15)]">
+                {t('viewer.badge', 'VISOR')}
               </span>
             </button>
           </Tooltip>
         </div>
 
-        <h1
-          className={`min-w-0 flex-1 truncate px-1 text-center text-[14px] font-semibold tracking-tight ${textPrimary}`}
-        >
-          {t('viewer.title')}
-        </h1>
+        {/* Dynamic Center Title: Type, Source & Details */}
+        <div className="flex min-w-0 flex-1 items-center justify-center gap-2 px-2">
+          <div
+            className={`flex max-w-[420px] items-center gap-2 rounded-full border px-3 py-1 font-mono text-[12px] font-medium shadow-sm transition-all ${groupBg} ${textPrimary}`}
+          >
+            {isImageClip ? (
+              <ImageIcon size={14} className="shrink-0 text-cyan-400" />
+            ) : isCodeClip ? (
+              <Code size={14} className="shrink-0 text-indigo-400" />
+            ) : isUrlClip ? (
+              <Globe size={14} className="shrink-0 text-emerald-400" />
+            ) : isFileClip ? (
+              <LucideFile size={14} className="shrink-0 text-amber-400" />
+            ) : colorInfo ? (
+              <span
+                className="h-3.5 w-3.5 shrink-0 rounded-full border border-white/20 shadow-sm"
+                style={{ backgroundColor: colorInfo.hex }}
+              />
+            ) : (
+              <FileText size={14} className="shrink-0 text-cyan-400" />
+            )}
 
+            <span className="truncate">
+              {isImageClip
+                ? fileName
+                : isUrlClip && urlObj
+                  ? urlObj.hostname
+                  : isFileClip
+                    ? (clip.preview || clip.content || '').split(/[\\/]/).pop() ||
+                      t('clipType.file')
+                    : clip.source_app ||
+                      t(`clipType.${clip.clip_type}`, { defaultValue: t('clipType.text') })}
+            </span>
+
+            {detectedLang && (
+              <span className="py-0.2 shrink-0 rounded border border-cyan-500/30 bg-cyan-500/10 px-1.5 text-[9px] font-semibold uppercase tracking-wider text-cyan-400">
+                {detectedLang}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Actions Toolbar */}
         <div className="no-drag z-10 flex shrink-0 items-center gap-2">
-          {/* Nav */}
+          {/* Universal Carousel Navigation */}
           <div className={`flex items-center gap-0.5 rounded-lg border p-0.5 ${groupBg}`}>
-            <Tooltip label={t('viewer.previousImage')} placement="bottom">
+            <Tooltip label={t('viewer.previousClip')} placement="bottom">
               <button
                 type="button"
-                onClick={() => navigateImage(-1)}
+                onClick={() => navigateClip(-1)}
                 disabled={!hasPrev}
                 className={`rounded-md p-1.5 transition-colors ${btnHover} ${hasPrev ? textMuted + ' hover:text-cyan-500' : 'cursor-not-allowed opacity-30'}`}
               >
                 <ChevronLeft size={15} />
               </button>
             </Tooltip>
-            <Tooltip label={t('viewer.nextImage')} placement="bottom">
+            <Tooltip label={t('viewer.nextClip')} placement="bottom">
               <button
                 type="button"
-                onClick={() => navigateImage(1)}
+                onClick={() => navigateClip(1)}
                 disabled={!hasNext}
                 className={`rounded-md p-1.5 transition-colors ${btnHover} ${hasNext ? textMuted + ' hover:text-cyan-500' : 'cursor-not-allowed opacity-30'}`}
               >
@@ -983,59 +1205,182 @@ export function ImageViewerWindow() {
             </Tooltip>
           </div>
 
-          {/* Image actions */}
+          {/* Contextual Action Group */}
           <div className={`flex items-center gap-0.5 rounded-lg border p-0.5 ${groupBg}`}>
-            <Tooltip label={t('viewer.zoomOut')} placement="bottom">
-              <button
-                type="button"
-                onClick={() => zoomBy(1 / ZOOM_STEP)}
-                className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
-              >
-                <ZoomOut size={15} />
-              </button>
-            </Tooltip>
-            <Tooltip
-              label={isFitMode ? t('viewer.originalSize') : t('viewer.fitToWindow')}
-              placement="bottom"
-            >
-              <button
-                type="button"
-                onClick={() => (isFitMode ? setOriginalSize() : resetViewToFit())}
-                className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
-              >
-                {isFitMode ? <Expand size={15} /> : <Scan size={15} />}
-              </button>
-            </Tooltip>
-            <Tooltip label={t('viewer.zoomIn')} placement="bottom">
-              <button
-                type="button"
-                onClick={() => zoomBy(ZOOM_STEP)}
-                className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
-              >
-                <ZoomIn size={15} />
-              </button>
-            </Tooltip>
+            {isImageClip ? (
+              <>
+                <Tooltip label={t('viewer.zoomOut')} placement="bottom">
+                  <button
+                    type="button"
+                    onClick={() => zoomBy(1 / ZOOM_STEP)}
+                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
+                  >
+                    <ZoomOut size={15} />
+                  </button>
+                </Tooltip>
+                <Tooltip
+                  label={isFitMode ? t('viewer.originalSize') : t('viewer.fitToWindow')}
+                  placement="bottom"
+                >
+                  <button
+                    type="button"
+                    onClick={() => (isFitMode ? setOriginalSize() : resetViewToFit())}
+                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
+                  >
+                    {isFitMode ? <Expand size={15} /> : <Scan size={15} />}
+                  </button>
+                </Tooltip>
+                <Tooltip label={t('viewer.zoomIn')} placement="bottom">
+                  <button
+                    type="button"
+                    onClick={() => zoomBy(ZOOM_STEP)}
+                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
+                  >
+                    <ZoomIn size={15} />
+                  </button>
+                </Tooltip>
+                <Tooltip label={t('viewer.openExternalViewer')} placement="bottom">
+                  <button
+                    type="button"
+                    onClick={handleOpenExternal}
+                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-indigo-500`}
+                  >
+                    <ExternalLink size={15} />
+                  </button>
+                </Tooltip>
+              </>
+            ) : isCodeClip || (!isImageClip && !isFileClip && !isUrlClip && !isHtmlClip) ? (
+              <>
+                <Tooltip label={t('viewer.toggleWrap')} placement="bottom">
+                  <button
+                    type="button"
+                    onClick={() => setWrapLines((prev) => !prev)}
+                    className={`rounded-md p-1.5 transition-colors ${btnHover} ${wrapLines ? (isDark ? 'bg-white/10 text-cyan-400' : 'bg-cyan-50 text-cyan-700') : textMuted + ' hover:text-cyan-500'}`}
+                  >
+                    <WrapText size={15} />
+                  </button>
+                </Tooltip>
+                <Tooltip label={t('viewer.decreaseFontSize')} placement="bottom">
+                  <button
+                    type="button"
+                    onClick={() => setFontSize((prev) => Math.max(10, prev - 1))}
+                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
+                  >
+                    <Minus size={15} />
+                  </button>
+                </Tooltip>
+                <Tooltip label={`${t('viewer.resetFontSize')} (${fontSize}px)`} placement="bottom">
+                  <button
+                    type="button"
+                    onClick={() => setFontSize(13)}
+                    className={`rounded-md px-1.5 py-1 font-mono text-[11px] ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
+                  >
+                    {fontSize}px
+                  </button>
+                </Tooltip>
+                <Tooltip label={t('viewer.increaseFontSize')} placement="bottom">
+                  <button
+                    type="button"
+                    onClick={() => setFontSize((prev) => Math.min(24, prev + 1))}
+                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
+                  >
+                    <Plus size={15} />
+                  </button>
+                </Tooltip>
+                {highlightedHtml && (
+                  <Tooltip label={t('viewer.toggleSyntax')} placement="bottom">
+                    <button
+                      type="button"
+                      onClick={() => setShowRawText((prev) => !prev)}
+                      className={`rounded-md p-1.5 transition-colors ${btnHover} ${!showRawText ? (isDark ? 'bg-white/10 text-cyan-400' : 'bg-cyan-50 text-cyan-700') : textMuted + ' hover:text-cyan-500'}`}
+                    >
+                      {showRawText ? <FileText size={15} /> : <Code size={15} />}
+                    </button>
+                  </Tooltip>
+                )}
+              </>
+            ) : isHtmlClip ? (
+              <>
+                <Tooltip
+                  label={
+                    viewModeHtml === 'rendered' ? t('viewer.sourceView') : t('viewer.renderedView')
+                  }
+                  placement="bottom"
+                >
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setViewModeHtml((prev) => (prev === 'rendered' ? 'source' : 'rendered'))
+                    }
+                    className={`rounded-md p-1.5 transition-colors ${btnHover} ${isDark ? 'text-[#00F2FF]' : 'text-cyan-700'}`}
+                  >
+                    {viewModeHtml === 'rendered' ? <Code size={15} /> : <Eye size={15} />}
+                  </button>
+                </Tooltip>
+                <Tooltip label={t('viewer.decreaseFontSize')} placement="bottom">
+                  <button
+                    type="button"
+                    onClick={() => setFontSize((prev) => Math.max(10, prev - 1))}
+                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
+                  >
+                    <Minus size={15} />
+                  </button>
+                </Tooltip>
+                <Tooltip label={t('viewer.increaseFontSize')} placement="bottom">
+                  <button
+                    type="button"
+                    onClick={() => setFontSize((prev) => Math.min(24, prev + 1))}
+                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
+                  >
+                    <Plus size={15} />
+                  </button>
+                </Tooltip>
+              </>
+            ) : isUrlClip ? (
+              <>
+                <Tooltip label={t('viewer.openInBrowser')} placement="bottom">
+                  <button
+                    type="button"
+                    onClick={handleOpenExternal}
+                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-emerald-500`}
+                  >
+                    <Globe size={15} />
+                  </button>
+                </Tooltip>
+              </>
+            ) : isFileClip ? (
+              <>
+                <Tooltip label={t('viewer.openFile')} placement="bottom">
+                  <button
+                    type="button"
+                    onClick={handleOpenExternal}
+                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-amber-500`}
+                  >
+                    <ExternalLink size={15} />
+                  </button>
+                </Tooltip>
+                <Tooltip label={t('viewer.showInExplorer')} placement="bottom">
+                  <button
+                    type="button"
+                    onClick={handleShowInFolder}
+                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-amber-500`}
+                  >
+                    <FolderOpen size={15} />
+                  </button>
+                </Tooltip>
+                <Tooltip label={t('viewer.copyPath')} placement="bottom">
+                  <button
+                    type="button"
+                    onClick={handleCopyPath}
+                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
+                  >
+                    <Copy size={15} />
+                  </button>
+                </Tooltip>
+              </>
+            ) : null}
 
-            <Tooltip
-              label={
-                canEdit
-                  ? t('viewer.openExternalViewer')
-                  : t('viewer.noImagePath')
-              }
-              placement="bottom"
-            >
-              <button
-                type="button"
-                onClick={handleEdit}
-                className={`rounded-md p-1.5 transition-colors ${btnHover} ${
-                  canEdit ? `${textMuted} hover:text-indigo-500` : 'cursor-not-allowed opacity-35'
-                }`}
-                aria-disabled={!canEdit}
-              >
-                <ExternalLink size={15} />
-              </button>
-            </Tooltip>
-
+            {/* Standard actions: Copy & Export */}
             <Tooltip label={t('viewer.copy')} placement="bottom">
               <button
                 type="button"
@@ -1058,22 +1403,27 @@ export function ImageViewerWindow() {
               </button>
             </Tooltip>
 
-            <Tooltip label={t('viewer.extractText')} placement="bottom">
+            {/* Drawer toggle button: OCR for images, Details for text/code/file */}
+            <Tooltip
+              label={isImageClip ? t('viewer.extractText') : t('viewer.clipInfo')}
+              placement="bottom"
+            >
               <button
                 type="button"
-                onClick={handleRunOcr}
+                onClick={isImageClip ? handleRunOcr : () => setShowDrawer((v) => !v)}
                 className={`rounded-md p-1.5 transition-colors ${btnHover} ${
-                  showOcrDrawer
+                  showDrawer
                     ? isDark
-                      ? 'bg-white/5 text-[#00F2FF]'
+                      ? 'bg-white/10 text-cyan-400'
                       : 'bg-cyan-50 text-cyan-700'
                     : `${textMuted} hover:text-cyan-500`
                 }`}
               >
-                <ScanText size={15} />
+                {isImageClip ? <ScanText size={15} /> : <Info size={15} />}
               </button>
             </Tooltip>
 
+            {/* Pin on top */}
             <Tooltip
               label={alwaysOnTop ? t('viewer.unpinOnTop') : t('viewer.pinOnTop')}
               placement="bottom"
@@ -1134,12 +1484,15 @@ export function ImageViewerWindow() {
         </div>
       </div>
 
-      {/* Main Container */}
+      {/* Main Content Area */}
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
         <div
           ref={containerRef}
-          className={`relative flex flex-1 items-center justify-center overflow-hidden ${canvasBg}`}
+          className={`relative flex flex-1 overflow-hidden ${canvasBg} ${
+            isImageClip ? 'items-center justify-center' : 'items-stretch justify-stretch'
+          }`}
         >
+          {/* Sutil dot background pattern */}
           <div
             className="pointer-events-none absolute inset-0 opacity-[0.03]"
             style={{
@@ -1150,7 +1503,8 @@ export function ImageViewerWindow() {
             }}
           />
 
-          {imageSrc && (
+          {/* RENDERER: Image */}
+          {isImageClip && imageSrc && (
             <img
               src={imageSrc}
               alt=""
@@ -1171,8 +1525,6 @@ export function ImageViewerWindow() {
                 switching ? 'opacity-40' : 'opacity-100'
               } transition-opacity duration-200`}
               style={{
-                // Keep aspect ratio exact: only set width; height follows intrinsically.
-                // Scaling via transform avoids sub-pixel width/height drift at high zoom.
                 width: naturalSize.w || undefined,
                 height: naturalSize.h || undefined,
                 maxWidth: naturalSize.w ? 'none' : '100%',
@@ -1186,8 +1538,220 @@ export function ImageViewerWindow() {
             />
           )}
 
+          {/* RENDERER: Code & Syntax Highlighting */}
+          {isCodeClip && (
+            <div className="scrollbar-thin relative flex h-full w-full overflow-auto p-6">
+              {isHighlighting && (
+                <div className="absolute right-6 top-6 z-10 flex items-center gap-2 rounded border border-cyan-500/30 bg-zinc-950/80 px-2.5 py-1 font-mono text-[11px] text-cyan-400 backdrop-blur-md">
+                  <Loader2 size={13} className="animate-spin" />
+                  <span>{t('common.loading')}</span>
+                </div>
+              )}
+              {highlightedHtml && !showRawText ? (
+                <div
+                  className={clsx(
+                    'w-full select-text font-mono leading-relaxed',
+                    wrapLines ? 'whitespace-pre-wrap break-words' : 'whitespace-pre',
+                    '[&_span]:!bg-transparent'
+                  )}
+                  style={{ fontSize: `${fontSize}px` }}
+                  dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+                />
+              ) : (
+                <pre
+                  className={clsx(
+                    'w-full select-text font-mono leading-relaxed',
+                    isDark ? 'text-zinc-200' : 'text-zinc-800',
+                    wrapLines ? 'whitespace-pre-wrap break-words' : 'whitespace-pre'
+                  )}
+                  style={{ fontSize: `${fontSize}px` }}
+                >
+                  {clip.content || clip.preview}
+                </pre>
+              )}
+            </div>
+          )}
+
+          {/* RENDERER: HTML / RTF with preview toggle */}
+          {isHtmlClip && (
+            <div className="relative flex h-full w-full flex-col">
+              {viewModeHtml === 'rendered' ? (
+                <iframe
+                  title="Rendered Preview"
+                  sandbox="allow-same-origin"
+                  srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:24px;font-family:sans-serif;color:${isDark ? '#e4e4e7' : '#18181b'};background:transparent;line-height:1.6;}</style></head><body>${clip.content || clip.preview}</body></html>`}
+                  className="h-full w-full border-0 bg-transparent"
+                />
+              ) : (
+                <pre
+                  className={clsx(
+                    'scrollbar-thin h-full w-full select-text overflow-auto p-6 font-mono leading-relaxed',
+                    isDark ? 'text-zinc-200' : 'text-zinc-800',
+                    wrapLines ? 'whitespace-pre-wrap break-words' : 'whitespace-pre'
+                  )}
+                  style={{ fontSize: `${fontSize}px` }}
+                >
+                  {clip.content || clip.preview}
+                </pre>
+              )}
+            </div>
+          )}
+
+          {/* RENDERER: URL Card */}
+          {isUrlClip && (
+            <div className="flex h-full w-full flex-col items-center justify-center p-8">
+              <div
+                className={`flex max-w-xl flex-col items-center gap-6 rounded-2xl border p-8 shadow-2xl backdrop-blur-md ${
+                  isDark ? 'border-white/10 bg-zinc-900/60' : 'border-zinc-200 bg-white/80'
+                }`}
+              >
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+                  <Globe size={32} />
+                </div>
+
+                <div className="flex flex-col items-center gap-2 text-center">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-bold uppercase text-emerald-400">
+                      {urlObj?.protocol?.replace(':', '') || 'HTTP'}
+                    </span>
+                    <span className="text-lg font-bold tracking-tight text-foreground">
+                      {urlObj?.hostname || 'URL'}
+                    </span>
+                  </div>
+
+                  <a
+                    href={clip.content?.trim()}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleOpenExternal();
+                    }}
+                    className="max-w-md break-all text-sm font-medium text-cyan-400 underline decoration-cyan-400/40 underline-offset-4 transition-colors hover:text-cyan-300 hover:decoration-cyan-400"
+                  >
+                    {clip.content?.trim()}
+                  </a>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleOpenExternal}
+                    className="flex items-center gap-2 rounded-xl bg-cyan-500/20 px-4 py-2 text-xs font-semibold text-cyan-400 transition-all hover:bg-cyan-500/30 active:scale-95"
+                  >
+                    <ExternalLink size={14} />
+                    <span>{t('viewer.openInBrowser')}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCopy}
+                    className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-4 py-2 text-xs font-semibold text-foreground transition-all hover:bg-muted active:scale-95"
+                  >
+                    {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                    <span>{copied ? t('common.copied') : t('contextMenu.copy')}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* RENDERER: File / Files Card */}
+          {isFileClip && (
+            <div className="flex h-full w-full flex-col items-center justify-center p-8">
+              <div
+                className={`flex max-w-xl flex-col items-center gap-6 rounded-2xl border p-8 shadow-2xl backdrop-blur-md ${
+                  isDark ? 'border-white/10 bg-zinc-900/60' : 'border-zinc-200 bg-white/80'
+                }`}
+              >
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/10 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.2)]">
+                  <LucideFile size={32} />
+                </div>
+
+                <div className="flex flex-col items-center gap-2 text-center">
+                  <span className="text-base font-bold tracking-tight text-foreground">
+                    {(clip.preview || clip.content || '').split(/[\\/]/).pop() ||
+                      t('clipType.file')}
+                  </span>
+                  <span className="max-w-md break-all font-mono text-xs text-muted-foreground/80">
+                    {clip.preview || clip.content}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleOpenExternal}
+                    className="flex items-center gap-2 rounded-xl bg-amber-500/20 px-4 py-2 text-xs font-semibold text-amber-400 transition-all hover:bg-amber-500/30 active:scale-95"
+                  >
+                    <ExternalLink size={14} />
+                    <span>{t('viewer.openFile')}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleShowInFolder}
+                    className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-4 py-2 text-xs font-semibold text-foreground transition-all hover:bg-muted active:scale-95"
+                  >
+                    <FolderOpen size={14} />
+                    <span>{t('viewer.showInExplorer')}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCopyPath}
+                    className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-4 py-2 text-xs font-semibold text-foreground transition-all hover:bg-muted active:scale-95"
+                  >
+                    <Copy size={14} />
+                    <span>{t('viewer.copyPath')}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* RENDERER: Plain Text (with Color swatch support) */}
+          {!isImageClip && !isCodeClip && !isHtmlClip && !isUrlClip && !isFileClip && (
+            <div className="relative flex h-full w-full flex-col">
+              {colorInfo && (
+                <div className="flex items-center justify-between border-b px-6 py-3 backdrop-blur-md">
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="h-7 w-7 rounded-lg border border-white/20 shadow-md"
+                      style={{ backgroundColor: colorInfo.hex }}
+                    />
+                    <div className="flex items-center gap-2 font-mono text-xs font-semibold text-foreground">
+                      <span>{colorInfo.hex}</span>
+                      <span className="text-muted-foreground">·</span>
+                      <span className="text-muted-foreground">{colorInfo.rgb}</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(colorInfo.hex);
+                      showStatus(t('viewer.colorCopied'));
+                    }}
+                    className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-3 py-1 font-mono text-xs text-foreground transition-colors hover:bg-muted"
+                  >
+                    <Copy size={12} />
+                    <span>HEX</span>
+                  </button>
+                </div>
+              )}
+              <pre
+                className={clsx(
+                  'scrollbar-thin h-full w-full select-text overflow-auto p-6 font-mono leading-relaxed',
+                  isDark ? 'text-zinc-200' : 'text-zinc-800',
+                  wrapLines ? 'whitespace-pre-wrap break-words' : 'whitespace-pre'
+                )}
+                style={{ fontSize: `${fontSize}px` }}
+              >
+                {clip.content || clip.preview}
+              </pre>
+            </div>
+          )}
+
+          {/* Switching spinner overlay */}
           {switching && (
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-[1px]">
               <Loader2
                 size={28}
                 className={`animate-spin ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}
@@ -1195,11 +1759,12 @@ export function ImageViewerWindow() {
             </div>
           )}
 
+          {/* Status notification toast */}
           {statusMessage && (
             <div
-              className={`absolute bottom-3 left-1/2 z-30 -translate-x-1/2 rounded-md px-3 py-1.5 font-mono text-[11px] shadow-lg ${
+              className={`absolute bottom-3 left-1/2 z-30 -translate-x-1/2 rounded-md px-3 py-1.5 font-mono text-[11px] shadow-lg backdrop-blur-md ${
                 isDark
-                  ? 'border border-white/10 bg-zinc-900/90 text-cyan-300'
+                  ? 'border border-white/10 bg-zinc-900/95 text-cyan-300'
                   : 'border border-zinc-200 bg-white/95 text-zinc-700'
               }`}
             >
@@ -1208,31 +1773,41 @@ export function ImageViewerWindow() {
           )}
         </div>
 
-        {/* OCR Drawer — overlay, resizable */}
-        {showOcrDrawer && (
+        {/* Dynamic Drawer: OCR for Images / Details & Stats for other types */}
+        {showDrawer && (
           <div
             className={`absolute right-0 top-0 z-20 flex h-full flex-col border-l shadow-2xl backdrop-blur-md ${drawerBg}`}
-            style={{ width: ocrDrawerWidth }}
+            style={{ width: drawerWidth }}
           >
+            {/* Drag resize handle */}
             <div
               className={`absolute left-0 top-0 z-30 h-full w-1 cursor-col-resize ${isDark ? 'hover:bg-cyan-400/40' : 'hover:bg-cyan-500/30'}`}
-              onPointerDown={handleOcrResizeStart}
-              onPointerMove={handleOcrResizeMove}
-              onPointerUp={handleOcrResizeEnd}
-              onPointerCancel={handleOcrResizeEnd}
+              onPointerDown={handleDrawerResizeStart}
+              onPointerMove={handleDrawerResizeMove}
+              onPointerUp={handleDrawerResizeEnd}
+              onPointerCancel={handleDrawerResizeEnd}
               title={t('viewer.resizeDrawer')}
             />
 
+            {/* Drawer Header */}
             <div
               className={`flex items-center justify-between border-b px-4 py-3 ${isDark ? 'border-white/5 bg-zinc-950/40' : 'border-zinc-200 bg-zinc-50/80'}`}
             >
-              <span
-                className={`font-mono text-xs font-bold uppercase tracking-wider ${isDark ? 'text-cyan-400' : 'text-cyan-700'}`}
-              >
-                {t('viewer.ocrText')}
-              </span>
+              <div className="flex items-center gap-2">
+                {isImageClip ? (
+                  <ScanText size={15} className="text-cyan-400" />
+                ) : (
+                  <Info size={15} className="text-cyan-400" />
+                )}
+                <span
+                  className={`font-mono text-xs font-bold uppercase tracking-wider ${isDark ? 'text-cyan-400' : 'text-cyan-700'}`}
+                >
+                  {isImageClip ? t('viewer.ocrText') : t('viewer.clipInfo')}
+                </span>
+              </div>
+
               <div className="flex items-center gap-1">
-                {ocrText && (
+                {isImageClip && ocrText && (
                   <Tooltip label={t('viewer.copyOcrText')} placement="bottom">
                     <button
                       type="button"
@@ -1250,7 +1825,7 @@ export function ImageViewerWindow() {
                 <Tooltip label={t('viewer.closeDrawer')} placement="bottom">
                   <button
                     type="button"
-                    onClick={() => setShowOcrDrawer(false)}
+                    onClick={() => setShowDrawer(false)}
                     className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover}`}
                   >
                     <X size={14} />
@@ -1259,33 +1834,111 @@ export function ImageViewerWindow() {
               </div>
             </div>
 
+            {/* Drawer Content */}
             <div
-              className={`flex-1 overflow-auto p-4 font-mono text-xs leading-relaxed ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}
+              className={`scrollbar-thin flex-1 overflow-auto p-4 font-mono text-xs leading-relaxed ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}
             >
-              {ocrLoading ? (
-                <div
-                  className={`flex h-full flex-col items-center justify-center gap-2 ${isDark ? 'text-cyan-400/80' : 'text-cyan-700'}`}
-                >
-                  <Loader2 size={24} className="animate-spin" />
-                  <span className="text-[10px] uppercase tracking-wider">
-                    {t('viewer.extractingText')}
-                  </span>
-                </div>
-              ) : ocrError ? (
-                <div
-                  className={`rounded border p-2 ${isDark ? 'border-[#FF00D0]/20 bg-[#FF00D0]/5 text-[#FF00D0]/80' : 'border-rose-200 bg-rose-50 text-rose-600'}`}
-                >
-                  ERROR: {ocrError}
-                </div>
-              ) : ocrText ? (
-                <pre
-                  className={`select-text whitespace-pre-wrap break-all font-mono ${isDark ? 'selection:bg-[#7A00FF]/30 selection:text-white' : 'selection:bg-indigo-200'}`}
-                >
-                  {ocrText}
-                </pre>
+              {isImageClip ? (
+                ocrLoading ? (
+                  <div
+                    className={`flex h-full flex-col items-center justify-center gap-2 ${isDark ? 'text-cyan-400/80' : 'text-cyan-700'}`}
+                  >
+                    <Loader2 size={24} className="animate-spin" />
+                    <span className="text-[10px] uppercase tracking-wider">
+                      {t('viewer.extractingText')}
+                    </span>
+                  </div>
+                ) : ocrError ? (
+                  <div
+                    className={`rounded border p-2 ${isDark ? 'border-[#FF00D0]/20 bg-[#FF00D0]/5 text-[#FF00D0]/80' : 'border-rose-200 bg-rose-50 text-rose-600'}`}
+                  >
+                    ERROR: {ocrError}
+                  </div>
+                ) : ocrText ? (
+                  <pre
+                    className={`select-text whitespace-pre-wrap break-all font-mono ${isDark ? 'selection:bg-[#7A00FF]/30 selection:text-white' : 'selection:bg-indigo-200'}`}
+                  >
+                    {ocrText}
+                  </pre>
+                ) : (
+                  <div className={`flex h-full flex-col items-center justify-center ${textMuted}`}>
+                    <span>{t('viewer.noTextDetected')}</span>
+                  </div>
+                )
               ) : (
-                <div className={`flex h-full flex-col items-center justify-center ${textMuted}`}>
-                  <span>{t('viewer.noTextDetected')}</span>
+                /* Metadata details for non-image clips */
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-2 rounded-xl border border-border/50 bg-muted/30 p-3">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {t('folders.type', 'Tipo')}
+                    </span>
+                    <span className="font-bold text-foreground">
+                      {clip.clip_type.toUpperCase()}
+                      {detectedLang ? ` (${detectedLang})` : ''}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-col gap-1 rounded-xl border border-border/50 bg-muted/30 p-3">
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        {t('viewer.linesLabel', 'Líneas')}
+                      </span>
+                      <span className="font-bold text-foreground">{textStats.lines}</span>
+                    </div>
+                    <div className="flex flex-col gap-1 rounded-xl border border-border/50 bg-muted/30 p-3">
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        {t('viewer.wordsLabel', 'Palabras')}
+                      </span>
+                      <span className="font-bold text-foreground">{textStats.words}</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-col gap-1 rounded-xl border border-border/50 bg-muted/30 p-3">
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        {t('viewer.charsLabel', 'Caracteres')}
+                      </span>
+                      <span className="font-bold text-foreground">{textStats.chars}</span>
+                    </div>
+                    <div className="flex flex-col gap-1 rounded-xl border border-border/50 bg-muted/30 p-3">
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        {t('viewer.sizeLabel', 'Tamaño')}
+                      </span>
+                      <span className="font-bold text-foreground">
+                        {sizeLabel || `${textStats.chars} B`}
+                      </span>
+                    </div>
+                  </div>
+
+                  {clip.source_app && (
+                    <div className="flex flex-col gap-1 rounded-xl border border-border/50 bg-muted/30 p-3">
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        {t('filters.allApps', 'App')}
+                      </span>
+                      <span className="font-medium text-foreground">{clip.source_app}</span>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col gap-1 rounded-xl border border-border/50 bg-muted/30 p-3">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      ID
+                    </span>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-mono text-[11px] text-muted-foreground">
+                        {clip.id}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(clip.id);
+                          showStatus(t('common.copied'));
+                        }}
+                        className="rounded p-1 hover:bg-muted"
+                      >
+                        <Copy size={12} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -1293,17 +1946,32 @@ export function ImageViewerWindow() {
         )}
       </div>
 
-      {/* Footer info */}
+      {/* Footer Info & Metrics */}
       <div
         className={`flex select-none items-center justify-between gap-3 border-t px-3 py-1.5 font-mono text-[11px] ${footerBg}`}
         onMouseDown={(e) => e.preventDefault()}
       >
         <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-          <Tooltip label={fileName} placement="top">
+          <Tooltip label={clip.clip_type.toUpperCase()} placement="top">
             <span
               className={`flex shrink-0 cursor-default items-center transition-colors hover:text-cyan-400 ${accentCyan}`}
             >
-              <ImageIcon size={13} className="shrink-0" />
+              {isImageClip ? (
+                <ImageIcon size={13} className="shrink-0" />
+              ) : isCodeClip ? (
+                <Code size={13} className="shrink-0" />
+              ) : isUrlClip ? (
+                <Globe size={13} className="shrink-0" />
+              ) : isFileClip ? (
+                <LucideFile size={13} className="shrink-0" />
+              ) : colorInfo ? (
+                <span
+                  className="h-3 w-3 shrink-0 rounded-full border border-white/20"
+                  style={{ backgroundColor: colorInfo.hex }}
+                />
+              ) : (
+                <FileText size={13} className="shrink-0" />
+              )}
             </span>
           </Tooltip>
 
@@ -1313,34 +1981,53 @@ export function ImageViewerWindow() {
             </span>
           )}
 
-          {(dimsLabel || sizeLabel) && (
-            <span className={`shrink-0 ${isDark ? 'text-zinc-600' : 'text-zinc-300'}`}>·</span>
+          {/* Contextual Metric Separators & Labels */}
+          {isImageClip ? (
+            <>
+              {(dimsLabel || sizeLabel) && (
+                <span className={`shrink-0 ${isDark ? 'text-zinc-600' : 'text-zinc-300'}`}>·</span>
+              )}
+              {dimsLabel && <span className="shrink-0">{dimsLabel}</span>}
+              {dimsLabel && sizeLabel && (
+                <span className={`shrink-0 ${isDark ? 'text-zinc-600' : 'text-zinc-300'}`}>·</span>
+              )}
+              {sizeLabel && <span className="shrink-0">{sizeLabel}</span>}
+              <span className={`shrink-0 ${isDark ? 'text-zinc-600' : 'text-zinc-300'}`}>·</span>
+              <span className={`shrink-0 ${isDark ? 'text-cyan-400/70' : 'text-cyan-700'}`}>
+                {zoomPercent}%
+                {isFitMode
+                  ? ` · ${t('viewer.fitShort')}`
+                  : isOriginalMode
+                    ? ` · ${t('viewer.originalShort')}`
+                    : ''}
+              </span>
+            </>
+          ) : (
+            <>
+              <span className={`shrink-0 ${isDark ? 'text-zinc-600' : 'text-zinc-300'}`}>·</span>
+              <span className="shrink-0">{t('viewer.linesCount', { count: textStats.lines })}</span>
+              <span className={`shrink-0 ${isDark ? 'text-zinc-600' : 'text-zinc-300'}`}>·</span>
+              <span className="shrink-0">{t('viewer.charsCount', { count: textStats.chars })}</span>
+              <span className={`shrink-0 ${isDark ? 'text-zinc-600' : 'text-zinc-300'}`}>·</span>
+              <span className={`shrink-0 ${isDark ? 'text-cyan-400/70' : 'text-cyan-700'}`}>
+                {fontSize}px{wrapLines ? ` · ${t('viewer.toggleWrap')}` : ''}
+              </span>
+            </>
           )}
-          {dimsLabel && <span className="shrink-0">{dimsLabel}</span>}
-          {dimsLabel && sizeLabel && (
-            <span className={`shrink-0 ${isDark ? 'text-zinc-600' : 'text-zinc-300'}`}>·</span>
-          )}
-          {sizeLabel && <span className="shrink-0">{sizeLabel}</span>}
-          <span className={`shrink-0 ${isDark ? 'text-zinc-600' : 'text-zinc-300'}`}>·</span>
-          <span className={`shrink-0 ${isDark ? 'text-cyan-400/70' : 'text-cyan-700'}`}>
-            {zoomPercent}%
-            {isFitMode
-              ? ` · ${t('viewer.fitShort')}`
-              : isOriginalMode
-                ? ` · ${t('viewer.originalShort')}`
-                : ''}
-          </span>
         </div>
+
+        {/* Global Position Counter */}
         <div className="flex shrink-0 items-center gap-2">
-          {imageIds.length > 0 && currentImageIndex >= 0 && (
-            <span>
-              {currentImageIndex + 1}/{imageIds.length}
+          {clipIds.length > 0 && currentClipIndex >= 0 && (
+            <span className="rounded bg-muted/40 px-1.5 py-0.5 text-[10px]">
+              {currentClipIndex + 1}/{clipIds.length}
             </span>
           )}
           {editHint && <span className="max-w-[200px] truncate text-rose-400">{editHint}</span>}
         </div>
       </div>
 
+      {/* Decorative gradient stripe */}
       <div
         className={`h-0.5 w-full bg-gradient-to-r from-transparent to-transparent ${isDark ? 'via-[#7A00FF]/50' : 'via-indigo-400/50'}`}
       />

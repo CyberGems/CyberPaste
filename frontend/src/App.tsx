@@ -2775,20 +2775,22 @@ function App() {
         const clip = clipsRef.current.find((c) => c.id === itemId);
         const opts: ContextMenuOption[] = [];
 
-        // Universal preview — replaces the old image-only "View Image" flow
-        if (clip?.clip_type === 'image') {
-          opts.push({
-            label: t('contextMenu.view'),
-            icon: <Eye size={14} />,
-            onClick: () => handleOpenPreview(itemId),
-          });
-
+        // Universal standalone viewer — available for all clip types
+        if (clip) {
           opts.push({
             label: t('contextMenu.openFullViewer'),
             icon: <Maximize2 size={14} />,
             onClick: () => {
               invoke('open_image_viewer', { clipId: clip.id }).catch(console.error);
             },
+          });
+        }
+
+        if (clip?.clip_type === 'image') {
+          opts.push({
+            label: t('contextMenu.view'),
+            icon: <Eye size={14} />,
+            onClick: () => handleOpenPreview(itemId),
           });
 
           opts.push({
