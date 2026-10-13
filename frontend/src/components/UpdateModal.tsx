@@ -1,6 +1,16 @@
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Download, Loader2, AlertTriangle, Sparkles, ExternalLink } from 'lucide-react';
+import {
+  X,
+  Download,
+  Loader2,
+  AlertTriangle,
+  Sparkles,
+  ExternalLink,
+  ChevronUp,
+  ChevronDown,
+  FileText,
+} from 'lucide-react';
 import { check } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { getVersion } from '@tauri-apps/api/app';
@@ -25,6 +35,18 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [skipBusy, setSkipBusy] = useState(false);
   const [skipError, setSkipError] = useState(false);
+  const [releaseBody, setReleaseBody] = useState<string>(update?.body || '');
+  const notesScrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollUp, setCanScrollUp] = useState(false);
+  const [canScrollDown, setCanScrollDown] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    const el = notesScrollRef.current;
+    if (!el) return;
+    const { scrollTop, scrollHeight, clientHeight } = el;
+    setCanScrollUp(scrollTop > 4);
+    setCanScrollDown(scrollTop + clientHeight < scrollHeight - 4);
+  }, []);
 
   useEffect(() => {
     getVersion().then(setCurrentVersion).catch(console.error);
@@ -39,6 +61,43 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
       setSkipError(false);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !update?.version) return;
+    setReleaseBody(update.body || '');
+    const cleanVersion = update.version.replace(/^v/, '');
+    const ctrl = new AbortController();
+    fetch(`https://api.github.com/repos/CyberGems/CyberPaste/releases/tags/v${cleanVersion}`, {
+      signal: ctrl.signal,
+      headers: { Accept: 'application/vnd.github.v3+json' },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        if (data?.body && typeof data.body === 'string' && data.body.trim()) {
+          setReleaseBody(data.body);
+        }
+      })
+      .catch(() => {
+        // Fallback to update.body is already preserved
+      });
+    return () => ctrl.abort();
+  }, [isOpen, update?.version, update?.body]);
+
+  useEffect(() => {
+    const timer = setTimeout(checkScroll, 60);
+    return () => clearTimeout(timer);
+  }, [releaseBody, checkScroll]);
+
+  const handleScrollUp = () => {
+    notesScrollRef.current?.scrollBy({ top: -120, behavior: 'smooth' });
+  };
+
+  const handleScrollDown = () => {
+    notesScrollRef.current?.scrollBy({ top: 120, behavior: 'smooth' });
+  };
 
   if (!isOpen || !update) return null;
 
@@ -151,11 +210,47 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
                   </div>
                 </div>
 
-                {update.body && (
+                {releaseBody && (
                   <div className="flex flex-col gap-2">
-                    <div className="rounded-lg border border-border/60 bg-black/20 px-3.5 py-3 text-[12.5px] leading-relaxed text-foreground/80">
-                      <ReleaseNotes body={update.body} />
+                    <div className="flex items-center justify-between px-0.5 text-xs">
+                      <span className="flex items-center gap-1.5 font-semibold text-foreground/90">
+                        <FileText size={13} className="text-primary" />
+                        {t('settings.updatesChangelog')}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <Tooltip label={t('settings.updatesScrollUp')} placement="top">
+                          <button
+                            type="button"
+                            onClick={handleScrollUp}
+                            disabled={!canScrollUp}
+                            aria-label={t('settings.updatesScrollUp')}
+                            className="flex h-6 w-6 items-center justify-center rounded border border-border/70 bg-secondary/50 text-foreground/80 transition-all hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-25"
+                          >
+                            <ChevronUp size={13} strokeWidth={2.4} />
+                          </button>
+                        </Tooltip>
+                        <Tooltip label={t('settings.updatesScrollDown')} placement="top">
+                          <button
+                            type="button"
+                            onClick={handleScrollDown}
+                            disabled={!canScrollDown}
+                            aria-label={t('settings.updatesScrollDown')}
+                            className="flex h-6 w-6 items-center justify-center rounded border border-border/70 bg-secondary/50 text-foreground/80 transition-all hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-25"
+                          >
+                            <ChevronDown size={13} strokeWidth={2.4} />
+                          </button>
+                        </Tooltip>
+                      </div>
                     </div>
+
+                    <div
+                      ref={notesScrollRef}
+                      onScroll={checkScroll}
+                      className="custom-scrollbar max-h-[220px] select-text overflow-y-auto rounded-lg border border-border/60 bg-black/25 px-3.5 py-3 text-[12.5px] leading-relaxed text-foreground/85"
+                    >
+                      <ReleaseNotes body={releaseBody} />
+                    </div>
+
                     <Tooltip label={t('settings.updatesViewOnGithub')} placement="bottom">
                       <button
                         type="button"
@@ -336,6 +431,7 @@ function ReleaseNotes({ body }: { body: string }) {
   for (const line of lines) {
     const heading = line.match(/^#{1,3}\s+(.*)$/);
     const bullet = line.match(/^[-*]\s+(.*)$/);
+    const quote = line.match(/^>\s*(.*)$/);
     if (heading) {
       flushList();
       nodes.push(
@@ -348,6 +444,16 @@ function ReleaseNotes({ body }: { body: string }) {
       );
     } else if (bullet) {
       listItems.push(bullet[1]);
+    } else if (quote) {
+      flushList();
+      nodes.push(
+        <blockquote
+          key={`q-${nodes.length}`}
+          className="my-1.5 border-l-2 border-primary/50 py-0.5 pl-2.5 text-[12px] italic text-muted-foreground"
+        >
+          {renderInline(quote[1])}
+        </blockquote>
+      );
     } else if (!line.trim() || /^---+/.test(line.trim())) {
       flushList();
     } else {

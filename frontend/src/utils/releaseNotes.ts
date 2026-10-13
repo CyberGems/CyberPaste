@@ -1,3 +1,25 @@
+function sanitizeNotes(text: string): string {
+  return (
+    text
+      // Strip HTML comments
+      .replace(/<!--[\s\S]*?-->/g, '')
+      // Strip header logo paragraphs
+      .replace(/<p\s+align=["']center["']>[\s\S]*?<\/p>/gi, '')
+      // Strip release title if duplicate (e.g. ## 📋 CyberPaste v1.24.0: Release Notes)
+      .replace(/^#{1,2}\s*.*?CyberPaste\s+v?[\d.]+:?\s*Release Notes\s*$/gim, '')
+      // Strip download / asset tables and checksum sections from modal preview
+      .replace(/#{2,4}\s*📦\s*(?:Downloads|Descargas)[\s\S]*/i, '')
+      .replace(/#{2,4}\s*🔐\s*(?:Checksums|Sumas de verificación)[\s\S]*/i, '')
+      // Strip footer
+      .replace(/\*Crafted with precision[\s\S]*/i, '')
+      // Strip introductory blockquotes
+      .replace(/^>\s*\*\*.*?(?:New to CyberPaste|Nuevo en CyberPaste).*?(?:\r?\n|$)/gim, '')
+      // Normalize excessive newlines
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+  );
+}
+
 /**
  * Localized GitHub release-notes selector (CyberClock pattern).
  *
@@ -30,7 +52,7 @@ export function extractLocalizedReleaseNotes(
     'i'
   );
   const commentMatch = body.match(commentRegex);
-  if (commentMatch?.[1]?.trim()) return commentMatch[1].trim();
+  if (commentMatch?.[1]?.trim()) return sanitizeNotes(commentMatch[1].trim());
 
   // 2. Spanish <details> block or Spanish header section.
   if (code === 'es') {
@@ -38,12 +60,13 @@ export function extractLocalizedReleaseNotes(
       /(?:<details>[\s\S]*?<summary>[\s\S]*?(?:español|spanish)[\s\S]*?<\/summary>([\s\S]*?)<\/details>)|(?:#{2,4}\s*(?:.*?(?:español|novedades|cambios).*?)\r?\n([\s\S]*?)(?=(?:#{2,4}\s)|<\/details>|$))/i;
     const esMatch = body.match(esBlockRegex);
     const content = esMatch ? esMatch[1] || esMatch[2] : null;
-    if (content?.trim()) return content.trim();
+    if (content?.trim()) return sanitizeNotes(content.trim());
   }
 
   // 3. Fallback: strip Spanish details blocks so other languages stay clean.
-  return body.replace(
+  const cleaned = body.replace(
     /<details>[\s\S]*?<summary>[\s\S]*?(?:español|spanish)[\s\S]*?<\/summary>[\s\S]*?<\/details>/gi,
     ''
   );
+  return sanitizeNotes(cleaned);
 }

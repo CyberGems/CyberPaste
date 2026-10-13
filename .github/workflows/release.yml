@@ -175,3 +175,17 @@ jobs:
             Replace("{{MSI_BLOCK}}", $msiBlock)
           [System.IO.File]::WriteAllText("FINAL_RELEASE_NOTES.md", $notes, [System.Text.Encoding]::UTF8)
           gh release edit $tag --notes-file "FINAL_RELEASE_NOTES.md"
+
+          # Update latest.json updater manifest with bilingual release notes
+          try {
+            gh release download $tag --pattern "latest.json" --clobber
+            if (Test-Path "latest.json") {
+              $lj = Get-Content "latest.json" -Raw | ConvertFrom-Json
+              $lj.notes = $notes
+              $lj | ConvertTo-Json -Depth 10 | Set-Content "latest.json" -Encoding UTF8
+              gh release upload $tag "latest.json" --clobber
+              Write-Host "Successfully updated latest.json with bilingual release notes."
+            }
+          } catch {
+            Write-Warning "Could not update latest.json with bilingual notes: $_"
+          }

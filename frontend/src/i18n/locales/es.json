@@ -155,7 +155,7 @@
   },
   "titleBar": {
     "update": "Actualizar",
-    "updateAvailable": "Actualización disponible — v{{version}}",
+    "updateAvailable": "Actualización disponible (v{{version}})",
     "moreMenu": {
       "docs": "Documentación online",
       "website": "Sitio web",
@@ -512,6 +512,9 @@
     "updatesErrorDesc": "No se pudo descargar la actualización. Por favor comprueba tu conexión a internet o intenta descargar manualmente.",
     "updatesOpenReleasePage": "Abrir Página de Lanzamiento",
     "updatesViewOnGithub": "Ver notas completas en GitHub",
+    "updatesChangelog": "Novedades de la versión",
+    "updatesScrollUp": "Subir notas",
+    "updatesScrollDown": "Bajar notas",
     "accessibilityPermission": "Permiso de Accesibilidad",
     "accessibilityPermissionDesc": "Requerido para Auto-Pegar en macOS",
     "grantPermission": "Conceder Permiso",

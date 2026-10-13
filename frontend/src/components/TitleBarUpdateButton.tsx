@@ -7,6 +7,7 @@ export function TitleBarUpdateButton({
   visible,
   version,
   onClick,
+  iconSize = 13,
 }: {
   visible: boolean;
   version?: string;
@@ -17,6 +18,7 @@ export function TitleBarUpdateButton({
   if (!visible) return null;
 
   const tooltip = version ? t('titleBar.updateAvailable', { version }) : t('tray.updateAvailable');
+  const arrowSize = Math.max(12, Math.min(iconSize || 13, 14));
 
   return (
     <Tooltip label={tooltip} placement="bottom">
@@ -25,23 +27,23 @@ export function TitleBarUpdateButton({
         onClick={onClick}
         aria-label={tooltip}
         className={clsx(
-          'group mr-1 inline-flex h-[26px] shrink-0 items-center self-center overflow-hidden rounded-full border',
-          'border-primary/50 bg-primary/10 text-primary',
-          'shadow-[0_0_8px_rgba(var(--primary-rgb),0.2)]',
-          'transition-colors duration-200',
-          'hover:border-primary/80 hover:bg-primary/20',
-          'focus:outline-none focus-visible:ring-0'
+          'group mr-1 inline-flex h-7 shrink-0 items-center self-center overflow-hidden rounded-full border',
+          'border-primary/40 bg-primary text-primary-foreground',
+          'shadow-sm',
+          'transition-all duration-200 ease-out',
+          'hover:shadow-md hover:brightness-105 active:scale-95',
+          'focus:outline-none focus-visible:ring-1 focus-visible:ring-primary'
         )}
       >
-        <span className="grid h-[26px] grid-cols-[0fr] items-center overflow-hidden opacity-0 transition-[grid-template-columns,opacity] duration-200 ease-out group-hover:grid-cols-[1fr] group-hover:opacity-100">
-          <span className="flex h-[26px] min-w-0 items-center overflow-hidden">
-            <span className="whitespace-nowrap pl-2.5 pr-1 text-[11px] font-semibold leading-none tracking-wide text-primary">
+        <span className="grid h-7 grid-cols-[0fr] items-center overflow-hidden opacity-0 transition-[grid-template-columns,opacity] duration-200 ease-out group-hover:grid-cols-[1fr] group-hover:opacity-100">
+          <span className="flex h-7 min-w-0 items-center overflow-hidden">
+            <span className="whitespace-nowrap pl-2.5 pr-1 text-[11px] font-bold leading-none tracking-wide text-primary-foreground">
               {t('titleBar.update')}
             </span>
           </span>
         </span>
-        <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center">
-          <ArrowDown size={12} strokeWidth={2.5} className="block text-primary" />
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center">
+          <ArrowDown size={arrowSize} strokeWidth={2.5} className="block text-primary-foreground" />
         </span>
       </button>
     </Tooltip>

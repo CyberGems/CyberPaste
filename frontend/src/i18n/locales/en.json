@@ -155,7 +155,7 @@
   },
   "titleBar": {
     "update": "Update",
-    "updateAvailable": "Update available — v{{version}}",
+    "updateAvailable": "Update available (v{{version}})",
     "moreMenu": {
       "docs": "Online Documentation",
       "website": "Website",
@@ -515,6 +515,9 @@
     "updatesErrorDesc": "Could not download the update. Please check your internet connection or try downloading manually.",
     "updatesOpenReleasePage": "Open Release Page",
     "updatesViewOnGithub": "View full notes on GitHub",
+    "updatesChangelog": "Release Highlights",
+    "updatesScrollUp": "Scroll notes up",
+    "updatesScrollDown": "Scroll notes down",
     "autoCheckUpdates": "Automatic updates",
     "autoCheckUpdatesDesc": "Check for new versions when CyberPaste starts.",
     "copyContent": "Copy content",
