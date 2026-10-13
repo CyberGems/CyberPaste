@@ -289,9 +289,7 @@ export const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
             </div>
           ) : (
             filtered.map((item, index) => {
-              const Icon = item.isMain
-                ? Clipboard
-                : IconMap[item.icon || 'Folder'] || FolderIcon;
+              const Icon = item.isMain ? Clipboard : IconMap[item.icon || 'Folder'] || FolderIcon;
               const iconColor = item.color || undefined;
               const isActive = index === activeIndex;
 

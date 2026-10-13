@@ -102,16 +102,13 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
   return (
     <div className="animate-in fade-in fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md duration-300">
       <div className="animate-in zoom-in-95 relative flex max-h-[min(90vh,680px)] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-primary/20 bg-background/90 shadow-2xl shadow-primary/10 duration-300">
-        
         <div className="absolute -left-16 -top-16 h-32 w-32 rounded-full bg-primary/10 blur-2xl" />
-        <div className="absolute -right-16 -bottom-16 h-32 w-32 rounded-full bg-cyan-500/10 blur-2xl" />
+        <div className="absolute -bottom-16 -right-16 h-32 w-32 rounded-full bg-cyan-500/10 blur-2xl" />
 
         <div className="relative flex shrink-0 items-center justify-between px-6 pb-4 pt-6">
           <div className="flex items-center gap-2 text-primary">
             <Sparkles size={20} className="animate-pulse" />
-            <h3 className="text-lg font-bold tracking-wide">
-              {t('settings.updatesTitle')}
-            </h3>
+            <h3 className="text-lg font-bold tracking-wide">{t('settings.updatesTitle')}</h3>
           </div>
           {status !== 'downloading' && (
             <Tooltip label={t('common.close')} placement="bottom">
@@ -130,48 +127,48 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
         <div className="relative z-10 flex min-h-0 flex-1 flex-col">
           {status === 'prompt' && (
             <>
-            <div className="max-h-[min(380px,calc(90vh-13rem))] space-y-4 overflow-y-auto px-6 pb-4">
-              <p className="text-sm font-medium text-foreground/90">
-                {t('settings.updatesNewVersionAvailable')}
-              </p>
-              
-              <div className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-secondary/50 p-3.5 text-xs font-mono">
-                <div>
-                  <span className="text-muted-foreground block mb-0.5">
-                    {t('settings.updatesCurrentVersion', { version: '' }).replace(':', '')}
-                  </span>
-                  <span className="text-foreground/80 font-bold bg-white/5 px-2 py-0.5 rounded">
-                    v{currentVersion}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-primary block mb-0.5">
-                    {t('settings.updatesLatestVersion', { version: '' }).replace(':', '')}
-                  </span>
-                  <span className="text-primary font-bold bg-primary/10 border border-primary/20 px-2 py-0.5 rounded">
-                    v{update.version}
-                  </span>
-                </div>
-              </div>
-              
-              {update.body && (
-                <div className="flex flex-col gap-2">
-                  <div className="rounded-lg border border-border/60 bg-black/20 px-3.5 py-3 text-[12.5px] leading-relaxed text-foreground/80">
-                    <ReleaseNotes body={update.body} />
+              <div className="max-h-[min(380px,calc(90vh-13rem))] space-y-4 overflow-y-auto px-6 pb-4">
+                <p className="text-sm font-medium text-foreground/90">
+                  {t('settings.updatesNewVersionAvailable')}
+                </p>
+
+                <div className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-secondary/50 p-3.5 font-mono text-xs">
+                  <div>
+                    <span className="mb-0.5 block text-muted-foreground">
+                      {t('settings.updatesCurrentVersion', { version: '' }).replace(':', '')}
+                    </span>
+                    <span className="rounded bg-white/5 px-2 py-0.5 font-bold text-foreground/80">
+                      v{currentVersion}
+                    </span>
                   </div>
-                  <Tooltip label={t('settings.updatesViewOnGithub')} placement="bottom">
-                    <button
-                      type="button"
-                      onClick={handleOpenReleasePage}
-                      className="inline-flex items-center gap-1.5 self-start text-xs font-medium text-primary transition-colors hover:text-primary/80 hover:underline"
-                    >
-                      <ExternalLink size={12} />
-                      {t('settings.updatesViewOnGithub')}
-                    </button>
-                  </Tooltip>
+                  <div>
+                    <span className="mb-0.5 block text-primary">
+                      {t('settings.updatesLatestVersion', { version: '' }).replace(':', '')}
+                    </span>
+                    <span className="rounded border border-primary/20 bg-primary/10 px-2 py-0.5 font-bold text-primary">
+                      v{update.version}
+                    </span>
+                  </div>
                 </div>
-              )}
-            </div>
+
+                {update.body && (
+                  <div className="flex flex-col gap-2">
+                    <div className="rounded-lg border border-border/60 bg-black/20 px-3.5 py-3 text-[12.5px] leading-relaxed text-foreground/80">
+                      <ReleaseNotes body={update.body} />
+                    </div>
+                    <Tooltip label={t('settings.updatesViewOnGithub')} placement="bottom">
+                      <button
+                        type="button"
+                        onClick={handleOpenReleasePage}
+                        className="inline-flex items-center gap-1.5 self-start text-xs font-medium text-primary transition-colors hover:text-primary/80 hover:underline"
+                      >
+                        <ExternalLink size={12} />
+                        {t('settings.updatesViewOnGithub')}
+                      </button>
+                    </Tooltip>
+                  </div>
+                )}
+              </div>
 
               <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-border/60 bg-background/95 px-6 py-4">
                 {skipError && (
@@ -218,15 +215,17 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
               <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
               <div className="space-y-2">
                 <p className="text-sm font-semibold text-foreground/90">
-                  {progress < 100 ? t('settings.updatesDownloading') : t('settings.updatesInstalling')}
+                  {progress < 100
+                    ? t('settings.updatesDownloading')
+                    : t('settings.updatesInstalling')}
                 </p>
                 <div className="relative h-2 w-full overflow-hidden rounded-full bg-white/10">
-                  <div 
-                    className="h-full bg-primary transition-all duration-300 ease-out" 
+                  <div
+                    className="h-full bg-primary transition-all duration-300 ease-out"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                <span className="text-xs font-mono text-muted-foreground">{progress}%</span>
+                <span className="font-mono text-xs text-muted-foreground">{progress}%</span>
               </div>
             </div>
           )}
@@ -234,16 +233,16 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
           {status === 'error' && (
             <div className="space-y-4 px-6 pb-6">
               <div className="flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-3.5">
-                <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
                 <div>
                   <h4 className="text-sm font-bold text-destructive">
                     {t('settings.updatesErrorTitle')}
                   </h4>
-                  <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                     {t('settings.updatesErrorDesc')}
                   </p>
                   {errorMsg && (
-                    <p className="mt-2 font-mono text-[10px] text-destructive bg-destructive/10 p-1.5 rounded break-all max-h-16 overflow-y-auto">
+                    <p className="mt-2 max-h-16 overflow-y-auto break-all rounded bg-destructive/10 p-1.5 font-mono text-[10px] text-destructive">
                       {errorMsg}
                     </p>
                   )}
@@ -274,7 +273,6 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
             </div>
           )}
         </div>
-
       </div>
     </div>
   );
@@ -297,7 +295,10 @@ function renderInline(text: string): ReactNode {
     }
     if (part.startsWith('`') && part.endsWith('`')) {
       return (
-        <code key={i} className="rounded bg-white/10 px-1 py-px font-mono text-[11px] text-foreground/90">
+        <code
+          key={i}
+          className="rounded bg-white/10 px-1 py-px font-mono text-[11px] text-foreground/90"
+        >
           {part.slice(1, -1)}
         </code>
       );
@@ -309,7 +310,10 @@ function renderInline(text: string): ReactNode {
 function ReleaseNotes({ body }: { body: string }) {
   const { i18n } = useTranslation();
   const localized = extractLocalizedReleaseNotes(body, i18n.language);
-  const lines = localized.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').split('\n');
+  const lines = localized
+    .replace(/^\uFEFF/, '')
+    .replace(/\r\n/g, '\n')
+    .split('\n');
   const nodes: ReactNode[] = [];
   let listItems: string[] = [];
 
@@ -318,7 +322,10 @@ function ReleaseNotes({ body }: { body: string }) {
     const items = listItems;
     listItems = [];
     nodes.push(
-      <ul key={`list-${nodes.length}`} className="my-1.5 list-disc space-y-1 pl-4 marker:text-primary/70">
+      <ul
+        key={`list-${nodes.length}`}
+        className="my-1.5 list-disc space-y-1 pl-4 marker:text-primary/70"
+      >
         {items.map((item, i) => (
           <li key={i}>{renderInline(item)}</li>
         ))}
@@ -332,7 +339,10 @@ function ReleaseNotes({ body }: { body: string }) {
     if (heading) {
       flushList();
       nodes.push(
-        <h4 key={`h-${nodes.length}`} className="mb-1 mt-2.5 first:mt-0 text-[13px] font-semibold text-foreground">
+        <h4
+          key={`h-${nodes.length}`}
+          className="mb-1 mt-2.5 text-[13px] font-semibold text-foreground first:mt-0"
+        >
           {renderInline(heading[1])}
         </h4>
       );

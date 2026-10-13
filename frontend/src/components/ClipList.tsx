@@ -472,7 +472,8 @@ export const ClipList: React.FC<ClipListProps> = ({
   // Adaptive column count: fit as many columns as the container allows.
   // In horizontal mode, every clip is its own column (single scrollable row).
   const isPanoramic = cardFormat === 'panoramic';
-  const effectiveCardWidth = (isPanoramic ? BASE_CARD_WIDTH_PANORAMIC : BASE_CARD_WIDTH) * gridScale;
+  const effectiveCardWidth =
+    (isPanoramic ? BASE_CARD_WIDTH_PANORAMIC : BASE_CARD_WIDTH) * gridScale;
   const columnCount = isVertical
     ? gridColumns > 0
       ? Math.min(MAX_COLUMNS, Math.max(MIN_COLUMNS, gridColumns))
@@ -617,7 +618,7 @@ export const ClipList: React.FC<ClipListProps> = ({
     <div
       ref={containerRef}
       data-clip-list="true"
-      className="h-full w-full flex-1 overflow-hidden select-none"
+      className="h-full w-full flex-1 select-none overflow-hidden"
       onWheel={handleWheel}
       onMouseDown={handleContainerMouseDown}
     >

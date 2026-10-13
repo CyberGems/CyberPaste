@@ -16,9 +16,7 @@ export function TitleBarUpdateButton({
   const { t } = useTranslation();
   if (!visible) return null;
 
-  const tooltip = version
-    ? t('titleBar.updateAvailable', { version })
-    : t('tray.updateAvailable');
+  const tooltip = version ? t('titleBar.updateAvailable', { version }) : t('tray.updateAvailable');
 
   return (
     <Tooltip label={tooltip} placement="bottom">

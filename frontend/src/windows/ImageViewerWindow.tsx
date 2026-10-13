@@ -552,7 +552,6 @@ export function ImageViewerWindow() {
     };
   }, [loadClip, applyTheme]);
 
-
   const handleClose = useCallback(() => {
     appWindow.close();
   }, [appWindow]);
@@ -1194,242 +1193,247 @@ export function ImageViewerWindow() {
           {/* Contextual Action Group */}
           {clip && (
             <div className={`flex items-center gap-0.5 rounded-lg border p-0.5 ${groupBg}`}>
-            {isImageClip ? (
-              <>
-                <Tooltip label={t('viewer.zoomOut')} placement="bottom">
-                  <button
-                    type="button"
-                    onClick={() => zoomBy(1 / ZOOM_STEP)}
-                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
-                  >
-                    <ZoomOut size={15} />
-                  </button>
-                </Tooltip>
-                <Tooltip
-                  label={isFitMode ? t('viewer.originalSize') : t('viewer.fitToWindow')}
-                  placement="bottom"
-                >
-                  <button
-                    type="button"
-                    onClick={() => (isFitMode ? setOriginalSize() : resetViewToFit())}
-                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
-                  >
-                    {isFitMode ? <Expand size={15} /> : <Scan size={15} />}
-                  </button>
-                </Tooltip>
-                <Tooltip label={t('viewer.zoomIn')} placement="bottom">
-                  <button
-                    type="button"
-                    onClick={() => zoomBy(ZOOM_STEP)}
-                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
-                  >
-                    <ZoomIn size={15} />
-                  </button>
-                </Tooltip>
-                <Tooltip label={t('viewer.openExternalViewer')} placement="bottom">
-                  <button
-                    type="button"
-                    onClick={handleOpenExternal}
-                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-indigo-500`}
-                  >
-                    <ExternalLink size={15} />
-                  </button>
-                </Tooltip>
-              </>
-            ) : isCodeClip || (!isImageClip && !isFileClip && !isUrlClip && !isHtmlClip) ? (
-              <>
-                <Tooltip label={t('viewer.toggleWrap')} placement="bottom">
-                  <button
-                    type="button"
-                    onClick={() => setWrapLines((prev) => !prev)}
-                    className={`rounded-md p-1.5 transition-colors ${btnHover} ${wrapLines ? (isDark ? 'bg-white/10 text-cyan-400' : 'bg-cyan-50 text-cyan-700') : textMuted + ' hover:text-cyan-500'}`}
-                  >
-                    <WrapText size={15} />
-                  </button>
-                </Tooltip>
-                <Tooltip label={t('viewer.decreaseFontSize')} placement="bottom">
-                  <button
-                    type="button"
-                    onClick={() => setFontSize((prev) => Math.max(10, prev - 1))}
-                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
-                  >
-                    <Minus size={15} />
-                  </button>
-                </Tooltip>
-                <Tooltip label={`${t('viewer.resetFontSize')} (${fontSize}px)`} placement="bottom">
-                  <button
-                    type="button"
-                    onClick={() => setFontSize(13)}
-                    className={`rounded-md px-1.5 py-1 font-mono text-[11px] ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
-                  >
-                    {fontSize}px
-                  </button>
-                </Tooltip>
-                <Tooltip label={t('viewer.increaseFontSize')} placement="bottom">
-                  <button
-                    type="button"
-                    onClick={() => setFontSize((prev) => Math.min(24, prev + 1))}
-                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
-                  >
-                    <Plus size={15} />
-                  </button>
-                </Tooltip>
-                {highlightedHtml && (
-                  <Tooltip label={t('viewer.toggleSyntax')} placement="bottom">
+              {isImageClip ? (
+                <>
+                  <Tooltip label={t('viewer.zoomOut')} placement="bottom">
                     <button
                       type="button"
-                      onClick={() => setShowRawText((prev) => !prev)}
-                      className={`rounded-md p-1.5 transition-colors ${btnHover} ${!showRawText ? (isDark ? 'bg-white/10 text-cyan-400' : 'bg-cyan-50 text-cyan-700') : textMuted + ' hover:text-cyan-500'}`}
+                      onClick={() => zoomBy(1 / ZOOM_STEP)}
+                      className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
                     >
-                      {showRawText ? <FileText size={15} /> : <Code size={15} />}
+                      <ZoomOut size={15} />
                     </button>
                   </Tooltip>
-                )}
-              </>
-            ) : isHtmlClip ? (
-              <>
-                <Tooltip
-                  label={
-                    viewModeHtml === 'rendered' ? t('viewer.sourceView') : t('viewer.renderedView')
-                  }
-                  placement="bottom"
-                >
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setViewModeHtml((prev) => (prev === 'rendered' ? 'source' : 'rendered'))
+                  <Tooltip
+                    label={isFitMode ? t('viewer.originalSize') : t('viewer.fitToWindow')}
+                    placement="bottom"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => (isFitMode ? setOriginalSize() : resetViewToFit())}
+                      className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
+                    >
+                      {isFitMode ? <Expand size={15} /> : <Scan size={15} />}
+                    </button>
+                  </Tooltip>
+                  <Tooltip label={t('viewer.zoomIn')} placement="bottom">
+                    <button
+                      type="button"
+                      onClick={() => zoomBy(ZOOM_STEP)}
+                      className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
+                    >
+                      <ZoomIn size={15} />
+                    </button>
+                  </Tooltip>
+                  <Tooltip label={t('viewer.openExternalViewer')} placement="bottom">
+                    <button
+                      type="button"
+                      onClick={handleOpenExternal}
+                      className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-indigo-500`}
+                    >
+                      <ExternalLink size={15} />
+                    </button>
+                  </Tooltip>
+                </>
+              ) : isCodeClip || (!isImageClip && !isFileClip && !isUrlClip && !isHtmlClip) ? (
+                <>
+                  <Tooltip label={t('viewer.toggleWrap')} placement="bottom">
+                    <button
+                      type="button"
+                      onClick={() => setWrapLines((prev) => !prev)}
+                      className={`rounded-md p-1.5 transition-colors ${btnHover} ${wrapLines ? (isDark ? 'bg-white/10 text-cyan-400' : 'bg-cyan-50 text-cyan-700') : textMuted + ' hover:text-cyan-500'}`}
+                    >
+                      <WrapText size={15} />
+                    </button>
+                  </Tooltip>
+                  <Tooltip label={t('viewer.decreaseFontSize')} placement="bottom">
+                    <button
+                      type="button"
+                      onClick={() => setFontSize((prev) => Math.max(10, prev - 1))}
+                      className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
+                    >
+                      <Minus size={15} />
+                    </button>
+                  </Tooltip>
+                  <Tooltip
+                    label={`${t('viewer.resetFontSize')} (${fontSize}px)`}
+                    placement="bottom"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setFontSize(13)}
+                      className={`rounded-md px-1.5 py-1 font-mono text-[11px] ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
+                    >
+                      {fontSize}px
+                    </button>
+                  </Tooltip>
+                  <Tooltip label={t('viewer.increaseFontSize')} placement="bottom">
+                    <button
+                      type="button"
+                      onClick={() => setFontSize((prev) => Math.min(24, prev + 1))}
+                      className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
+                    >
+                      <Plus size={15} />
+                    </button>
+                  </Tooltip>
+                  {highlightedHtml && (
+                    <Tooltip label={t('viewer.toggleSyntax')} placement="bottom">
+                      <button
+                        type="button"
+                        onClick={() => setShowRawText((prev) => !prev)}
+                        className={`rounded-md p-1.5 transition-colors ${btnHover} ${!showRawText ? (isDark ? 'bg-white/10 text-cyan-400' : 'bg-cyan-50 text-cyan-700') : textMuted + ' hover:text-cyan-500'}`}
+                      >
+                        {showRawText ? <FileText size={15} /> : <Code size={15} />}
+                      </button>
+                    </Tooltip>
+                  )}
+                </>
+              ) : isHtmlClip ? (
+                <>
+                  <Tooltip
+                    label={
+                      viewModeHtml === 'rendered'
+                        ? t('viewer.sourceView')
+                        : t('viewer.renderedView')
                     }
-                    className={`rounded-md p-1.5 transition-colors ${btnHover} ${isDark ? 'text-[#00F2FF]' : 'text-cyan-700'}`}
+                    placement="bottom"
                   >
-                    {viewModeHtml === 'rendered' ? <Code size={15} /> : <Eye size={15} />}
-                  </button>
-                </Tooltip>
-                <Tooltip label={t('viewer.decreaseFontSize')} placement="bottom">
-                  <button
-                    type="button"
-                    onClick={() => setFontSize((prev) => Math.max(10, prev - 1))}
-                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
-                  >
-                    <Minus size={15} />
-                  </button>
-                </Tooltip>
-                <Tooltip label={t('viewer.increaseFontSize')} placement="bottom">
-                  <button
-                    type="button"
-                    onClick={() => setFontSize((prev) => Math.min(24, prev + 1))}
-                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
-                  >
-                    <Plus size={15} />
-                  </button>
-                </Tooltip>
-              </>
-            ) : isUrlClip ? (
-              <>
-                <Tooltip label={t('viewer.openInBrowser')} placement="bottom">
-                  <button
-                    type="button"
-                    onClick={handleOpenExternal}
-                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-emerald-500`}
-                  >
-                    <Globe size={15} />
-                  </button>
-                </Tooltip>
-              </>
-            ) : isFileClip ? (
-              <>
-                <Tooltip label={t('viewer.openFile')} placement="bottom">
-                  <button
-                    type="button"
-                    onClick={handleOpenExternal}
-                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-amber-500`}
-                  >
-                    <ExternalLink size={15} />
-                  </button>
-                </Tooltip>
-                <Tooltip label={t('viewer.showInExplorer')} placement="bottom">
-                  <button
-                    type="button"
-                    onClick={handleShowInFolder}
-                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-amber-500`}
-                  >
-                    <FolderOpen size={15} />
-                  </button>
-                </Tooltip>
-                <Tooltip label={t('viewer.copyPath')} placement="bottom">
-                  <button
-                    type="button"
-                    onClick={handleCopyPath}
-                    className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
-                  >
-                    <Copy size={15} />
-                  </button>
-                </Tooltip>
-              </>
-            ) : null}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setViewModeHtml((prev) => (prev === 'rendered' ? 'source' : 'rendered'))
+                      }
+                      className={`rounded-md p-1.5 transition-colors ${btnHover} ${isDark ? 'text-[#00F2FF]' : 'text-cyan-700'}`}
+                    >
+                      {viewModeHtml === 'rendered' ? <Code size={15} /> : <Eye size={15} />}
+                    </button>
+                  </Tooltip>
+                  <Tooltip label={t('viewer.decreaseFontSize')} placement="bottom">
+                    <button
+                      type="button"
+                      onClick={() => setFontSize((prev) => Math.max(10, prev - 1))}
+                      className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
+                    >
+                      <Minus size={15} />
+                    </button>
+                  </Tooltip>
+                  <Tooltip label={t('viewer.increaseFontSize')} placement="bottom">
+                    <button
+                      type="button"
+                      onClick={() => setFontSize((prev) => Math.min(24, prev + 1))}
+                      className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
+                    >
+                      <Plus size={15} />
+                    </button>
+                  </Tooltip>
+                </>
+              ) : isUrlClip ? (
+                <>
+                  <Tooltip label={t('viewer.openInBrowser')} placement="bottom">
+                    <button
+                      type="button"
+                      onClick={handleOpenExternal}
+                      className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-emerald-500`}
+                    >
+                      <Globe size={15} />
+                    </button>
+                  </Tooltip>
+                </>
+              ) : isFileClip ? (
+                <>
+                  <Tooltip label={t('viewer.openFile')} placement="bottom">
+                    <button
+                      type="button"
+                      onClick={handleOpenExternal}
+                      className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-amber-500`}
+                    >
+                      <ExternalLink size={15} />
+                    </button>
+                  </Tooltip>
+                  <Tooltip label={t('viewer.showInExplorer')} placement="bottom">
+                    <button
+                      type="button"
+                      onClick={handleShowInFolder}
+                      className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-amber-500`}
+                    >
+                      <FolderOpen size={15} />
+                    </button>
+                  </Tooltip>
+                  <Tooltip label={t('viewer.copyPath')} placement="bottom">
+                    <button
+                      type="button"
+                      onClick={handleCopyPath}
+                      className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
+                    >
+                      <Copy size={15} />
+                    </button>
+                  </Tooltip>
+                </>
+              ) : null}
 
-            {/* Standard actions: Copy & Export */}
-            <Tooltip label={t('viewer.copy')} placement="bottom">
-              <button
-                type="button"
-                onClick={handleCopy}
-                className={`rounded-md p-1.5 transition-colors ${btnHover} ${
-                  copied ? 'text-emerald-500' : `${textMuted} hover:text-emerald-500`
-                }`}
-              >
-                {copied ? <Check size={15} /> : <Copy size={15} />}
-              </button>
-            </Tooltip>
+              {/* Standard actions: Copy & Export */}
+              <Tooltip label={t('viewer.copy')} placement="bottom">
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className={`rounded-md p-1.5 transition-colors ${btnHover} ${
+                    copied ? 'text-emerald-500' : `${textMuted} hover:text-emerald-500`
+                  }`}
+                >
+                  {copied ? <Check size={15} /> : <Copy size={15} />}
+                </button>
+              </Tooltip>
 
-            <Tooltip label={t('export.saveAs')} placement="bottom">
-              <button
-                type="button"
-                onClick={handleExport}
-                className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
-              >
-                <Download size={15} />
-              </button>
-            </Tooltip>
+              <Tooltip label={t('export.saveAs')} placement="bottom">
+                <button
+                  type="button"
+                  onClick={handleExport}
+                  className={`rounded-md p-1.5 ${textMuted} transition-colors ${btnHover} hover:text-cyan-500`}
+                >
+                  <Download size={15} />
+                </button>
+              </Tooltip>
 
-            {/* Drawer toggle button: OCR for images, Details for text/code/file */}
-            <Tooltip
-              label={isImageClip ? t('viewer.extractText') : t('viewer.clipInfo')}
-              placement="bottom"
-            >
-              <button
-                type="button"
-                onClick={isImageClip ? handleRunOcr : () => setShowDrawer((v) => !v)}
-                className={`rounded-md p-1.5 transition-colors ${btnHover} ${
-                  showDrawer
-                    ? isDark
-                      ? 'bg-white/10 text-cyan-400'
-                      : 'bg-cyan-50 text-cyan-700'
-                    : `${textMuted} hover:text-cyan-500`
-                }`}
+              {/* Drawer toggle button: OCR for images, Details for text/code/file */}
+              <Tooltip
+                label={isImageClip ? t('viewer.extractText') : t('viewer.clipInfo')}
+                placement="bottom"
               >
-                {isImageClip ? <ScanText size={15} /> : <Info size={15} />}
-              </button>
-            </Tooltip>
+                <button
+                  type="button"
+                  onClick={isImageClip ? handleRunOcr : () => setShowDrawer((v) => !v)}
+                  className={`rounded-md p-1.5 transition-colors ${btnHover} ${
+                    showDrawer
+                      ? isDark
+                        ? 'bg-white/10 text-cyan-400'
+                        : 'bg-cyan-50 text-cyan-700'
+                      : `${textMuted} hover:text-cyan-500`
+                  }`}
+                >
+                  {isImageClip ? <ScanText size={15} /> : <Info size={15} />}
+                </button>
+              </Tooltip>
 
-            {/* Pin on top */}
-            <Tooltip
-              label={alwaysOnTop ? t('viewer.unpinOnTop') : t('viewer.pinOnTop')}
-              placement="bottom"
-            >
-              <button
-                type="button"
-                onClick={handleToggleAlwaysOnTop}
-                className={`rounded-md p-1.5 transition-colors ${btnHover} ${
-                  alwaysOnTop
-                    ? isDark
-                      ? 'text-[#00F2FF]'
-                      : 'text-cyan-700'
-                    : `${textMuted} hover:text-cyan-500`
-                }`}
+              {/* Pin on top */}
+              <Tooltip
+                label={alwaysOnTop ? t('viewer.unpinOnTop') : t('viewer.pinOnTop')}
+                placement="bottom"
               >
-                {alwaysOnTop ? <Pin size={15} /> : <PinOff size={15} />}
-              </button>
-            </Tooltip>
-          </div>
+                <button
+                  type="button"
+                  onClick={handleToggleAlwaysOnTop}
+                  className={`rounded-md p-1.5 transition-colors ${btnHover} ${
+                    alwaysOnTop
+                      ? isDark
+                        ? 'text-[#00F2FF]'
+                        : 'text-cyan-700'
+                      : `${textMuted} hover:text-cyan-500`
+                  }`}
+                >
+                  {alwaysOnTop ? <Pin size={15} /> : <PinOff size={15} />}
+                </button>
+              </Tooltip>
+            </div>
           )}
 
           <TitleBarMenu iconSize={15} variant="viewer" />
@@ -1507,9 +1511,7 @@ export function ImageViewerWindow() {
           {/* Canvas clip not found state */}
           {!loading && !clip && (
             <div className="flex h-full w-full flex-col items-center justify-center gap-2">
-              <span className="font-mono text-xs text-rose-500">
-                {t('viewer.clipNotFound')}
-              </span>
+              <span className="font-mono text-xs text-rose-500">{t('viewer.clipNotFound')}</span>
             </div>
           )}
 
@@ -2024,134 +2026,208 @@ export function ImageViewerWindow() {
       >
         {clip ? (
           <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-          {/* Tipo de captura */}
-          <div className="flex shrink-0 items-center gap-1.5 font-medium text-foreground">
-            {isImageClip ? (
-              <ImageIcon size={13} className={`shrink-0 ${isDark ? 'text-cyan-400' : 'text-blue-600'}`} />
-            ) : isCodeClip ? (
-              <Code size={13} className={`shrink-0 ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`} />
-            ) : isUrlClip ? (
-              <Globe size={13} className={`shrink-0 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-            ) : isFileClip ? (
-              <LucideFile size={13} className={`shrink-0 ${isDark ? 'text-amber-400' : 'text-amber-600'}`} />
-            ) : colorInfo ? (
-              <span
-                className="h-3 w-3 shrink-0 rounded-full border border-black/15 dark:border-white/20"
-                style={{ backgroundColor: colorInfo.hex }}
-              />
-            ) : (
-              <FileText size={13} className={`shrink-0 ${isDark ? 'text-cyan-400' : 'text-blue-600'}`} />
+            {/* Tipo de captura */}
+            <div className="flex shrink-0 items-center gap-1.5 font-medium text-foreground">
+              {isImageClip ? (
+                <ImageIcon
+                  size={13}
+                  className={`shrink-0 ${isDark ? 'text-cyan-400' : 'text-blue-600'}`}
+                />
+              ) : isCodeClip ? (
+                <Code
+                  size={13}
+                  className={`shrink-0 ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}
+                />
+              ) : isUrlClip ? (
+                <Globe
+                  size={13}
+                  className={`shrink-0 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}
+                />
+              ) : isFileClip ? (
+                <LucideFile
+                  size={13}
+                  className={`shrink-0 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}
+                />
+              ) : colorInfo ? (
+                <span
+                  className="h-3 w-3 shrink-0 rounded-full border border-black/15 dark:border-white/20"
+                  style={{ backgroundColor: colorInfo.hex }}
+                />
+              ) : (
+                <FileText
+                  size={13}
+                  className={`shrink-0 ${isDark ? 'text-cyan-400' : 'text-blue-600'}`}
+                />
+              )}
+              <span className="truncate">
+                {detectedLang
+                  ? `${t('clipType.code', 'Código')} (${detectedLang})`
+                  : t(`clipType.${clip.clip_type}`, { defaultValue: t('clipType.text') })}
+              </span>
+            </div>
+
+            <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>
+              ·
+            </span>
+
+            {/* Origen de la captura (source_app + source_icon) */}
+            {clip.source_app && (
+              <>
+                <div className="flex shrink-0 items-center gap-1.5 font-medium text-foreground">
+                  {clip.source_icon && (
+                    <img
+                      src={
+                        clip.source_icon.startsWith('data:')
+                          ? clip.source_icon
+                          : `data:image/png;base64,${clip.source_icon}`
+                      }
+                      alt=""
+                      className="h-3.5 w-3.5 shrink-0 object-contain"
+                    />
+                  )}
+                  <span className="max-w-[160px] truncate">{clip.source_app}</span>
+                </div>
+                <span
+                  className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}
+                >
+                  ·
+                </span>
+              </>
             )}
-            <span className="truncate">
-              {detectedLang
-                ? `${t('clipType.code', 'Código')} (${detectedLang})`
-                : t(`clipType.${clip.clip_type}`, { defaultValue: t('clipType.text') })}
-            </span>
-          </div>
 
-          <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
+            {/* Fecha relativa */}
+            {friendlyDate && (
+              <span className={`shrink-0 ${isDark ? 'text-muted-foreground/90' : 'text-zinc-600'}`}>
+                {friendlyDate}
+              </span>
+            )}
 
-          {/* Origen de la captura (source_app + source_icon) */}
-          {clip.source_app && (
-            <>
-              <div className="flex shrink-0 items-center gap-1.5 font-medium text-foreground">
-                {clip.source_icon && (
-                  <img
-                    src={
-                      clip.source_icon.startsWith('data:')
-                        ? clip.source_icon
-                        : `data:image/png;base64,${clip.source_icon}`
-                    }
-                    alt=""
-                    className="h-3.5 w-3.5 shrink-0 object-contain"
-                  />
-                )}
-                <span className="max-w-[160px] truncate">{clip.source_app}</span>
-              </div>
-              <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
-            </>
-          )}
-
-          {/* Fecha relativa */}
-          {friendlyDate && (
-            <span className={`shrink-0 ${isDark ? 'text-muted-foreground/90' : 'text-zinc-600'}`}>
-              {friendlyDate}
-            </span>
-          )}
-
-          {/* Métricas contextuales */}
-          {isImageClip ? (
-            <>
-              {(dimsLabel || sizeLabel) && (
-                <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
-              )}
-              {dimsLabel && <span className="shrink-0 tabular-nums">{dimsLabel}</span>}
-              {dimsLabel && sizeLabel && (
-                <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
-              )}
-              {sizeLabel && <span className="shrink-0 tabular-nums">{sizeLabel}</span>}
-              <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
-              <span className={`shrink-0 tabular-nums font-medium ${isDark ? 'text-cyan-400' : 'text-blue-600'}`}>
-                {zoomPercent}%
-                {isFitMode
-                  ? ` · ${t('viewer.fitShort')}`
-                  : isOriginalMode
-                    ? ` · ${t('viewer.originalShort')}`
-                    : ''}
-              </span>
-            </>
-          ) : isCodeClip || (!isImageClip && !isFileClip && !isUrlClip && !isHtmlClip) ? (
-            <>
-              <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
-              <span className="shrink-0 tabular-nums">
-                {t('viewer.linesCount', { count: textStats.lines })}
-              </span>
-              <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
-              <span className="shrink-0 tabular-nums">
-                {t('viewer.wordsCount', { count: textStats.words })}
-              </span>
-              <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
-              <span className="shrink-0 tabular-nums">{sizeLabel || `${textStats.chars} B`}</span>
-              <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
-              <span className={`shrink-0 tabular-nums font-medium ${isDark ? 'text-cyan-400' : 'text-blue-600'}`}>
-                {fontSize}px{wrapLines ? ` · ${t('viewer.toggleWrap')}` : ''}
-              </span>
-            </>
-          ) : isUrlClip ? (
-            <>
-              {urlObj && (
-                <>
-                  <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
-                  <span className={`max-w-[180px] truncate font-semibold ${isDark ? 'text-cyan-400' : 'text-blue-600'}`}>
-                    {urlObj.hostname}
+            {/* Métricas contextuales */}
+            {isImageClip ? (
+              <>
+                {(dimsLabel || sizeLabel) && (
+                  <span
+                    className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}
+                  >
+                    ·
                   </span>
-                </>
-              )}
-              <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
-              <span className="shrink-0 tabular-nums">
-                {t('viewer.charsCount', { count: (clip.content || '').length })}
-              </span>
-            </>
-          ) : isFileClip ? (
-            <>
-              <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
-              <span className="max-w-[200px] truncate font-medium text-foreground">
-                {(clip.preview || clip.content || '').split(/[\\/]/).pop()}
-              </span>
-              {sizeLabel && (
-                <>
-                  <span className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}>·</span>
-                  <span className="shrink-0 tabular-nums">{sizeLabel}</span>
-                </>
-              )}
-            </>
-          ) : null}
+                )}
+                {dimsLabel && <span className="shrink-0 tabular-nums">{dimsLabel}</span>}
+                {dimsLabel && sizeLabel && (
+                  <span
+                    className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}
+                  >
+                    ·
+                  </span>
+                )}
+                {sizeLabel && <span className="shrink-0 tabular-nums">{sizeLabel}</span>}
+                <span
+                  className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}
+                >
+                  ·
+                </span>
+                <span
+                  className={`shrink-0 font-medium tabular-nums ${isDark ? 'text-cyan-400' : 'text-blue-600'}`}
+                >
+                  {zoomPercent}%
+                  {isFitMode
+                    ? ` · ${t('viewer.fitShort')}`
+                    : isOriginalMode
+                      ? ` · ${t('viewer.originalShort')}`
+                      : ''}
+                </span>
+              </>
+            ) : isCodeClip || (!isImageClip && !isFileClip && !isUrlClip && !isHtmlClip) ? (
+              <>
+                <span
+                  className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}
+                >
+                  ·
+                </span>
+                <span className="shrink-0 tabular-nums">
+                  {t('viewer.linesCount', { count: textStats.lines })}
+                </span>
+                <span
+                  className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}
+                >
+                  ·
+                </span>
+                <span className="shrink-0 tabular-nums">
+                  {t('viewer.wordsCount', { count: textStats.words })}
+                </span>
+                <span
+                  className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}
+                >
+                  ·
+                </span>
+                <span className="shrink-0 tabular-nums">{sizeLabel || `${textStats.chars} B`}</span>
+                <span
+                  className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}
+                >
+                  ·
+                </span>
+                <span
+                  className={`shrink-0 font-medium tabular-nums ${isDark ? 'text-cyan-400' : 'text-blue-600'}`}
+                >
+                  {fontSize}px{wrapLines ? ` · ${t('viewer.toggleWrap')}` : ''}
+                </span>
+              </>
+            ) : isUrlClip ? (
+              <>
+                {urlObj && (
+                  <>
+                    <span
+                      className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}
+                    >
+                      ·
+                    </span>
+                    <span
+                      className={`max-w-[180px] truncate font-semibold ${isDark ? 'text-cyan-400' : 'text-blue-600'}`}
+                    >
+                      {urlObj.hostname}
+                    </span>
+                  </>
+                )}
+                <span
+                  className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}
+                >
+                  ·
+                </span>
+                <span className="shrink-0 tabular-nums">
+                  {t('viewer.charsCount', { count: (clip.content || '').length })}
+                </span>
+              </>
+            ) : isFileClip ? (
+              <>
+                <span
+                  className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}
+                >
+                  ·
+                </span>
+                <span className="max-w-[200px] truncate font-medium text-foreground">
+                  {(clip.preview || clip.content || '').split(/[\\/]/).pop()}
+                </span>
+                {sizeLabel && (
+                  <>
+                    <span
+                      className={`shrink-0 ${isDark ? 'text-muted-foreground/40' : 'text-zinc-400'}`}
+                    >
+                      ·
+                    </span>
+                    <span className="shrink-0 tabular-nums">{sizeLabel}</span>
+                  </>
+                )}
+              </>
+            ) : null}
           </div>
         ) : (
-          <div className="flex min-w-0 flex-1 items-center gap-2 text-muted-foreground/70 text-[10px]">
+          <div className="flex min-w-0 flex-1 items-center gap-2 text-[10px] text-muted-foreground/70">
             {loading ? (
               <>
-                <Loader2 size={12} className={`animate-spin ${isDark ? 'text-cyan-400' : 'text-blue-600'}`} />
+                <Loader2
+                  size={12}
+                  className={`animate-spin ${isDark ? 'text-cyan-400' : 'text-blue-600'}`}
+                />
                 <span>{t('viewer.loadingImage')}</span>
               </>
             ) : (
@@ -2167,7 +2243,11 @@ export function ImageViewerWindow() {
               {currentClipIndex + 1}/{clipIds.length}
             </span>
           )}
-          {editHint && <span className="max-w-[200px] truncate font-medium text-rose-500 dark:text-rose-400">{editHint}</span>}
+          {editHint && (
+            <span className="max-w-[200px] truncate font-medium text-rose-500 dark:text-rose-400">
+              {editHint}
+            </span>
+          )}
         </div>
       </div>
 

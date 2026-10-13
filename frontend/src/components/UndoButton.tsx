@@ -11,12 +11,7 @@ interface UndoButtonProps {
   size?: 'compact' | 'full';
 }
 
-export function UndoButton({
-  canUndo,
-  onUndo,
-  className,
-  size = 'compact',
-}: UndoButtonProps) {
+export function UndoButton({ canUndo, onUndo, className, size = 'compact' }: UndoButtonProps) {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(canUndo);
   const [isExiting, setIsExiting] = useState(false);
@@ -51,11 +46,7 @@ export function UndoButton({
       placement="bottom"
       disabled={isExiting}
     >
-      <button
-        type="button"
-        onClick={onUndo}
-        className={buttonClass}
-      >
+      <button type="button" onClick={onUndo} className={buttonClass}>
         <Undo2 size={size === 'compact' ? 13 : 12} className="shrink-0" />
         <span className="hidden text-[11px] sm:inline">{t('contextMenu.undo')}</span>
       </button>

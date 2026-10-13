@@ -91,7 +91,8 @@ export const FullPeek: React.FC<FullPeekProps> = ({
 
   let top = cardCenterY - calculatedMaxHeight / 2;
   if (top < VIEWPORT_MARGIN) top = VIEWPORT_MARGIN;
-  if (top + calculatedMaxHeight > vh - VIEWPORT_MARGIN) top = vh - VIEWPORT_MARGIN - calculatedMaxHeight;
+  if (top + calculatedMaxHeight > vh - VIEWPORT_MARGIN)
+    top = vh - VIEWPORT_MARGIN - calculatedMaxHeight;
 
   const style: React.CSSProperties = {
     position: 'fixed',
@@ -182,9 +183,9 @@ export const FullPeek: React.FC<FullPeekProps> = ({
                   </div>
                 )
               ) : (
-                <div className="min-h-0 flex-1 overflow-y-auto p-4 custom-scrollbar">
+                <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-4">
                   {textToShow ? (
-                    <pre className="whitespace-pre-wrap break-words font-mono text-[11.5px] leading-relaxed text-foreground/95 select-text">
+                    <pre className="select-text whitespace-pre-wrap break-words font-mono text-[11.5px] leading-relaxed text-foreground/95">
                       {textToShow}
                     </pre>
                   ) : (

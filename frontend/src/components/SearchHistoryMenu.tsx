@@ -176,9 +176,7 @@ export function SearchHistoryMenu({
   return (
     <div
       ref={rootRef}
-      className={
-        embedded ? 'absolute right-1 top-1/2 z-10 -translate-y-1/2' : 'relative shrink-0'
-      }
+      className={embedded ? 'absolute right-1 top-1/2 z-10 -translate-y-1/2' : 'relative shrink-0'}
     >
       <Tooltip
         label={t('common.tooltipWithHotkey', {
@@ -266,9 +264,7 @@ export function SearchHistoryMenu({
                           ? 'bg-accent text-foreground ring-1 ring-primary/50'
                           : 'text-muted-foreground'
                       } ${
-                        pointerMovedSinceOpen
-                          ? 'hover:bg-accent hover:text-foreground'
-                          : ''
+                        pointerMovedSinceOpen ? 'hover:bg-accent hover:text-foreground' : ''
                       } focus-visible:bg-accent focus-visible:text-foreground`}
                     >
                       <History size={12} className="shrink-0 text-primary/70" />

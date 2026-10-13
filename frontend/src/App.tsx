@@ -469,7 +469,6 @@ function App() {
       setSettings(event.payload);
       recentSearchesRef.current = event.payload.recent_searches ?? [];
       setRecentSearches(recentSearchesRef.current);
-
     });
 
     const unlistenAchievements = listen<{ achievement_id: string }[]>(

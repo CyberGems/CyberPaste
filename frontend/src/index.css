@@ -94,11 +94,14 @@
 }
 
 @keyframes undo-glow-pulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
   }
   50% {
-    box-shadow: 0 0 18px rgba(245, 158, 11, 0.5), inset 0 0 6px rgba(245, 158, 11, 0.2);
+    box-shadow:
+      0 0 18px rgba(245, 158, 11, 0.5),
+      inset 0 0 6px rgba(245, 158, 11, 0.2);
   }
 }
 

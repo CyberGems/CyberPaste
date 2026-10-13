@@ -149,7 +149,7 @@ function ContextMenuItem({
           }
         }}
         className={clsx(
-          'flex w-full items-center rounded-lg px-2.5 py-1.5 text-left text-[13px] font-medium transition-colors group',
+          'group flex w-full items-center rounded-lg px-2.5 py-1.5 text-left text-[13px] font-medium transition-colors',
           option.disabled ? 'pointer-events-none opacity-40' : '',
           option.danger
             ? clsx('text-foreground/90 hover:bg-red-500/10', focused && 'bg-red-500/10')
@@ -178,7 +178,7 @@ function ContextMenuItem({
       {hasSubMenu && isOpen && (
         <div
           ref={subMenuRef}
-          className="custom-scrollbar absolute z-[210] min-w-[180px] max-h-[calc(100vh-16px)] overflow-y-auto overflow-x-hidden rounded-xl border border-border bg-popover/95 p-1 shadow-2xl backdrop-blur-md"
+          className="custom-scrollbar absolute z-[210] max-h-[calc(100vh-16px)] min-w-[180px] overflow-y-auto overflow-x-hidden rounded-xl border border-border bg-popover/95 p-1 shadow-2xl backdrop-blur-md"
           style={
             subMenuPlacement === 'below'
               ? {
@@ -413,7 +413,7 @@ export function ContextMenu({
   return (
     <div
       ref={menuRef}
-      className="custom-scrollbar fixed z-[200] min-w-[180px] max-h-[calc(100vh-16px)] overflow-y-auto overflow-x-hidden rounded-xl border border-border bg-popover/95 p-1 shadow-2xl backdrop-blur-md"
+      className="custom-scrollbar fixed z-[200] max-h-[calc(100vh-16px)] min-w-[180px] overflow-y-auto overflow-x-hidden rounded-xl border border-border bg-popover/95 p-1 shadow-2xl backdrop-blur-md"
       style={{
         left: x,
         top: y,

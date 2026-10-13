@@ -300,7 +300,9 @@ export function AppLockScreen({
                 value={secret}
                 disabled={busy || lockedOut}
                 onChange={(e) => {
-                  const next = isPin ? e.target.value.replace(/\D/g, '').slice(0, 8) : e.target.value;
+                  const next = isPin
+                    ? e.target.value.replace(/\D/g, '').slice(0, 8)
+                    : e.target.value;
                   setSecret(next);
                   setError('');
                 }}
