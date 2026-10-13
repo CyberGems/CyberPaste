@@ -8,7 +8,7 @@
 
 <!-- Maintainer: Rewrite the marked paragraph for every release. Use 25-45 words, lead with user-facing changes, and do not repeat the app name or version. -->
 <!-- changelog-summary:start -->
-Outside clicks hide the window again, styled clipboard HTML is stored as plain text, and the update dialog keeps its actions below the notes. Search and folder hints are clearer, with a quieter compact footer that rotates the useful shortcuts.
+Universal media visor brings full inspection and zoom to text, code, images, and files without screen flash. Source application filters, panoramic cards, marquee selection, horizontal folder chevrons, and automatic history retention make daily workflow faster and more organized.
 <!-- changelog-summary:end -->
 
 > **New to CyberPaste?** A fast, privacy-first Windows clipboard manager with history, folders, OCR, and configurable AI actions.
@@ -17,18 +17,24 @@ Outside clicks hide the window again, styled clipboard HTML is stored as plain t
 
 ### ✨ Key Features & Highlights
 
-- 🪟 **Hide on Outside Click**:
-  - Clicking the desktop or another app hides the window again in Full and Compact, even when it stays above other windows.
-  - The hide-on-blur setting shows its proper name in the confirmation toast.
+- 👁️ **Universal Clip Visor**:
+  - Full media inspector for text, code, images, HTML, and files with zoom, pan, and a dedicated metadata footer.
+  - Window opens hidden and reveals only after theme styles load, eliminating empty screen flashes.
+  - Position validation prevents windows from opening off-screen.
 
-- 📋 **Clipboard Text**:
-  - Styled HTML that is only a sentence, such as a colored span from another app, is stored as plain text.
-  - Tables and other structural HTML stay HTML.
+- 🏷️ **Source Application & Type Filters**:
+  - Filter clips and captures by originating application with instant search, badges, and unknown process detection.
+  - One-click type filter chips combine with active application filters and display in the compact footer.
 
-- 🔎 **Search, Folders & Updates**:
-  - Search history sits inside the field. The tooltip mentions type-to-search, and `Ctrl+F` always focuses the bar.
-  - Full-mode folders use `Ctrl+←/→`. Compact folders use `←/→`, with a short quiet highlight and a slow footer rotation of search, folder, and peek hints.
-  - The update dialog keeps Skip, Later, and Update below the notes. Spanish Skip reads “Saltar versión”.
+- 📐 **Panoramic Cards & Marquee Selection**:
+  - Added panoramic card layout format with a quick layout toggle in Full mode.
+  - Drag from layout dead zones to marquee multi-select clips, with bulk context deletion.
+  - Visual styling distinguishes active keyboard navigation from hovered items in compact view.
+
+- 📂 **Folders, History Retention & Polish**:
+  - Horizontal folder navigation with scroll chevrons, boundary disabling, and folder deletion confirmation.
+  - Configurable automatic history expiration policy cleans up old history in the background.
+  - Direct clipboard monitoring toggle button on titlebars and custom NSIS installer graphics.
 
 <details>
 <summary><b>🇪🇸 Ver notas de la versión en Español</b></summary>
@@ -37,7 +43,7 @@ Outside clicks hide the window again, styled clipboard HTML is stored as plain t
 
 ### 🚀 Novedades de esta versión
 
-<!-- Maintainer: Resumen en español (25-45 palabras), mismos cambios visibles que el resumen en inglés. -->
+El visor universal adapta inspección completa y zoom para texto, código, imágenes y archivos sin destellos. Filtros por aplicación de origen, tarjetas panorámicas, selección múltiple por arrastre, navegación horizontal de carpetas y retención automática aceleran tu flujo diario.
 
 > **¿Nuevo en CyberPaste?** Un gestor de portapapeles rápido y privado para Windows, con historial, carpetas, OCR y acciones de IA configurables.
 
@@ -45,7 +51,24 @@ Outside clicks hide the window again, styled clipboard HTML is stored as plain t
 
 ### ✨ Novedades destacadas
 
-<!-- Maintainer: Versión en español de "Key Features & Highlights". -->
+- 👁️ **Visor Universal de Clips**:
+  - Inspector multimedia completo para texto, código, imágenes, HTML y archivos con zoom, paneo y pie con metadatos.
+  - La ventana se crea oculta y se revela tras cargar los estilos del tema, eliminando destellos blancos.
+  - Validación de posición para evitar que la ventana se abra fuera de la pantalla.
+
+- 🏷️ **Filtros por Aplicación de Origen y Tipo**:
+  - Filtra clips y capturas por su aplicación de origen con búsqueda instantánea, distintivos y soporte para procesos desconocidos.
+  - Los chips de tipo a 1 clic se combinan con los filtros de aplicación y se reflejan en el pie compacto.
+
+- 📐 **Tarjetas Panorámicas y Selección Múltiple**:
+  - Nuevo formato de tarjeta panorámico con selector rápido de diseño en modo Completo.
+  - Arrastra desde zonas vacías para selección múltiple en bloque, con borrado contextual conjunto.
+  - Distinción visual clara entre el elemento activo por teclado y los elementos resaltados por el cursor.
+
+- 📂 **Carpetas, Retención de Historial y Acabados**:
+  - Navegación horizontal de carpetas con flechas, desactivación en extremos y diálogo de confirmación de borrado.
+  - Política configurable de expiración automática para depurar el historial antiguo en segundo plano.
+  - Botón directo de monitoreo del portapapeles en las barras de título y nuevos gráficos de instalación NSIS.
 
 </details>
 

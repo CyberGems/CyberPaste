@@ -2,6 +2,28 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.24.0] — 2026-10-13
+
+### 👁️ Visor Multimedia & Universal Clip Inspection
+- **Adaptive universal visor**: Converted the image viewer into a universal media inspector supporting all clip types (images, text, code, rich text, HTML, and file paths) with a VISOR badge, zoom/pan controls, and metadata footer.
+- **Flash-free window opening**: Viewer windows initialize hidden and reveal only after stylesheets and theme tokens apply, eliminating white or empty flashes.
+- **Positioning and theme polish**: Prevents off-screen positioning, polishes header responsive layout, and refines Light and Gray theme contrast.
+
+### 🏷️ Source Application & Type Filtering
+- **Origin app filtering**: Added quick search and filtering of clips by source application across Full and Compact modes, including unknown app detection and fallback labels.
+- **1-click filter integration**: Type filter chips integrate with app filters, showing combined filter status in footer and auto-closing reset dropdowns.
+
+### 📐 Panoramic Mode & Marquee Selection
+- **Panoramic card format**: Added a panoramic layout option and quick toggle button for Full mode cards.
+- **Marquee drag multi-selection**: Drag from layout empty spaces to select multiple cards simultaneously.
+- **Multi-card deletion**: Context menu supports deleting all selected items when multiple cards are highlighted.
+- **Keyboard focus clarity**: Clearly distinguishes actively selected items from hovered items in compact view.
+
+### 📂 Folder Chevrons, History Expiration & Polish
+- **Horizontal folder navigation**: Added scroll chevrons and fast wheel scrolling for compact folders, with edge disabling and folder deletion confirmation.
+- **Automatic history retention**: Configurable background auto-deletion policy to safely purge older clips.
+- **Quick controls**: Added clipboard monitoring toggle button to titlebars, custom NSIS installer graphics, and documented `Ctrl+Wheel` density zoom.
+
 ## [1.23.0] — 2026-09-25
 
 ### 🪟 Hide on Outside Click
