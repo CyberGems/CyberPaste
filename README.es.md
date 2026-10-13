@@ -48,15 +48,16 @@ La mayoría de los gestores de portapapeles envían tus datos a la nube o son de
 ## ✨ Funciones principales
 
 ### 📋 Motor del portapapeles
-- **Soporte de contenido enriquecido**: captura automáticamente texto con formato, código (con resaltado de sintaxis e insignias de lenguaje), HTML, RTF, imágenes (con visor de alta resolución y extracción de texto por OCR), URLs y archivos
-- **Monitorización inteligente**: detecta las operaciones de cortar (Ctrl+X, Mayús+Supr) mediante ganchos globales de teclado y suprime los eventos duplicados
-- **Búsqueda instantánea**: búsqueda de texto completo en tiempo real con filtros rápidos (Texto, Código, Imágenes, Enlaces, Archivos) y contadores de la base de datos en vivo
+- **Soporte de contenido enriquecido**: captura automáticamente texto con formato, código (con resaltado de sintaxis e insignias de lenguaje), HTML, RTF, imágenes (con visor universal de inspección y extracción de texto por OCR), URLs y archivos
+- **Monitorización inteligente**: detecta las operaciones de cortar (Ctrl+X, Mayús+Supr) mediante ganchos globales de teclado, suprime los eventos duplicados e incluye botón de alternancia en la barra de título
+- **Búsqueda instantánea y filtros por app**: búsqueda de texto completo en tiempo real con filtros rápidos (Texto, Código, Imágenes, Enlaces, Archivos), filtrado por aplicación de origen y contadores en vivo
 
 ### 🗂️ Organización
-- **Carpetas**: organiza los clips en carpetas personalizadas con arrastrar y soltar y auto-desplazamiento en los bordes
+- **Carpetas**: organiza los clips en carpetas personalizadas con arrastrar y soltar, flechas de navegación horizontal y confirmación de eliminación segura
 - **Favoritos y anclaje**: fija los clips de uso frecuente para que permanezcan arriba
-- **Gestión por lotes**: `Ctrl+Clic` / `Mayús+Clic` para selección múltiple y `Ctrl+A` para seleccionar todos los clips visibles
-- **Dos modos de vista**: Modo Completo (cuadrícula multicolumna con zoom) o Modo Compacto (lista de alta densidad con vista previa al pasar el cursor)
+- **Gestión por lotes**: `Ctrl+Clic` / `Mayús+Clic` para selección múltiple, selección por arrastre (marquesina) y `Ctrl+A` para seleccionar todos los clips visibles
+- **Dos modos de vista**: Modo Completo (cuadrícula multicolumna, formato panorámico, selección múltiple) o Modo Compacto (lista de alta densidad con vista previa y navegación horizontal de carpetas)
+- **Retención automática del historial**: política configurable de borrado automático en segundo plano para limpiar clips antiguos
 
 ### 🤖 Acciones de IA
 - **Acciones inteligentes**: resume, traduce, explica código o corrige gramática

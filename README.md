@@ -48,15 +48,16 @@ Most clipboard managers either send your data to the cloud or are too basic to b
 ## ✨ Key Features
 
 ### 📋 Clipboard Engine
-- **Rich Content Support** — Automatically captures formatted Text, Code (with syntax highlighting and language badges), HTML, RTF, Images (with high-res viewer & OCR text extraction), URLs, and Files
-- **Smart Monitoring** — Detects cut operations (Ctrl+X, Shift+Delete) via global keyboard hooks and suppresses duplicate events
-- **Instant Search** — Real-time full-text search with quick filter chips (Text, Code, Images, Links, Files) and live database counters
+- **Rich Content Support** — Automatically captures formatted Text, Code (with syntax highlighting and language badges), HTML, RTF, Images (with universal Visor inspection & OCR text extraction), URLs, and Files
+- **Smart Monitoring** — Detects cut operations (Ctrl+X, Shift+Delete) via global keyboard hooks, suppresses duplicate events, and includes a titlebar monitoring toggle
+- **Instant Search & App Filters** — Real-time full-text search with quick filter chips (Text, Code, Images, Links, Files) and source application filtering with live database counters
 
 ### 🗂️ Organization
-- **Folders** — Organize clips into custom folders with drag & drop and edge auto-scrolling
+- **Folders** — Organize clips into custom folders with drag & drop, horizontal navigation chevrons, and safe deletion confirmation
 - **Favorites & Pinning** — Pin frequently used clips that stay at the top
-- **Bulk Management** — `Ctrl+Click` / `Shift+Click` for multi-select, `Ctrl+A` to select all visible clips
-- **Dual View Modes** — Full Mode (multi-column grid with zoom) or Compact Mode (high-density list with hover peek)
+- **Bulk Management** — `Ctrl+Click` / `Shift+Click` for multi-select, marquee drag selection, and `Ctrl+A` to select all visible clips
+- **Dual View Modes** — Full Mode (multi-column grid, panoramic cards, marquee selection) or Compact Mode (high-density list with hover peek and horizontal folder navigation)
+- **Automatic History Retention** — Configurable background auto-deletion to automatically clean up older clips
 
 ### 🤖 AI Actions
 - **Smart Actions** — Summarize, translate, explain code, or fix grammar
