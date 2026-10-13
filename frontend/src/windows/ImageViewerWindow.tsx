@@ -216,6 +216,44 @@ export function ImageViewerWindow() {
   showDrawerRef.current = showDrawer;
   clipIdsRef.current = clipIds;
 
+  const brandingDragRef = useRef({ isDown: false, startX: 0, startY: 0, dragged: false });
+
+  const handleBrandingPointerDown = useCallback((e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    brandingDragRef.current = {
+      isDown: true,
+      startX: e.screenX,
+      startY: e.screenY,
+      dragged: false,
+    };
+  }, []);
+
+  const handleBrandingPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!brandingDragRef.current.isDown || brandingDragRef.current.dragged) return;
+      const dx = e.screenX - brandingDragRef.current.startX;
+      const dy = e.screenY - brandingDragRef.current.startY;
+      if (dx * dx + dy * dy > 9) {
+        brandingDragRef.current.dragged = true;
+        appWindow.startDragging().catch(() => {});
+      }
+    },
+    [appWindow]
+  );
+
+  const handleBrandingPointerUp = useCallback(() => {
+    brandingDragRef.current.isDown = false;
+  }, []);
+
+  const handleBrandingClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (brandingDragRef.current.dragged) {
+      e.preventDefault();
+      return;
+    }
+    invoke('open_about').catch(console.error);
+  }, []);
+
   const showStatus = useCallback((msg: string, ms = 1800) => {
     setStatusMessage(msg);
     if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
@@ -331,6 +369,10 @@ export function ImageViewerWindow() {
         console.error('Failed to load viewer clip:', err);
         setLoading(false);
         setSwitching(false);
+        if (!hasRevealedRef.current) {
+          hasRevealedRef.current = true;
+          appWindow.show().catch(() => {});
+        }
       });
   }, []);
 
@@ -501,6 +543,17 @@ export function ImageViewerWindow() {
       return () => clearTimeout(timer);
     }
   }, [clip, appWindow]);
+
+  // Safety fallback: ensure window is revealed even if clip load takes longer
+  useEffect(() => {
+    const fallbackTimer = setTimeout(() => {
+      if (!hasRevealedRef.current) {
+        hasRevealedRef.current = true;
+        appWindow.show().catch(() => {});
+      }
+    }, 450);
+    return () => clearTimeout(fallbackTimer);
+  }, [appWindow]);
 
   const handleClose = useCallback(() => {
     appWindow.close();
@@ -1107,12 +1160,11 @@ export function ImageViewerWindow() {
           <Tooltip label={t('common.openAbout')} placement="bottom">
             <button
               type="button"
-              className="flex items-center gap-1.5 rounded-lg p-1 text-left transition-opacity hover:opacity-80"
-              onClick={(e) => {
-                e.stopPropagation();
-                invoke('open_about').catch(console.error);
-              }}
-              onMouseDown={(e) => e.stopPropagation()}
+              className="flex cursor-pointer select-none items-center gap-1.5 rounded-lg p-1 text-left transition-opacity hover:opacity-80 active:cursor-grabbing"
+              onPointerDown={handleBrandingPointerDown}
+              onPointerMove={handleBrandingPointerMove}
+              onPointerUp={handleBrandingPointerUp}
+              onClick={handleBrandingClick}
             >
               <img
                 src="/logo.png"
@@ -1462,39 +1514,51 @@ export function ImageViewerWindow() {
           />
 
           {/* RENDERER: Image */}
-          {isImageClip && imageSrc && (
-            <img
-              src={imageSrc}
-              alt=""
-              draggable={false}
-              onLoad={(e) => {
-                const img = e.currentTarget;
-                setNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
-              }}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onPointerCancel={handlePointerUp}
-              onDoubleClick={() => {
-                if (isFitMode) setOriginalSize();
-                else resetViewToFit();
-              }}
-              className={`block max-w-none select-none ${isPanning ? 'cursor-grabbing' : 'cursor-grab'} ${
-                switching ? 'opacity-40' : 'opacity-100'
-              } transition-opacity duration-200`}
-              style={{
-                width: naturalSize.w || undefined,
-                height: naturalSize.h || undefined,
-                maxWidth: naturalSize.w ? 'none' : '100%',
-                maxHeight: naturalSize.h ? 'none' : '100%',
-                transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
-                transformOrigin: 'center center',
-                filter: isDark
-                  ? 'drop-shadow(0 0 20px rgba(0,0,0,0.8))'
-                  : 'drop-shadow(0 8px 24px rgba(0,0,0,0.18))',
-              }}
-            />
-          )}
+          {isImageClip &&
+            (imageSrc ? (
+              <img
+                src={imageSrc}
+                alt=""
+                draggable={false}
+                onLoad={(e) => {
+                  const img = e.currentTarget;
+                  setNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
+                }}
+                onError={(e) => {
+                  if (clip.content && !e.currentTarget.src.startsWith('data:')) {
+                    const mime = mimeFromPath(clip.image_path) || 'image/png';
+                    e.currentTarget.src = `data:${mime};base64,${clip.content}`;
+                  }
+                }}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerUp}
+                onDoubleClick={() => {
+                  if (isFitMode) setOriginalSize();
+                  else resetViewToFit();
+                }}
+                className={`block max-w-none select-none ${isPanning ? 'cursor-grabbing' : 'cursor-grab'} ${
+                  switching ? 'opacity-40' : 'opacity-100'
+                } transition-opacity duration-200`}
+                style={{
+                  width: naturalSize.w || undefined,
+                  height: naturalSize.h || undefined,
+                  maxWidth: naturalSize.w ? 'none' : '100%',
+                  maxHeight: naturalSize.h ? 'none' : '100%',
+                  transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
+                  transformOrigin: 'center center',
+                  filter: isDark
+                    ? 'drop-shadow(0 0 20px rgba(0,0,0,0.8))'
+                    : 'drop-shadow(0 8px 24px rgba(0,0,0,0.18))',
+                }}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-2 p-8 text-center text-muted-foreground">
+                <ImageIcon size={48} className="opacity-40" />
+                <span className="text-sm font-medium">{t('viewer.loadingImage')}</span>
+              </div>
+            ))}
 
           {/* RENDERER: Code & Syntax Highlighting */}
           {isCodeClip && (
@@ -1559,17 +1623,31 @@ export function ImageViewerWindow() {
           {isUrlClip && (
             <div className="flex h-full w-full flex-col items-center justify-center p-8">
               <div
-                className={`flex max-w-xl flex-col items-center gap-6 rounded-2xl border p-8 shadow-2xl backdrop-blur-md ${
-                  isDark ? 'border-white/10 bg-zinc-900/60' : 'border-zinc-200 bg-white/80'
+                className={`flex max-w-xl flex-col items-center gap-6 rounded-2xl border p-8 backdrop-blur-md ${
+                  isDark
+                    ? 'border-white/10 bg-zinc-900/70 shadow-2xl'
+                    : 'border-zinc-200/90 bg-white shadow-lg ring-1 ring-black/[0.04]'
                 }`}
               >
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+                <div
+                  className={`flex h-16 w-16 items-center justify-center rounded-2xl border transition-colors ${
+                    isDark
+                      ? 'border-cyan-500/25 bg-cyan-500/10 text-cyan-400'
+                      : 'border-blue-100 bg-blue-50/80 text-blue-600'
+                  }`}
+                >
                   <Globe size={32} />
                 </div>
 
                 <div className="flex flex-col items-center gap-2 text-center">
                   <div className="flex items-center gap-2">
-                    <span className="rounded border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-bold uppercase text-emerald-400">
+                    <span
+                      className={`rounded px-2 py-0.5 font-mono text-[10px] font-bold uppercase ${
+                        isDark
+                          ? 'border border-cyan-500/25 bg-cyan-500/10 text-cyan-400'
+                          : 'border border-blue-200/80 bg-blue-50/70 text-blue-700'
+                      }`}
+                    >
                       {urlObj?.protocol?.replace(':', '') || 'HTTP'}
                     </span>
                     <span className="text-lg font-bold tracking-tight text-foreground">
@@ -1585,7 +1663,11 @@ export function ImageViewerWindow() {
                       e.preventDefault();
                       handleOpenExternal();
                     }}
-                    className="max-w-md break-all text-sm font-medium text-cyan-400 underline decoration-cyan-400/40 underline-offset-4 transition-colors hover:text-cyan-300 hover:decoration-cyan-400"
+                    className={`max-w-md break-all text-sm font-medium underline underline-offset-4 transition-colors ${
+                      isDark
+                        ? 'text-cyan-400 decoration-cyan-400/40 hover:text-cyan-300 hover:decoration-cyan-400'
+                        : 'text-blue-600 decoration-blue-300 hover:text-blue-700 hover:decoration-blue-500'
+                    }`}
                   >
                     {clip.content?.trim()}
                   </a>
@@ -1595,7 +1677,11 @@ export function ImageViewerWindow() {
                   <button
                     type="button"
                     onClick={handleOpenExternal}
-                    className="flex items-center gap-2 rounded-xl bg-cyan-500/20 px-4 py-2 text-xs font-semibold text-cyan-400 transition-all hover:bg-cyan-500/30 active:scale-95"
+                    className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all active:scale-95 ${
+                      isDark
+                        ? 'border border-cyan-500/30 bg-cyan-500/15 text-cyan-300 hover:bg-cyan-500/25'
+                        : 'bg-blue-600 text-white shadow-sm hover:bg-blue-700'
+                    }`}
                   >
                     <ExternalLink size={14} />
                     <span>{t('viewer.openInBrowser')}</span>
@@ -1603,7 +1689,11 @@ export function ImageViewerWindow() {
                   <button
                     type="button"
                     onClick={handleCopy}
-                    className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-4 py-2 text-xs font-semibold text-foreground transition-all hover:bg-muted active:scale-95"
+                    className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-xs font-semibold transition-all active:scale-95 ${
+                      isDark
+                        ? 'border-white/10 bg-white/5 text-zinc-200 hover:bg-white/10'
+                        : 'border-zinc-200 bg-zinc-100/90 text-zinc-700 hover:bg-zinc-200/80 hover:text-zinc-900'
+                    }`}
                   >
                     {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
                     <span>{copied ? t('common.copied') : t('contextMenu.copy')}</span>
@@ -1617,11 +1707,19 @@ export function ImageViewerWindow() {
           {isFileClip && (
             <div className="flex h-full w-full flex-col items-center justify-center p-8">
               <div
-                className={`flex max-w-xl flex-col items-center gap-6 rounded-2xl border p-8 shadow-2xl backdrop-blur-md ${
-                  isDark ? 'border-white/10 bg-zinc-900/60' : 'border-zinc-200 bg-white/80'
+                className={`flex max-w-xl flex-col items-center gap-6 rounded-2xl border p-8 backdrop-blur-md ${
+                  isDark
+                    ? 'border-white/10 bg-zinc-900/70 shadow-2xl'
+                    : 'border-zinc-200/90 bg-white shadow-lg ring-1 ring-black/[0.04]'
                 }`}
               >
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/10 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.2)]">
+                <div
+                  className={`flex h-16 w-16 items-center justify-center rounded-2xl border transition-colors ${
+                    isDark
+                      ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
+                      : 'border-amber-200 bg-amber-50/80 text-amber-600'
+                  }`}
+                >
                   <LucideFile size={32} />
                 </div>
 

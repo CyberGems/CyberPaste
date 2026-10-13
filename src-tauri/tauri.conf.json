@@ -34,7 +34,9 @@
         "enable": true,
         "scope": [
           "$DATA/CyberPaste/images/**",
-          "$LOCALDATA/CyberPaste/images/**"
+          "$LOCALDATA/CyberPaste/images/**",
+          "$APPDATA/CyberPaste/images/**",
+          "$APPDATA/images/**"
         ]
       },
       "capabilities": [

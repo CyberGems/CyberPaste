@@ -1042,21 +1042,23 @@ pub async fn get_clip(
                         .await
                         .map_err(|e| e.to_string())?;
 
-                let full = load_full_image_content(pool, &mut clip).await?;
+                let full = load_full_image_content(pool, &mut clip).await.ok();
 
                 // JIT Migration: If no file path exists, create one now so the viewer can use it for 'Edit'
-                if file_path.is_none() || file_path.as_ref().map(|s| s.is_empty()).unwrap_or(true) {
-                    if let Ok(path) = crate::clipboard::persist_full_image_file(&clip.uuid, &full) {
-                        let _ = sqlx::query("UPDATE clip_images SET file_path = ?, storage_kind = 'file' WHERE clip_uuid = ?")
-                            .bind(&path)
-                            .bind(&clip.uuid)
-                            .execute(pool)
-                            .await;
-                        file_path = Some(path);
+                if (file_path.is_none() || file_path.as_ref().map(|s| s.is_empty()).unwrap_or(true)) && full.is_some() {
+                    if let Some(bytes) = &full {
+                        if let Ok(path) = crate::clipboard::persist_full_image_file(&clip.uuid, bytes) {
+                            let _ = sqlx::query("UPDATE clip_images SET file_path = ?, storage_kind = 'file' WHERE clip_uuid = ?")
+                                .bind(&path)
+                                .bind(&clip.uuid)
+                                .execute(pool)
+                                .await;
+                            file_path = Some(path);
+                        }
                     }
                 }
 
-                Ok(clip_to_detail_item(&clip, Some(&full), file_path))
+                Ok(clip_to_detail_item(&clip, full.as_deref(), file_path))
             } else {
                 Ok(clip_to_detail_item(&clip, None, None))
             }

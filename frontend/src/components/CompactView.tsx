@@ -74,6 +74,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
 import { clsx, type ClassValue } from 'clsx';
@@ -708,6 +709,43 @@ export const CompactView: React.FC<CompactViewProps> = ({
     const timer = setInterval(() => setFooterHintIndex((i) => (i + 1) % footerHints.length), 7000);
     return () => clearInterval(timer);
   }, [isWindowActive, footerHints.length]);
+
+  const brandingDragRef = useRef({ isDown: false, startX: 0, startY: 0, dragged: false });
+
+  const handleBrandingPointerDown = useCallback((e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    brandingDragRef.current = {
+      isDown: true,
+      startX: e.screenX,
+      startY: e.screenY,
+      dragged: false,
+    };
+  }, []);
+
+  const handleBrandingPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!brandingDragRef.current.isDown || brandingDragRef.current.dragged) return;
+    const dx = e.screenX - brandingDragRef.current.startX;
+    const dy = e.screenY - brandingDragRef.current.startY;
+    if (dx * dx + dy * dy > 9) {
+      brandingDragRef.current.dragged = true;
+      getCurrentWindow()
+        .startDragging()
+        .catch(() => {});
+    }
+  }, []);
+
+  const handleBrandingPointerUp = useCallback(() => {
+    brandingDragRef.current.isDown = false;
+  }, []);
+
+  const handleBrandingClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (brandingDragRef.current.dragged) {
+      e.preventDefault();
+      return;
+    }
+    invoke('open_about').catch(console.error);
+  }, []);
   const folderScrollRef = useRef<HTMLDivElement>(null);
   const [hasOverflow, setHasOverflow] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -1370,14 +1408,14 @@ export const CompactView: React.FC<CompactViewProps> = ({
           <Tooltip label={t('common.openAbout')} placement="bottom">
             <button
               type="button"
-              className="no-drag -ml-1.5 flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1 transition-colors hover:bg-accent/60"
+              className="-ml-1.5 flex min-w-0 cursor-pointer select-none items-center gap-2 rounded-md px-1.5 py-1 transition-colors hover:bg-accent/60 active:cursor-grabbing"
               aria-label={t('common.openAbout')}
-              onClick={(e) => {
-                e.stopPropagation();
-                invoke('open_about').catch(console.error);
-              }}
+              onPointerDown={handleBrandingPointerDown}
+              onPointerMove={handleBrandingPointerMove}
+              onPointerUp={handleBrandingPointerUp}
+              onClick={handleBrandingClick}
             >
-              <img src="/logo.png" alt="" className="h-5 w-5 shrink-0 object-contain" />
+              <img src="/logo.png" alt="" className="h-5 w-5 shrink-0 select-none object-contain" />
               <span className="truncate text-sm font-bold leading-5 tracking-tight text-foreground">
                 CyberPaste
               </span>
