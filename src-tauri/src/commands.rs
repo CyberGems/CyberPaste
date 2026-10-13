@@ -4987,6 +4987,7 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
     .decorations(false)
     .transparent(false)
     .theme(Some(theme_mode))
+    .maximized(settings.viewer_window_maximized)
     .always_on_top(false);
 
     if let Some((x, y)) = position {

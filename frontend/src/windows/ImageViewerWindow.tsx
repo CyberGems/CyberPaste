@@ -1011,40 +1011,18 @@ export function ImageViewerWindow() {
   const groupBg = isDark ? 'border-white/5 bg-white/5' : 'border-zinc-200 bg-zinc-200/40';
   const drawerBg = isDark ? 'border-white/10 bg-zinc-900/95' : 'border-zinc-200 bg-white/95';
 
-  if (loading && !clip) {
-    return (
-      <div
-        className={`flex h-screen w-screen animate-pulse items-center justify-center font-mono ${isDark ? 'bg-zinc-950 text-[#00F2FF]' : 'bg-zinc-100 text-cyan-700'}`}
-        role="status"
-        aria-label={t('viewer.loadingImageAria')}
-      >
-        {t('viewer.loadingImage')}
-      </div>
-    );
-  }
-
-  if (!clip) {
-    return (
-      <div
-        className={`flex h-screen w-screen items-center justify-center border font-mono ${isDark ? 'border-[#FF00D0]/30 bg-zinc-950 text-[#FF00D0]' : 'border-rose-300 bg-zinc-100 text-rose-600'}`}
-      >
-        {t('viewer.clipNotFound')}
-      </div>
-    );
-  }
-
-  const friendlyDate = getRelativeTime(clip.created_at, i18n.language);
-  const imageSrc = clip.clip_type === 'image' ? getImageSrc(clip) : '';
+  const friendlyDate = clip ? getRelativeTime(clip.created_at, i18n.language) : '';
+  const imageSrc = clip && clip.clip_type === 'image' ? getImageSrc(clip) : '';
   const zoomPercent = Math.round(scale * 100);
-  const sizeLabel = formatBytes(imageMeta.sizeBytes || clip.content_length);
+  const sizeLabel = clip ? formatBytes(imageMeta.sizeBytes || clip.content_length) : '';
   const dimsLabel =
     imageMeta.width && imageMeta.height ? `${imageMeta.width}×${imageMeta.height}` : '';
 
-  const isImageClip = clip.clip_type === 'image';
-  const isCodeClip = clip.clip_type === 'code';
-  const isUrlClip = clip.clip_type === 'url' || Boolean(urlObj);
-  const isFileClip = clip.clip_type === 'file';
-  const isHtmlClip = clip.clip_type === 'html' || clip.clip_type === 'rtf';
+  const isImageClip = clip?.clip_type === 'image';
+  const isCodeClip = clip?.clip_type === 'code';
+  const isUrlClip = clip?.clip_type === 'url' || Boolean(urlObj);
+  const isFileClip = clip?.clip_type === 'file';
+  const isHtmlClip = clip?.clip_type === 'html' || clip?.clip_type === 'rtf';
 
   return (
     <div
@@ -1204,7 +1182,8 @@ export function ImageViewerWindow() {
         {/* Actions Toolbar */}
         <div className="no-drag z-10 flex shrink-0 items-center gap-2">
           {/* Contextual Action Group */}
-          <div className={`flex items-center gap-0.5 rounded-lg border p-0.5 ${groupBg}`}>
+          {clip && (
+            <div className={`flex items-center gap-0.5 rounded-lg border p-0.5 ${groupBg}`}>
             {isImageClip ? (
               <>
                 <Tooltip label={t('viewer.zoomOut')} placement="bottom">
@@ -1441,6 +1420,7 @@ export function ImageViewerWindow() {
               </button>
             </Tooltip>
           </div>
+          )}
 
           <TitleBarMenu iconSize={15} variant="viewer" />
 
@@ -1501,8 +1481,31 @@ export function ImageViewerWindow() {
             }}
           />
 
+          {/* Canvas loading state */}
+          {loading && !clip && (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-3">
+              <Loader2
+                size={32}
+                className={`animate-spin ${isDark ? 'text-cyan-400' : 'text-blue-600'}`}
+              />
+              <span className="font-mono text-xs text-muted-foreground/80">
+                {t('viewer.loadingImage')}
+              </span>
+            </div>
+          )}
+
+          {/* Canvas clip not found state */}
+          {!loading && !clip && (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-2">
+              <span className="font-mono text-xs text-rose-500">
+                {t('viewer.clipNotFound')}
+              </span>
+            </div>
+          )}
+
           {/* RENDERER: Image */}
-          {isImageClip &&
+          {clip &&
+            isImageClip &&
             (imageSrc ? (
               <img
                 src={imageSrc}
@@ -1559,7 +1562,7 @@ export function ImageViewerWindow() {
             ))}
 
           {/* RENDERER: Code & Syntax Highlighting */}
-          {isCodeClip && (
+          {clip && isCodeClip && (
             <div className="scrollbar-thin relative flex h-full w-full overflow-auto p-6">
               {isHighlighting && (
                 <div className="absolute right-6 top-6 z-10 flex items-center gap-2 rounded border border-cyan-500/30 bg-zinc-950/80 px-2.5 py-1 font-mono text-[11px] text-cyan-400 backdrop-blur-md">
@@ -1593,7 +1596,7 @@ export function ImageViewerWindow() {
           )}
 
           {/* RENDERER: HTML / RTF with preview toggle */}
-          {isHtmlClip && (
+          {clip && isHtmlClip && (
             <div className="relative flex h-full w-full flex-col">
               {viewModeHtml === 'rendered' ? (
                 <iframe
@@ -1618,7 +1621,7 @@ export function ImageViewerWindow() {
           )}
 
           {/* RENDERER: URL Card */}
-          {isUrlClip && (
+          {clip && isUrlClip && (
             <div className="flex h-full w-full flex-col items-center justify-center p-8">
               <div
                 className={`flex max-w-xl flex-col items-center gap-6 rounded-2xl border p-8 backdrop-blur-md ${
@@ -1702,7 +1705,7 @@ export function ImageViewerWindow() {
           )}
 
           {/* RENDERER: File / Files Card */}
-          {isFileClip && (
+          {clip && isFileClip && (
             <div className="flex h-full w-full flex-col items-center justify-center p-8">
               <div
                 className={`flex max-w-xl flex-col items-center gap-6 rounded-2xl border p-8 backdrop-blur-md ${
@@ -1762,7 +1765,7 @@ export function ImageViewerWindow() {
           )}
 
           {/* RENDERER: Plain Text (with Color swatch support) */}
-          {!isImageClip && !isCodeClip && !isHtmlClip && !isUrlClip && !isFileClip && (
+          {clip && !isImageClip && !isCodeClip && !isHtmlClip && !isUrlClip && !isFileClip && (
             <div className="relative flex h-full w-full flex-col">
               {colorInfo && (
                 <div className="flex items-center justify-between border-b px-6 py-3 backdrop-blur-md">
@@ -1828,7 +1831,7 @@ export function ImageViewerWindow() {
         </div>
 
         {/* Dynamic Drawer: OCR for Images / Details & Stats for other types */}
-        {showDrawer && (
+        {showDrawer && clip && (
           <div
             className={`absolute right-0 top-0 z-20 flex h-full flex-col border-l shadow-2xl backdrop-blur-md ${drawerBg}`}
             style={{ width: drawerWidth }}
@@ -2009,7 +2012,8 @@ export function ImageViewerWindow() {
         }`}
         onMouseDown={(e) => e.preventDefault()}
       >
-        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+        {clip ? (
+          <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
           {/* Tipo de captura */}
           <div className="flex shrink-0 items-center gap-1.5 font-medium text-foreground">
             {isImageClip ? (
@@ -2132,7 +2136,19 @@ export function ImageViewerWindow() {
               )}
             </>
           ) : null}
-        </div>
+          </div>
+        ) : (
+          <div className="flex min-w-0 flex-1 items-center gap-2 text-muted-foreground/70 text-[10px]">
+            {loading ? (
+              <>
+                <Loader2 size={12} className={`animate-spin ${isDark ? 'text-cyan-400' : 'text-blue-600'}`} />
+                <span>{t('viewer.loadingImage')}</span>
+              </>
+            ) : (
+              <span>{t('viewer.clipNotFound')}</span>
+            )}
+          </div>
+        )}
 
         {/* Global Position Counter */}
         <div className="flex shrink-0 items-center gap-2">
