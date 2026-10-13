@@ -4988,6 +4988,7 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
     .transparent(false)
     .theme(Some(theme_mode))
     .maximized(settings.viewer_window_maximized)
+    .visible(false)
     .always_on_top(false);
 
     if let Some((x, y)) = position {
@@ -5001,12 +5002,25 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
         .map_err(|_| "WebView creation lock poisoned".to_string())?;
     let result = builder.build();
     drop(webview_create_guard);
-    let win = result.map_err(|e| {
+    let _win = result.map_err(|e| {
         log::error!("Failed to build image-viewer window: {}", e);
         e.to_string()
     })?;
 
-    present_image_viewer(&app, &win);
+    // For new windows the frontend will call show() after the theme is
+    // applied, so we only need to hide the main window here.  The reuse
+    // path (line 4943) still calls present_image_viewer which shows the
+    // already-themed existing window immediately.
+    if let Some(main) = app.get_webview_window("main") {
+        match main.is_visible() {
+            Ok(true) => {
+                crate::skip_lock_on_next_hide();
+                crate::animate_window_hide(&main, None);
+            }
+            Ok(false) => {}
+            Err(e) => log::warn!("Could not read main window visibility: {}", e),
+        }
+    }
 
     Ok(())
 }

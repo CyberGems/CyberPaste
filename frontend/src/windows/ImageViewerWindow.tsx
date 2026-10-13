@@ -444,8 +444,27 @@ export function ImageViewerWindow() {
         if (s.viewer_window_maximized) {
           appWindow.maximize().catch(() => {});
         }
+        // Reveal the window now that the theme has been applied, so the
+        // user never sees a blank white surface before the dark background.
+        if (!hasRevealedRef.current) {
+          hasRevealedRef.current = true;
+          appWindow
+            .show()
+            .then(() => appWindow.setFocus().catch(() => {}))
+            .catch(() => {});
+        }
       })
-      .catch(console.error);
+      .catch((err) => {
+        console.error(err);
+        // Fallback: reveal even if settings failed
+        if (!hasRevealedRef.current) {
+          hasRevealedRef.current = true;
+          appWindow
+            .show()
+            .then(() => appWindow.setFocus().catch(() => {}))
+            .catch(() => {});
+        }
+      });
 
     const unlistenSettings = listen<Settings>('settings-changed', (event) => {
       settingsRef.current = event.payload;
@@ -533,15 +552,6 @@ export function ImageViewerWindow() {
     };
   }, [loadClip, applyTheme]);
 
-  // Ensure window is revealed and focused on mount
-  useEffect(() => {
-    if (hasRevealedRef.current) return;
-    hasRevealedRef.current = true;
-    appWindow
-      .show()
-      .then(() => appWindow.setFocus().catch(() => {}))
-      .catch(() => {});
-  }, [appWindow]);
 
   const handleClose = useCallback(() => {
     appWindow.close();
