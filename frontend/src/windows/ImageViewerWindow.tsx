@@ -1105,14 +1105,14 @@ export function ImageViewerWindow() {
       {/* Header Bar */}
       <div
         data-tauri-drag-region
-        className={`relative z-10 flex cursor-default select-none items-center gap-2 border-b px-4 py-2.5 ${headerBg}`}
+        className={`relative z-10 flex cursor-default select-none items-center gap-2 border-b px-3.5 py-2 ${headerBg}`}
       >
-        {/* Branding with requested Compact-style VISOR badge */}
-        <div className="z-10 flex min-w-0 shrink-0 cursor-default select-none items-center">
+        {/* Left: Branding & Fixed Universal Navigation (pinned to left so buttons never jump) */}
+        <div className="z-10 flex min-w-0 shrink-0 cursor-default select-none items-center gap-2">
           <Tooltip label={t('common.openAbout')} placement="bottom">
             <button
               type="button"
-              className="flex items-center gap-2 rounded-lg p-1 text-left transition-opacity hover:opacity-80"
+              className="flex items-center gap-1.5 rounded-lg p-1 text-left transition-opacity hover:opacity-80"
               onClick={(e) => {
                 e.stopPropagation();
                 invoke('open_about').catch(console.error);
@@ -1126,7 +1126,7 @@ export function ImageViewerWindow() {
                 draggable={false}
               />
               <span
-                className={`shrink-0 select-none text-[17px] font-bold tracking-tight ${textPrimary}`}
+                className={`hidden shrink-0 select-none text-[16px] font-bold tracking-tight sm:inline ${textPrimary}`}
               >
                 CyberPaste
               </span>
@@ -1135,53 +1135,10 @@ export function ImageViewerWindow() {
               </span>
             </button>
           </Tooltip>
-        </div>
 
-        {/* Dynamic Center Title: Type, Source & Details */}
-        <div className="flex min-w-0 flex-1 items-center justify-center gap-2 px-2">
-          <div
-            className={`flex max-w-[420px] items-center gap-2 rounded-full border px-3 py-1 font-mono text-[12px] font-medium shadow-sm transition-all ${groupBg} ${textPrimary}`}
-          >
-            {isImageClip ? (
-              <ImageIcon size={14} className="shrink-0 text-cyan-400" />
-            ) : isCodeClip ? (
-              <Code size={14} className="shrink-0 text-indigo-400" />
-            ) : isUrlClip ? (
-              <Globe size={14} className="shrink-0 text-emerald-400" />
-            ) : isFileClip ? (
-              <LucideFile size={14} className="shrink-0 text-amber-400" />
-            ) : colorInfo ? (
-              <span
-                className="h-3.5 w-3.5 shrink-0 rounded-full border border-white/20 shadow-sm"
-                style={{ backgroundColor: colorInfo.hex }}
-              />
-            ) : (
-              <FileText size={14} className="shrink-0 text-cyan-400" />
-            )}
+          <div className={`h-4 w-px ${isDark ? 'bg-white/10' : 'bg-zinc-300'}`} />
 
-            <span className="truncate">
-              {isImageClip
-                ? fileName
-                : isUrlClip && urlObj
-                  ? urlObj.hostname
-                  : isFileClip
-                    ? (clip.preview || clip.content || '').split(/[\\/]/).pop() ||
-                      t('clipType.file')
-                    : clip.source_app ||
-                      t(`clipType.${clip.clip_type}`, { defaultValue: t('clipType.text') })}
-            </span>
-
-            {detectedLang && (
-              <span className="py-0.2 shrink-0 rounded border border-cyan-500/30 bg-cyan-500/10 px-1.5 text-[9px] font-semibold uppercase tracking-wider text-cyan-400">
-                {detectedLang}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Actions Toolbar */}
-        <div className="no-drag z-10 flex shrink-0 items-center gap-2">
-          {/* Universal Carousel Navigation */}
+          {/* Fixed-Position Navigation Buttons — stable anchor prevents any shifting on clip switch */}
           <div className={`flex items-center gap-0.5 rounded-lg border p-0.5 ${groupBg}`}>
             <Tooltip label={t('viewer.previousClip')} placement="bottom">
               <button
@@ -1205,6 +1162,57 @@ export function ImageViewerWindow() {
             </Tooltip>
           </div>
 
+          {clipIds.length > 0 && currentClipIndex >= 0 && (
+            <span className="hidden shrink-0 select-none font-mono text-[10px] text-muted-foreground/70 md:inline">
+              {currentClipIndex + 1}/{clipIds.length}
+            </span>
+          )}
+        </div>
+
+        {/* Dynamic Center Title: Type, Source & Details — strictly bounded, auto-truncates and never collides */}
+        <div className="flex min-w-0 flex-1 items-center justify-center overflow-hidden px-1">
+          <div
+            className={`flex min-w-0 max-w-full items-center gap-1.5 overflow-hidden rounded-full border px-2.5 py-0.5 font-mono text-[11px] font-medium shadow-sm ${groupBg} ${textPrimary}`}
+          >
+            {isImageClip ? (
+              <ImageIcon size={13} className="shrink-0 text-cyan-400" />
+            ) : isCodeClip ? (
+              <Code size={13} className="shrink-0 text-indigo-400" />
+            ) : isUrlClip ? (
+              <Globe size={13} className="shrink-0 text-emerald-400" />
+            ) : isFileClip ? (
+              <LucideFile size={13} className="shrink-0 text-amber-400" />
+            ) : colorInfo ? (
+              <span
+                className="h-3 w-3 shrink-0 rounded-full border border-white/20 shadow-sm"
+                style={{ backgroundColor: colorInfo.hex }}
+              />
+            ) : (
+              <FileText size={13} className="shrink-0 text-cyan-400" />
+            )}
+
+            <span className="min-w-0 truncate">
+              {isImageClip
+                ? fileName
+                : isUrlClip && urlObj
+                  ? urlObj.hostname
+                  : isFileClip
+                    ? (clip.preview || clip.content || '').split(/[\\/]/).pop() ||
+                      t('clipType.file')
+                    : clip.source_app ||
+                      t(`clipType.${clip.clip_type}`, { defaultValue: t('clipType.text') })}
+            </span>
+
+            {detectedLang && (
+              <span className="shrink-0 rounded border border-cyan-500/30 bg-cyan-500/10 px-1 py-px text-[8px] font-semibold uppercase tracking-wider text-cyan-400">
+                {detectedLang}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Actions Toolbar */}
+        <div className="no-drag z-10 flex shrink-0 items-center gap-2">
           {/* Contextual Action Group */}
           <div className={`flex items-center gap-0.5 rounded-lg border p-0.5 ${groupBg}`}>
             {isImageClip ? (

@@ -58,7 +58,7 @@ import {
   File as LucideFile,
   Image as ImageIcon,
   Eye,
-  Maximize2,
+  AppWindow,
   ScanText,
   ExternalLink,
   Pencil,
@@ -2779,7 +2779,7 @@ function App() {
         if (clip) {
           opts.push({
             label: t('contextMenu.openFullViewer'),
-            icon: <Maximize2 size={14} />,
+            icon: <AppWindow size={14} />,
             onClick: () => {
               invoke('open_image_viewer', { clipId: clip.id }).catch(console.error);
             },
