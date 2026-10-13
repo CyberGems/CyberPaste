@@ -140,6 +140,9 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
     // The close behavior is managed by the close dialog so stale settings round-trips cannot
     // silently change the user's remembered choice.
     new_settings.close_behavior = current.close_behavior.clone();
+    // Type filters are transient view states and must always remain "all" in saved settings.
+    new_settings.compact_type_filter = "all".to_string();
+    new_settings.full_type_filter = "all".to_string();
 
     // Lock core is only changed via dedicated commands.
     new_settings.app_lock_enabled = current.app_lock_enabled;

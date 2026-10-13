@@ -426,13 +426,9 @@ function App() {
         setSettings(s);
         recentSearchesRef.current = s.recent_searches ?? [];
         setRecentSearches(recentSearchesRef.current);
-        // Cargar preferencias compact persistidas
-        if (s.compact_type_filter && s.compact_type_filter !== 'all') {
-          setCompactTypeFilter(s.compact_type_filter as any);
-        }
-        if (s.full_type_filter) {
-          setFullTypeFilter(s.full_type_filter as FullTypeFilter);
-        }
+        // Type filters always initialize clean ('all') on startup
+        setCompactTypeFilter('all');
+        setFullTypeFilter('all');
         clearTimeout(timer);
         setIsLoading(false);
 
@@ -473,9 +469,7 @@ function App() {
       setSettings(event.payload);
       recentSearchesRef.current = event.payload.recent_searches ?? [];
       setRecentSearches(recentSearchesRef.current);
-      if (event.payload.full_type_filter) {
-        setFullTypeFilter(event.payload.full_type_filter as FullTypeFilter);
-      }
+
     });
 
     const unlistenAchievements = listen<{ achievement_id: string }[]>(
@@ -3420,13 +3414,8 @@ function App() {
               onLoadMore={loadMore}
               onReorderFolder={handleReorderFolder}
               typeFilter={compactTypeFilter}
-              onTypeFilterChange={async (v) => {
+              onTypeFilterChange={(v) => {
                 setCompactTypeFilter(v);
-                if (settings) {
-                  const newSettings = { ...settings, compact_type_filter: v };
-                  await invoke('save_settings', { settings: newSettings });
-                  setSettings(newSettings);
-                }
               }}
               appFilter={appFilter}
               onAppFilterChange={setAppFilter}
@@ -3518,12 +3507,6 @@ function App() {
                 value={fullTypeFilter}
                 onChange={(value) => {
                   setFullTypeFilter(value);
-                  setSettings((prev) => {
-                    if (!prev) return prev;
-                    const next = { ...prev, full_type_filter: value };
-                    invoke('save_settings', { settings: next }).catch(console.error);
-                    return next;
-                  });
                 }}
                 counts={typeFilterCounts}
                 appFilter={appFilter}
@@ -3560,12 +3543,6 @@ function App() {
                   onFilterByType={(type) => {
                     const next = fullTypeFilter === type ? 'all' : type;
                     setFullTypeFilter(next);
-                    setSettings((prev) => {
-                      if (!prev) return prev;
-                      const s = { ...prev, full_type_filter: next };
-                      invoke('save_settings', { settings: s }).catch(console.error);
-                      return s;
-                    });
                   }}
                   typeFilter={fullTypeFilter}
                   scrollDirection="vertical"

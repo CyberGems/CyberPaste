@@ -97,6 +97,16 @@ impl SettingsManager {
             needs_save = true;
         }
 
+        // Type filters are transient view states and must always reset to "all" on app start.
+        if settings.compact_type_filter != "all" {
+            settings.compact_type_filter = "all".to_string();
+            needs_save = true;
+        }
+        if settings.full_type_filter != "all" {
+            settings.full_type_filter = "all".to_string();
+            needs_save = true;
+        }
+
         // Ensure we save it once immediately if migrating or updated, so file exists
         let manager = Self {
             file_path: path,
