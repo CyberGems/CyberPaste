@@ -955,11 +955,6 @@ export function ImageViewerWindow() {
     : 'bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-50 to-zinc-200';
   const btnHover = isDark ? 'hover:bg-white/10' : 'hover:bg-zinc-900/5';
   const groupBg = isDark ? 'border-white/5 bg-white/5' : 'border-zinc-200 bg-zinc-200/40';
-  const accentCyan = isDark ? 'text-cyan-400/80' : 'text-cyan-700';
-  const accentIndigo = isDark ? 'text-indigo-400/80' : 'text-indigo-600';
-  const footerBg = isDark
-    ? 'border-white/5 bg-zinc-900/80 text-zinc-400'
-    : 'border-zinc-200 bg-white/80 text-zinc-500';
   const drawerBg = isDark ? 'border-white/10 bg-zinc-900/95' : 'border-zinc-200 bg-white/95';
 
   if (loading && !clip) {
@@ -983,19 +978,6 @@ export function ImageViewerWindow() {
       </div>
     );
   }
-
-  const fileName = clip.image_path
-    ? clip.image_path.split(/[\\/]/).pop()
-    : clip.metadata
-      ? (() => {
-          try {
-            const m = JSON.parse(clip.metadata);
-            return m.file_name || 'ClipboardImage.png';
-          } catch {
-            return 'ClipboardImage.png';
-          }
-        })()
-      : 'ClipboardImage.png';
 
   const friendlyDate = getRelativeTime(clip.created_at, i18n.language);
   const imageSrc = clip.clip_type === 'image' ? getImageSrc(clip) : '';
@@ -1161,55 +1143,10 @@ export function ImageViewerWindow() {
               </button>
             </Tooltip>
           </div>
-
-          {clipIds.length > 0 && currentClipIndex >= 0 && (
-            <span className="hidden shrink-0 select-none font-mono text-[10px] text-muted-foreground/70 md:inline">
-              {currentClipIndex + 1}/{clipIds.length}
-            </span>
-          )}
         </div>
 
-        {/* Dynamic Center Title: Type, Source & Details — strictly bounded, auto-truncates and never collides */}
-        <div className="flex min-w-0 flex-1 items-center justify-center overflow-hidden px-1">
-          <div
-            className={`flex min-w-0 max-w-full items-center gap-1.5 overflow-hidden rounded-full border px-2.5 py-0.5 font-mono text-[11px] font-medium shadow-sm ${groupBg} ${textPrimary}`}
-          >
-            {isImageClip ? (
-              <ImageIcon size={13} className="shrink-0 text-cyan-400" />
-            ) : isCodeClip ? (
-              <Code size={13} className="shrink-0 text-indigo-400" />
-            ) : isUrlClip ? (
-              <Globe size={13} className="shrink-0 text-emerald-400" />
-            ) : isFileClip ? (
-              <LucideFile size={13} className="shrink-0 text-amber-400" />
-            ) : colorInfo ? (
-              <span
-                className="h-3 w-3 shrink-0 rounded-full border border-white/20 shadow-sm"
-                style={{ backgroundColor: colorInfo.hex }}
-              />
-            ) : (
-              <FileText size={13} className="shrink-0 text-cyan-400" />
-            )}
-
-            <span className="min-w-0 truncate">
-              {isImageClip
-                ? fileName
-                : isUrlClip && urlObj
-                  ? urlObj.hostname
-                  : isFileClip
-                    ? (clip.preview || clip.content || '').split(/[\\/]/).pop() ||
-                      t('clipType.file')
-                    : clip.source_app ||
-                      t(`clipType.${clip.clip_type}`, { defaultValue: t('clipType.text') })}
-            </span>
-
-            {detectedLang && (
-              <span className="shrink-0 rounded border border-cyan-500/30 bg-cyan-500/10 px-1 py-px text-[8px] font-semibold uppercase tracking-wider text-cyan-400">
-                {detectedLang}
-              </span>
-            )}
-          </div>
-        </div>
+        {/* Spacious, unobstructed draggable titlebar region */}
+        <div data-tauri-drag-region className="min-h-full min-w-0 flex-1 self-stretch" />
 
         {/* Actions Toolbar */}
         <div className="no-drag z-10 flex shrink-0 items-center gap-2">
@@ -1954,54 +1891,80 @@ export function ImageViewerWindow() {
         )}
       </div>
 
-      {/* Footer Info & Metrics */}
+      {/* Footer Info & Metrics — styled with Compact mode typography */}
       <div
-        className={`flex select-none items-center justify-between gap-3 border-t px-3 py-1.5 font-mono text-[11px] ${footerBg}`}
+        className={`flex select-none items-center justify-between gap-3 border-t px-3 py-1.5 text-[10px] font-medium tracking-normal text-muted-foreground/80 backdrop-blur-md ${
+          isDark ? 'border-white/5 bg-black/25' : 'border-border/60 bg-secondary/40'
+        }`}
         onMouseDown={(e) => e.preventDefault()}
       >
         <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-          <Tooltip label={clip.clip_type.toUpperCase()} placement="top">
-            <span
-              className={`flex shrink-0 cursor-default items-center transition-colors hover:text-cyan-400 ${accentCyan}`}
-            >
-              {isImageClip ? (
-                <ImageIcon size={13} className="shrink-0" />
-              ) : isCodeClip ? (
-                <Code size={13} className="shrink-0" />
-              ) : isUrlClip ? (
-                <Globe size={13} className="shrink-0" />
-              ) : isFileClip ? (
-                <LucideFile size={13} className="shrink-0" />
-              ) : colorInfo ? (
-                <span
-                  className="h-3 w-3 shrink-0 rounded-full border border-white/20"
-                  style={{ backgroundColor: colorInfo.hex }}
-                />
-              ) : (
-                <FileText size={13} className="shrink-0" />
-              )}
+          {/* Tipo de captura */}
+          <div className="flex shrink-0 items-center gap-1.5 font-medium text-foreground">
+            {isImageClip ? (
+              <ImageIcon size={13} className="shrink-0 text-cyan-400" />
+            ) : isCodeClip ? (
+              <Code size={13} className="shrink-0 text-indigo-400" />
+            ) : isUrlClip ? (
+              <Globe size={13} className="shrink-0 text-emerald-400" />
+            ) : isFileClip ? (
+              <LucideFile size={13} className="shrink-0 text-amber-400" />
+            ) : colorInfo ? (
+              <span
+                className="h-3 w-3 shrink-0 rounded-full border border-white/20"
+                style={{ backgroundColor: colorInfo.hex }}
+              />
+            ) : (
+              <FileText size={13} className="shrink-0 text-cyan-400" />
+            )}
+            <span className="truncate">
+              {detectedLang
+                ? `${t('clipType.code', 'Código')} (${detectedLang})`
+                : t(`clipType.${clip.clip_type}`, { defaultValue: t('clipType.text') })}
             </span>
-          </Tooltip>
+          </div>
 
-          {friendlyDate && (
-            <span className={`truncate font-mono text-[11px] font-medium ${accentIndigo}`}>
-              {friendlyDate}
-            </span>
+          <span className="shrink-0 text-muted-foreground/40">·</span>
+
+          {/* Origen de la captura (source_app + source_icon) */}
+          {clip.source_app && (
+            <>
+              <div className="flex shrink-0 items-center gap-1.5 text-foreground/85">
+                {clip.source_icon && (
+                  <img
+                    src={
+                      clip.source_icon.startsWith('data:')
+                        ? clip.source_icon
+                        : `data:image/png;base64,${clip.source_icon}`
+                    }
+                    alt=""
+                    className="h-3.5 w-3.5 shrink-0 object-contain"
+                  />
+                )}
+                <span className="max-w-[160px] truncate">{clip.source_app}</span>
+              </div>
+              <span className="shrink-0 text-muted-foreground/40">·</span>
+            </>
           )}
 
-          {/* Contextual Metric Separators & Labels */}
+          {/* Fecha relativa */}
+          {friendlyDate && (
+            <span className="shrink-0 text-muted-foreground/90">{friendlyDate}</span>
+          )}
+
+          {/* Métricas contextuales */}
           {isImageClip ? (
             <>
               {(dimsLabel || sizeLabel) && (
-                <span className={`shrink-0 ${isDark ? 'text-zinc-600' : 'text-zinc-300'}`}>·</span>
+                <span className="shrink-0 text-muted-foreground/40">·</span>
               )}
-              {dimsLabel && <span className="shrink-0">{dimsLabel}</span>}
+              {dimsLabel && <span className="shrink-0 tabular-nums">{dimsLabel}</span>}
               {dimsLabel && sizeLabel && (
-                <span className={`shrink-0 ${isDark ? 'text-zinc-600' : 'text-zinc-300'}`}>·</span>
+                <span className="shrink-0 text-muted-foreground/40">·</span>
               )}
-              {sizeLabel && <span className="shrink-0">{sizeLabel}</span>}
-              <span className={`shrink-0 ${isDark ? 'text-zinc-600' : 'text-zinc-300'}`}>·</span>
-              <span className={`shrink-0 ${isDark ? 'text-cyan-400/70' : 'text-cyan-700'}`}>
+              {sizeLabel && <span className="shrink-0 tabular-nums">{sizeLabel}</span>}
+              <span className="shrink-0 text-muted-foreground/40">·</span>
+              <span className="shrink-0 tabular-nums text-cyan-400">
                 {zoomPercent}%
                 {isFitMode
                   ? ` · ${t('viewer.fitShort')}`
@@ -2010,24 +1973,56 @@ export function ImageViewerWindow() {
                     : ''}
               </span>
             </>
-          ) : (
+          ) : isCodeClip || (!isImageClip && !isFileClip && !isUrlClip && !isHtmlClip) ? (
             <>
-              <span className={`shrink-0 ${isDark ? 'text-zinc-600' : 'text-zinc-300'}`}>·</span>
-              <span className="shrink-0">{t('viewer.linesCount', { count: textStats.lines })}</span>
-              <span className={`shrink-0 ${isDark ? 'text-zinc-600' : 'text-zinc-300'}`}>·</span>
-              <span className="shrink-0">{t('viewer.charsCount', { count: textStats.chars })}</span>
-              <span className={`shrink-0 ${isDark ? 'text-zinc-600' : 'text-zinc-300'}`}>·</span>
-              <span className={`shrink-0 ${isDark ? 'text-cyan-400/70' : 'text-cyan-700'}`}>
+              <span className="shrink-0 text-muted-foreground/40">·</span>
+              <span className="shrink-0 tabular-nums">
+                {t('viewer.linesCount', { count: textStats.lines })}
+              </span>
+              <span className="shrink-0 text-muted-foreground/40">·</span>
+              <span className="shrink-0 tabular-nums">
+                {t('viewer.wordsCount', { count: textStats.words })}
+              </span>
+              <span className="shrink-0 text-muted-foreground/40">·</span>
+              <span className="shrink-0 tabular-nums">{sizeLabel || `${textStats.chars} B`}</span>
+              <span className="shrink-0 text-muted-foreground/40">·</span>
+              <span className="shrink-0 tabular-nums text-cyan-400">
                 {fontSize}px{wrapLines ? ` · ${t('viewer.toggleWrap')}` : ''}
               </span>
             </>
-          )}
+          ) : isUrlClip ? (
+            <>
+              {urlObj && (
+                <>
+                  <span className="shrink-0 text-muted-foreground/40">·</span>
+                  <span className="max-w-[180px] truncate text-cyan-400">{urlObj.hostname}</span>
+                </>
+              )}
+              <span className="shrink-0 text-muted-foreground/40">·</span>
+              <span className="shrink-0 tabular-nums">
+                {t('viewer.charsCount', { count: (clip.content || '').length })}
+              </span>
+            </>
+          ) : isFileClip ? (
+            <>
+              <span className="shrink-0 text-muted-foreground/40">·</span>
+              <span className="max-w-[200px] truncate">
+                {(clip.preview || clip.content || '').split(/[\\/]/).pop()}
+              </span>
+              {sizeLabel && (
+                <>
+                  <span className="shrink-0 text-muted-foreground/40">·</span>
+                  <span className="shrink-0 tabular-nums">{sizeLabel}</span>
+                </>
+              )}
+            </>
+          ) : null}
         </div>
 
         {/* Global Position Counter */}
         <div className="flex shrink-0 items-center gap-2">
           {clipIds.length > 0 && currentClipIndex >= 0 && (
-            <span className="rounded bg-muted/40 px-1.5 py-0.5 text-[10px]">
+            <span className="rounded bg-muted/40 px-2 py-0.5 text-[10px] font-medium tabular-nums text-foreground/80">
               {currentClipIndex + 1}/{clipIds.length}
             </span>
           )}
