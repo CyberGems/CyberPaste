@@ -2038,9 +2038,10 @@ function App() {
     return () => document.removeEventListener('wheel', handleZoomWheel);
   }, [showZoomIndicator]);
 
-  // Ctrl + wheel en área de clips del modo Compact: cambia densidad (36/44/52px)
+  // Ctrl + wheel en área de clips del modo Compact: cambia densidad (34/40/48px)
   useEffect(() => {
     const ROW_HEIGHTS = [34, 40, 48];
+    let lastZoomAt = 0;
     const handleCompactZoom = (e: WheelEvent) => {
       if (!e.ctrlKey && !e.metaKey) return;
       if (settingsRef.current?.view_mode !== 'compact') return;
@@ -2048,6 +2049,10 @@ function App() {
       // Solo si estamos sobre el área de clips (cualquier elemento dentro del div de la lista)
       if (!target.closest('[data-clip-list="true"]')) return;
       e.preventDefault();
+
+      const now = Date.now();
+      if (now - lastZoomAt < 160) return; // throttle continuous wheel/trackpad ticks
+
       const rawCurrent = settingsRef.current?.compact_row_height ?? 40;
       const current = rawCurrent === 44 ? 40 : rawCurrent;
       let idx = ROW_HEIGHTS.indexOf(current);
@@ -2056,19 +2061,21 @@ function App() {
       const nextIdx = Math.min(ROW_HEIGHTS.length - 1, Math.max(0, idx + direction));
       const next = ROW_HEIGHTS[nextIdx];
       if (next === current || !settingsRef.current) return;
+      lastZoomAt = now;
       const newSettings = { ...settingsRef.current, compact_row_height: next };
       setSettings(newSettings);
       invoke('save_settings', { settings: newSettings }).catch(console.error);
-      // Micro-toast de feedback
-      toast.info(
-        t('settings.compactDensity') +
-          ': ' +
-          (next <= 34
-            ? t('compact.densitySmall')
-            : next <= 42
-              ? t('compact.densityMedium')
-              : t('compact.densityLarge'))
-      );
+      // Micro-toast de feedback deduplicado con ID único para evitar apilamiento de banners
+      const label =
+        next <= 34
+          ? t('compact.densitySmall')
+          : next <= 42
+            ? t('compact.densityMedium')
+            : t('compact.densityLarge');
+      toast.info(`${t('compact.density', 'Densidad')}: ${label}`, {
+        id: 'compact-density',
+        duration: 1300,
+      });
     };
     document.addEventListener('wheel', handleCompactZoom, { passive: false });
     return () => document.removeEventListener('wheel', handleCompactZoom);

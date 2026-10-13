@@ -199,6 +199,7 @@
     "footerWithSelection": "{{count}} seleccionados · Ctrl+Enter COPIAR · Ctrl+P FIJAR · SUPR ELIMINAR",
     "footerTotalClips": "{{count}} clips",
     "footerFilteredBy": "filtro: {{type}}",
+    "density": "Densidad",
     "densitySmall": "Pequeño",
     "densityMedium": "Mediano",
     "densityLarge": "Grande"

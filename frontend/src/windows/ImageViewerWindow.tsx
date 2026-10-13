@@ -457,6 +457,11 @@ export function ImageViewerWindow() {
 
     const unlistenUpdate = listen<string>('update-viewer-clip', (event) => {
       loadClip(event.payload);
+      appWindow.unminimize().catch(() => {});
+      appWindow
+        .show()
+        .then(() => appWindow.setFocus().catch(() => {}))
+        .catch(() => {});
     });
 
     const persistWindow = debounce(async () => {
@@ -1520,6 +1525,16 @@ export function ImageViewerWindow() {
                 src={imageSrc}
                 alt=""
                 draggable={false}
+                ref={(node) => {
+                  if (
+                    node &&
+                    node.complete &&
+                    node.naturalWidth > 0 &&
+                    naturalSize.w !== node.naturalWidth
+                  ) {
+                    setNaturalSize({ w: node.naturalWidth, h: node.naturalHeight });
+                  }
+                }}
                 onLoad={(e) => {
                   const img = e.currentTarget;
                   setNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
