@@ -441,6 +441,9 @@ export function ImageViewerWindow() {
       .then((s) => {
         settingsRef.current = s;
         applyTheme(s.theme);
+        if (s.viewer_window_maximized) {
+          appWindow.maximize().catch(() => {});
+        }
       })
       .catch(console.error);
 
@@ -530,34 +533,14 @@ export function ImageViewerWindow() {
     };
   }, [loadClip, applyTheme]);
 
-  // Reveal window smoothly once clip is loaded & themed
+  // Ensure window is revealed and focused on mount
   useEffect(() => {
-    if (clip && !hasRevealedRef.current) {
-      hasRevealedRef.current = true;
-      const timer = setTimeout(() => {
-        if (settingsRef.current?.viewer_window_maximized) {
-          appWindow.maximize().catch(() => {});
-        }
-        appWindow
-          .show()
-          .then(() => {
-            appWindow.setFocus().catch(() => {});
-          })
-          .catch(() => {});
-      }, 50);
-      return () => clearTimeout(timer);
-    }
-  }, [clip, appWindow]);
-
-  // Safety fallback: ensure window is revealed even if clip load takes longer
-  useEffect(() => {
-    const fallbackTimer = setTimeout(() => {
-      if (!hasRevealedRef.current) {
-        hasRevealedRef.current = true;
-        appWindow.show().catch(() => {});
-      }
-    }, 450);
-    return () => clearTimeout(fallbackTimer);
+    if (hasRevealedRef.current) return;
+    hasRevealedRef.current = true;
+    appWindow
+      .show()
+      .then(() => appWindow.setFocus().catch(() => {}))
+      .catch(() => {});
   }, [appWindow]);
 
   const handleClose = useCallback(() => {

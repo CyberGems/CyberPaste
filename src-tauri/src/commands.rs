@@ -1044,8 +1044,13 @@ pub async fn get_clip(
 
                 let full = load_full_image_content(pool, &mut clip).await.ok();
 
-                // JIT Migration: If no file path exists, create one now so the viewer can use it for 'Edit'
-                if (file_path.is_none() || file_path.as_ref().map(|s| s.is_empty()).unwrap_or(true)) && full.is_some() {
+                let file_missing = match &file_path {
+                    Some(p) => p.is_empty() || !std::path::Path::new(p).exists(),
+                    None => true,
+                };
+
+                // JIT Migration: If no file path exists or file is missing from disk, persist it now
+                if file_missing && full.is_some() {
                     if let Some(bytes) = &full {
                         if let Ok(path) = crate::clipboard::persist_full_image_file(&clip.uuid, bytes) {
                             let _ = sqlx::query("UPDATE clip_images SET file_path = ?, storage_kind = 'file' WHERE clip_uuid = ?")
@@ -4963,6 +4968,14 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
         saved_pos
     };
 
+    let theme_mode = if settings.theme == "dark" || settings.theme == "cyberpaste" {
+        tauri::Theme::Dark
+    } else if settings.theme == "light" {
+        tauri::Theme::Light
+    } else {
+        tauri::Theme::Dark
+    };
+
     let mut builder = tauri::WebviewWindowBuilder::new(
         &app,
         window_label,
@@ -4973,8 +4986,8 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
     .min_inner_size(300.0, 200.0)
     .decorations(false)
     .transparent(false)
-    .always_on_top(false)
-    .visible(false);
+    .theme(Some(theme_mode))
+    .always_on_top(false);
 
     if let Some((x, y)) = position {
         builder = builder.position(x, y);
@@ -4987,22 +5000,12 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
         .map_err(|_| "WebView creation lock poisoned".to_string())?;
     let result = builder.build();
     drop(webview_create_guard);
-    let _win = result.map_err(|e| {
+    let win = result.map_err(|e| {
         log::error!("Failed to build image-viewer window: {}", e);
         e.to_string()
     })?;
 
-    // Dismiss main first. The viewer reveals itself from frontend once mounted and themed.
-    if let Some(main) = app.get_webview_window("main") {
-        match main.is_visible() {
-            Ok(true) => {
-                crate::skip_lock_on_next_hide();
-                crate::animate_window_hide(&main, None);
-            }
-            Ok(false) => {}
-            Err(e) => log::warn!("Could not read main window visibility: {}", e),
-        }
-    }
+    present_image_viewer(&app, &win);
 
     Ok(())
 }
