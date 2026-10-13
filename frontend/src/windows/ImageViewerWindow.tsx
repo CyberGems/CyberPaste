@@ -196,7 +196,6 @@ export function ImageViewerWindow() {
   const [showRawText, setShowRawText] = useState(false);
   const [viewModeHtml, setViewModeHtml] = useState<'rendered' | 'source'>('rendered');
 
-  const [settings, setSettings] = useState<Settings | null>(null);
   const hasRevealedRef = useRef(false);
   const appWindow = getCurrentWebviewWindow();
   const settingsRef = useRef<Settings | null>(null);
@@ -399,14 +398,12 @@ export function ImageViewerWindow() {
     invoke<Settings>('get_settings')
       .then((s) => {
         settingsRef.current = s;
-        setSettings(s);
         applyTheme(s.theme);
       })
       .catch(console.error);
 
     const unlistenSettings = listen<Settings>('settings-changed', (event) => {
       settingsRef.current = event.payload;
-      setSettings(event.payload);
       applyTheme(event.payload.theme);
     });
 
@@ -438,12 +435,20 @@ export function ImageViewerWindow() {
           return;
         }
 
+        const isMin = await appWindow.isMinimized();
+        if (isMin) return;
+
+        const isVis = await appWindow.isVisible();
+        if (!isVis) return;
+
         const size = await appWindow.innerSize();
         const pos = await appWindow.innerPosition();
         const factor = await appWindow.scaleFactor();
 
         const logicalSize = size.toLogical(factor);
         const logicalPos = pos.toLogical(factor);
+
+        if (logicalPos.x < -1000 || logicalPos.y < -1000) return;
 
         if (logicalSize.width > 100 && logicalSize.height > 100) {
           invoke('save_settings', {
@@ -478,12 +483,12 @@ export function ImageViewerWindow() {
     };
   }, [loadClip, applyTheme]);
 
-  // Reveal window smoothly once clip, settings & theme paint
+  // Reveal window smoothly once clip is loaded & themed
   useEffect(() => {
-    if (clip && settings && !hasRevealedRef.current) {
+    if (clip && !hasRevealedRef.current) {
       hasRevealedRef.current = true;
       const timer = setTimeout(() => {
-        if (settings.viewer_window_maximized) {
+        if (settingsRef.current?.viewer_window_maximized) {
           appWindow.maximize().catch(() => {});
         }
         appWindow
@@ -495,7 +500,7 @@ export function ImageViewerWindow() {
       }, 50);
       return () => clearTimeout(timer);
     }
-  }, [clip, settings, appWindow]);
+  }, [clip, appWindow]);
 
   const handleClose = useCallback(() => {
     appWindow.close();

@@ -4915,6 +4915,12 @@ fn present_image_viewer(app: &AppHandle, win: &tauri::WebviewWindow) {
     }
 
     let _ = win.unminimize();
+    if let (Ok(pos), Ok(factor)) = (win.inner_position(), win.scale_factor()) {
+        let logical_pos = pos.to_logical::<f64>(factor);
+        if !crate::is_logical_point_on_any_monitor(win, logical_pos.x, logical_pos.y) {
+            let _ = win.center();
+        }
+    }
     let _ = win.show();
     let _ = win.set_focus();
 }
@@ -4934,6 +4940,26 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
     log::info!("Creating new image-viewer window");
     let manager = app.state::<Arc<crate::settings_manager::SettingsManager>>();
     let settings = manager.get();
+    let reference_window = app.get_webview_window("main");
+
+    let width = settings.viewer_window_width;
+    let height = settings.viewer_window_height;
+
+    let saved_pos = match (settings.viewer_window_x, settings.viewer_window_y) {
+        (Some(x), Some(y)) => Some((x as f64, y as f64)),
+        _ => None,
+    };
+
+    let position = if let Some(ref_win) = &reference_window {
+        let saved_on_screen = saved_pos
+            .filter(|(x, y)| crate::is_logical_point_on_any_monitor(ref_win, *x, *y));
+        saved_on_screen.or_else(|| {
+            crate::get_monitor_at_cursor(ref_win)
+                .map(|m| crate::logical_center_on_monitor(&m, width, height))
+        })
+    } else {
+        saved_pos
+    };
 
     let mut builder = tauri::WebviewWindowBuilder::new(
         &app,
@@ -4941,15 +4967,15 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
         tauri::WebviewUrl::App(format!("index.html?clip_id={}", clip_id).into()),
     )
     .title("CyberPaste Viewer")
-    .inner_size(settings.viewer_window_width, settings.viewer_window_height)
+    .inner_size(width, height)
     .min_inner_size(300.0, 200.0)
     .decorations(false)
     .transparent(false)
     .always_on_top(false)
     .visible(false);
 
-    if let (Some(x), Some(y)) = (settings.viewer_window_x, settings.viewer_window_y) {
-        builder = builder.position(x as f64, y as f64);
+    if let Some((x, y)) = position {
+        builder = builder.position(x, y);
     } else {
         builder = builder.center();
     }
