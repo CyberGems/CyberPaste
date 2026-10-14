@@ -12,7 +12,6 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Eye,
-  EyeOff,
   Square,
   RectangleHorizontal,
 } from 'lucide-react';
@@ -168,11 +167,13 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
               })}
               aria-pressed={fullPeekEnabled}
               className={clsx(
-                'flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition-colors',
-                'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground'
+                'flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition-all',
+                fullPeekEnabled
+                  ? 'border-primary/40 bg-primary/15 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.2)] hover:border-primary/60 hover:bg-primary/25'
+                  : 'border-transparent text-muted-foreground/70 hover:border-border hover:bg-accent hover:text-foreground'
               )}
             >
-              {fullPeekEnabled ? <Eye size={13} /> : <EyeOff size={13} />}
+              <Eye size={13} />
             </button>
           </Tooltip>
         )}
