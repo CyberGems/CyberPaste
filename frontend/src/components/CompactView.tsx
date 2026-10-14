@@ -732,6 +732,17 @@ export const CompactView: React.FC<CompactViewProps> = ({
     return () => window.removeEventListener('cyberpaste-reset-view', handleReset);
   }, []);
 
+  // Auto-focus search input when emoji mode is toggled on
+  useEffect(() => {
+    if (isEmojiMode) {
+      const timer = setTimeout(() => {
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isEmojiMode]);
+
   const { isPaused, toggleMonitoring } = useClipboardMonitoring();
   const footerHints = useMemo(
     () => [
@@ -1859,6 +1870,14 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
                     onKeyDown={(e) => {
+                      if (isEmojiMode && e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        const grid = document.querySelector('[data-emoji-grid="true"]') as HTMLElement;
+                        if (grid) {
+                          grid.focus();
+                        }
+                        return;
+                      }
                       if (e.key === 'Enter') {
                         if (e.ctrlKey || e.metaKey || e.shiftKey) {
                           return;
@@ -2099,6 +2118,14 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   value={searchQuery}
                   onChange={(e) => onSearchChange(e.target.value)}
                   onKeyDown={(e) => {
+                    if (isEmojiMode && e.key === 'ArrowDown') {
+                      e.preventDefault();
+                      const grid = document.querySelector('[data-emoji-grid="true"]') as HTMLElement;
+                      if (grid) {
+                        grid.focus();
+                      }
+                      return;
+                    }
                     if (e.key === 'Enter') {
                       if (e.ctrlKey || e.metaKey || e.shiftKey) {
                         return;

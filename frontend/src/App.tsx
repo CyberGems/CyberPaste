@@ -22,7 +22,12 @@ import { ClipList } from './components/ClipList';
 import { ControlBar } from './components/ControlBar';
 import { TypeFilterChipRow, type FullTypeFilter } from './components/TypeFilterChips';
 import { EmojiPickerView } from './components/EmojiPickerView';
-import { saveRecentEmoji } from './data/emojis';
+import {
+  saveRecentEmoji,
+  getRecentEmojiSearches,
+  saveRecentEmojiSearch,
+  clearRecentEmojiSearches,
+} from './data/emojis';
 import { ClipPreviewModal } from './components/ClipPreviewModal';
 import { BulkActionBar } from './components/BulkActionBar';
 import { ClipDetailPanel } from './components/ClipDetailPanel';
@@ -225,6 +230,14 @@ function App() {
 
   const [isWindowActive, setIsWindowActive] = useState(true);
   const [isEmojiMode, setIsEmojiMode] = useState(false);
+  const isEmojiModeRef = useRef(false);
+  const [emojiRecentSearches, setEmojiRecentSearches] = useState<string[]>(() =>
+    getRecentEmojiSearches()
+  );
+
+  useEffect(() => {
+    isEmojiModeRef.current = isEmojiMode;
+  }, [isEmojiMode]);
 
   useEffect(() => {
     settingsRef.current = settings;
@@ -767,6 +780,11 @@ function App() {
   const commitSearchHistory = useCallback(async (query: string) => {
     const normalized = query.trim();
     if (!normalized || isLockedRef.current) return;
+    if (isEmojiModeRef.current) {
+      const updated = saveRecentEmojiSearch(normalized);
+      setEmojiRecentSearches(updated);
+      return;
+    }
     try {
       const history = await invoke<string[]>('record_search_history', { query: normalized });
       recentSearchesRef.current = history;
@@ -815,6 +833,11 @@ function App() {
   );
 
   const handleClearSearchHistory = useCallback(async () => {
+    if (isEmojiModeRef.current) {
+      clearRecentEmojiSearches();
+      setEmojiRecentSearches([]);
+      return;
+    }
     try {
       const history = await invoke<string[]>('clear_search_history');
       recentSearchesRef.current = history;
@@ -3384,7 +3407,7 @@ function App() {
               searchQuery={searchQuery}
               onSearchChange={handleSearch}
               onSearchCommit={handleSearchCommit}
-              recentSearches={recentSearches}
+              recentSearches={isEmojiMode ? emojiRecentSearches : recentSearches}
               searchHistoryToggleToken={searchHistoryToggleToken}
               onSelectSearchHistory={handleSelectSearchHistory}
               onClearSearchHistory={handleClearSearchHistory}
@@ -3491,7 +3514,7 @@ function App() {
                 searchQuery={searchQuery}
                 onSearchChange={handleSearch}
                 onSearchCommit={handleSearchCommit}
-                recentSearches={recentSearches}
+                recentSearches={isEmojiMode ? emojiRecentSearches : recentSearches}
                 searchHistoryToggleToken={searchHistoryToggleToken}
                 onSelectSearchHistory={handleSelectSearchHistory}
                 onClearSearchHistory={handleClearSearchHistory}

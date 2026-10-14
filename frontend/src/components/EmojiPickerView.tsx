@@ -132,6 +132,14 @@ export const EmojiPickerView: React.FC<EmojiPickerViewProps> = ({
         nextIndex = Math.min(selectedIndex + cols, displayedEmojis.length - 1);
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
+        if (selectedIndex < cols) {
+          const searchInput = document.getElementById('search-input') as HTMLInputElement;
+          if (searchInput) {
+            searchInput.focus();
+            searchInput.select();
+            return;
+          }
+        }
         nextIndex = Math.max(selectedIndex - cols, 0);
       } else if (e.key === 'Enter') {
         e.preventDefault();
@@ -167,6 +175,7 @@ export const EmojiPickerView: React.FC<EmojiPickerViewProps> = ({
   return (
     <div
       tabIndex={0}
+      data-emoji-grid="true"
       onKeyDown={handleKeyDown}
       className="flex h-full w-full flex-col overflow-hidden bg-background/50 focus:outline-none"
     >

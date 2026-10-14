@@ -1055,7 +1055,7 @@
   },
   "emoji": {
     "toggle": "Modo Emojis ({{hotkey}})",
-    "searchPlaceholder": "Buscar emojis (ej. fuego, check, cohete)...",
+    "searchPlaceholder": "Buscar emojis (ej. fuego, check)...",
     "noResults": "No se encontraron emojis",
     "copied": "Emoji copiado al portapapeles",
     "hint": "Clic o Enter para pegar · Esc para salir",

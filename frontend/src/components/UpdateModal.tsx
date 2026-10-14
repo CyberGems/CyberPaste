@@ -251,16 +251,14 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
                       <ReleaseNotes body={releaseBody} />
                     </div>
 
-                    <Tooltip label={t('settings.updatesViewOnGithub')} placement="bottom">
-                      <button
-                        type="button"
-                        onClick={handleOpenReleasePage}
-                        className="inline-flex items-center gap-1.5 self-start text-xs font-medium text-primary transition-colors hover:text-primary/80 hover:underline"
-                      >
-                        <ExternalLink size={12} />
-                        {t('settings.updatesViewOnGithub')}
-                      </button>
-                    </Tooltip>
+                    <button
+                      type="button"
+                      onClick={handleOpenReleasePage}
+                      className="inline-flex items-center gap-1.5 self-start text-xs font-medium text-primary transition-colors hover:text-primary/80 hover:underline"
+                    >
+                      <ExternalLink size={12} />
+                      {t('settings.updatesViewOnGithub')}
+                    </button>
                   </div>
                 )}
               </div>
@@ -271,36 +269,30 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
                     {t('settings.updatesSkipError')}
                   </p>
                 )}
-                <Tooltip label={t('settings.updatesSkipVersion')} placement="top">
-                  <button
-                    type="button"
-                    onClick={handleSkipVersion}
-                    disabled={skipBusy}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white/5 px-4 py-2 text-sm font-medium text-foreground/85 transition-all hover:bg-accent hover:text-foreground disabled:cursor-wait disabled:opacity-60"
-                  >
-                    {skipBusy && <Loader2 size={14} className="animate-spin" />}
-                    {t('settings.updatesSkipVersion')}
-                  </button>
-                </Tooltip>
-                <Tooltip label={t('settings.updatesLater')} placement="top">
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="inline-flex items-center rounded-md border border-border bg-white/5 px-4 py-2 text-sm font-medium text-foreground/85 transition-all hover:bg-accent hover:text-foreground"
-                  >
-                    {t('settings.updatesLater')}
-                  </button>
-                </Tooltip>
-                <Tooltip label={t('settings.updatesUpdateNow')} placement="top">
-                  <button
-                    type="button"
-                    onClick={handleUpdate}
-                    className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:bg-primary/90 hover:shadow-primary/35"
-                  >
-                    <Download size={16} strokeWidth={2.4} className="text-primary-foreground" />
-                    {t('settings.updatesUpdateNow')}
-                  </button>
-                </Tooltip>
+                <button
+                  type="button"
+                  onClick={handleSkipVersion}
+                  disabled={skipBusy}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white/5 px-4 py-2 text-sm font-medium text-foreground/85 transition-all hover:bg-accent hover:text-foreground disabled:cursor-wait disabled:opacity-60"
+                >
+                  {skipBusy && <Loader2 size={14} className="animate-spin" />}
+                  {t('settings.updatesSkipVersion')}
+                </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="inline-flex items-center rounded-md border border-border bg-white/5 px-4 py-2 text-sm font-medium text-foreground/85 transition-all hover:bg-accent hover:text-foreground"
+                >
+                  {t('settings.updatesLater')}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUpdate}
+                  className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:bg-primary/90 hover:shadow-primary/35"
+                >
+                  <Download size={16} strokeWidth={2.4} className="text-primary-foreground" />
+                  {t('settings.updatesUpdateNow')}
+                </button>
               </div>
             </>
           )}

@@ -286,3 +286,36 @@ export function searchEmojis(query: string, category?: string | null): EmojiItem
 
   return EMOJI_LIST;
 }
+
+const RECENT_EMOJI_SEARCHES_KEY = 'cyberpaste-recent-emoji-searches';
+const MAX_SEARCH_HISTORY = 10;
+
+export function getRecentEmojiSearches(): string[] {
+  try {
+    const raw = localStorage.getItem(RECENT_EMOJI_SEARCHES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveRecentEmojiSearch(query: string): string[] {
+  const q = query.trim();
+  if (!q) return getRecentEmojiSearches();
+  try {
+    const current = getRecentEmojiSearches().filter((s) => s.toLowerCase() !== q.toLowerCase());
+    const updated = [q, ...current].slice(0, MAX_SEARCH_HISTORY);
+    localStorage.setItem(RECENT_EMOJI_SEARCHES_KEY, JSON.stringify(updated));
+    return updated;
+  } catch {
+    return [q];
+  }
+}
+
+export function clearRecentEmojiSearches(): void {
+  try {
+    localStorage.removeItem(RECENT_EMOJI_SEARCHES_KEY);
+  } catch {}
+}
