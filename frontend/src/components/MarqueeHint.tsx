@@ -49,7 +49,7 @@ export const MarqueeHint: React.FC<MarqueeHintProps> = ({ text, className, animK
       ref={containerRef}
       className={cn(
         'relative mx-3 flex min-w-0 flex-1 items-center overflow-hidden',
-        isOverflowing ? 'justify-start marquee-mask' : 'justify-center',
+        isOverflowing ? 'marquee-mask justify-start' : 'justify-center',
         className
       )}
     >

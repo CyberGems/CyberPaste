@@ -938,8 +938,6 @@ export const CompactView: React.FC<CompactViewProps> = ({
     }
   }, [searchFocusToken]);
 
-
-
   const filteredClips = useMemo(() => {
     let res =
       typeFilter === 'all'
@@ -1723,9 +1721,15 @@ export const CompactView: React.FC<CompactViewProps> = ({
                           >
                             <Icon
                               size={11}
-                              className={isSelected ? 'text-primary' : 'flex-shrink-0 text-muted-foreground/60'}
+                              className={
+                                isSelected
+                                  ? 'text-primary'
+                                  : 'flex-shrink-0 text-muted-foreground/60'
+                              }
                             />
-                            <span className="min-w-0 flex-1 truncate text-left">{t(cat.labelKey)}</span>
+                            <span className="min-w-0 flex-1 truncate text-left">
+                              {t(cat.labelKey)}
+                            </span>
                           </button>
                         );
                       })
@@ -1734,81 +1738,81 @@ export const CompactView: React.FC<CompactViewProps> = ({
                         <Tooltip label={t('common.folderNavHintCompact')} placement="right">
                           <button
                             onClick={() => onSelectFolder(null)}
-                        data-folder-id="clipboard"
-                        data-selected={highlightedFolderId === null}
-                        className={cn(
-                          'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2 py-1.5 text-[11px] font-medium transition-all focus:outline-none focus-visible:ring-0',
-                          isClipboardFlashing && 'folder-soft-flash',
-                          highlightedFolderId === null && dragTargetFolderId === undefined
-                            ? 'border-transparent bg-primary/15 font-semibold text-foreground'
-                            : dragTargetFolderId === null && isDragging
-                              ? 'border-transparent bg-primary/30 text-foreground'
-                              : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
+                            data-folder-id="clipboard"
+                            data-selected={highlightedFolderId === null}
+                            className={cn(
+                              'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2 py-1.5 text-[11px] font-medium transition-all focus:outline-none focus-visible:ring-0',
+                              isClipboardFlashing && 'folder-soft-flash',
+                              highlightedFolderId === null && dragTargetFolderId === undefined
+                                ? 'border-transparent bg-primary/15 font-semibold text-foreground'
+                                : dragTargetFolderId === null && isDragging
+                                  ? 'border-transparent bg-primary/30 text-foreground'
+                                  : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
+                            )}
+                            onMouseEnter={() => handleFolderHover(null)}
+                            onMouseLeave={onDragLeave}
+                          >
+                            <Clock size={11} className="flex-shrink-0" />
+                            <span className="min-w-0 flex-1 truncate text-left">
+                              {t('folders.clipboard')}
+                            </span>
+                            <span
+                              className={cn(
+                                'flex-shrink-0 text-[10px] tabular-nums opacity-35',
+                                selectedFolder === null && 'opacity-70'
+                              )}
+                            >
+                              ({totalClipCount})
+                            </span>
+                          </button>
+                        </Tooltip>
+                        {folders.map((folder) => {
+                          const isSelected = highlightedFolderId === folder.id;
+                          return (
+                            <React.Fragment key={folder.id}>
+                              {folderReorderTargetId === folder.id &&
+                                folderReorderTargetPosition === 'before' && (
+                                  <div className="mx-2 h-0.5 flex-shrink-0 animate-pulse rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
+                                )}
+                              <CompactSidebarFolderItem
+                                folder={folder}
+                                isSelected={isSelected}
+                                isDragTarget={dragTargetFolderId === folder.id && isDragging}
+                                contextMenuFolderId={contextMenuFolderId}
+                                draggingFolderId={draggingFolderId}
+                                dragTargetFolderId={dragTargetFolderId}
+                                onMouseDown={handleFolderMouseDown}
+                                onMouseMove={handleFolderMouseMove}
+                                onMouseLeave={() => {
+                                  handleFolderMouseLeave();
+                                  onDragLeave();
+                                }}
+                                onClick={(id) => {
+                                  if (wasFolderDraggingRef.current) return;
+                                  onSelectFolder(id);
+                                }}
+                                onContextMenu={onFolderContextMenu}
+                                onMouseEnter={(id) => handleFolderHover(id)}
+                              />
+                              {folderReorderTargetId === folder.id &&
+                                folderReorderTargetPosition === 'after' && (
+                                  <div className="mx-2 h-0.5 flex-shrink-0 animate-pulse rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
+                                )}
+                            </React.Fragment>
+                          );
+                        })}
+                        {folders.length === 0 && (
+                          <div className="mx-1.5 mt-6 flex flex-col items-center gap-2 rounded-lg border border-dashed border-border/40 bg-muted/20 px-3 py-5 text-center">
+                            <FolderIcon size={18} className="opacity-20" />
+                            <p className="text-[10px] leading-snug text-muted-foreground/60">
+                              {t('folders.noFoldersCreated', {
+                                defaultValue: 'No folders yet — drag clips to organize',
+                              })}
+                            </p>
+                          </div>
                         )}
-                        onMouseEnter={() => handleFolderHover(null)}
-                        onMouseLeave={onDragLeave}
-                      >
-                        <Clock size={11} className="flex-shrink-0" />
-                        <span className="min-w-0 flex-1 truncate text-left">
-                          {t('folders.clipboard')}
-                        </span>
-                        <span
-                          className={cn(
-                            'flex-shrink-0 text-[10px] tabular-nums opacity-35',
-                            selectedFolder === null && 'opacity-70'
-                          )}
-                        >
-                          ({totalClipCount})
-                        </span>
-                      </button>
-                    </Tooltip>
-                    {folders.map((folder) => {
-                      const isSelected = highlightedFolderId === folder.id;
-                      return (
-                        <React.Fragment key={folder.id}>
-                          {folderReorderTargetId === folder.id &&
-                            folderReorderTargetPosition === 'before' && (
-                              <div className="mx-2 h-0.5 flex-shrink-0 animate-pulse rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
-                            )}
-                          <CompactSidebarFolderItem
-                            folder={folder}
-                            isSelected={isSelected}
-                            isDragTarget={dragTargetFolderId === folder.id && isDragging}
-                            contextMenuFolderId={contextMenuFolderId}
-                            draggingFolderId={draggingFolderId}
-                            dragTargetFolderId={dragTargetFolderId}
-                            onMouseDown={handleFolderMouseDown}
-                            onMouseMove={handleFolderMouseMove}
-                            onMouseLeave={() => {
-                              handleFolderMouseLeave();
-                              onDragLeave();
-                            }}
-                            onClick={(id) => {
-                              if (wasFolderDraggingRef.current) return;
-                              onSelectFolder(id);
-                            }}
-                            onContextMenu={onFolderContextMenu}
-                            onMouseEnter={(id) => handleFolderHover(id)}
-                          />
-                          {folderReorderTargetId === folder.id &&
-                            folderReorderTargetPosition === 'after' && (
-                              <div className="mx-2 h-0.5 flex-shrink-0 animate-pulse rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
-                            )}
-                        </React.Fragment>
-                      );
-                    })}
-                    {folders.length === 0 && (
-                      <div className="mx-1.5 mt-6 flex flex-col items-center gap-2 rounded-lg border border-dashed border-border/40 bg-muted/20 px-3 py-5 text-center">
-                        <FolderIcon size={18} className="opacity-20" />
-                        <p className="text-[10px] leading-snug text-muted-foreground/60">
-                          {t('folders.noFoldersCreated', {
-                            defaultValue: 'No folders yet — drag clips to organize',
-                          })}
-                        </p>
-                      </div>
+                      </>
                     )}
-                  </>
-                )}
                   </div>
                   {onAddFolder && !isEmojiMode && (
                     <div className="flex-shrink-0 border-t border-sidebar-border/60 bg-sidebar p-1.5">
@@ -1871,7 +1875,9 @@ export const CompactView: React.FC<CompactViewProps> = ({
                           e.preventDefault();
                           const hasEmojis = Boolean(document.querySelector('[data-emoji-index]'));
                           if (hasEmojis) {
-                            const grid = document.querySelector('[data-emoji-grid="true"]') as HTMLElement;
+                            const grid = document.querySelector(
+                              '[data-emoji-grid="true"]'
+                            ) as HTMLElement;
                             if (grid) {
                               grid.focus();
                             }
@@ -2012,52 +2018,52 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 />
               ) : (
                 <CompactClipList
-                clips={filteredClips}
-                listRef={clipListApiRef}
-                resetToken={resetToken}
-                peekClipId={peekClipId}
-                selectedClipId={selectedClipId}
-                selectedFolder={selectedFolder}
-                onPaste={onPaste}
-                onSelectClip={onSelectClip}
-                singleClickPaste={singleClickPaste}
-                onDelete={onDelete}
-                onContextMenu={onContextMenu}
-                onDragStart={onDragStart}
-                reorderEnabled={reorderEnabled}
-                reorderTargetClipId={reorderTargetClipId}
-                reorderTargetPosition={reorderTargetPosition}
-                getClipImageSrc={getClipImageSrc}
-                t={t}
-                draggingClipId={draggingClipId}
-                clipNumbering={clipNumbering}
-                isLoading={isLoading}
-                isFiltering={isFiltering}
-                isPeekVisible={!!peekClipId}
-                onClosePeek={closePeek}
-                compactShowSourceIcon={compactShowSourceIcon}
-                compactShowTime={compactShowTime}
-                compactShowTypeIcon={compactShowTypeIcon}
-                compactShowNumber={compactShowNumber}
-                showScrollbar={compactShowScrollbar}
-                emptyLabel={
-                  searchQuery.trim()
-                    ? t('clipList.noResults')
-                    : isFiltering && clips.length > 0
-                      ? t('compact.noMatchFilter') === 'compact.noMatchFilter'
-                        ? 'No clips match this filter'
-                        : t('compact.noMatchFilter')
-                      : t('clipList.empty')
-                }
-                onRowsRendered={handleRowsRendered}
-                selectedClipIds={selectedClipIds}
-                onToggleClipSelect={onToggleClipSelect}
-                rowHeight={rowHeight}
-                onRowMouseEnter={handleRowMouseEnter}
-                onRowMouseLeave={handleRowMouseLeave}
-                appFilter={appFilter}
-                onAppFilterChange={onAppFilterChange}
-              />
+                  clips={filteredClips}
+                  listRef={clipListApiRef}
+                  resetToken={resetToken}
+                  peekClipId={peekClipId}
+                  selectedClipId={selectedClipId}
+                  selectedFolder={selectedFolder}
+                  onPaste={onPaste}
+                  onSelectClip={onSelectClip}
+                  singleClickPaste={singleClickPaste}
+                  onDelete={onDelete}
+                  onContextMenu={onContextMenu}
+                  onDragStart={onDragStart}
+                  reorderEnabled={reorderEnabled}
+                  reorderTargetClipId={reorderTargetClipId}
+                  reorderTargetPosition={reorderTargetPosition}
+                  getClipImageSrc={getClipImageSrc}
+                  t={t}
+                  draggingClipId={draggingClipId}
+                  clipNumbering={clipNumbering}
+                  isLoading={isLoading}
+                  isFiltering={isFiltering}
+                  isPeekVisible={!!peekClipId}
+                  onClosePeek={closePeek}
+                  compactShowSourceIcon={compactShowSourceIcon}
+                  compactShowTime={compactShowTime}
+                  compactShowTypeIcon={compactShowTypeIcon}
+                  compactShowNumber={compactShowNumber}
+                  showScrollbar={compactShowScrollbar}
+                  emptyLabel={
+                    searchQuery.trim()
+                      ? t('clipList.noResults')
+                      : isFiltering && clips.length > 0
+                        ? t('compact.noMatchFilter') === 'compact.noMatchFilter'
+                          ? 'No clips match this filter'
+                          : t('compact.noMatchFilter')
+                        : t('clipList.empty')
+                  }
+                  onRowsRendered={handleRowsRendered}
+                  selectedClipIds={selectedClipIds}
+                  onToggleClipSelect={onToggleClipSelect}
+                  rowHeight={rowHeight}
+                  onRowMouseEnter={handleRowMouseEnter}
+                  onRowMouseLeave={handleRowMouseLeave}
+                  appFilter={appFilter}
+                  onAppFilterChange={onAppFilterChange}
+                />
               )}
             </div>
 
@@ -2128,7 +2134,9 @@ export const CompactView: React.FC<CompactViewProps> = ({
                         e.preventDefault();
                         const hasEmojis = Boolean(document.querySelector('[data-emoji-index]'));
                         if (hasEmojis) {
-                          const grid = document.querySelector('[data-emoji-grid="true"]') as HTMLElement;
+                          const grid = document.querySelector(
+                            '[data-emoji-grid="true"]'
+                          ) as HTMLElement;
                           if (grid) {
                             grid.focus();
                           }
@@ -2253,137 +2261,140 @@ export const CompactView: React.FC<CompactViewProps> = ({
 
             {!isEmojiMode && (
               <div className="flex items-center gap-1">
-              {hasOverflow && (
-                <div className="flex-shrink-0 pb-1">
-                  <Tooltip label={canScrollLeft ? t('folders.scrollBack') : ''} placement="bottom">
-                    <button
-                      type="button"
-                      disabled={!canScrollLeft}
-                      onClick={() => scrollFolders('left')}
-                      aria-label={t('folders.scrollBack')}
-                      className={cn(
-                        'flex h-7 w-5 items-center justify-center rounded-md border transition-all',
-                        canScrollLeft
-                          ? 'cursor-pointer border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
-                          : 'pointer-events-none cursor-default border-transparent bg-transparent text-muted-foreground/30 opacity-40'
-                      )}
+                {hasOverflow && (
+                  <div className="flex-shrink-0 pb-1">
+                    <Tooltip
+                      label={canScrollLeft ? t('folders.scrollBack') : ''}
+                      placement="bottom"
                     >
-                      <ChevronLeft size={13} strokeWidth={2.2} />
+                      <button
+                        type="button"
+                        disabled={!canScrollLeft}
+                        onClick={() => scrollFolders('left')}
+                        aria-label={t('folders.scrollBack')}
+                        className={cn(
+                          'flex h-7 w-5 items-center justify-center rounded-md border transition-all',
+                          canScrollLeft
+                            ? 'cursor-pointer border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
+                            : 'pointer-events-none cursor-default border-transparent bg-transparent text-muted-foreground/30 opacity-40'
+                        )}
+                      >
+                        <ChevronLeft size={13} strokeWidth={2.2} />
+                      </button>
+                    </Tooltip>
+                  </div>
+                )}
+                <div
+                  ref={folderScrollRef}
+                  onWheel={handleWheel}
+                  onScroll={updateScrollState}
+                  className="no-scrollbar flex min-w-0 flex-1 gap-1 overflow-x-auto pb-1"
+                >
+                  <Tooltip label={t('common.folderNavHintCompact')} placement="bottom">
+                    <button
+                      onClick={() => onSelectFolder(null)}
+                      data-folder-id="clipboard"
+                      data-selected={highlightedFolderId === null}
+                      className={folderTabClass(
+                        highlightedFolderId === null,
+                        dragTargetFolderId === null,
+                        false,
+                        isClipboardFlashing
+                      )}
+                      onMouseEnter={() => handleFolderHover(null)}
+                      onMouseLeave={onDragLeave}
+                    >
+                      <Clock size={11} />
+                      {t('folders.clipboard')}
+                      <span
+                        className={cn(
+                          'flex-shrink-0 text-[10px] tabular-nums opacity-35',
+                          selectedFolder === null && 'opacity-70'
+                        )}
+                      >
+                        ({totalClipCount})
+                      </span>
                     </button>
                   </Tooltip>
+                  {folders.map((folder) => {
+                    const isSelected = highlightedFolderId === folder.id;
+                    return (
+                      <React.Fragment key={folder.id}>
+                        {folderReorderTargetId === folder.id &&
+                          folderReorderTargetPosition === 'before' && (
+                            <div
+                              className="mx-0.5 h-6 w-0.5 flex-shrink-0 animate-pulse rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]"
+                              style={{ alignSelf: 'center' }}
+                            />
+                          )}
+                        <CompactTopFolderItem
+                          folder={folder}
+                          isSelected={isSelected}
+                          isDragTarget={dragTargetFolderId === folder.id && isDragging}
+                          contextMenuFolderId={contextMenuFolderId}
+                          draggingFolderId={draggingFolderId}
+                          folderTabClass={folderTabClass}
+                          onMouseDown={handleFolderMouseDown}
+                          onMouseMove={handleFolderMouseMove}
+                          onMouseLeave={() => {
+                            handleFolderMouseLeave();
+                            onDragLeave();
+                          }}
+                          onClick={(id) => {
+                            if (wasFolderDraggingRef.current) return;
+                            onSelectFolder(id);
+                          }}
+                          onContextMenu={onFolderContextMenu}
+                          onMouseEnter={(id) => handleFolderHover(id)}
+                        />
+                        {folderReorderTargetId === folder.id &&
+                          folderReorderTargetPosition === 'after' && (
+                            <div
+                              className="mx-0.5 h-6 w-0.5 flex-shrink-0 animate-pulse rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]"
+                              style={{ alignSelf: 'center' }}
+                            />
+                          )}
+                      </React.Fragment>
+                    );
+                  })}
                 </div>
-              )}
-              <div
-                ref={folderScrollRef}
-                onWheel={handleWheel}
-                onScroll={updateScrollState}
-                className="no-scrollbar flex min-w-0 flex-1 gap-1 overflow-x-auto pb-1"
-              >
-                <Tooltip label={t('common.folderNavHintCompact')} placement="bottom">
-                  <button
-                    onClick={() => onSelectFolder(null)}
-                    data-folder-id="clipboard"
-                    data-selected={highlightedFolderId === null}
-                    className={folderTabClass(
-                      highlightedFolderId === null,
-                      dragTargetFolderId === null,
-                      false,
-                      isClipboardFlashing
-                    )}
-                    onMouseEnter={() => handleFolderHover(null)}
-                    onMouseLeave={onDragLeave}
-                  >
-                    <Clock size={11} />
-                    {t('folders.clipboard')}
-                    <span
-                      className={cn(
-                        'flex-shrink-0 text-[10px] tabular-nums opacity-35',
-                        selectedFolder === null && 'opacity-70'
-                      )}
+                {hasOverflow && (
+                  <div className="flex-shrink-0 pb-1">
+                    <Tooltip
+                      label={canScrollRight ? t('folders.scrollForward') : ''}
+                      placement="bottom"
                     >
-                      ({totalClipCount})
-                    </span>
-                  </button>
-                </Tooltip>
-                {folders.map((folder) => {
-                  const isSelected = highlightedFolderId === folder.id;
-                  return (
-                    <React.Fragment key={folder.id}>
-                      {folderReorderTargetId === folder.id &&
-                        folderReorderTargetPosition === 'before' && (
-                          <div
-                            className="mx-0.5 h-6 w-0.5 flex-shrink-0 animate-pulse rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]"
-                            style={{ alignSelf: 'center' }}
-                          />
+                      <button
+                        type="button"
+                        disabled={!canScrollRight}
+                        onClick={() => scrollFolders('right')}
+                        aria-label={t('folders.scrollForward')}
+                        className={cn(
+                          'flex h-7 w-5 items-center justify-center rounded-md border transition-all',
+                          canScrollRight
+                            ? 'cursor-pointer border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
+                            : 'pointer-events-none cursor-default border-transparent bg-transparent text-muted-foreground/30 opacity-40'
                         )}
-                      <CompactTopFolderItem
-                        folder={folder}
-                        isSelected={isSelected}
-                        isDragTarget={dragTargetFolderId === folder.id && isDragging}
-                        contextMenuFolderId={contextMenuFolderId}
-                        draggingFolderId={draggingFolderId}
-                        folderTabClass={folderTabClass}
-                        onMouseDown={handleFolderMouseDown}
-                        onMouseMove={handleFolderMouseMove}
-                        onMouseLeave={() => {
-                          handleFolderMouseLeave();
-                          onDragLeave();
-                        }}
-                        onClick={(id) => {
-                          if (wasFolderDraggingRef.current) return;
-                          onSelectFolder(id);
-                        }}
-                        onContextMenu={onFolderContextMenu}
-                        onMouseEnter={(id) => handleFolderHover(id)}
-                      />
-                      {folderReorderTargetId === folder.id &&
-                        folderReorderTargetPosition === 'after' && (
-                          <div
-                            className="mx-0.5 h-6 w-0.5 flex-shrink-0 animate-pulse rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]"
-                            style={{ alignSelf: 'center' }}
-                          />
-                        )}
-                    </React.Fragment>
-                  );
-                })}
+                      >
+                        <ChevronRight size={13} strokeWidth={2.2} />
+                      </button>
+                    </Tooltip>
+                  </div>
+                )}
+                {onAddFolder && (
+                  <div className="flex-shrink-0 pb-1">
+                    <Tooltip label={t('folders.addFolderBtn')} placement="bottom">
+                      <button
+                        type="button"
+                        onClick={onAddFolder}
+                        className="flex h-7 w-7 items-center justify-center rounded-md border border-dashed border-border bg-transparent text-muted-foreground/70 transition-all hover:border-muted hover:text-foreground"
+                      >
+                        <Plus size={13} strokeWidth={2.2} />
+                      </button>
+                    </Tooltip>
+                  </div>
+                )}
               </div>
-              {hasOverflow && (
-                <div className="flex-shrink-0 pb-1">
-                  <Tooltip
-                    label={canScrollRight ? t('folders.scrollForward') : ''}
-                    placement="bottom"
-                  >
-                    <button
-                      type="button"
-                      disabled={!canScrollRight}
-                      onClick={() => scrollFolders('right')}
-                      aria-label={t('folders.scrollForward')}
-                      className={cn(
-                        'flex h-7 w-5 items-center justify-center rounded-md border transition-all',
-                        canScrollRight
-                          ? 'cursor-pointer border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
-                          : 'pointer-events-none cursor-default border-transparent bg-transparent text-muted-foreground/30 opacity-40'
-                      )}
-                    >
-                      <ChevronRight size={13} strokeWidth={2.2} />
-                    </button>
-                  </Tooltip>
-                </div>
-              )}
-              {onAddFolder && (
-                <div className="flex-shrink-0 pb-1">
-                  <Tooltip label={t('folders.addFolderBtn')} placement="bottom">
-                    <button
-                      type="button"
-                      onClick={onAddFolder}
-                      className="flex h-7 w-7 items-center justify-center rounded-md border border-dashed border-border bg-transparent text-muted-foreground/70 transition-all hover:border-muted hover:text-foreground"
-                    >
-                      <Plus size={13} strokeWidth={2.2} />
-                    </button>
-                  </Tooltip>
-                </div>
-              )}
-            </div>
             )}
           </div>
 
@@ -2403,57 +2414,57 @@ export const CompactView: React.FC<CompactViewProps> = ({
               />
             ) : (
               <CompactClipList
-              clips={filteredClips}
-              listRef={clipListApiRef}
-              resetToken={resetToken}
-              peekClipId={peekClipId}
-              selectedClipId={selectedClipId}
-              selectedFolder={selectedFolder}
-              onPaste={onPaste}
-              onSelectClip={onSelectClip}
-              singleClickPaste={singleClickPaste}
-              onDelete={onDelete}
-              onContextMenu={(e, id) => {
-                closePeek();
-                onContextMenu?.(e, id);
-              }}
-              onDragStart={onDragStart}
-              reorderEnabled={reorderEnabled}
-              reorderTargetClipId={reorderTargetClipId}
-              reorderTargetPosition={reorderTargetPosition}
-              getClipImageSrc={getClipImageSrc}
-              t={t}
-              draggingClipId={draggingClipId}
-              clipNumbering={clipNumbering}
-              isLoading={isLoading}
-              isFiltering={isFiltering}
-              emptyLabel={
-                searchQuery.trim()
-                  ? t('clipList.noResults')
-                  : isFiltering && clips.length > 0
-                    ? t('compact.noMatchFilter') === 'compact.noMatchFilter'
-                      ? 'No clips match this filter'
-                      : t('compact.noMatchFilter')
-                    : t('clipList.empty')
-              }
-              onRowsRendered={handleRowsRendered}
-              selectedClipIds={selectedClipIds}
-              onToggleClipSelect={onToggleClipSelect}
-              rowHeight={rowHeight}
-              onRowMouseEnter={handleRowMouseEnter}
-              onRowMouseLeave={handleRowMouseLeave}
-              isPeekVisible={!!peekClipId}
-              onClosePeek={closePeek}
-              compactShowSourceIcon={compactShowSourceIcon}
-              compactShowTime={compactShowTime}
-              compactShowTypeIcon={compactShowTypeIcon}
-              compactShowNumber={compactShowNumber}
-              showScrollbar={compactShowScrollbar}
-              appFilter={appFilter}
-              onAppFilterChange={onAppFilterChange}
-              typeFilter={typeFilter}
-              onTypeFilterChange={onTypeFilterChange}
-            />
+                clips={filteredClips}
+                listRef={clipListApiRef}
+                resetToken={resetToken}
+                peekClipId={peekClipId}
+                selectedClipId={selectedClipId}
+                selectedFolder={selectedFolder}
+                onPaste={onPaste}
+                onSelectClip={onSelectClip}
+                singleClickPaste={singleClickPaste}
+                onDelete={onDelete}
+                onContextMenu={(e, id) => {
+                  closePeek();
+                  onContextMenu?.(e, id);
+                }}
+                onDragStart={onDragStart}
+                reorderEnabled={reorderEnabled}
+                reorderTargetClipId={reorderTargetClipId}
+                reorderTargetPosition={reorderTargetPosition}
+                getClipImageSrc={getClipImageSrc}
+                t={t}
+                draggingClipId={draggingClipId}
+                clipNumbering={clipNumbering}
+                isLoading={isLoading}
+                isFiltering={isFiltering}
+                emptyLabel={
+                  searchQuery.trim()
+                    ? t('clipList.noResults')
+                    : isFiltering && clips.length > 0
+                      ? t('compact.noMatchFilter') === 'compact.noMatchFilter'
+                        ? 'No clips match this filter'
+                        : t('compact.noMatchFilter')
+                      : t('clipList.empty')
+                }
+                onRowsRendered={handleRowsRendered}
+                selectedClipIds={selectedClipIds}
+                onToggleClipSelect={onToggleClipSelect}
+                rowHeight={rowHeight}
+                onRowMouseEnter={handleRowMouseEnter}
+                onRowMouseLeave={handleRowMouseLeave}
+                isPeekVisible={!!peekClipId}
+                onClosePeek={closePeek}
+                compactShowSourceIcon={compactShowSourceIcon}
+                compactShowTime={compactShowTime}
+                compactShowTypeIcon={compactShowTypeIcon}
+                compactShowNumber={compactShowNumber}
+                showScrollbar={compactShowScrollbar}
+                appFilter={appFilter}
+                onAppFilterChange={onAppFilterChange}
+                typeFilter={typeFilter}
+                onTypeFilterChange={onTypeFilterChange}
+              />
             )}
           </div>
 

@@ -197,17 +197,31 @@
 }
 
 @keyframes marquee-ping-pong {
-  0%, 18% {
+  0%,
+  18% {
     transform: translateX(0);
   }
-  82%, 100% {
+  82%,
+  100% {
     transform: translateX(var(--overflow-dist, -40px));
   }
 }
 
 .marquee-mask {
-  -webkit-mask-image: linear-gradient(to right, transparent, black 12px, black calc(100% - 12px), transparent);
-  mask-image: linear-gradient(to right, transparent, black 12px, black calc(100% - 12px), transparent);
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 12px,
+    black calc(100% - 12px),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 12px,
+    black calc(100% - 12px),
+    transparent
+  );
 }
 
 @keyframes toast-shrink {

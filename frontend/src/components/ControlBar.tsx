@@ -1017,7 +1017,9 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                           e.preventDefault();
                           const hasEmojis = Boolean(document.querySelector('[data-emoji-index]'));
                           if (hasEmojis) {
-                            const grid = document.querySelector('[data-emoji-grid="true"]') as HTMLElement;
+                            const grid = document.querySelector(
+                              '[data-emoji-grid="true"]'
+                            ) as HTMLElement;
                             if (grid) {
                               grid.focus();
                             }

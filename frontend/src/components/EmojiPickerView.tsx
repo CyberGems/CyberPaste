@@ -96,7 +96,9 @@ export const EmojiPickerView: React.FC<EmojiPickerViewProps> = ({
       const recentsSet = new Set(frozenRecentEmojis);
       const matched = EMOJI_LIST.filter((item) => recentsSet.has(item.char));
       // Sort in order of frozenRecentEmojis array
-      matched.sort((a, b) => frozenRecentEmojis.indexOf(a.char) - frozenRecentEmojis.indexOf(b.char));
+      matched.sort(
+        (a, b) => frozenRecentEmojis.indexOf(a.char) - frozenRecentEmojis.indexOf(b.char)
+      );
       // If no recents recorded yet, return a starter selection
       if (matched.length === 0) {
         return EMOJI_LIST.slice(0, 24);
@@ -211,7 +213,7 @@ export const EmojiPickerView: React.FC<EmojiPickerViewProps> = ({
         className={clsx(
           'flex-1 overflow-y-auto overflow-x-hidden p-2',
           mode === 'full'
-            ? 'grid grid-cols-7 sm:grid-cols-9 md:grid-cols-11 lg:grid-cols-13 gap-2 p-4'
+            ? 'lg:grid-cols-13 grid grid-cols-7 gap-2 p-4 sm:grid-cols-9 md:grid-cols-11'
             : 'grid grid-cols-6 gap-1 p-2'
         )}
       >
@@ -231,16 +233,19 @@ export const EmojiPickerView: React.FC<EmojiPickerViewProps> = ({
                 data-emoji-index={index}
                 type="button"
                 title={title}
-                style={{ fontFamily: '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif' }}
+                style={{
+                  fontFamily:
+                    '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif',
+                }}
                 onClick={() => handleSelectEmoji(item.char)}
                 onMouseEnter={() => {
                   setSelectedIndex(index);
                   setHoveredEmoji(item);
                 }}
                 className={clsx(
-                  'group relative flex items-center justify-center rounded-xl transition-all duration-150 select-none active:scale-90',
+                  'group relative flex select-none items-center justify-center rounded-xl transition-all duration-150 active:scale-90',
                   mode === 'full'
-                    ? 'h-12 w-12 text-2xl hover:scale-115'
+                    ? 'hover:scale-115 h-12 w-12 text-2xl'
                     : 'h-10 w-10 text-xl hover:scale-110',
                   isSelected
                     ? 'border border-primary/50 bg-primary/20 shadow-[0_0_12px_rgba(var(--primary-rgb),0.3)] ring-1 ring-primary/40'
@@ -260,7 +265,7 @@ export const EmojiPickerView: React.FC<EmojiPickerViewProps> = ({
           {hoveredEmoji ? (
             <>
               <span className="text-base leading-none">{hoveredEmoji.char}</span>
-              <span className="font-medium text-foreground truncate">
+              <span className="truncate font-medium text-foreground">
                 {isSpanish ? hoveredEmoji.nameEs : hoveredEmoji.name}
               </span>
             </>
