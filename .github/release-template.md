@@ -8,7 +8,7 @@
 
 <!-- Maintainer: Rewrite the marked paragraph for every release. Use 25-45 words, lead with user-facing changes, and do not repeat the app name or version. -->
 <!-- changelog-summary:start -->
-Universal media visor brings full inspection and zoom to text, code, images, and files without screen flash. Source application filters, panoramic cards, marquee selection, horizontal folder chevrons, and automatic history retention make daily workflow faster and more organized.
+Dedicated emoji mode with bilingual search, category tabs, and continuous injection when pinned makes expression effortless. Streamlined search navigation, smooth focus retention, non-stacking toast alerts, and a refined installer wizard complete this release.
 <!-- changelog-summary:end -->
 
 > **New to CyberPaste?** A fast, privacy-first Windows clipboard manager with history, folders, OCR, and configurable AI actions.
@@ -17,24 +17,23 @@ Universal media visor brings full inspection and zoom to text, code, images, and
 
 ### ✨ Key Features & Highlights
 
-- 👁️ **Universal Clip Visor**:
-  - Full media inspector for text, code, images, HTML, and files with zoom, pan, and a dedicated metadata footer.
-  - Window opens hidden and reveals only after theme styles load, eliminating empty screen flashes.
-  - Position validation prevents windows from opening off-screen.
+- 🌟 **Dedicated Emoji Mode**:
+  - Full-featured emoji picker with bilingual search (English and Spanish) by name, aliases, and keywords.
+  - Instant paste via click or Enter into active applications.
+  - Continuous multi-injection when window is pinned without losing focus or closing.
+  - Session-stable recents prevent accidental misclicks, and search history remains completely isolated from clips.
 
-- 🏷️ **Source Application & Type Filters**:
-  - Filter clips and captures by originating application with instant search, badges, and unknown process detection.
-  - One-click type filter chips combine with active application filters and display in the compact footer.
+- 🔎 **Search & Keyboard Navigation**:
+  - Backspacing to an empty search bar retains focus and cursor position smoothly.
+  - Pressing Arrow Down when search yields no results safely preserves search input focus.
+  - Two-stage Escape: first Escape clears or blurs search; second Escape hides the window or closes emoji mode.
+  - Pressing Arrow Up on the first clip (Compact) or first row (Full) returns focus directly to the search bar.
 
-- 📐 **Panoramic Cards & Marquee Selection**:
-  - Added panoramic card layout format with a quick layout toggle in Full mode.
-  - Drag from layout dead zones to marquee multi-select clips, with bulk context deletion.
-  - Visual styling distinguishes active keyboard navigation from hovered items in compact view.
-
-- 📂 **Folders, History Retention & Polish**:
-  - Horizontal folder navigation with scroll chevrons, boundary disabling, and folder deletion confirmation.
-  - Configurable automatic history expiration policy cleans up old history in the background.
-  - Direct clipboard monitoring toggle button on titlebars and custom NSIS installer graphics.
+- 🎨 **UI Polish, Toasts & Installer**:
+  - Unified single-toast notification system prevents toast stacking across the entire application with unselectable text.
+  - Compact footer tips rotate smoothly with dynamic marquee scrolling.
+  - Refined NSIS installer sidebar with proper 164x314 aspect ratio, safe margins, and seamless white background blend.
+  - Streamlined update modal removing redundant button tooltips.
 
 <details>
 <summary><b>🇪🇸 Ver notas de la versión en Español</b></summary>
@@ -43,7 +42,7 @@ Universal media visor brings full inspection and zoom to text, code, images, and
 
 ### 🚀 Novedades de esta versión
 
-El visor universal adapta inspección completa y zoom para texto, código, imágenes y archivos sin destellos. Filtros por aplicación de origen, tarjetas panorámicas, selección múltiple por arrastre, navegación horizontal de carpetas y retención automática aceleran tu flujo diario.
+El nuevo modo de emojis con búsqueda bilingüe, pestañas de categoría e inyección continua al estar anclado agiliza la comunicación. La navegación de búsqueda optimizada, retención fluida del foco, avisos sin apilamiento y el instalador perfeccionado completan esta versión.
 
 > **¿Nuevo en CyberPaste?** Un gestor de portapapeles rápido y privado para Windows, con historial, carpetas, OCR y acciones de IA configurables.
 
@@ -51,24 +50,23 @@ El visor universal adapta inspección completa y zoom para texto, código, imág
 
 ### ✨ Novedades destacadas
 
-- 👁️ **Visor Universal de Clips**:
-  - Inspector multimedia completo para texto, código, imágenes, HTML y archivos con zoom, paneo y pie con metadatos.
-  - La ventana se crea oculta y se revela tras cargar los estilos del tema, eliminando destellos blancos.
-  - Validación de posición para evitar que la ventana se abra fuera de la pantalla.
+- 🌟 **Modo Emojis Dedicado**:
+  - Panel completo de emojis con búsqueda bilingüe (inglés y español) por nombre, sinónimos y palabras clave.
+  - Pegado instantáneo con clic o Enter en la aplicación activa.
+  - Inyección continua múltiple al estar anclado sin perder el foco ni cerrar la ventana.
+  - Recientes estables durante la sesión para evitar clics accidentales e historial de búsqueda totalmente aislado de los clips.
 
-- 🏷️ **Filtros por Aplicación de Origen y Tipo**:
-  - Filtra clips y capturas por su aplicación de origen con búsqueda instantánea, distintivos y soporte para procesos desconocidos.
-  - Los chips de tipo a 1 clic se combinan con los filtros de aplicación y se reflejan en el pie compacto.
+- 🔎 **Búsqueda y Navegación por Teclado**:
+  - Borrar con Backspace hasta dejar la barra vacía mantiene el foco y el cursor dentro sin desenfoques inesperados.
+  - Pulsar Flecha Abajo sin resultados de búsqueda preserva el foco en la barra sin obligar a usar el ratón.
+  - Escape en dos fases: el primer Escape limpia o desenfoca la búsqueda; el segundo oculta la ventana o sale de emojis.
+  - Pulsar Flecha Arriba en el primer clip (Compacto) o primera fila (Completo) regresa de inmediato a la barra de búsqueda.
 
-- 📐 **Tarjetas Panorámicas y Selección Múltiple**:
-  - Nuevo formato de tarjeta panorámico con selector rápido de diseño en modo Completo.
-  - Arrastra desde zonas vacías para selección múltiple en bloque, con borrado contextual conjunto.
-  - Distinción visual clara entre el elemento activo por teclado y los elementos resaltados por el cursor.
-
-- 📂 **Carpetas, Retención de Historial y Acabados**:
-  - Navegación horizontal de carpetas con flechas, desactivación en extremos y diálogo de confirmación de borrado.
-  - Política configurable de expiración automática para depurar el historial antiguo en segundo plano.
-  - Botón directo de monitoreo del portapapeles en las barras de título y nuevos gráficos de instalación NSIS.
+- 🎨 **Pulido Visual, Toasts e Instalador**:
+  - Sistema de avisos emergentes sin apilamiento con texto no seleccionable en toda la aplicación.
+  - Consejos en el pie compacto con marquesina animada y márgenes optimizados.
+  - Banner lateral del instalador NSIS corregido a 164x314 con márgenes seguros y fusión limpia a blanco.
+  - Modal de actualización depurado eliminando tooltips redundantes en botones.
 
 </details>
 
