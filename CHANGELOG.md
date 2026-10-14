@@ -2,6 +2,22 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.26.0] — 2026-10-14
+
+### 📋 Independent Copy & Paste Actions
+- **Hover quick actions**: Clip cards now feature distinct hover buttons to copy to clipboard or paste directly into the active application.
+- **Context menu separation**: Separate context menu options for "Copy" (places clip on system clipboard) and "Paste" (pastes directly into target app).
+- **Keyboard copy shortcut**: Pressing `Ctrl+C` with a clip selected copies it to the clipboard without auto-pasting (when not typing or selecting text).
+
+### 🔒 Extended Idle Auto-Lock
+- **Longer security intervals**: Added extended idle auto-lock options for 2 hours, 4 hours, 8 hours, and 12 hours in settings.
+
+### 🔇 Internal Action Alert Suppression & Polish
+- **Suppressed self-alerts**: Prevents duplicate sound cues and toast notifications when copying or pasting items within CyberPaste.
+- **Preserved source metadata**: Self-copy and self-paste operations maintain original source application metadata and icons.
+- **Pre-armed clip ignore**: Arms clip hash suppression before write operations to prevent duplicate history records and notifications.
+- **Settings text clarity**: Clarified mouse wheel folder navigation setting title and description in English and Spanish.
+
 ## [1.25.0] — 2026-10-14
 
 ### 🌟 Emoji Mode (Picker, Search & Instant Paste)

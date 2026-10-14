@@ -8,7 +8,7 @@
 
 <!-- Maintainer: Rewrite the marked paragraph for every release. Use 25-45 words, lead with user-facing changes, and do not repeat the app name or version. -->
 <!-- changelog-summary:start -->
-Dedicated emoji mode with bilingual search, category tabs, and continuous injection when pinned makes expression effortless. Streamlined search navigation, smooth focus retention, non-stacking toast alerts, and a refined installer wizard complete this release.
+Dedicated hover buttons and context menu options now cleanly separate copy from direct paste. Extended idle lock options up to 12 hours, refined mouse wheel settings, and duplicate alert suppression for internal actions complete this release.
 <!-- changelog-summary:end -->
 
 > **New to CyberPaste?** A fast, privacy-first Windows clipboard manager with history, folders, OCR, and configurable AI actions.
@@ -17,23 +17,21 @@ Dedicated emoji mode with bilingual search, category tabs, and continuous inject
 
 ### ✨ Key Features & Highlights
 
-- 🌟 **Dedicated Emoji Mode**:
-  - Full-featured emoji picker with bilingual search (English and Spanish) by name, aliases, and keywords.
-  - Instant paste via click or Enter into active applications.
-  - Continuous multi-injection when window is pinned without losing focus or closing.
-  - Session-stable recents prevent accidental misclicks, and search history remains completely isolated from clips.
+- 📋 **Independent Copy & Paste Actions**:
+  - Quick hover buttons on clip cards to Copy to clipboard or Paste directly into the active application.
+  - Dedicated context menu options distinguishing clipboard copying from direct pasting.
+  - Keyboard shortcut `Ctrl+C` to copy the selected clip to clipboard without triggering auto-paste.
 
-- 🔎 **Search & Keyboard Navigation**:
-  - Backspacing to an empty search bar retains focus and cursor position smoothly.
-  - Pressing Arrow Down when search yields no results safely preserves search input focus.
-  - Two-stage Escape: first Escape clears or blurs search; second Escape hides the window or closes emoji mode.
-  - Pressing Arrow Up on the first clip (Compact) or first row (Full) returns focus directly to the search bar.
+- 🔒 **Extended Idle Auto-Lock**:
+  - Added extended security timeout intervals: 2, 4, 8, and 12 hours for flexible unattended workstation protection.
 
-- 🎨 **UI Polish, Toasts & Installer**:
-  - Unified single-toast notification system prevents toast stacking across the entire application with unselectable text.
-  - Compact footer tips rotate smoothly with dynamic marquee scrolling.
-  - Refined NSIS installer sidebar with proper 164x314 aspect ratio, safe margins, and seamless white background blend.
-  - Streamlined update modal removing redundant button tooltips.
+- 🔇 **Internal Action Alert Suppression**:
+  - Automatically suppresses duplicate audio chimes and toast notifications when copying or pasting clips within the app.
+  - Preserves original application source metadata when items are reused internally.
+  - Pre-arms clip ignore hash on internal copy and paste to ensure clean database state.
+
+- ⚙️ **Settings Polish**:
+  - Clarified mouse wheel folder navigation title and description in English and Spanish.
 
 <details>
 <summary><b>🇪🇸 Ver notas de la versión en Español</b></summary>
@@ -42,7 +40,7 @@ Dedicated emoji mode with bilingual search, category tabs, and continuous inject
 
 ### 🚀 Novedades de esta versión
 
-El nuevo modo de emojis con búsqueda bilingüe, pestañas de categoría e inyección continua al estar anclado agiliza la comunicación. La navegación de búsqueda optimizada, retención fluida del foco, avisos sin apilamiento y el instalador perfeccionado completan esta versión.
+Botones flotantes y opciones de menú contextual separan claramente la acción de copiar del pegado directo. Nuevas opciones de bloqueo por inactividad de hasta 12 horas, ajustes clarificados para la rueda del ratón y supresión de avisos duplicados completan esta versión.
 
 > **¿Nuevo en CyberPaste?** Un gestor de portapapeles rápido y privado para Windows, con historial, carpetas, OCR y acciones de IA configurables.
 
@@ -50,23 +48,21 @@ El nuevo modo de emojis con búsqueda bilingüe, pestañas de categoría e inyec
 
 ### ✨ Novedades destacadas
 
-- 🌟 **Modo Emojis Dedicado**:
-  - Panel completo de emojis con búsqueda bilingüe (inglés y español) por nombre, sinónimos y palabras clave.
-  - Pegado instantáneo con clic o Enter en la aplicación activa.
-  - Inyección continua múltiple al estar anclado sin perder el foco ni cerrar la ventana.
-  - Recientes estables durante la sesión para evitar clics accidentales e historial de búsqueda totalmente aislado de los clips.
+- 📋 **Acciones Separadas de Copiar y Pegar**:
+  - Botones flotantes rápidos en las tarjetas de clip para copiar al portapapeles o pegar directamente en la aplicación activa.
+  - Opciones de menú contextual diferenciadas para copiar al portapapeles frente a pegar directamente.
+  - Atajo de teclado `Ctrl+C` para copiar el clip seleccionado al portapapeles sin activar el pegado automático.
 
-- 🔎 **Búsqueda y Navegación por Teclado**:
-  - Borrar con Backspace hasta dejar la barra vacía mantiene el foco y el cursor dentro sin desenfoques inesperados.
-  - Pulsar Flecha Abajo sin resultados de búsqueda preserva el foco en la barra sin obligar a usar el ratón.
-  - Escape en dos fases: el primer Escape limpia o desenfoca la búsqueda; el segundo oculta la ventana o sale de emojis.
-  - Pulsar Flecha Arriba en el primer clip (Compacto) o primera fila (Completo) regresa de inmediato a la barra de búsqueda.
+- 🔒 **Bloqueo por Inactividad Extendido**:
+  - Nuevos intervalos de tiempo de espera: 2, 4, 8 y 12 horas para mayor flexibilidad y seguridad.
 
-- 🎨 **Pulido Visual, Toasts e Instalador**:
-  - Sistema de avisos emergentes sin apilamiento con texto no seleccionable en toda la aplicación.
-  - Consejos en el pie compacto con marquesina animada y márgenes optimizados.
-  - Banner lateral del instalador NSIS corregido a 164x314 con márgenes seguros y fusión limpia a blanco.
-  - Modal de actualización depurado eliminando tooltips redundantes en botones.
+- 🔇 **Supresión de Avisos en Acciones Propias**:
+  - Silencia automáticamente avisos sonoros y notificaciones emergentes al copiar o pegar elementos dentro de la propia aplicación.
+  - Conserva los metadatos de la aplicación de origen al reutilizar elementos internamente.
+  - Prepara la supresión de hash antes de escribir para mantener el historial limpio.
+
+- ⚙️ **Claridad en Configuración**:
+  - Título y descripción clarificados para la navegación por carpetas con la rueda del ratón en inglés y español.
 
 </details>
 
