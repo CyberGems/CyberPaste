@@ -116,19 +116,33 @@ export function useKeyboard(options: KeyboardOptions) {
         if (isTyping && !isSearchInput) {
           return;
         }
-        // First Escape dismisses search (even after leaving the field with arrows).
-        // A second Escape hides the window.
-        const searchFieldHasText = isSearchInput && (e.target as HTMLInputElement).value.length > 0;
-        if (options.onClearSearch && (options.searchActive || searchFieldHasText)) {
+
+        // If focused in the search input, the first Escape exits/blurs the search field.
+        if (isSearchInput) {
+          e.preventDefault();
+          const searchFieldHasText = (e.target as HTMLInputElement).value.length > 0;
+          if (options.onClearSearch && (options.searchActive || searchFieldHasText)) {
+            options.onClearSearch();
+          }
+          (e.target as HTMLElement).blur();
+          return;
+        }
+
+        // If search filter is active outside the input, dismiss search.
+        if (options.onClearSearch && options.searchActive) {
           e.preventDefault();
           options.onClearSearch();
           return;
         }
+
+        // If in emoji mode, exit emoji mode before closing window.
         if (options.isEmojiMode && options.onToggleEmojiMode) {
           e.preventDefault();
           options.onToggleEmojiMode();
           return;
         }
+
+        // Otherwise hide/close window.
         e.preventDefault();
         options.onClose();
       }
@@ -339,12 +353,11 @@ export function useKeyboard(options: KeyboardOptions) {
       };
 
       if (e.key === 'ArrowUp' && options.onNavigatePrev) {
-        if (isTyping && !isSearchInput) {
+        if (isTyping) {
           return;
         }
         e.preventDefault();
         e.stopPropagation();
-        leaveSearchInput();
         lockListHover();
         options.onNavigatePrev();
       }
@@ -355,9 +368,14 @@ export function useKeyboard(options: KeyboardOptions) {
         }
         e.preventDefault();
         e.stopPropagation();
+        const wasInSearch = isSearchInput;
         leaveSearchInput();
         lockListHover();
-        options.onNavigateNext();
+        if (wasInSearch && options.onNavigateFirst) {
+          options.onNavigateFirst();
+        } else {
+          options.onNavigateNext();
+        }
       }
 
       if ((e.key === 'Home' || e.key === 'Start') && options.onNavigateFirst) {

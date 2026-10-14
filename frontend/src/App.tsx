@@ -2101,17 +2101,28 @@ function App() {
     return () => document.removeEventListener('wheel', handleCompactZoom);
   }, [t]);
 
-  // Keyboard navigation handlers
   const handleNavigatePrev = useCallback(() => {
     if (clips.length === 0) return;
 
     if (!selectedClipId) {
+      const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+      if (searchInput && (showSearch || searchInput.offsetParent !== null)) {
+        searchInput.focus();
+        searchInput.select();
+        return;
+      }
       setSelectedClipId(clips[0].id);
       return;
     }
 
     const currentIndex = clips.findIndex((c) => c.id === selectedClipId);
     if (currentIndex < 0) {
+      const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+      if (searchInput && (showSearch || searchInput.offsetParent !== null)) {
+        searchInput.focus();
+        searchInput.select();
+        return;
+      }
       setSelectedClipId(clips[0].id);
       return;
     }
@@ -2121,14 +2132,28 @@ function App() {
       if (currentIndex >= cols) {
         setSelectedClipId(clips[currentIndex - cols].id);
       } else {
+        const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+        if (searchInput && (showSearch || searchInput.offsetParent !== null)) {
+          setSelectedClipId(null);
+          searchInput.focus();
+          searchInput.select();
+          return;
+        }
         setSelectedClipId(clips[clips.length - 1].id);
       }
     } else if (currentIndex > 0) {
       setSelectedClipId(clips[currentIndex - 1].id);
     } else {
+      const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+      if (searchInput && searchInput.offsetParent !== null) {
+        setSelectedClipId(null);
+        searchInput.focus();
+        searchInput.select();
+        return;
+      }
       setSelectedClipId(clips[clips.length - 1].id);
     }
-  }, [clips, selectedClipId, settings?.view_mode, gridColumns]);
+  }, [clips, selectedClipId, settings?.view_mode, gridColumns, showSearch]);
 
   const handleNavigateNext = useCallback(() => {
     if (clips.length === 0) return;

@@ -938,11 +938,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
     }
   }, [searchFocusToken]);
 
-  useEffect(() => {
-    if (!searchQuery && document.activeElement === searchInputRef.current) {
-      searchInputRef.current?.blur();
-    }
-  }, [searchQuery]);
+
 
   const filteredClips = useMemo(() => {
     let res =
