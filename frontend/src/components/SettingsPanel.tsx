@@ -1993,6 +1993,12 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                   { value: '60', label: t('settings.appLockIdle1m') },
                                   { value: '300', label: t('settings.appLockIdle5m') },
                                   { value: '900', label: t('settings.appLockIdle15m') },
+                                  { value: '1800', label: t('settings.appLockIdle30m') },
+                                  { value: '3600', label: t('settings.appLockIdle1h') },
+                                  { value: '7200', label: t('settings.appLockIdle2h') },
+                                  { value: '14400', label: t('settings.appLockIdle4h') },
+                                  { value: '28800', label: t('settings.appLockIdle8h') },
+                                  { value: '43200', label: t('settings.appLockIdle12h') },
                                 ]}
                               />
                             </div>
