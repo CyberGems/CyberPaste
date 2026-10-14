@@ -101,22 +101,6 @@ fn start_main_window_outside_click_watcher(app: tauri::AppHandle) {
                     prev_down = false;
                     continue;
                 }
-                let settings = app
-                    .try_state::<Arc<settings_manager::SettingsManager>>()
-                    .map(|manager| manager.get());
-                let Some(settings) = settings else {
-                    continue;
-                };
-                if !settings.hide_on_blur || settings.pinned || is_window_hide_blocked() || has_pending_undos() || native_dialog_is_open() {
-                    continue;
-                }
-                let now = chrono::Local::now().timestamp_millis();
-                if now < STARTUP_FOCUS_GRACE_UNTIL.load(Ordering::SeqCst) {
-                    continue;
-                }
-                if now - LAST_SHOW_TIME.load(Ordering::SeqCst) < 400 {
-                    continue;
-                }
 
                 let our_hwnd = win.hwnd().ok().map(|handle| HWND(handle.0 as _));
                 let foreground = unsafe { GetForegroundWindow() };
@@ -136,6 +120,28 @@ fn start_main_window_outside_click_watcher(app: tauri::AppHandle) {
                                 hwnd == foreground || hwnd == foreground_root
                             })
                     });
+
+                // Update TARGET_FOREGROUND_HND whenever an external application is active
+                if !foreground.0.is_null() && !foreground_is_ours && !foreground_is_sibling {
+                    TARGET_FOREGROUND_HND.store(foreground.0 as *mut (), Ordering::Relaxed);
+                }
+
+                let settings = app
+                    .try_state::<Arc<settings_manager::SettingsManager>>()
+                    .map(|manager| manager.get());
+                let Some(settings) = settings else {
+                    continue;
+                };
+                if !settings.hide_on_blur || settings.pinned || is_window_hide_blocked() || has_pending_undos() || native_dialog_is_open() {
+                    continue;
+                }
+                let now = chrono::Local::now().timestamp_millis();
+                if now < STARTUP_FOCUS_GRACE_UNTIL.load(Ordering::SeqCst) {
+                    continue;
+                }
+                if now - LAST_SHOW_TIME.load(Ordering::SeqCst) < 400 {
+                    continue;
+                }
 
                 let key_state = unsafe { GetAsyncKeyState(VK_LBUTTON.0 as i32) as u16 };
                 let down = (key_state & 0x8000) != 0;

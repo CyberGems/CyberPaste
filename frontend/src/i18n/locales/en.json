@@ -1059,6 +1059,13 @@
     "noResults": "No emojis match your search",
     "copied": "Emoji copied to clipboard",
     "hint": "Click or Enter to paste · Esc to exit",
+    "hintPin": "Pin window to insert multiple emojis",
+    "hintPinned": "Window pinned: click emojis to insert sequentially",
+    "hintNavigate": "Arrow keys to navigate, Enter to insert",
+    "hintSearch": "Search in English or Spanish",
+    "hintToggle": "Alt+E or Esc to exit emoji panel",
+    "enterToInsert": "ENTER TO INSERT",
+    "escToExit": "ESC TO EXIT",
     "categories": {
       "recent": "Recent",
       "smileys": "Smileys & Emotion",

@@ -82,17 +82,17 @@ pub async fn paste_text(
 
     if settings.pinned {
         if auto_paste || auto_inject {
-            let target_hwnd = if auto_inject {
-                unsafe {
-                    let fg = windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow();
-                    fg.0 as isize
-                }
+            let our_hwnd = window.hwnd().ok().map(|h| h.0 as isize).unwrap_or(0);
+            let target = crate::TARGET_FOREGROUND_HND
+                .load(std::sync::atomic::Ordering::Relaxed) as isize;
+            let target_hwnd = if target != 0 && target != our_hwnd {
+                target
             } else {
                 0
             };
             std::thread::spawn(move || {
-                std::thread::sleep(std::time::Duration::from_millis(150));
-                if auto_inject {
+                std::thread::sleep(std::time::Duration::from_millis(80));
+                if target_hwnd != 0 {
                     simulate_ctrl_v_with_target(target_hwnd);
                 } else {
                     crate::clipboard::send_paste_input();
@@ -1435,18 +1435,17 @@ pub async fn paste_clip(
                 if settings.pinned {
                     if auto_paste || auto_inject {
                         // If pinned and auto-paste/auto-inject is on, paste without hiding
-                        let target_hwnd = if auto_inject {
-                            unsafe {
-                                let fg =
-                                    windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow();
-                                fg.0 as isize
-                            }
+                        let our_hwnd = window.hwnd().ok().map(|h| h.0 as isize).unwrap_or(0);
+                        let target = crate::TARGET_FOREGROUND_HND
+                            .load(std::sync::atomic::Ordering::Relaxed) as isize;
+                        let target_hwnd = if target != 0 && target != our_hwnd {
+                            target
                         } else {
                             0
                         };
                         std::thread::spawn(move || {
-                            std::thread::sleep(std::time::Duration::from_millis(150));
-                            if auto_inject {
+                            std::thread::sleep(std::time::Duration::from_millis(80));
+                            if target_hwnd != 0 {
                                 simulate_ctrl_v_with_target(target_hwnd);
                             } else {
                                 crate::clipboard::send_paste_input();

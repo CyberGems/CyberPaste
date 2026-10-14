@@ -86,6 +86,15 @@ export const EmojiPickerView: React.FC<EmojiPickerViewProps> = ({
     };
   }, []);
 
+  // Reset internal category on view reset
+  useEffect(() => {
+    const handleReset = () => {
+      setInternalCategory('recent');
+    };
+    window.addEventListener('cyberpaste-reset-view', handleReset);
+    return () => window.removeEventListener('cyberpaste-reset-view', handleReset);
+  }, []);
+
   // Compute displayed emojis
   const displayedEmojis = useMemo(() => {
     const query = searchQuery.trim();

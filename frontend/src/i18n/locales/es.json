@@ -1059,6 +1059,13 @@
     "noResults": "No se encontraron emojis",
     "copied": "Emoji copiado al portapapeles",
     "hint": "Clic o Enter para pegar · Esc para salir",
+    "hintPin": "Fija la ventana para insertar múltiples emojis",
+    "hintPinned": "Ventana fijada: haz clic en varios emojis para insertarlos",
+    "hintNavigate": "Flechas para navegar, Enter para insertar",
+    "hintSearch": "Busca en español o inglés",
+    "hintToggle": "Alt+E o Esc para salir del panel",
+    "enterToInsert": "ENTER PARA INSERTAR",
+    "escToExit": "ESC PARA SALIR",
     "categories": {
       "recent": "Recientes",
       "smileys": "Caritas y Emociones",

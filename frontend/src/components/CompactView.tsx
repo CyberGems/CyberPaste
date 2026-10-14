@@ -712,6 +712,25 @@ export const CompactView: React.FC<CompactViewProps> = ({
 }) => {
   const { t } = useTranslation();
   const [emojiCategory, setEmojiCategory] = useState<string>('recent');
+
+  useEffect(() => {
+    if (!isEmojiMode) {
+      setEmojiCategory('recent');
+    }
+  }, [isEmojiMode]);
+
+  useEffect(() => {
+    setEmojiCategory('recent');
+  }, [resetToken]);
+
+  useEffect(() => {
+    const handleReset = () => {
+      setEmojiCategory('recent');
+    };
+    window.addEventListener('cyberpaste-reset-view', handleReset);
+    return () => window.removeEventListener('cyberpaste-reset-view', handleReset);
+  }, []);
+
   const { isPaused, toggleMonitoring } = useClipboardMonitoring();
   const footerHints = useMemo(
     () => [
@@ -722,12 +741,27 @@ export const CompactView: React.FC<CompactViewProps> = ({
     ],
     [t]
   );
+  const emojiHints = useMemo(
+    () => [
+      isPinned ? t('emoji.hintPinned') : t('emoji.hintPin'),
+      t('emoji.hintNavigate'),
+      t('emoji.hintSearch'),
+      t('emoji.hintToggle'),
+    ],
+    [t, isPinned]
+  );
+  const activeHints = isEmojiMode ? emojiHints : footerHints;
   const [footerHintIndex, setFooterHintIndex] = useState(0);
+
+  useEffect(() => {
+    setFooterHintIndex(0);
+  }, [isEmojiMode]);
+
   useEffect(() => {
     if (!isWindowActive) return;
-    const timer = setInterval(() => setFooterHintIndex((i) => (i + 1) % footerHints.length), 7000);
+    const timer = setInterval(() => setFooterHintIndex((i) => (i + 1) % activeHints.length), 6000);
     return () => clearInterval(timer);
-  }, [isWindowActive, footerHints.length]);
+  }, [isWindowActive, activeHints.length]);
 
   const brandingDragRef = useRef({ isDown: false, startX: 0, startY: 0, dragged: false });
 
@@ -2011,12 +2045,22 @@ export const CompactView: React.FC<CompactViewProps> = ({
               )}
             >
               <span className="flex-shrink-0 select-none">
-                {hasSelection
-                  ? t('compact.footerWithSelection', { count: selectedCount })
-                  : t('compact.enterToPaste')}
+                {isEmojiMode
+                  ? t('emoji.enterToInsert')
+                  : hasSelection
+                    ? t('compact.footerWithSelection', { count: selectedCount })
+                    : t('compact.enterToPaste')}
               </span>
               <span className="min-w-0 truncate px-2 text-center tabular-nums">
-                {isFiltering || searchQuery || selectedFolder ? (
+                {isEmojiMode ? (
+                  <span
+                    key={`emoji-hint-v-${footerHintIndex}`}
+                    className="inline-block"
+                    style={{ animation: 'compact-hint-fade 0.8s ease-out' }}
+                  >
+                    {emojiHints[footerHintIndex % emojiHints.length]}
+                  </span>
+                ) : isFiltering || searchQuery || selectedFolder ? (
                   isFiltering ? (
                     `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: activeFilterText })}`
                   ) : (
@@ -2028,11 +2072,13 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     className="inline-block"
                     style={{ animation: 'compact-hint-fade 0.8s ease-out' }}
                   >
-                    {footerHints[footerHintIndex]}
+                    {footerHints[footerHintIndex % footerHints.length]}
                   </span>
                 )}
               </span>
-              <span className="flex-shrink-0 select-none">{t('compact.escToHide')}</span>
+              <span className="flex-shrink-0 select-none">
+                {isEmojiMode ? t('emoji.escToExit') : t('compact.escToHide')}
+              </span>
             </div>
           </div>
         </div>
@@ -2385,12 +2431,22 @@ export const CompactView: React.FC<CompactViewProps> = ({
             )}
           >
             <span className="flex-shrink-0 select-none">
-              {hasSelection
-                ? t('compact.footerWithSelection', { count: selectedCount })
-                : t('compact.enterToPaste')}
+              {isEmojiMode
+                ? t('emoji.enterToInsert')
+                : hasSelection
+                  ? t('compact.footerWithSelection', { count: selectedCount })
+                  : t('compact.enterToPaste')}
             </span>
             <span className="min-w-0 truncate px-2 text-center tabular-nums">
-              {isFiltering || searchQuery || selectedFolder ? (
+              {isEmojiMode ? (
+                <span
+                  key={`emoji-hint-h-${footerHintIndex}`}
+                  className="inline-block"
+                  style={{ animation: 'compact-hint-fade 0.8s ease-out' }}
+                >
+                  {emojiHints[footerHintIndex % emojiHints.length]}
+                </span>
+              ) : isFiltering || searchQuery || selectedFolder ? (
                 isFiltering ? (
                   `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: activeFilterText })}`
                 ) : (
@@ -2402,11 +2458,13 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   className="inline-block"
                   style={{ animation: 'compact-hint-fade 0.8s ease-out' }}
                 >
-                  {footerHints[footerHintIndex]}
+                  {footerHints[footerHintIndex % footerHints.length]}
                 </span>
               )}
             </span>
-            <span className="flex-shrink-0 select-none">{t('compact.escToHide')}</span>
+            <span className="flex-shrink-0 select-none">
+              {isEmojiMode ? t('emoji.escToExit') : t('compact.escToHide')}
+            </span>
           </div>
         </>
       )}
