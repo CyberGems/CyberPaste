@@ -113,6 +113,8 @@ export function SettingsWindow() {
         position="bottom-center"
         richColors
         closeButton
+        visibleToasts={1}
+        duration={2500}
         theme={settings?.theme === 'light' ? 'light' : 'dark'}
       />
     </div>

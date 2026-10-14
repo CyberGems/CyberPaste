@@ -15,6 +15,7 @@ interface ToastOptions {
  */
 export const inAppToast = {
   success: (message: string, options?: ToastOptions) => {
+    sonnerToast.dismiss();
     return sonnerToast.success(message, {
       id: options?.id,
       duration: options?.duration,
@@ -22,6 +23,7 @@ export const inAppToast = {
     });
   },
   error: (message: string, options?: ToastOptions) => {
+    sonnerToast.dismiss();
     return sonnerToast.error(message, {
       id: options?.id,
       duration: options?.duration,
@@ -29,6 +31,7 @@ export const inAppToast = {
     });
   },
   duplicate: (message: string, options?: ToastOptions) => {
+    sonnerToast.dismiss();
     return sonnerToast.warning(message, {
       id: options?.id,
       duration: options?.duration,
@@ -36,6 +39,7 @@ export const inAppToast = {
     });
   },
   warning: (message: string, options?: ToastOptions) => {
+    sonnerToast.dismiss();
     return sonnerToast.warning(message, {
       id: options?.id,
       duration: options?.duration,
@@ -43,6 +47,7 @@ export const inAppToast = {
     });
   },
   info: (message: string, options?: ToastOptions) => {
+    sonnerToast.dismiss();
     return sonnerToast.info(message, {
       id: options?.id,
       duration: options?.duration,
@@ -50,6 +55,7 @@ export const inAppToast = {
     });
   },
   update: (message: string, options?: ToastOptions) => {
+    sonnerToast.dismiss();
     return sonnerToast.info(message, {
       id: options?.id,
       duration: options?.duration,
@@ -57,6 +63,7 @@ export const inAppToast = {
     });
   },
   loading: (message: string, options?: ToastOptions) => {
+    sonnerToast.dismiss();
     return sonnerToast.loading(message, {
       id: options?.id,
       duration: options?.duration,

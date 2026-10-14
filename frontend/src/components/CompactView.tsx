@@ -77,6 +77,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { EmojiPickerView } from './EmojiPickerView';
+import { MarqueeHint } from './MarqueeHint';
 import { EMOJI_CATEGORIES } from '../data/emojis';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -2051,31 +2052,24 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     ? t('compact.footerWithSelection', { count: selectedCount })
                     : t('compact.enterToPaste')}
               </span>
-              <span className="min-w-0 truncate px-2 text-center tabular-nums">
-                {isEmojiMode ? (
-                  <span
-                    key={`emoji-hint-v-${footerHintIndex}`}
-                    className="inline-block"
-                    style={{ animation: 'compact-hint-fade 0.8s ease-out' }}
-                  >
-                    {emojiHints[footerHintIndex % emojiHints.length]}
-                  </span>
-                ) : isFiltering || searchQuery || selectedFolder ? (
-                  isFiltering ? (
-                    `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: activeFilterText })}`
-                  ) : (
-                    t('compact.footerTotalClips', { count: filteredClips.length })
-                  )
-                ) : (
-                  <span
-                    key={footerHintIndex}
-                    className="inline-block"
-                    style={{ animation: 'compact-hint-fade 0.8s ease-out' }}
-                  >
-                    {footerHints[footerHintIndex % footerHints.length]}
-                  </span>
-                )}
-              </span>
+              <MarqueeHint
+                animKey={
+                  isEmojiMode
+                    ? `emoji-${footerHintIndex}`
+                    : isFiltering || searchQuery || selectedFolder
+                      ? `filter-${filteredClips.length}`
+                      : `hint-${footerHintIndex}`
+                }
+                text={
+                  isEmojiMode
+                    ? emojiHints[footerHintIndex % emojiHints.length]
+                    : isFiltering || searchQuery || selectedFolder
+                      ? isFiltering
+                        ? `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: activeFilterText })}`
+                        : t('compact.footerTotalClips', { count: filteredClips.length })
+                      : footerHints[footerHintIndex % footerHints.length]
+                }
+              />
               <span className="flex-shrink-0 select-none">
                 {isEmojiMode ? t('emoji.escToExit') : t('compact.escToHide')}
               </span>
@@ -2437,31 +2431,24 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   ? t('compact.footerWithSelection', { count: selectedCount })
                   : t('compact.enterToPaste')}
             </span>
-            <span className="min-w-0 truncate px-2 text-center tabular-nums">
-              {isEmojiMode ? (
-                <span
-                  key={`emoji-hint-h-${footerHintIndex}`}
-                  className="inline-block"
-                  style={{ animation: 'compact-hint-fade 0.8s ease-out' }}
-                >
-                  {emojiHints[footerHintIndex % emojiHints.length]}
-                </span>
-              ) : isFiltering || searchQuery || selectedFolder ? (
-                isFiltering ? (
-                  `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: activeFilterText })}`
-                ) : (
-                  t('compact.footerTotalClips', { count: filteredClips.length })
-                )
-              ) : (
-                <span
-                  key={footerHintIndex}
-                  className="inline-block"
-                  style={{ animation: 'compact-hint-fade 0.8s ease-out' }}
-                >
-                  {footerHints[footerHintIndex % footerHints.length]}
-                </span>
-              )}
-            </span>
+            <MarqueeHint
+              animKey={
+                isEmojiMode
+                  ? `emoji-${footerHintIndex}`
+                  : isFiltering || searchQuery || selectedFolder
+                    ? `filter-${filteredClips.length}`
+                    : `hint-${footerHintIndex}`
+              }
+              text={
+                isEmojiMode
+                  ? emojiHints[footerHintIndex % emojiHints.length]
+                  : isFiltering || searchQuery || selectedFolder
+                    ? isFiltering
+                      ? `${t('compact.footerTotalClips', { count: filteredClips.length })} · ${t('compact.footerFilteredBy', { type: activeFilterText })}`
+                      : t('compact.footerTotalClips', { count: filteredClips.length })
+                    : footerHints[footerHintIndex % footerHints.length]
+              }
+            />
             <span className="flex-shrink-0 select-none">
               {isEmojiMode ? t('emoji.escToExit') : t('compact.escToHide')}
             </span>

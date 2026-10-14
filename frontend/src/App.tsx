@@ -2511,7 +2511,7 @@ function App() {
       try {
         await invoke('paste_text', { text: emoji });
         if (settingsRef.current?.pinned) {
-          toast.success(t('emoji.copied'));
+          toast.success(t('emoji.copied'), { duration: 1800 });
         }
         if (settingsRef.current?.reset_view_on_paste && !settingsRef.current?.pinned) {
           setIsEmojiMode(false);
@@ -3809,6 +3809,8 @@ function App() {
           position="bottom-center"
           richColors
           closeButton
+          visibleToasts={1}
+          duration={2500}
           theme={theme === 'light' ? 'light' : 'dark'}
           toastOptions={{
             className: 'font-sans text-xs sm:text-sm shadow-xl',
