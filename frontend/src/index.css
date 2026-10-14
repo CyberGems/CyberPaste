@@ -219,6 +219,19 @@
   }
 }
 
+/* ── Unselectable toast banners & notifications ─────────────────── */
+[data-sonner-toaster],
+[data-sonner-toast],
+[data-sonner-toast] *,
+.sonner-toast,
+.toast-card,
+.toast-card * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -ms-user-select: none !important;
+  cursor: default;
+}
+
 /* ── Checkerboard transparency background ──────────────────────── */
 .checkerboard-bg {
   background-color: var(--checker-bg-1, #0f131c);

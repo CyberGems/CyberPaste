@@ -62,34 +62,24 @@ export const EmojiPickerView: React.FC<EmojiPickerViewProps> = ({
     [propOnSelectCategory]
   );
 
-  const [recentEmojis, setRecentEmojis] = useState<string[]>([]);
+  // Stable snapshot of recent emojis to prevent jumping/missclicks while clicking multiple emojis in 'recent'
+  const [frozenRecentEmojis, setFrozenRecentEmojis] = useState<string[]>(() => getRecentEmojis());
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [hoveredEmoji, setHoveredEmoji] = useState<EmojiItem | null>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
 
-  // Load recents on mount and listen to changes
+  // Refresh recent snapshot only when switching to 'recent' category
   useEffect(() => {
-    setRecentEmojis(getRecentEmojis());
+    if (activeCategory === 'recent') {
+      setFrozenRecentEmojis(getRecentEmojis());
+    }
+  }, [activeCategory]);
 
-    const handleRecentsChange = (e: Event) => {
-      const customEvent = e as CustomEvent<string[]>;
-      if (customEvent.detail) {
-        setRecentEmojis(customEvent.detail);
-      } else {
-        setRecentEmojis(getRecentEmojis());
-      }
-    };
-
-    window.addEventListener('cyberpaste-recent-emojis-changed', handleRecentsChange);
-    return () => {
-      window.removeEventListener('cyberpaste-recent-emojis-changed', handleRecentsChange);
-    };
-  }, []);
-
-  // Reset internal category on view reset
+  // Reset internal category and refresh recents snapshot on view reset
   useEffect(() => {
     const handleReset = () => {
       setInternalCategory('recent');
+      setFrozenRecentEmojis(getRecentEmojis());
     };
     window.addEventListener('cyberpaste-reset-view', handleReset);
     return () => window.removeEventListener('cyberpaste-reset-view', handleReset);
@@ -103,10 +93,10 @@ export const EmojiPickerView: React.FC<EmojiPickerViewProps> = ({
     }
 
     if (activeCategory === 'recent') {
-      const recentsSet = new Set(recentEmojis);
+      const recentsSet = new Set(frozenRecentEmojis);
       const matched = EMOJI_LIST.filter((item) => recentsSet.has(item.char));
-      // Sort in order of recentEmojis array
-      matched.sort((a, b) => recentEmojis.indexOf(a.char) - recentEmojis.indexOf(b.char));
+      // Sort in order of frozenRecentEmojis array
+      matched.sort((a, b) => frozenRecentEmojis.indexOf(a.char) - frozenRecentEmojis.indexOf(b.char));
       // If no recents recorded yet, return a starter selection
       if (matched.length === 0) {
         return EMOJI_LIST.slice(0, 24);
@@ -115,7 +105,7 @@ export const EmojiPickerView: React.FC<EmojiPickerViewProps> = ({
     }
 
     return searchEmojis('', activeCategory);
-  }, [searchQuery, activeCategory, recentEmojis]);
+  }, [searchQuery, activeCategory, frozenRecentEmojis]);
 
   // Reset keyboard selected index when list changes
   useEffect(() => {
@@ -168,8 +158,7 @@ export const EmojiPickerView: React.FC<EmojiPickerViewProps> = ({
 
   const handleSelectEmoji = useCallback(
     (char: string) => {
-      const updated = saveRecentEmoji(char);
-      setRecentEmojis(updated);
+      saveRecentEmoji(char);
       onPasteEmoji(char);
     },
     [onPasteEmoji]

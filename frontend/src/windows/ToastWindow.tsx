@@ -916,7 +916,7 @@ export function ToastWindow() {
           onContextMenu={handleContextMenu}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
-          className={`pointer-events-auto relative w-full overflow-hidden rounded-xl transition-all duration-300 ${containerClasses} ${isClickable ? 'cursor-pointer' : 'cursor-default'} ${isClosing ? 'translate-y-2 scale-95 opacity-0' : 'translate-y-0 scale-100 opacity-100'}`}
+          className={`pointer-events-auto relative w-full select-none overflow-hidden rounded-xl transition-all duration-300 ${containerClasses} ${isClickable ? 'cursor-pointer' : 'cursor-default'} ${isClosing ? 'translate-y-2 scale-95 opacity-0' : 'translate-y-0 scale-100 opacity-100'}`}
           data-tauri-drag-region
         >
           {isWelcome ? (
