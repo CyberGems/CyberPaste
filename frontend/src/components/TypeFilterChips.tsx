@@ -12,6 +12,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Eye,
+  Smile,
   Square,
   RectangleHorizontal,
 } from 'lucide-react';
@@ -57,6 +58,9 @@ interface TypeFilterChipRowProps {
   onUndo?: () => void;
   cardFormat?: 'square' | 'panoramic';
   onToggleCardFormat?: () => void;
+  isEmojiMode?: boolean;
+  onToggleEmojiMode?: () => void;
+  emojiHotkey?: string;
 }
 
 export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
@@ -77,6 +81,9 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
   onUndo,
   cardFormat = 'square',
   onToggleCardFormat,
+  isEmojiMode = false,
+  onToggleEmojiMode,
+  emojiHotkey = TITLEBAR_HOTKEYS.emoji,
 }) => {
   const { t } = useTranslation();
   const isActive = value !== 'all';
@@ -174,6 +181,32 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
               )}
             >
               <Eye size={13} />
+            </button>
+          </Tooltip>
+        )}
+
+        {onToggleEmojiMode && (
+          <Tooltip
+            label={t('emoji.toggle', {
+              hotkey: emojiHotkey,
+            })}
+            placement="bottom"
+          >
+            <button
+              type="button"
+              onClick={onToggleEmojiMode}
+              aria-label={t('emoji.toggle', {
+                hotkey: emojiHotkey,
+              })}
+              aria-pressed={isEmojiMode}
+              className={clsx(
+                'flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition-all',
+                isEmojiMode
+                  ? 'border-primary/40 bg-primary/15 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.2)] hover:border-primary/60 hover:bg-primary/25'
+                  : 'border-transparent text-muted-foreground/70 hover:border-border hover:bg-accent hover:text-foreground'
+              )}
+            >
+              <Smile size={13} />
             </button>
           </Tooltip>
         )}

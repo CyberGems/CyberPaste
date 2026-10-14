@@ -1052,5 +1052,20 @@
       "generic": "No se pudo desbloquear CyberPaste.",
       "mismatch": "Los dos valores no coinciden."
     }
+  },
+  "emoji": {
+    "toggle": "Modo Emojis ({{hotkey}})",
+    "searchPlaceholder": "Buscar emojis (ej. fuego, check, cohete)...",
+    "noResults": "No se encontraron emojis",
+    "copied": "Emoji copiado al portapapeles",
+    "hint": "Clic o Enter para pegar · Esc para salir",
+    "categories": {
+      "recent": "Recientes",
+      "smileys": "Caritas y Emociones",
+      "gestures": "Personas y Gestos",
+      "work": "Trabajo y Tecnología",
+      "symbols": "Símbolos y Alertas",
+      "arrows": "Flechas y Señales"
+    }
   }
 }

@@ -159,6 +159,7 @@ interface ControlBarProps {
   onRequestClose?: () => void;
   canUndo?: boolean;
   onUndo?: () => void;
+  isEmojiMode?: boolean;
 }
 
 interface FolderTabButtonProps {
@@ -283,6 +284,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   onRequestClose,
   canUndo = false,
   onUndo,
+  isEmojiMode = false,
 }) => {
   const foldersRef = React.useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
@@ -991,7 +993,9 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                 <div className="flex flex-1 items-center gap-2 overflow-hidden">
                   <span className="whitespace-nowrap text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
                     {t('common.searchingIn')}{' '}
-                    <span className="text-primary/80">{currentFolderName}</span>
+                    <span className="text-primary/80">
+                      {isEmojiMode ? 'Emojis' : currentFolderName}
+                    </span>
                   </span>
                   <div className="mx-1 h-4 w-px flex-shrink-0 bg-border" />
                   <input
@@ -999,7 +1003,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                     type="text"
                     name="cyberpaste-search"
                     id="search-input"
-                    placeholder="..."
+                    placeholder={isEmojiMode ? t('emoji.searchPlaceholder') : '...'}
                     autoComplete="off"
                     autoCorrect="off"
                     autoCapitalize="none"

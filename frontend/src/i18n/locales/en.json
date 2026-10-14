@@ -1052,5 +1052,20 @@
       "generic": "Could not unlock CyberPaste.",
       "mismatch": "The two values do not match."
     }
+  },
+  "emoji": {
+    "toggle": "Emoji Mode ({{hotkey}})",
+    "searchPlaceholder": "Search emojis (e.g. fire, check, rocket)...",
+    "noResults": "No emojis match your search",
+    "copied": "Emoji copied to clipboard",
+    "hint": "Click or Enter to paste · Esc to exit",
+    "categories": {
+      "recent": "Recent",
+      "smileys": "Smileys & Emotion",
+      "gestures": "People & Gestures",
+      "work": "Work & Tech",
+      "symbols": "Symbols & Alerts",
+      "arrows": "Arrows & Badges"
+    }
   }
 }

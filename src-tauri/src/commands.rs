@@ -56,6 +56,74 @@ pub async fn write_clipboard_text(text: String) -> Result<(), String> {
     write_text(text).await.map_err(|e| e.to_string())
 }
 
+/// Write arbitrary text to the clipboard and trigger the standard auto-paste / window-hide workflow.
+#[tauri::command]
+pub async fn paste_text(
+    text: String,
+    app: AppHandle,
+    window: tauri::WebviewWindow,
+) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
+    let _guard = crate::clipboard::CLIPBOARD_SYNC.lock().await;
+
+    let hash = {
+        use sha2::{Digest, Sha256};
+        let mut hasher = Sha256::new();
+        hasher.update(text.as_bytes());
+        format!("{:x}", hasher.finalize())
+    };
+    crate::clipboard::set_ignore_hash(hash);
+    write_text(text.clone()).await.map_err(|e| e.to_string())?;
+
+    let manager = app.state::<Arc<SettingsManager>>();
+    let settings = manager.get();
+    let auto_paste = settings.auto_paste;
+    let auto_inject = settings.auto_paste && settings.auto_inject_paste;
+
+    if settings.pinned {
+        if auto_paste || auto_inject {
+            let target_hwnd = if auto_inject {
+                unsafe {
+                    let fg = windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow();
+                    fg.0 as isize
+                }
+            } else {
+                0
+            };
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_millis(150));
+                if auto_inject {
+                    simulate_ctrl_v_with_target(target_hwnd);
+                } else {
+                    crate::clipboard::send_paste_input();
+                }
+            });
+        }
+    } else if auto_inject {
+        let target_hwnd = crate::TARGET_FOREGROUND_HND
+            .load(std::sync::atomic::Ordering::Relaxed) as isize;
+        crate::animate_window_hide(
+            &window,
+            Some(Box::new(move || {
+                std::thread::sleep(std::time::Duration::from_millis(100));
+                simulate_ctrl_v_with_target(target_hwnd);
+            })),
+        );
+    } else if auto_paste {
+        crate::animate_window_hide(
+            &window,
+            Some(Box::new(move || {
+                std::thread::sleep(std::time::Duration::from_millis(200));
+                crate::clipboard::send_paste_input();
+            })),
+        );
+    } else {
+        crate::animate_window_hide(&window, None);
+    }
+
+    Ok(())
+}
+
 /// Copy a clip to the clipboard as plain text only (strips HTML/RTF formatting).
 /// Does not auto-paste or hide the window — used for "copy as plain text" actions.
 #[tauri::command]

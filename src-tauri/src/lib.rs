@@ -842,6 +842,7 @@ pub fn run_app() {
             commands::export_clip,
             commands::save_text_to_file,
             commands::paste_clip,
+            commands::paste_text,
             commands::copy_clip,
             commands::delete_clip,
             commands::delete_clips,

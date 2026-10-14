@@ -11,6 +11,7 @@ export const TITLEBAR_HOTKEYS = {
   mode: 'Ctrl+M',
   compactLayout: 'Ctrl+L',
   searchHistory: 'Ctrl+H',
+  emoji: 'Alt+E',
 } as const;
 
 interface KeyboardOptions {
@@ -63,6 +64,9 @@ interface KeyboardOptions {
   maximizeHotkey?: string;
   onToggleLayout?: () => void;
   layoutHotkey?: string;
+  onToggleEmojiMode?: () => void;
+  emojiHotkey?: string;
+  isEmojiMode?: boolean;
 }
 
 export function useKeyboard(options: KeyboardOptions) {
@@ -118,6 +122,11 @@ export function useKeyboard(options: KeyboardOptions) {
         if (options.onClearSearch && (options.searchActive || searchFieldHasText)) {
           e.preventDefault();
           options.onClearSearch();
+          return;
+        }
+        if (options.isEmojiMode && options.onToggleEmojiMode) {
+          e.preventDefault();
+          options.onToggleEmojiMode();
           return;
         }
         e.preventDefault();
@@ -181,6 +190,13 @@ export function useKeyboard(options: KeyboardOptions) {
         e.preventDefault();
         e.stopPropagation();
         options.onTogglePeek();
+        return;
+      }
+
+      if (options.onToggleEmojiMode && options.emojiHotkey && matchesHotkey(options.emojiHotkey)) {
+        e.preventDefault();
+        e.stopPropagation();
+        options.onToggleEmojiMode();
         return;
       }
 

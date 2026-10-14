@@ -21,6 +21,8 @@ import {
 import { ClipList } from './components/ClipList';
 import { ControlBar } from './components/ControlBar';
 import { TypeFilterChipRow, type FullTypeFilter } from './components/TypeFilterChips';
+import { EmojiPickerView } from './components/EmojiPickerView';
+import { saveRecentEmoji } from './data/emojis';
 import { ClipPreviewModal } from './components/ClipPreviewModal';
 import { BulkActionBar } from './components/BulkActionBar';
 import { ClipDetailPanel } from './components/ClipDetailPanel';
@@ -222,6 +224,7 @@ function App() {
   const [viewModeFading, setViewModeFading] = useState(false);
 
   const [isWindowActive, setIsWindowActive] = useState(true);
+  const [isEmojiMode, setIsEmojiMode] = useState(false);
 
   useEffect(() => {
     settingsRef.current = settings;
@@ -2491,6 +2494,32 @@ function App() {
     [t]
   );
 
+  const handleToggleEmojiMode = useCallback(() => {
+    setIsEmojiMode((prev) => {
+      const next = !prev;
+      if (next && settingsRef.current?.view_mode === 'full') {
+        setShowSearch(true);
+      }
+      return next;
+    });
+  }, []);
+
+  const handlePasteEmoji = useCallback(
+    async (emoji: string) => {
+      saveRecentEmoji(emoji);
+      try {
+        await invoke('paste_text', { text: emoji });
+        if (settingsRef.current?.pinned) {
+          toast.success(t('emoji.copied'));
+        }
+      } catch (err) {
+        console.error('Failed to paste emoji:', err);
+        toast.error(t('notifications.copyFailed'));
+      }
+    },
+    [t]
+  );
+
   const handleCreateFolder = async (name: string, icon?: string, color?: string) => {
     try {
       await invoke('create_folder', { name, icon, color });
@@ -3267,6 +3296,9 @@ function App() {
     toggleModeHotkey: settings?.view_mode_hotkey,
     onTogglePeek: handleTogglePeek,
     peekHotkey: TITLEBAR_HOTKEYS.peek,
+    onToggleEmojiMode: handleToggleEmojiMode,
+    emojiHotkey: TITLEBAR_HOTKEYS.emoji,
+    isEmojiMode,
     onOpenSettings: () => {
       void openSettings();
     },
@@ -3433,6 +3465,10 @@ function App() {
               onPinClip={handleToggleClipPin}
               canUndo={deletedStack.length > 0}
               onUndo={handleUndoDelete}
+              isEmojiMode={isEmojiMode}
+              onToggleEmojiMode={handleToggleEmojiMode}
+              emojiHotkey={TITLEBAR_HOTKEYS.emoji}
+              onPasteEmoji={handlePasteEmoji}
             />
           ) : (
             <div
@@ -3499,6 +3535,7 @@ function App() {
                 onRequestClose={requestCloseWindow}
                 canUndo={deletedStack.length > 0}
                 onUndo={handleUndoDelete}
+                isEmojiMode={isEmojiMode}
               />
 
               {/* Type filter chips (Full mode) */}
@@ -3522,61 +3559,75 @@ function App() {
                 peekHotkey={TITLEBAR_HOTKEYS.peek}
                 canUndo={deletedStack.length > 0}
                 onUndo={handleUndoDelete}
+                isEmojiMode={isEmojiMode}
+                onToggleEmojiMode={handleToggleEmojiMode}
+                emojiHotkey={TITLEBAR_HOTKEYS.emoji}
               />
 
               <main
                 data-el="clip-list-area"
                 className="no-scrollbar relative flex-1 overflow-hidden"
               >
-                <ClipList
-                  clips={clips}
-                  isLoading={isLoading}
-                  hasMore={hasMore}
-                  resetToken={clipListResetToken}
-                  selectedClipId={selectedClipId}
-                  onPaste={handlePaste}
-                  onLoadMore={loadMore}
-                  onDragStart={startDrag}
-                  onCardContextMenu={(e, clipId) => handleContextMenu(e, 'card', clipId)}
-                  onFilterByApp={setAppFilter}
-                  onFilterByType={(type) => {
-                    const next = fullTypeFilter === type ? 'all' : type;
-                    setFullTypeFilter(next);
-                  }}
-                  typeFilter={fullTypeFilter}
-                  scrollDirection="vertical"
-                  reorderTargetClipId={reorderTargetClipId}
-                  reorderTargetPosition={reorderTargetPosition}
-                  reorderEnabled={true}
-                  draggingClipId={draggingClipId}
-                  clipNumbering={settings?.clip_numbering || 'positional'}
-                  cardFormat={settings?.full_card_format ?? 'square'}
-                  gridScale={settings?.full_grid_scale ?? 1}
-                  gridColumns={settings?.full_grid_columns ?? 0}
-                  showSourceIcon={settings?.full_show_source_icon ?? true}
-                  showTime={settings?.full_show_time ?? true}
-                  showTypeIcon={settings?.full_show_type_icon ?? true}
-                  showNumber={settings?.full_show_number ?? true}
-                  showScrollbar={settings?.full_show_scrollbar ?? true}
-                  fullPeekEnabled={settings?.full_peek_enabled ?? true}
-                  emptyLabel={searchQuery.trim() ? t('clipList.noResults') : undefined}
-                  actionTooltip={fullActionTooltip}
-                  singleClickPaste={settings?.single_click_paste ?? true}
-                  onRequestPreview={handleOpenPreview}
-                  bulkSelectedIds={selectedClipIds}
-                  onBulkSelectChange={setSelectedClipIds}
-                  onClipClick={handleClipClick}
-                  onToggleBulkSelect={handleClipToggleSelect}
-                  onRequestOcr={handleOcrRequest}
-                  onColumnsChange={setGridColumns}
-                />
-                <BulkActionBar
-                  count={selectedClipIds.size}
-                  folders={folders}
-                  onDelete={handleBulkDelete}
-                  onMoveToFolder={handleBulkMove}
-                  onClear={handleClearBulkSelection}
-                />
+                {isEmojiMode ? (
+                  <EmojiPickerView
+                    mode="full"
+                    searchQuery={searchQuery}
+                    onPasteEmoji={handlePasteEmoji}
+                    showCategoryTabs={true}
+                  />
+                ) : (
+                  <>
+                    <ClipList
+                      clips={clips}
+                      isLoading={isLoading}
+                      hasMore={hasMore}
+                      resetToken={clipListResetToken}
+                      selectedClipId={selectedClipId}
+                      onPaste={handlePaste}
+                      onLoadMore={loadMore}
+                      onDragStart={startDrag}
+                      onCardContextMenu={(e, clipId) => handleContextMenu(e, 'card', clipId)}
+                      onFilterByApp={setAppFilter}
+                      onFilterByType={(type) => {
+                        const next = fullTypeFilter === type ? 'all' : type;
+                        setFullTypeFilter(next);
+                      }}
+                      typeFilter={fullTypeFilter}
+                      scrollDirection="vertical"
+                      reorderTargetClipId={reorderTargetClipId}
+                      reorderTargetPosition={reorderTargetPosition}
+                      reorderEnabled={true}
+                      draggingClipId={draggingClipId}
+                      clipNumbering={settings?.clip_numbering || 'positional'}
+                      cardFormat={settings?.full_card_format ?? 'square'}
+                      gridScale={settings?.full_grid_scale ?? 1}
+                      gridColumns={settings?.full_grid_columns ?? 0}
+                      showSourceIcon={settings?.full_show_source_icon ?? true}
+                      showTime={settings?.full_show_time ?? true}
+                      showTypeIcon={settings?.full_show_type_icon ?? true}
+                      showNumber={settings?.full_show_number ?? true}
+                      showScrollbar={settings?.full_show_scrollbar ?? true}
+                      fullPeekEnabled={settings?.full_peek_enabled ?? true}
+                      emptyLabel={searchQuery.trim() ? t('clipList.noResults') : undefined}
+                      actionTooltip={fullActionTooltip}
+                      singleClickPaste={settings?.single_click_paste ?? true}
+                      onRequestPreview={handleOpenPreview}
+                      bulkSelectedIds={selectedClipIds}
+                      onBulkSelectChange={setSelectedClipIds}
+                      onClipClick={handleClipClick}
+                      onToggleBulkSelect={handleClipToggleSelect}
+                      onRequestOcr={handleOcrRequest}
+                      onColumnsChange={setGridColumns}
+                    />
+                    <BulkActionBar
+                      count={selectedClipIds.size}
+                      folders={folders}
+                      onDelete={handleBulkDelete}
+                      onMoveToFolder={handleBulkMove}
+                      onClear={handleClearBulkSelection}
+                    />
+                  </>
+                )}
                 {/* Zoom indicator + keyframes injected once */}
                 {zoomIndicator && (
                   <>

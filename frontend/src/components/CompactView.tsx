@@ -54,6 +54,7 @@ import {
   Settings,
   Share2,
   Smile,
+  Sparkles,
   Sun,
   LayoutGrid,
   MoveHorizontal,
@@ -70,8 +71,13 @@ import {
   Eye,
   Pause,
   Play,
+  ThumbsUp,
+  Laptop,
+  ArrowRight,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { EmojiPickerView } from './EmojiPickerView';
+import { EMOJI_CATEGORIES } from '../data/emojis';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useTranslation } from 'react-i18next';
@@ -455,6 +461,10 @@ interface CompactViewProps {
   updateVersion?: string;
   onShowUpdate?: () => void;
   onRequestClose?: () => void;
+  isEmojiMode?: boolean;
+  onToggleEmojiMode?: () => void;
+  emojiHotkey?: string;
+  onPasteEmoji?: (emoji: string) => void;
 }
 
 interface CompactSidebarFolderItemProps {
@@ -695,8 +705,13 @@ export const CompactView: React.FC<CompactViewProps> = ({
   updateVersion,
   onShowUpdate,
   onRequestClose,
+  isEmojiMode = false,
+  onToggleEmojiMode,
+  emojiHotkey = TITLEBAR_HOTKEYS.emoji,
+  onPasteEmoji,
 }) => {
   const { t } = useTranslation();
+  const [emojiCategory, setEmojiCategory] = useState<string>('recent');
   const { isPaused, toggleMonitoring } = useClipboardMonitoring();
   const footerHints = useMemo(
     () => [
@@ -1640,9 +1655,43 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     onWheel={handleWheel}
                     className="no-scrollbar flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto py-2"
                   >
-                    <Tooltip label={t('common.folderNavHintCompact')} placement="right">
-                      <button
-                        onClick={() => onSelectFolder(null)}
+                    {isEmojiMode ? (
+                      EMOJI_CATEGORIES.map((cat) => {
+                        const iconMap: Record<string, LucideIcon> = {
+                          Clock,
+                          Smile,
+                          ThumbsUp,
+                          Laptop,
+                          Sparkles,
+                          ArrowRight,
+                        };
+                        const Icon = iconMap[cat.icon] || Smile;
+                        const isSelected = emojiCategory === cat.id;
+                        return (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onClick={() => setEmojiCategory(cat.id)}
+                            className={cn(
+                              'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2 py-1.5 text-[11px] font-medium transition-all focus:outline-none',
+                              isSelected
+                                ? 'border-transparent bg-primary/15 font-semibold text-foreground shadow-[0_0_8px_rgba(var(--primary-rgb),0.15)]'
+                                : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
+                            )}
+                          >
+                            <Icon
+                              size={11}
+                              className={isSelected ? 'text-primary' : 'flex-shrink-0 text-muted-foreground/60'}
+                            />
+                            <span className="min-w-0 flex-1 truncate text-left">{t(cat.labelKey)}</span>
+                          </button>
+                        );
+                      })
+                    ) : (
+                      <>
+                        <Tooltip label={t('common.folderNavHintCompact')} placement="right">
+                          <button
+                            onClick={() => onSelectFolder(null)}
                         data-folder-id="clipboard"
                         data-selected={highlightedFolderId === null}
                         className={cn(
@@ -1716,8 +1765,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
                         </p>
                       </div>
                     )}
+                  </>
+                )}
                   </div>
-                  {onAddFolder && (
+                  {onAddFolder && !isEmojiMode && (
                     <div className="flex-shrink-0 border-t border-sidebar-border/60 bg-sidebar p-1.5">
                       <Tooltip label={t('folders.addFolderBtn')} placement="right">
                         <button
@@ -1765,7 +1816,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     name="cyberpaste-search"
                     id="search-input"
                     ref={searchInputRef}
-                    placeholder={t('common.search')}
+                    placeholder={isEmojiMode ? t('emoji.searchPlaceholder') : t('common.search')}
                     autoComplete="off"
                     autoCorrect="off"
                     autoCapitalize="none"
@@ -1840,6 +1891,31 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     </button>
                   </Tooltip>
                 )}
+                {onToggleEmojiMode && (
+                  <Tooltip
+                    label={t('emoji.toggle', {
+                      hotkey: emojiHotkey,
+                    })}
+                    placement="top"
+                  >
+                    <button
+                      type="button"
+                      onClick={onToggleEmojiMode}
+                      aria-label={t('emoji.toggle', {
+                        hotkey: emojiHotkey,
+                      })}
+                      aria-pressed={isEmojiMode}
+                      className={cn(
+                        'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all focus:outline-none',
+                        isEmojiMode
+                          ? 'border-primary/40 bg-primary/15 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.2)] hover:border-primary/60 hover:bg-primary/25'
+                          : 'border-transparent text-muted-foreground/70 hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
+                      )}
+                    >
+                      <Smile size={14} />
+                    </button>
+                  </Tooltip>
+                )}
                 <UndoButton canUndo={canUndo} onUndo={onUndo} size="compact" />
                 {onTypeFilterChange && (
                   <TypeFilterDropdown
@@ -1862,7 +1938,21 @@ export const CompactView: React.FC<CompactViewProps> = ({
 
             {/* List */}
             <div data-clip-list="true" className="min-h-0 flex-1 overflow-hidden px-0 pb-0">
-              <CompactClipList
+              {isEmojiMode ? (
+                <EmojiPickerView
+                  mode="compact"
+                  searchQuery={searchQuery}
+                  selectedCategory={emojiCategory}
+                  onSelectCategory={setEmojiCategory}
+                  onPasteEmoji={(emoji) => {
+                    if (onPasteEmoji) {
+                      onPasteEmoji(emoji);
+                    }
+                  }}
+                  showCategoryTabs={false}
+                />
+              ) : (
+                <CompactClipList
                 clips={filteredClips}
                 listRef={clipListApiRef}
                 resetToken={resetToken}
@@ -1909,6 +1999,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 appFilter={appFilter}
                 onAppFilterChange={onAppFilterChange}
               />
+              )}
             </div>
 
             {/* Footer */}
@@ -1960,7 +2051,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   name="cyberpaste-search"
                   id="search-input"
                   ref={searchInputRef}
-                  placeholder={t('common.search')}
+                  placeholder={isEmojiMode ? t('emoji.searchPlaceholder') : t('common.search')}
                   autoComplete="off"
                   autoCorrect="off"
                   autoCapitalize="none"
@@ -2035,6 +2126,31 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   </button>
                 </Tooltip>
               )}
+              {onToggleEmojiMode && (
+                <Tooltip
+                  label={t('emoji.toggle', {
+                    hotkey: emojiHotkey,
+                  })}
+                  placement="top"
+                >
+                  <button
+                    type="button"
+                    onClick={onToggleEmojiMode}
+                    aria-label={t('emoji.toggle', {
+                      hotkey: emojiHotkey,
+                    })}
+                    aria-pressed={isEmojiMode}
+                    className={cn(
+                      'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all focus:outline-none',
+                      isEmojiMode
+                        ? 'border-primary/40 bg-primary/15 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.2)] hover:border-primary/60 hover:bg-primary/25'
+                        : 'border-transparent text-muted-foreground/70 hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
+                    )}
+                  >
+                    <Smile size={14} />
+                  </button>
+                </Tooltip>
+              )}
               <UndoButton canUndo={canUndo} onUndo={onUndo} size="compact" />
               {onTypeFilterChange && (
                 <TypeFilterDropdown
@@ -2054,7 +2170,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
               )}
             </div>
 
-            <div className="flex items-center gap-1">
+            {!isEmojiMode && (
+              <div className="flex items-center gap-1">
               {hasOverflow && (
                 <div className="flex-shrink-0 pb-1">
                   <Tooltip label={canScrollLeft ? t('folders.scrollBack') : ''} placement="bottom">
@@ -2186,10 +2303,25 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 </div>
               )}
             </div>
+            )}
           </div>
 
           <div data-clip-list="true" className="min-h-0 flex-1 overflow-hidden">
-            <CompactClipList
+            {isEmojiMode ? (
+              <EmojiPickerView
+                mode="compact"
+                searchQuery={searchQuery}
+                selectedCategory={emojiCategory}
+                onSelectCategory={setEmojiCategory}
+                onPasteEmoji={(emoji) => {
+                  if (onPasteEmoji) {
+                    onPasteEmoji(emoji);
+                  }
+                }}
+                showCategoryTabs={true}
+              />
+            ) : (
+              <CompactClipList
               clips={filteredClips}
               listRef={clipListApiRef}
               resetToken={resetToken}
@@ -2241,6 +2373,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
               typeFilter={typeFilter}
               onTypeFilterChange={onTypeFilterChange}
             />
+            )}
           </div>
 
           {/* Footer */}
