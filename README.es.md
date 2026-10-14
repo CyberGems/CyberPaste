@@ -57,6 +57,7 @@ La mayoría de los gestores de portapapeles envían tus datos a la nube o son de
 - **Favoritos y anclaje**: fija los clips de uso frecuente para que permanezcan arriba
 - **Gestión por lotes**: `Ctrl+Clic` / `Mayús+Clic` para selección múltiple, selección por arrastre (marquesina) y `Ctrl+A` para seleccionar todos los clips visibles
 - **Dos modos de vista**: Modo Completo (cuadrícula multicolumna, formato panorámico, selección múltiple) o Modo Compacto (lista de alta densidad con vista previa y navegación horizontal de carpetas)
+- **Modo Emojis y pegado instantáneo**: panel de emojis dedicado con búsqueda bilingüe (inglés/español), pestañas de categoría, historial de búsqueda independiente y multi-inyección al estar anclado
 - **Retención automática del historial**: política configurable de borrado automático en segundo plano para limpiar clips antiguos
 
 ### 🤖 Acciones de IA
