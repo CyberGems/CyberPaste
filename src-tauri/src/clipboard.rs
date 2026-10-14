@@ -165,7 +165,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
 
 // GLOBAL STATE: Store the hash of the clip we just pasted ourselves.
 // If the next clipboard change matches this hash, we ignore it (don't update timestamp).
-static IGNORE_HASH: Lazy<parking_lot::Mutex<Option<String>>> =
+static IGNORE_HASH: Lazy<parking_lot::Mutex<Option<(String, std::time::Instant)>>> =
     Lazy::new(|| parking_lot::Mutex::new(None));
 static LAST_STABLE_HASH: Lazy<parking_lot::Mutex<Option<(String, std::time::Instant)>>> =
     Lazy::new(|| parking_lot::Mutex::new(None));
@@ -176,7 +176,7 @@ static DEBOUNCE_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 pub fn set_ignore_hash(hash: String) {
     let mut lock = IGNORE_HASH.lock();
-    *lock = Some(hash);
+    *lock = Some((hash, std::time::Instant::now()));
 }
 
 pub fn init(app: &AppHandle, db: Arc<Database>) {
@@ -733,14 +733,16 @@ async fn process_clipboard_change(
     }
 
     // Check ignore self-paste
+    let mut is_self_paste = false;
     {
-        let mut lock = IGNORE_HASH.lock();
-        if let Some(ignore_hash) = lock.take() {
-            if ignore_hash == clip_hash {
+        let lock = IGNORE_HASH.lock();
+        if let Some((ref ignore_hash, timestamp)) = *lock {
+            if ignore_hash == &clip_hash && timestamp.elapsed() < std::time::Duration::from_millis(4000) {
                 log::info!(
-                    "CLIPBOARD: Detected self-paste for hash {}, proceeding to update timestamp",
+                    "CLIPBOARD: Detected self-paste/self-copy for hash {}",
                     ignore_hash
                 );
+                is_self_paste = true;
             }
         }
     }
@@ -754,6 +756,15 @@ async fn process_clipboard_change(
         full_path,
         is_explicit_owner
     );
+
+    let is_cyberpaste_name = |name: &str| {
+        let n = name.trim().to_lowercase();
+        n == "cyberpaste" || n == "cyberpaste.exe" || n.starts_with("cyberpaste")
+    };
+    let is_self_app = is_self_paste
+        || source_app.as_deref().map(is_cyberpaste_name).unwrap_or(false)
+        || exe_name.as_deref().map(is_cyberpaste_name).unwrap_or(false)
+        || full_path.as_deref().map(|p| p.to_lowercase().contains("cyberpaste")).unwrap_or(false);
 
     // Check settings (cached via SettingsManager)
     use crate::settings_manager::SettingsManager;
@@ -819,8 +830,8 @@ async fn process_clipboard_change(
                 SET created_at = CASE WHEN is_pinned = 1 THEN created_at ELSE CURRENT_TIMESTAMP END,
                     is_deleted = 0,
                     folder_id = NULL,
-                    source_app = ?,
-                    source_icon = ?,
+                    source_app = CASE WHEN ? THEN source_app ELSE ? END,
+                    source_icon = CASE WHEN ? THEN source_icon ELSE ? END,
                     content = ?,
                     text_preview = ?,
                     metadata = ?,
@@ -828,7 +839,9 @@ async fn process_clipboard_change(
                 WHERE uuid = ?
                 "#,
             )
+            .bind(is_self_app)
             .bind(&source_app)
+            .bind(is_self_app)
             .bind(&source_icon)
             .bind(&clip_content)
             .bind(&clip_preview)
@@ -867,11 +880,13 @@ async fn process_clipboard_change(
                 SET created_at = CASE WHEN is_pinned = 1 THEN created_at ELSE CURRENT_TIMESTAMP END, 
                     is_deleted = 0, 
                     folder_id = NULL,
-                    source_app = ?, 
-                    source_icon = ? 
+                    source_app = CASE WHEN ? THEN source_app ELSE ? END, 
+                    source_icon = CASE WHEN ? THEN source_icon ELSE ? END 
                 WHERE uuid = ?
             "#)
+                .bind(is_self_app)
                 .bind(&source_app)
+                .bind(is_self_app)
                 .bind(&source_icon)
                 .bind(&existing_id)
                 .execute(pool)
@@ -1001,6 +1016,7 @@ async fn process_clipboard_change(
         if settings.clipboard_sound_enabled
             && !crate::quiet_hours::is_active(&settings)
             && (!was_existing || settings.duplicate_toast_enabled)
+            && !(was_existing && is_self_app)
         {
             let sound_path = if was_existing {
                 "default_duplicate".to_string()
@@ -1009,7 +1025,9 @@ async fn process_clipboard_change(
             };
             let _ = crate::commands::play_clipboard_sound(sound_path);
         }
-        let should_show_toast = if was_existing {
+        let should_show_toast = if is_self_app {
+            false
+        } else if was_existing {
             settings.duplicate_toast_enabled
         } else {
             settings.toast_enabled

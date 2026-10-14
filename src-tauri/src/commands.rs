@@ -56,6 +56,23 @@ pub async fn write_clipboard_text(text: String) -> Result<(), String> {
     write_text(text).await.map_err(|e| e.to_string())
 }
 
+/// Pre-arms the clipboard monitor to ignore an upcoming self-write from frontend given a clip id.
+#[tauri::command]
+pub async fn arm_ignore_clip_by_id(
+    id: String,
+    db: tauri::State<'_, Arc<Database>>,
+) -> Result<(), String> {
+    let pool = &db.pool;
+    if let Ok(Some(hash)) = sqlx::query_scalar::<_, String>("SELECT content_hash FROM clips WHERE uuid = ?")
+        .bind(&id)
+        .fetch_optional(pool)
+        .await
+    {
+        crate::clipboard::set_ignore_hash(hash);
+    }
+    Ok(())
+}
+
 /// Write arbitrary text to the clipboard and trigger the standard auto-paste / window-hide workflow.
 #[tauri::command]
 pub async fn paste_text(

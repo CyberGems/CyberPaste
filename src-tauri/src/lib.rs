@@ -850,6 +850,7 @@ pub fn run_app() {
             commands::paste_clip,
             commands::paste_text,
             commands::copy_clip,
+            commands::arm_ignore_clip_by_id,
             commands::delete_clip,
             commands::delete_clips,
             commands::restore_clip,

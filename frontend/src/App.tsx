@@ -1962,6 +1962,7 @@ function App() {
         return;
       }
       try {
+        invoke('arm_ignore_clip_by_id', { id: clipId }).catch(() => {});
         const clip = clipsRef.current.find((c) => c.id === clipId);
         if (clip && clip.clip_type === 'image') {
           try {
@@ -2003,6 +2004,7 @@ function App() {
   const handleCopy = useCallback(
     async (clipId: string) => {
       try {
+        invoke('arm_ignore_clip_by_id', { id: clipId }).catch(() => {});
         const clip = clipsRef.current.find((c) => c.id === clipId);
         if (clip && clip.clip_type === 'image') {
           try {
