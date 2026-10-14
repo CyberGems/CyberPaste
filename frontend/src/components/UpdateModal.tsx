@@ -10,6 +10,7 @@ import {
   ChevronUp,
   ChevronDown,
   FileText,
+  ArrowRight,
 } from 'lucide-react';
 import { check } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
@@ -35,7 +36,9 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [skipBusy, setSkipBusy] = useState(false);
   const [skipError, setSkipError] = useState(false);
-  const [releaseBody, setReleaseBody] = useState<string>(update?.body || '');
+  const [releaseBody, setReleaseBody] = useState<string>(
+    update?.body || (update as any)?.rawJson?.notes || ''
+  );
   const notesScrollRef = useRef<HTMLDivElement>(null);
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(false);
@@ -64,7 +67,10 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
 
   useEffect(() => {
     if (!isOpen || !update?.version) return;
-    setReleaseBody(update.body || '');
+    const initialNotes = update.body || (update as any)?.rawJson?.notes || '';
+    if (initialNotes) {
+      setReleaseBody(initialNotes);
+    }
     const cleanVersion = update.version.replace(/^v/, '');
     const ctrl = new AbortController();
     fetch(`https://api.github.com/repos/CyberGems/CyberPaste/releases/tags/v${cleanVersion}`, {
@@ -81,7 +87,7 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
         }
       })
       .catch(() => {
-        // Fallback to update.body is already preserved
+        // Fallback to update.body / rawJson is already preserved
       });
     return () => ctrl.abort();
   }, [isOpen, update?.version, update?.body]);
@@ -160,11 +166,11 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
 
   return (
     <div className="animate-in fade-in fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md duration-300">
-      <div className="animate-in zoom-in-95 relative flex max-h-[min(90vh,680px)] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-primary/20 bg-background/90 shadow-2xl shadow-primary/10 duration-300">
+      <div className="animate-in zoom-in-95 relative flex h-[min(90vh,600px)] w-[min(94vw,580px)] max-w-xl flex-col overflow-hidden rounded-xl border border-primary/20 bg-background/95 shadow-2xl shadow-primary/10 duration-300">
         <div className="absolute -left-16 -top-16 h-32 w-32 rounded-full bg-primary/10 blur-2xl" />
         <div className="absolute -bottom-16 -right-16 h-32 w-32 rounded-full bg-cyan-500/10 blur-2xl" />
 
-        <div className="relative flex shrink-0 items-center justify-between px-6 pb-4 pt-6">
+        <div className="relative flex shrink-0 items-center justify-between px-6 pb-3 pt-5">
           <div className="flex items-center gap-2 text-primary">
             <Sparkles size={20} className="animate-pulse" />
             <h3 className="text-lg font-bold tracking-wide">{t('settings.updatesTitle')}</h3>
@@ -186,37 +192,39 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
         <div className="relative z-10 flex min-h-0 flex-1 flex-col">
           {status === 'prompt' && (
             <>
-              <div className="max-h-[min(380px,calc(90vh-13rem))] space-y-4 overflow-y-auto px-6 pb-4">
-                <p className="text-sm font-medium text-foreground/90">
-                  {t('settings.updatesNewVersionAvailable')}
-                </p>
-
-                <div className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-secondary/50 p-3.5 font-mono text-xs">
-                  <div>
-                    <span className="mb-0.5 block text-muted-foreground">
-                      {t('settings.updatesCurrentVersion', { version: '' }).replace(':', '')}
-                    </span>
-                    <span className="rounded bg-white/5 px-2 py-0.5 font-bold text-foreground/80">
+              <div className="relative z-10 flex min-h-0 flex-1 flex-col px-6 pb-2">
+                {/* Version & Notice Banner */}
+                <div className="flex shrink-0 items-center justify-between gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5">
+                  <p className="truncate text-xs font-medium text-foreground/90">
+                    {t('settings.updatesNewVersionAvailable')}
+                  </p>
+                  <div className="flex shrink-0 items-center gap-2 font-mono text-xs">
+                    <span className="rounded bg-white/5 px-2 py-0.5 text-muted-foreground">
                       v{currentVersion}
                     </span>
-                  </div>
-                  <div>
-                    <span className="mb-0.5 block text-primary">
-                      {t('settings.updatesLatestVersion', { version: '' }).replace(':', '')}
-                    </span>
-                    <span className="rounded border border-primary/20 bg-primary/10 px-2 py-0.5 font-bold text-primary">
+                    <ArrowRight size={12} className="text-muted-foreground/60" />
+                    <span className="rounded border border-primary/30 bg-primary/15 px-2 py-0.5 font-bold text-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.15)]">
                       v{update.version}
                     </span>
                   </div>
                 </div>
 
-                {releaseBody && (
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between px-0.5 text-xs">
-                      <span className="flex items-center gap-1.5 font-semibold text-foreground/90">
-                        <FileText size={13} className="text-primary" />
-                        {t('settings.updatesChangelog')}
-                      </span>
+                {/* Changelog & Release Notes Hero Area */}
+                <div className="mt-3 flex min-h-0 flex-1 flex-col">
+                  <div className="mb-2 flex shrink-0 items-center justify-between px-0.5 text-xs">
+                    <span className="flex items-center gap-1.5 font-semibold text-foreground/90">
+                      <FileText size={13} className="text-primary" />
+                      {t('settings.updatesChangelog')}
+                    </span>
+                    <div className="flex items-center gap-2.5">
+                      <button
+                        type="button"
+                        onClick={handleOpenReleasePage}
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-primary/80 transition-colors hover:text-primary hover:underline"
+                      >
+                        <ExternalLink size={11} />
+                        <span>{t('settings.updatesViewOnGithub')}</span>
+                      </button>
                       <div className="flex items-center gap-1">
                         <Tooltip label={t('settings.updatesScrollUp')} placement="top">
                           <button
@@ -242,28 +250,27 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
                         </Tooltip>
                       </div>
                     </div>
-
-                    <div
-                      ref={notesScrollRef}
-                      onScroll={checkScroll}
-                      className="custom-scrollbar max-h-[220px] select-text overflow-y-auto rounded-lg border border-border/60 bg-black/25 px-3.5 py-3 text-[12.5px] leading-relaxed text-foreground/85"
-                    >
-                      <ReleaseNotes body={releaseBody} />
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={handleOpenReleasePage}
-                      className="inline-flex items-center gap-1.5 self-start text-xs font-medium text-primary transition-colors hover:text-primary/80 hover:underline"
-                    >
-                      <ExternalLink size={12} />
-                      {t('settings.updatesViewOnGithub')}
-                    </button>
                   </div>
-                )}
+
+                  <div
+                    ref={notesScrollRef}
+                    onScroll={checkScroll}
+                    className="custom-scrollbar min-h-[160px] flex-1 select-text overflow-y-auto rounded-lg border border-border/60 bg-black/25 px-4 py-3 text-[12.5px] leading-relaxed text-foreground/85"
+                  >
+                    {releaseBody ? (
+                      <ReleaseNotes body={releaseBody} />
+                    ) : (
+                      <div className="flex h-full min-h-[140px] items-center justify-center text-xs text-muted-foreground">
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin text-primary" />
+                        <span>{t('common.loading')}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
-              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-border/60 bg-background/95 px-6 py-4">
+              {/* Action Buttons Footer */}
+              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-border/60 bg-background/95 px-6 py-3.5">
                 {skipError && (
                   <p className="mr-auto self-center text-xs text-destructive">
                     {t('settings.updatesSkipError')}
@@ -298,9 +305,9 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
           )}
 
           {status === 'downloading' && (
-            <div className="space-y-5 px-6 py-4 text-center">
-              <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-              <div className="space-y-2">
+            <div className="flex min-h-0 flex-1 flex-col items-center justify-center space-y-5 px-6 py-8 text-center">
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+              <div className="w-full max-w-xs space-y-2.5">
                 <p className="text-sm font-semibold text-foreground/90">
                   {progress < 100
                     ? t('settings.updatesDownloading')
@@ -318,7 +325,7 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
           )}
 
           {status === 'error' && (
-            <div className="space-y-4 px-6 pb-6">
+            <div className="flex min-h-0 flex-1 flex-col justify-center space-y-4 px-6 pb-6">
               <div className="flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-3.5">
                 <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
                 <div>

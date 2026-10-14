@@ -18,7 +18,7 @@ export function TitleBarUpdateButton({
   if (!visible) return null;
 
   const tooltip = version ? t('titleBar.updateAvailable', { version }) : t('tray.updateAvailable');
-  const arrowSize = Math.max(12, Math.min(iconSize || 13, 14));
+  const arrowSize = Math.max(10, Math.min(iconSize || 11, 12));
 
   return (
     <Tooltip label={tooltip} placement="bottom">
@@ -27,23 +27,23 @@ export function TitleBarUpdateButton({
         onClick={onClick}
         aria-label={tooltip}
         className={clsx(
-          'group mr-1 inline-flex h-7 shrink-0 items-center self-center overflow-hidden rounded-full border',
-          'border-primary/40 bg-primary text-primary-foreground',
+          'group mr-1 inline-flex h-[22px] shrink-0 items-center self-center overflow-hidden rounded-full border',
+          'border-primary/50 bg-primary text-primary-foreground',
           'shadow-sm',
           'transition-all duration-200 ease-out',
           'hover:shadow-md hover:brightness-105 active:scale-95',
           'focus:outline-none focus-visible:ring-1 focus-visible:ring-primary'
         )}
       >
-        <span className="grid h-7 grid-cols-[0fr] items-center overflow-hidden opacity-0 transition-[grid-template-columns,opacity] duration-200 ease-out group-hover:grid-cols-[1fr] group-hover:opacity-100">
-          <span className="flex h-7 min-w-0 items-center overflow-hidden">
-            <span className="whitespace-nowrap pl-2.5 pr-1 text-[11px] font-bold leading-none tracking-wide text-primary-foreground">
+        <span className="grid h-[22px] grid-cols-[0fr] items-center overflow-hidden opacity-0 transition-[grid-template-columns,opacity] duration-200 ease-out group-hover:grid-cols-[1fr] group-hover:opacity-100">
+          <span className="flex h-[22px] min-w-0 items-center overflow-hidden">
+            <span className="whitespace-nowrap pl-2 pr-0.5 text-[10px] font-bold leading-none tracking-wide text-primary-foreground">
               {t('titleBar.update')}
             </span>
           </span>
         </span>
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center">
-          <ArrowDown size={arrowSize} strokeWidth={2.5} className="block text-primary-foreground" />
+        <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center">
+          <ArrowDown size={arrowSize} strokeWidth={2.6} className="block text-primary-foreground" />
         </span>
       </button>
     </Tooltip>
