@@ -29,7 +29,7 @@
             "icons/128x128.png",
             "icons/128x128@2x.png",
             "icons/icon.icns",
-            "icons/icon_light_green_gradient.png"
+            "icons/icon.ico"
         ],
         "macOS": {
             "entitlements": "./Entitlements.plist",
