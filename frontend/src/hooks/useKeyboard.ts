@@ -48,6 +48,8 @@ interface KeyboardOptions {
   onClearSearch?: () => void;
   /** True while the full-mode search overlay is open or a query is active. */
   searchActive?: boolean;
+  /** Whether there are navigable items in the current view. */
+  hasItems?: boolean;
   onToggleMode?: () => void;
   toggleModeHotkey?: string; // e.g. "Ctrl+M"
   onStartTypingSearch?: (char: string) => void;
@@ -364,6 +366,10 @@ export function useKeyboard(options: KeyboardOptions) {
 
       if (e.key === 'ArrowDown' && options.onNavigateNext) {
         if (isTyping && !isSearchInput) {
+          return;
+        }
+        if (isSearchInput && options.hasItems === false) {
+          e.preventDefault();
           return;
         }
         e.preventDefault();

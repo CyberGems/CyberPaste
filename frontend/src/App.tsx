@@ -3345,6 +3345,7 @@ function App() {
       setShowSearch(false);
     },
     searchActive: Boolean(showSearch || searchQuery.trim()),
+    hasItems: isEmojiMode ? true : clips.length > 0,
     onToggleMode: toggleViewMode,
     toggleModeHotkey: settings?.view_mode_hotkey,
     onTogglePeek: handleTogglePeek,

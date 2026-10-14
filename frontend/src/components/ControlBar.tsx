@@ -1012,13 +1012,18 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
                     onKeyDown={(e) => {
-                      if (isEmojiMode && e.key === 'ArrowDown') {
-                        e.preventDefault();
-                        const grid = document.querySelector('[data-emoji-grid="true"]') as HTMLElement;
-                        if (grid) {
-                          grid.focus();
+                      if (e.key === 'ArrowDown') {
+                        if (isEmojiMode) {
+                          e.preventDefault();
+                          const hasEmojis = Boolean(document.querySelector('[data-emoji-index]'));
+                          if (hasEmojis) {
+                            const grid = document.querySelector('[data-emoji-grid="true"]') as HTMLElement;
+                            if (grid) {
+                              grid.focus();
+                            }
+                          }
+                          return;
                         }
-                        return;
                       }
                       if (e.key === 'Enter') {
                         onSearchCommit(searchQuery);
