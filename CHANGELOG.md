@@ -2,6 +2,28 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.25.0] — 2026-10-14
+
+### 🌟 Emoji Mode (Picker, Search & Instant Paste)
+- **Dedicated Emoji Mode**: Access an extensive, categorized emoji collection via titlebar toggle or global hotkey with instant click or Enter paste into target apps.
+- **Bilingual emoji search**: Search emojis naturally in English or Spanish by name, aliases, and keywords.
+- **Continuous injection when pinned**: When the window is pinned, selecting emojis repeatedly pastes them directly into the active application without closing.
+- **Session-stable recents**: Order of recent emojis remains frozen during active selection sessions to prevent accidental misclicks.
+- **Isolated search history**: Dedicated emoji search history completely separate from normal clipboard search history.
+- **Keyboard-first navigation**: Auto-focuses the search input upon opening; press Arrow Down from the search bar to browse the grid, and press Arrow Up on the top row to return to the search bar.
+
+### 🔎 Search & Keyboard Navigation Refinements
+- **Search focus retention**: Backspacing to empty search input keeps focus and cursor inside the bar without unexpected blur.
+- **Zero-result safety**: Pressing Arrow Down when a search yields no results preserves search input focus, avoiding unneeded mouse interaction.
+- **Two-stage Escape**: First Escape dismisses active search or blurs the search field; second Escape hides the window or exits emoji mode.
+- **Arrow Up return for clips**: Pressing Arrow Up on the first clip (Compact view) or top row (Full view) returns focus to the search bar and selects the search query.
+
+### 🎨 UI Polish, Toasts & Installer Banner
+- **Single-toast system**: Toast alerts and banners no longer stack, smoothly replacing previous notifications with unselectable text.
+- **Marquee footer hints**: Compact view footer tips scroll cleanly via marquee animation with optimal margins.
+- **NSIS installer sidebar**: Fixed aspect ratio (164x314), expanded right safe margin, and smoothed background blend for high-DPI Windows installer wizard displays.
+- **Update modal clean-up**: Removed redundant button tooltips and unified action button styles.
+
 ## [1.24.0] — 2026-10-13
 
 ### 👁️ Visor Multimedia & Universal Clip Inspection
