@@ -16,6 +16,8 @@ import {
   ScanText,
   Pin,
   Zap,
+  Copy,
+  ClipboardPaste,
 } from 'lucide-react';
 import Tooltip, { dismissAllTooltips } from './Tooltip';
 import { formatDistanceToNow } from 'date-fns';
@@ -53,7 +55,9 @@ const getRelativeTime = (dateStr: string, lang: string) => {
 interface ClipCardProps {
   clip: ClipboardItem;
   isSelected: boolean;
-  onPaste: () => void;
+  onPaste: (forcePaste?: boolean) => void;
+  onCopy?: () => void;
+  onCancelPeek?: () => void;
   onDragStart: (clipId: string, startX: number, startY: number) => void;
   onContextMenu?: (e: React.MouseEvent) => void;
   reorderDropIndicator?: 'before' | 'after' | null;
@@ -72,6 +76,7 @@ interface ClipCardProps {
   actionTooltip?: string;
   singleClickPaste?: boolean;
   onCardMouseEnter?: (e: React.MouseEvent, clip: ClipboardItem) => void;
+  onCardMouseMove?: (e: React.MouseEvent, clip: ClipboardItem) => void;
   onCardMouseLeave?: () => void;
   onFilterByApp?: (app: string) => void;
   onFilterByType?: (type: ClipFilterCategory) => void;
@@ -85,6 +90,8 @@ export const ClipCard = memo(
       clip,
       isSelected,
       onPaste,
+      onCopy,
+      onCancelPeek,
       onDragStart,
       onContextMenu,
       reorderDropIndicator,
@@ -102,6 +109,7 @@ export const ClipCard = memo(
       actionTooltip,
       singleClickPaste = true,
       onCardMouseEnter,
+      onCardMouseMove,
       onCardMouseLeave,
       onFilterByApp,
       onFilterByType,
@@ -259,7 +267,15 @@ export const ClipCard = memo(
     const pinFlash = usePinFlash(clip.id);
     const isDeleting = useDeleteFlash(clip.id);
     const foreignMenuOpenRef = useRef(false);
+    const [isOverActions, setIsOverActions] = useState(false);
     const showHover = menuHighlight || (hovered && !hoverLocked && !foreignMenuOpenRef.current);
+    const showQuickActions =
+      hovered &&
+      !hoverLocked &&
+      !foreignMenuOpenRef.current &&
+      !menuHighlight &&
+      !isDragging &&
+      !isDeleting;
 
     useEffect(() => {
       if (hoverLocked) setHovered(false);
@@ -297,7 +313,7 @@ export const ClipCard = memo(
     };
 
     return (
-      <Tooltip label={actionTooltip} placement="top" disabled={!actionTooltip}>
+      <Tooltip label={actionTooltip} placement="top" disabled={!actionTooltip || isOverActions}>
         <div
           ref={ref}
           data-el="clip-card"
@@ -333,11 +349,23 @@ export const ClipCard = memo(
               setHovered(true);
               onCardMouseEnter?.(e, clip);
             }}
-            onMouseMove={() => {
+            onMouseMove={(e) => {
               if (hoverLocked || isListHoverLocked() || foreignMenuOpenRef.current) return;
               setHovered(true);
+              const target = e.target as HTMLElement;
+              const over = Boolean(
+                target.closest('[data-el="clip-card-hover-actions"]') || target.closest('button')
+              );
+              if (over) {
+                if (!isOverActions) setIsOverActions(true);
+                dismissAllTooltips();
+              } else if (isOverActions) {
+                setIsOverActions(false);
+              }
+              onCardMouseMove?.(e, clip);
             }}
             onMouseLeave={() => {
+              setIsOverActions(false);
               if (menuHighlightRef.current) leftWhileMenuRef.current = true;
               else setHovered(false);
               onCardMouseLeave?.();
@@ -525,6 +553,83 @@ export const ClipCard = memo(
                     cardFormat === 'panoramic' ? 'h-7' : 'h-12'
                   )}
                 />
+              )}
+
+              {/* Hover Quick Actions: Copy & Paste */}
+              {showQuickActions && onCopy && (
+                <div
+                  data-el="clip-card-hover-actions"
+                  onMouseEnter={(e) => {
+                    e.stopPropagation();
+                    onCancelPeek?.();
+                  }}
+                  onMouseMove={(e) => {
+                    e.stopPropagation();
+                    onCancelPeek?.();
+                  }}
+                  className="animate-in fade-in zoom-in-95 pointer-events-none absolute inset-0 z-20 flex items-center justify-center gap-2 p-2 duration-150"
+                >
+                  <button
+                    type="button"
+                    onMouseEnter={(e) => {
+                      e.stopPropagation();
+                      setIsOverActions(true);
+                      dismissAllTooltips();
+                      onCancelPeek?.();
+                    }}
+                    onMouseMove={(e) => {
+                      e.stopPropagation();
+                      setIsOverActions(true);
+                      dismissAllTooltips();
+                      onCancelPeek?.();
+                    }}
+                    onMouseLeave={() => {
+                      setIsOverActions(false);
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onCopy();
+                    }}
+                    onDoubleClick={(e) => e.stopPropagation()}
+                    className="pointer-events-auto flex items-center gap-1.5 rounded-lg border border-border/80 bg-background/90 px-3 py-1.5 text-xs font-medium text-foreground shadow-xl backdrop-blur-md transition-all hover:border-primary/60 hover:bg-background hover:text-primary active:scale-95"
+                    aria-label={t('common.copy')}
+                  >
+                    <Copy size={13} className="opacity-80" />
+                    <span>{t('common.copy')}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onMouseEnter={(e) => {
+                      e.stopPropagation();
+                      setIsOverActions(true);
+                      dismissAllTooltips();
+                      onCancelPeek?.();
+                    }}
+                    onMouseMove={(e) => {
+                      e.stopPropagation();
+                      setIsOverActions(true);
+                      dismissAllTooltips();
+                      onCancelPeek?.();
+                    }}
+                    onMouseLeave={() => {
+                      setIsOverActions(false);
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onPaste(true);
+                    }}
+                    onDoubleClick={(e) => e.stopPropagation()}
+                    className="pointer-events-auto flex items-center gap-1.5 rounded-lg border border-border/80 bg-background/90 px-3 py-1.5 text-xs font-medium text-foreground shadow-xl backdrop-blur-md transition-all hover:border-primary/60 hover:bg-background hover:text-primary active:scale-95"
+                    aria-label={t('common.paste')}
+                  >
+                    <ClipboardPaste size={13} className="opacity-80" />
+                    <span>{t('common.paste')}</span>
+                  </button>
+                </div>
               )}
             </div>
 

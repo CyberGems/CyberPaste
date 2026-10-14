@@ -18,7 +18,8 @@ interface ClipListProps {
   isLoading: boolean;
   hasMore: boolean;
   onLoadMore: () => void;
-  onPaste: (id: string) => void;
+  onPaste: (id: string, forcePaste?: boolean) => void;
+  onCopy?: (id: string) => void;
   onDragStart: (clipId: string, startX: number, startY: number) => void;
   selectedClipId: string | null;
   onCardContextMenu?: (e: React.MouseEvent, id: string) => void;
@@ -66,6 +67,7 @@ export const ClipList: React.FC<ClipListProps> = ({
   isLoading,
   onLoadMore,
   onPaste,
+  onCopy,
   onDragStart,
   selectedClipId,
   onCardContextMenu,
@@ -184,6 +186,24 @@ export const ClipList: React.FC<ClipListProps> = ({
     return () => window.removeEventListener(SEARCH_HISTORY_EVENT, handleSearchHistory);
   }, [closePeek]);
 
+  const handleCancelPeek = useCallback(() => {
+    if (peekTimerRef.current) {
+      clearTimeout(peekTimerRef.current);
+      peekTimerRef.current = null;
+    }
+    closePeek();
+  }, [closePeek]);
+
+  const handleCardMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('button') || target.closest('[data-el="clip-card-hover-actions"]')) {
+        handleCancelPeek();
+      }
+    },
+    [handleCancelPeek]
+  );
+
   const handleCardMouseEnter = useCallback(
     (e: React.MouseEvent, clip: ClipboardItem) => {
       if (isListHoverLocked()) return;
@@ -203,9 +223,9 @@ export const ClipList: React.FC<ClipListProps> = ({
         return prev;
       });
 
-      // No iniciar peek si el cursor está sobre un botón de acción
+      // No iniciar peek si el cursor está sobre un botón de acción o los botones flotantes
       const target = e.target as HTMLElement;
-      if (target.closest('button')) return;
+      if (target.closest('button') || target.closest('[data-el="clip-card-hover-actions"]')) return;
 
       // Evitar peek en textos, URLs o archivos individuales que caben perfectamente en la tarjeta
       const isTextOrFileType =
@@ -232,6 +252,15 @@ export const ClipList: React.FC<ClipListProps> = ({
       peekOriginMousePosRef.current = { x: startX, y: startY };
 
       peekTimerRef.current = setTimeout(() => {
+        // Evitar activar peek si el cursor terminó posicionándose sobre un botón o los botones de acción
+        const elUnderCursor = document.querySelector(':hover');
+        if (
+          elUnderCursor &&
+          (elUnderCursor.closest('button') ||
+            elUnderCursor.closest('[data-el="clip-card-hover-actions"]'))
+        ) {
+          return;
+        }
         setPeekClip(clip);
         setPeekAnchor({ x: rect.left, y: rect.top, width: rect.width, height: rect.height });
         peekOriginMousePosRef.current = { x: startX, y: startY };
@@ -572,7 +601,8 @@ export const ClipList: React.FC<ClipListProps> = ({
           isBulkSelected={bulkSelectedIds?.has(clip.id)}
           onToggleBulkSelect={onToggleBulkSelect ? () => onToggleBulkSelect(clip.id) : undefined}
           onCardClick={(e) => onClipClick?.(clip.id, e)}
-          onPaste={() => onPaste(clip.id)}
+          onPaste={(forcePaste) => onPaste(clip.id, forcePaste)}
+          onCopy={onCopy ? () => onCopy(clip.id) : undefined}
           onDragStart={onDragStart}
           onContextMenu={(e: React.MouseEvent) => onCardContextMenu?.(e, clip.id)}
           reorderDropIndicator={reorderTargetClipId === clip.id ? reorderTargetPosition : null}
@@ -587,7 +617,9 @@ export const ClipList: React.FC<ClipListProps> = ({
           actionTooltip={peekClip ? undefined : actionTooltip}
           singleClickPaste={singleClickPaste}
           onCardMouseEnter={handleCardMouseEnter}
+          onCardMouseMove={handleCardMouseMove}
           onCardMouseLeave={handleCardMouseLeave}
+          onCancelPeek={handleCancelPeek}
           onFilterByApp={onFilterByApp}
           onFilterByType={onFilterByType}
           typeFilter={typeFilter}

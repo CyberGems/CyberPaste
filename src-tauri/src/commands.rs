@@ -1153,6 +1153,7 @@ pub async fn get_clip_detail(
 #[tauri::command]
 pub async fn paste_clip(
     id: String,
+    force_paste: Option<bool>,
     app: AppHandle,
     window: tauri::WebviewWindow,
     db: tauri::State<'_, Arc<Database>>,
@@ -1424,12 +1425,14 @@ pub async fn paste_clip(
                 // Check settings
                 let manager = app.state::<Arc<SettingsManager>>();
                 let settings = manager.get();
-                let auto_paste = settings.auto_paste;
-                let auto_inject = settings.auto_paste && settings.auto_inject_paste;
+                let forced = force_paste.unwrap_or(false);
+                let auto_paste = forced || settings.auto_paste;
+                let auto_inject = auto_paste && (forced || settings.auto_inject_paste);
                 log::info!(
-                    "paste_clip: auto_paste={}, auto_inject={}",
+                    "paste_clip: auto_paste={}, auto_inject={}, forced={}",
                     auto_paste,
-                    auto_inject
+                    auto_inject,
+                    forced
                 );
 
                 if settings.pinned {

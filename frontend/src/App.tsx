@@ -71,6 +71,7 @@ import {
   Pencil,
   Copy,
   ClipboardCopy,
+  ClipboardPaste,
   Pin,
   PinOff,
   FolderInput,
@@ -460,7 +461,6 @@ function App() {
                   updateAvailableRef.current = update;
                   setUpdateAvailable(update);
                   setShowUpdateModal(true);
-                  toast.update(t('settings.updateAvailable', { version: update.version }));
                   invoke('set_update_available', { available: true }).catch(console.error);
                 } else {
                   updateAvailableRef.current = null;
@@ -1957,7 +1957,7 @@ function App() {
   );
 
   const handlePaste = useCallback(
-    async (clipId: string) => {
+    async (clipId: string, forcePaste = false) => {
       if (wasDraggingRef.current) {
         return;
       }
@@ -1972,7 +1972,7 @@ function App() {
           }
         }
 
-        await invoke('paste_clip', { id: clipId });
+        await invoke('paste_clip', { id: clipId, forcePaste });
         // Force immediate refresh
         if (settingsRef.current?.reset_view_on_paste) {
           setSearchQuery('');
@@ -2000,26 +2000,30 @@ function App() {
     [getFullImageBlob, handleSelectFolder, refreshCurrentFolder, refreshTotalCount]
   );
 
-  const handleCopy = async (clipId: string) => {
-    try {
-      const clip = clipsRef.current.find((c) => c.id === clipId);
-      if (clip && clip.clip_type === 'image') {
-        try {
-          const blob = await getFullImageBlob(clipId, clip);
-          await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-        } catch (e) {
-          console.warn('Frontend navigator.clipboard.write fallback:', e);
+  const handleCopy = useCallback(
+    async (clipId: string) => {
+      try {
+        const clip = clipsRef.current.find((c) => c.id === clipId);
+        if (clip && clip.clip_type === 'image') {
+          try {
+            const blob = await getFullImageBlob(clipId, clip);
+            await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+          } catch (e) {
+            console.warn('Frontend navigator.clipboard.write fallback:', e);
+          }
         }
-      }
 
-      await invoke('copy_clip', { clipId });
-      refreshCurrentFolder();
-      refreshTotalCount();
-    } catch (error) {
-      console.error('Failed to copy clip:', error);
-      toast.error(t('notifications.copyFailed'));
-    }
-  };
+        await invoke('copy_clip', { clipId });
+        refreshCurrentFolder();
+        refreshTotalCount();
+        toast.success(t('common.copied'));
+      } catch (error) {
+        console.error('Failed to copy clip:', error);
+        toast.error(t('notifications.copyFailed'));
+      }
+    },
+    [getFullImageBlob, refreshCurrentFolder, refreshTotalCount, t]
+  );
 
   // Ctrl + wheel adjusts the Full-mode grid zoom (0.6x – 1.75x), persisted in settings
   const GRID_SCALE_MIN = 0.6;
@@ -2259,6 +2263,14 @@ function App() {
       handlePaste(targetId);
     }
   }, [selectedClipId, clips, handlePaste]);
+
+  const handleCopySelected = useCallback(() => {
+    const targetId =
+      selectedClipId && clips.some((c) => c.id === selectedClipId) ? selectedClipId : clips[0]?.id;
+    if (targetId) {
+      handleCopy(targetId);
+    }
+  }, [selectedClipId, clips, handleCopy]);
 
   // Toggle single-clip membership in the bulk selection (Ctrl+Click)
   const handleClipToggleSelect = useCallback((id: string) => {
@@ -2948,9 +2960,15 @@ function App() {
         }
 
         opts.push({
+          label: t('contextMenu.paste'),
+          icon: <ClipboardPaste size={14} />,
+          onClick: () => handlePaste(itemId, true),
+        });
+
+        opts.push({
           label: t('contextMenu.copy'),
           icon: <Copy size={14} />,
-          onClick: () => handlePaste(itemId),
+          onClick: () => handleCopy(itemId),
         });
 
         // Copy as plain text — only meaningful for formatted types
@@ -3334,6 +3352,7 @@ function App() {
     onFolderPrev: handleFolderPrev,
     onFolderNext: handleFolderNext,
     onPaste: handlePasteSelected,
+    onCopy: handleCopySelected,
     onCopyPlainText: handleCopyPlainTextSelected,
     onPreviewSelected: handlePreviewSelected,
     onToggleDetailPanel: handleToggleDetailPanel,
@@ -3638,6 +3657,7 @@ function App() {
                       resetToken={clipListResetToken}
                       selectedClipId={selectedClipId}
                       onPaste={handlePaste}
+                      onCopy={handleCopy}
                       onLoadMore={loadMore}
                       onDragStart={startDrag}
                       onCardContextMenu={(e, clipId) => handleContextMenu(e, 'card', clipId)}

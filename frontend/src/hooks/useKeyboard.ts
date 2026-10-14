@@ -32,6 +32,8 @@ interface KeyboardOptions {
   onFolderPrev?: () => void;
   onFolderNext?: () => void;
   onPaste?: () => void;
+  /** Ctrl/Cmd+C — copies selected clip to clipboard without pasting */
+  onCopy?: () => void;
   /** Enter with Ctrl/Cmd — copies selected clip as plain text without pasting */
   onCopyPlainText?: () => void;
   /** Enter with Shift — opens the full-screen preview for the selected clip */
@@ -474,6 +476,14 @@ export function useKeyboard(options: KeyboardOptions) {
           e.stopPropagation();
           lockListHover();
           options.onFolderNext();
+        }
+      }
+
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C') && options.onCopy) {
+        if (!isTyping && !window.getSelection()?.toString()) {
+          e.preventDefault();
+          options.onCopy();
+          return;
         }
       }
 
