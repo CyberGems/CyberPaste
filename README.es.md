@@ -198,6 +198,7 @@ npm run tauri build
 | `←` `→` | Moverse entre tarjetas (Modo Completo) o cambiar de carpeta (Modo Compacto) |
 | `Ctrl+←` / `Ctrl+→` | Cambiar de carpeta (Modo Completo) |
 | `Intro` | Pegar el clip seleccionado (con inyección de pegado automático) |
+| `Ctrl+C` | Copiar el clip seleccionado al portapapeles (sin pegar) |
 | `Ctrl+Intro` | Copiar el clip seleccionado como texto plano (sin pegar) |
 | `Mayús+Intro` | Abrir la vista previa a pantalla completa del clip seleccionado |
 | `RePág` / `AvPág` / `Inicio` / `Fin` | Navegación extendida con auto-desplazamiento |

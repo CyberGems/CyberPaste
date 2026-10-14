@@ -201,6 +201,7 @@ npm run tauri build
 | `←` `→` | Move between cards (Full mode) or switch folders (Compact mode) |
 | `Ctrl+←` / `Ctrl+→` | Switch folders (Full mode) |
 | `Enter` | Paste selected clip (with auto-paste injection) |
+| `Ctrl+C` | Copy selected clip to clipboard (no paste) |
 | `Ctrl+Enter` | Copy selected clip as plain text (no paste) |
 | `Shift+Enter` | Open full-screen preview of selected clip |
 | `PageUp` / `PageDown` / `Home` / `End` | Extended navigation with auto-scroll |
