@@ -1780,6 +1780,7 @@ function App() {
     setSelectedClipId(null);
     setSelectedClipIds(new Set());
     setDetailPanelOpen(false);
+    setIsEmojiMode(false);
     setClipListResetToken((prev) => prev + 1);
     window.dispatchEvent(new CustomEvent('cyberpaste-reset-view'));
   }, []);
@@ -2511,6 +2512,10 @@ function App() {
         await invoke('paste_text', { text: emoji });
         if (settingsRef.current?.pinned) {
           toast.success(t('emoji.copied'));
+        }
+        if (settingsRef.current?.reset_view_on_paste && !settingsRef.current?.pinned) {
+          setIsEmojiMode(false);
+          setSearchQuery('');
         }
       } catch (err) {
         console.error('Failed to paste emoji:', err);

@@ -45,9 +45,9 @@ export const EMOJI_LIST: EmojiItem[] = [
   { char: '😜', name: 'Winking Face with Tongue', nameEs: 'Guiño sacando la lengua', category: 'smileys', keywords: ['party', 'crazy', 'broma', 'loco', 'fiesta'] },
   { char: '🤪', name: 'Zany Face', nameEs: 'Cara chiflada', category: 'smileys', keywords: ['crazy', 'goofy', 'loco', 'chiflado'] },
   { char: '🤗', name: 'Smiling Face with Open Hands', nameEs: 'Cara sonriente con manos abiertas (Abrazo)', category: 'smileys', keywords: ['hug', 'abrazo', 'cálido', 'bienvenido'] },
-  { char: '🫣', name: 'Face with Peeking Eye', nameEs: 'Cara espiando entre los dedos', category: 'smileys', keywords: ['peek', 'espiar', 'miedo', 'verguenza', 'curioso'] },
+  { char: '🙈', name: 'See-No-Evil Monkey', nameEs: 'Mono tapándose los ojos', category: 'smileys', keywords: ['monkey', 'mono', 'verguenza', 'curioso', 'ojos', 'tapar'] },
   { char: '🤔', name: 'Thinking Face', nameEs: 'Cara pensativa', category: 'smileys', keywords: ['think', 'pensar', 'duda', 'interrogante', 'idea'] },
-  { char: '🫡', name: 'Saluting Face', nameEs: 'Cara saludando respetuosamente', category: 'smileys', keywords: ['salute', 'respeto', 'entendido', 'orden', 'si'] },
+  { char: '🙋', name: 'Person Raising Hand', nameEs: 'Persona levantando la mano', category: 'smileys', keywords: ['salute', 'yo', 'pregunta', 'atencion', 'aqui'] },
   { char: '🤨', name: 'Face with Raised Eyebrow', nameEs: 'Cara con ceja levantada', category: 'smileys', keywords: ['skeptical', 'duda', 'sospecha', 'incredulo'] },
   { char: '😐', name: 'Neutral Face', nameEs: 'Cara neutral', category: 'smileys', keywords: ['neutral', 'serio', 'sin comentarios', 'poker'] },
   { char: '😑', name: 'Expressionless Face', nameEs: 'Cara inexpresiva', category: 'smileys', keywords: ['meh', 'aburrido', 'inexpresivo'] },
@@ -82,7 +82,7 @@ export const EMOJI_LIST: EmojiItem[] = [
   { char: '😕', name: 'Confused Face', nameEs: 'Cara confundida', category: 'smileys', keywords: ['confused', 'confuso', 'desorientado'] },
   { char: '😟', name: 'Worried Face', nameEs: 'Cara preocupada', category: 'smileys', keywords: ['worried', 'preocupado', 'angustia'] },
   { char: '🙁', name: 'Slightly Frowning Face', nameEs: 'Cara ligeramente triste', category: 'smileys', keywords: ['sad', 'triste', 'decepcion'] },
-  { char: '😮‍💨', name: 'Face Exhaling', nameEs: 'Cara exhalando alivio', category: 'smileys', keywords: ['sigh', 'suspiro', 'alivio', 'cansancio'] },
+  { char: '🤧', name: 'Sneezing Face', nameEs: 'Cara estornudando', category: 'smileys', keywords: ['sneeze', 'estornudo', 'resfriado', 'salud', 'panuelo'] },
   { char: '😨', name: 'Fearful Face', nameEs: 'Cara asustada', category: 'smileys', keywords: ['fear', 'miedo', 'asustado'] },
   { char: '😰', name: 'Anxious Face with Sweat', nameEs: 'Cara ansiosa con sudor', category: 'smileys', keywords: ['anxious', 'ansiedad', 'nervioso', 'estres'] },
   { char: '😢', name: 'Crying Face', nameEs: 'Cara llorando', category: 'smileys', keywords: ['tear', 'sad', 'triste', 'lagrima'] },
@@ -129,15 +129,15 @@ export const EMOJI_LIST: EmojiItem[] = [
   { char: '🖖', name: 'Vulcan Salute', nameEs: 'Saludo vulcano', category: 'gestures', keywords: ['spock', 'vulcan', 'saludo', 'paz', 'prosperidad'] },
   { char: '👋', name: 'Waving Hand', nameEs: 'Mano saludando', category: 'gestures', keywords: ['wave', 'hello', 'bye', 'hola', 'adios', 'saludo'] },
   { char: '🤙', name: 'Call Me Hand', nameEs: 'Gesto de llamar / Shaka', category: 'gestures', keywords: ['call', 'llamame', 'shaka', 'surfer', 'tranquilo'] },
-  { char: '🤌', name: 'Pinched Fingers', nameEs: 'Dedos juntos hacia arriba (Italiano)', category: 'gestures', keywords: ['italian', 'italiano', 'que', 'como', 'pasta'] },
+  { char: '🙆', name: 'Person Gesturing OK', nameEs: 'Persona haciendo señal de OK', category: 'gestures', keywords: ['ok', 'bien', 'perfecto'] },
   { char: '🤏', name: 'Pinching Hand', nameEs: 'Mano pellizcando / Un poquito', category: 'gestures', keywords: ['pinch', 'poquito', 'pequeno', 'tiny'] },
   { char: '✌️', name: 'Victory Hand', nameEs: 'Mano de victoria o paz', category: 'gestures', keywords: ['peace', 'victory', 'paz', 'victoria', 'dos'] },
   { char: '🤞', name: 'Crossed Fingers', nameEs: 'Dedos cruzados (Suerte)', category: 'gestures', keywords: ['luck', 'suerte', 'esperanza', 'ojala'] },
-  { char: '🫰', name: 'Hand with Index and Thumb Crossed', nameEs: 'Corazón coreano con dedos', category: 'gestures', keywords: ['heart', 'kpop', 'amor', 'dinero'] },
+  { char: '🙅', name: 'Person Gesturing NO', nameEs: 'Persona haciendo señal de NO', category: 'gestures', keywords: ['no', 'alto', 'prohibido'] },
   { char: '🤟', name: 'Love-You Gesture', nameEs: 'Gesto de te quiero', category: 'gestures', keywords: ['love', 'tequiero', 'amor'] },
   { char: '🤘', name: 'Sign of the Horns', nameEs: 'Signo de cuernos (Rock)', category: 'gestures', keywords: ['rock', 'metal', 'musica', 'fiesta'] },
   { char: '👌', name: 'OK Hand', nameEs: 'Mano con señal de OK', category: 'gestures', keywords: ['ok', 'perfecto', 'bien', 'vale', 'listo'] },
-  { char: '🫵', name: 'Index Pointing at the Viewer', nameEs: 'Índice señalando hacia ti', category: 'gestures', keywords: ['you', 'tu', 'usted'] },
+  { char: '🙇', name: 'Person Bowing', nameEs: 'Persona haciendo reverencia', category: 'gestures', keywords: ['bow', 'gracias', 'disculpa', 'respeto'] },
   { char: '👀', name: 'Eyes', nameEs: 'Ojos curiosos', category: 'gestures', keywords: ['look', 'mirar', 'ojo', 'atencion', 'observar', 'curioso'] },
   { char: '👁️', name: 'Eye', nameEs: 'Ojo', category: 'gestures', keywords: ['eye', 'ojo', 'vision', 'mirar'] },
   { char: '🧠', name: 'Brain', nameEs: 'Cerebro', category: 'gestures', keywords: ['brain', 'cerebro', 'inteligencia', 'mente', 'pensar'] },
@@ -254,6 +254,7 @@ export function saveRecentEmoji(char: string): string[] {
     const current = getRecentEmojis().filter((c) => c !== char);
     const updated = [char, ...current].slice(0, MAX_RECENTS);
     localStorage.setItem(RECENT_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent('cyberpaste-recent-emojis-changed', { detail: updated }));
     return updated;
   } catch {
     return [char];

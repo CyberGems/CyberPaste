@@ -15,6 +15,7 @@ import {
   EMOJI_CATEGORIES,
   EMOJI_LIST,
   getRecentEmojis,
+  saveRecentEmoji,
   searchEmojis,
   type EmojiItem,
 } from '../data/emojis';
@@ -66,9 +67,23 @@ export const EmojiPickerView: React.FC<EmojiPickerViewProps> = ({
   const [hoveredEmoji, setHoveredEmoji] = useState<EmojiItem | null>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
 
-  // Load recents on mount
+  // Load recents on mount and listen to changes
   useEffect(() => {
     setRecentEmojis(getRecentEmojis());
+
+    const handleRecentsChange = (e: Event) => {
+      const customEvent = e as CustomEvent<string[]>;
+      if (customEvent.detail) {
+        setRecentEmojis(customEvent.detail);
+      } else {
+        setRecentEmojis(getRecentEmojis());
+      }
+    };
+
+    window.addEventListener('cyberpaste-recent-emojis-changed', handleRecentsChange);
+    return () => {
+      window.removeEventListener('cyberpaste-recent-emojis-changed', handleRecentsChange);
+    };
   }, []);
 
   // Compute displayed emojis
@@ -123,7 +138,7 @@ export const EmojiPickerView: React.FC<EmojiPickerViewProps> = ({
         e.preventDefault();
         const item = displayedEmojis[selectedIndex];
         if (item) {
-          onPasteEmoji(item.char);
+          handleSelectEmoji(item.char);
         }
         return;
       } else {
@@ -140,6 +155,15 @@ export const EmojiPickerView: React.FC<EmojiPickerViewProps> = ({
       }
     },
     [displayedEmojis, selectedIndex, mode, onPasteEmoji]
+  );
+
+  const handleSelectEmoji = useCallback(
+    (char: string) => {
+      const updated = saveRecentEmoji(char);
+      setRecentEmojis(updated);
+      onPasteEmoji(char);
+    },
+    [onPasteEmoji]
   );
 
   return (
@@ -200,7 +224,8 @@ export const EmojiPickerView: React.FC<EmojiPickerViewProps> = ({
                 data-emoji-index={index}
                 type="button"
                 title={title}
-                onClick={() => onPasteEmoji(item.char)}
+                style={{ fontFamily: '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif' }}
+                onClick={() => handleSelectEmoji(item.char)}
                 onMouseEnter={() => {
                   setSelectedIndex(index);
                   setHoveredEmoji(item);
