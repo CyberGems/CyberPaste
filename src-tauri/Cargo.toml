@@ -4,7 +4,7 @@ version = "1.26.0"
 default-run = "CyberPaste"
 description = "A beautiful clipboard history manager"
 authors = ["CyberGems"]
-license = "GPL-3.0"
+license = "GPL-3.0-only"
 edition = "2021"
 
 [build-dependencies]
