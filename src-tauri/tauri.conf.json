@@ -64,9 +64,16 @@
         "installMode": "both",
         "displayLanguageSelector": false,
         "sidebarImage": "icons/installerSidebar.bmp",
-        "headerImage": "icons/installerHeader.bmp",
         "installerIcon": "icons/icon.ico",
-        "uninstallerIcon": "icons/icon.ico"
+        "uninstallerIcon": "icons/icon.ico",
+        "languages": [
+          "English",
+          "Spanish",
+          "German",
+          "French",
+          "Japanese",
+          "SimpChinese"
+        ]
       },
       "webviewInstallMode": {
         "type": "downloadBootstrapper",
