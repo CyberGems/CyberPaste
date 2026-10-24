@@ -539,7 +539,11 @@ export function AboutWindow() {
                 </div>
                 <div className="mx-auto flex w-full flex-nowrap items-center justify-center gap-2">
                   {recommendedSuiteApps.map((app) => (
-                    <Tooltip key={app.slug} label={app.tagline[suiteLang]} placement="top">
+                    <Tooltip
+                      key={app.slug}
+                      label={`${app.name}: ${app.tagline[suiteLang]}`}
+                      placement="top"
+                    >
                       <button
                         type="button"
                         onClick={() => openUrl(app.site).catch(console.error)}
