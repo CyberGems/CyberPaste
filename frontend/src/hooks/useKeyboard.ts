@@ -76,6 +76,7 @@ interface KeyboardOptions {
 export function useKeyboard(options: KeyboardOptions) {
   const optionsRef = useRef(options);
   optionsRef.current = options;
+  const lastNavTimeRef = useRef(0);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -359,6 +360,29 @@ export function useKeyboard(options: KeyboardOptions) {
           e.target.blur();
         }
       };
+
+      const isNavKey =
+        e.key === 'ArrowUp' ||
+        e.key === 'ArrowDown' ||
+        e.key === 'ArrowLeft' ||
+        e.key === 'ArrowRight' ||
+        e.key === 'PageUp' ||
+        e.key === 'PageDown';
+
+      if (isNavKey) {
+        if (e.repeat) {
+          const now = performance.now();
+          // Rate-limit keyboard repeat to 50ms (~20 steps/sec) so every frame renders & paints
+          if (now - lastNavTimeRef.current < 50) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          }
+          lastNavTimeRef.current = now;
+        } else {
+          lastNavTimeRef.current = performance.now();
+        }
+      }
 
       if (e.key === 'ArrowUp' && options.onNavigatePrev) {
         if (isTyping) {

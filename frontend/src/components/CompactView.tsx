@@ -1,4 +1,12 @@
-import React, { useRef, useEffect, useMemo, useState, memo, useCallback } from 'react';
+import React, {
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+  memo,
+  useCallback,
+} from 'react';
 import {
   ClipboardItem as AppClip,
   FolderItem,
@@ -1233,7 +1241,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
 
   // Follow keyboard/selection moves only. Do not run when the clip array is
   // patched in place (pin, metadata, …) or the list jumps back to the selected row.
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!selectedClipId) return;
     const idx = filteredClips.findIndex((c) => c.id === selectedClipId);
     if (idx >= 0) {

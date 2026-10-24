@@ -861,7 +861,7 @@ function App() {
       folderId: string | null,
       append: boolean = false,
       searchQuery: string = '',
-      limit: number = 50,
+      limit: number = 9999,
       typeFilter: FullTypeFilter = 'all',
       appFilterOverride?: string | null
     ) => {
@@ -1034,7 +1034,7 @@ function App() {
   }, [loadSourceApps]);
 
   const refreshCurrentFolder = useCallback(() => {
-    const clipLimit = settingsRef.current?.view_mode === 'compact' ? 9999 : 50;
+    const clipLimit = 9999;
     loadClips(selectedFolderRef.current, false, searchQuery, clipLimit, fullTypeFilter, appFilter);
     void loadSourceApps();
   }, [loadClips, searchQuery, fullTypeFilter, appFilter, loadSourceApps]);
@@ -1074,8 +1074,8 @@ function App() {
       return;
     }
     loadFolders();
-    // Load all clips for compact view, paginate for full view
-    const clipLimit = settings?.view_mode === 'compact' ? 9999 : 50;
+    // Load all clips for both compact and full view (virtualized by react-window)
+    const clipLimit = 9999;
     const delay = searchQuery.trim() ? 120 : 0;
     const loadTimer = window.setTimeout(() => {
       loadClips(selectedFolder, false, searchQuery, clipLimit, fullTypeFilter, appFilter);
@@ -2621,7 +2621,7 @@ function App() {
 
   const loadMore = useCallback(() => {
     if (hasMore && !isLoading) {
-      loadClips(selectedFolder, true, searchQuery, 50, fullTypeFilter);
+      loadClips(selectedFolder, true, searchQuery, 9999, fullTypeFilter);
     }
   }, [hasMore, isLoading, selectedFolder, loadClips, searchQuery, fullTypeFilter]);
   loadMoreRef.current = loadMore;

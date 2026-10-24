@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState, useCallback, useMemo } from 'react';
 // @ts-ignore
 import { Grid, GridImperativeAPI, CellComponentProps } from 'react-window';
 import { listen } from '@tauri-apps/api/event';
@@ -656,7 +656,7 @@ export const ClipList: React.FC<ClipListProps> = ({
 
   const selectedClipIndex = clips.findIndex((c) => c.id === selectedClipId);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (gridRef.current && selectedClipIndex >= 0) {
       if (isVertical) {
         const rowIndex = Math.floor(selectedClipIndex / columnCount);
