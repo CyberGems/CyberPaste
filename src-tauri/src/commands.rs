@@ -5493,6 +5493,9 @@ fn show_tray_menu_fast(app: &AppHandle, anchor_x: i32, anchor_y: i32) -> Result<
         (true, win)
     };
 
+    crate::disable_window_transitions(&win);
+    crate::suppress_window_border(&win);
+
     let (x, y, w_px, h_px) = tray_menu_geometry(&win, anchor_x, anchor_y, est_w, est_h);
     let _ = win.set_size(tauri::Size::Physical(tauri::PhysicalSize {
         width: w_px,

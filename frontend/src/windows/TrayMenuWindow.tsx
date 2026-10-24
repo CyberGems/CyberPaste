@@ -284,7 +284,7 @@ export function TrayMenuWindow() {
       onContextMenu={(e) => e.preventDefault()}
     >
       <div
-        className="animate-in fade-in zoom-in-95 relative select-none overflow-hidden rounded-2xl border border-border bg-card/95 backdrop-blur-xl duration-150"
+        className="relative select-none overflow-hidden rounded-2xl border border-border bg-card/95 backdrop-blur-xl"
         style={{
           width: MENU_WIDTH,
           boxShadow:
@@ -293,7 +293,7 @@ export function TrayMenuWindow() {
         role="menu"
       >
         {view === 'main' ? (
-          <div key="main" className="animate-in fade-in slide-in-from-left-2 duration-150">
+          <div key="main">
             <button
               type="button"
               onPointerDown={(e) => {
@@ -393,7 +393,7 @@ export function TrayMenuWindow() {
         ) : null}
 
         {view === 'help' ? (
-          <div key="help" className="animate-in fade-in slide-in-from-right-4 duration-200">
+          <div key="help">
             <SubHeader
               title={t('tray.help', { defaultValue: 'Help' })}
               backLabel={t('tray.back', { defaultValue: 'Back' })}
@@ -456,7 +456,7 @@ export function TrayMenuWindow() {
         ) : null}
 
         {view === 'suite' ? (
-          <div key="suite" className="animate-in fade-in slide-in-from-right-4 duration-200">
+          <div key="suite">
             <SubHeader
               title={t('tray.suiteTitle', { defaultValue: 'CyberGems' })}
               icon={
