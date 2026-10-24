@@ -376,14 +376,9 @@ export function useKeyboard(options: KeyboardOptions) {
         }
         e.preventDefault();
         e.stopPropagation();
-        const wasInSearch = isSearchInput;
         leaveSearchInput();
         lockListHover();
-        if (wasInSearch && options.onNavigateFirst) {
-          options.onNavigateFirst();
-        } else {
-          options.onNavigateNext();
-        }
+        options.onNavigateNext();
       }
 
       if ((e.key === 'Home' || e.key === 'Start') && options.onNavigateFirst) {
