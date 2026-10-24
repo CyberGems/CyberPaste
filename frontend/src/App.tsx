@@ -2186,7 +2186,7 @@ function App() {
       return;
     }
 
-    if (currentIndex >= effectiveNavClips.length - 15) {
+    if (hasMore && currentIndex >= effectiveNavClips.length - 15) {
       loadMoreRef.current();
     }
 
@@ -2207,7 +2207,7 @@ function App() {
       setSelectedClipId(effectiveNavClips[currentIndex + 1].id);
     }
     // At the last clip in compact mode: stop (no wrap-around)
-  }, [effectiveNavClips, selectedClipId, settings?.view_mode, gridColumns]);
+  }, [effectiveNavClips, selectedClipId, settings?.view_mode, gridColumns, hasMore]);
 
   const handleNavigateFirst = useCallback(() => {
     if (effectiveNavClips.length === 0) return;
@@ -2251,11 +2251,11 @@ function App() {
       return;
     }
     const targetIndex = Math.min(effectiveNavClips.length - 1, currentIndex + pageSize);
-    if (targetIndex >= effectiveNavClips.length - 15) {
+    if (hasMore && targetIndex >= effectiveNavClips.length - 15) {
       loadMoreRef.current();
     }
     setSelectedClipId(effectiveNavClips[targetIndex].id);
-  }, [effectiveNavClips, selectedClipId, settings?.view_mode, gridColumns]);
+  }, [effectiveNavClips, selectedClipId, settings?.view_mode, gridColumns, hasMore]);
 
   // Folder navigation handlers (Left/Right arrows in compact mode)
   const handleFolderPrev = useCallback(() => {

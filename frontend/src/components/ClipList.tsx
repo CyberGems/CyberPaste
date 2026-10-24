@@ -161,17 +161,17 @@ function ClipGridCell({
         clipIndex={clipNumbering === 'positional' ? index + 1 : clips.length - index}
         isSelected={selectedClipId === clip.id}
         isBulkSelected={bulkSelectedIds?.has(clip.id)}
-        onToggleBulkSelect={onToggleBulkSelect ? () => onToggleBulkSelect(clip.id) : undefined}
-        onCardClick={(e) => onClipClick?.(clip.id, e)}
-        onPaste={(forcePaste) => onPaste(clip.id, forcePaste)}
-        onCopy={onCopy ? () => onCopy(clip.id) : undefined}
+        onToggleBulkSelect={onToggleBulkSelect}
+        onCardClick={onClipClick}
+        onPaste={onPaste}
+        onCopy={onCopy}
         onDragStart={onDragStart}
-        onContextMenu={(e: React.MouseEvent) => onCardContextMenu?.(e, clip.id)}
+        onContextMenu={onCardContextMenu}
         reorderDropIndicator={reorderTargetClipId === clip.id ? reorderTargetPosition : null}
         reorderEnabled={reorderEnabled}
         isDragging={draggingClipId === clip.id}
-        onPreview={onRequestPreview ? () => onRequestPreview(clip.id) : undefined}
-        onRunOcr={onRequestOcr ? () => onRequestOcr(clip.id) : undefined}
+        onPreview={onRequestPreview}
+        onRunOcr={onRequestOcr}
         showSourceIcon={showSourceIcon}
         showTime={showTime}
         showTypeIcon={showTypeIcon}
@@ -193,6 +193,7 @@ function ClipGridCell({
 export const ClipList: React.FC<ClipListProps> = ({
   clips,
   isLoading,
+  hasMore,
   onLoadMore,
   onPaste,
   onCopy,
@@ -660,17 +661,15 @@ export const ClipList: React.FC<ClipListProps> = ({
     if (gridRef.current && selectedClipIndex >= 0) {
       if (isVertical) {
         const rowIndex = Math.floor(selectedClipIndex / columnCount);
-        gridRef.current.scrollToCell({
-          rowIndex,
-          columnIndex: selectedClipIndex % columnCount,
-          rowAlign: 'auto',
+        gridRef.current.scrollToRow({
+          index: rowIndex,
+          align: 'auto',
           behavior: 'auto',
         });
       } else {
-        gridRef.current.scrollToCell({
-          columnIndex: selectedClipIndex,
-          rowIndex: 0,
-          columnAlign: 'auto',
+        gridRef.current.scrollToColumn({
+          index: selectedClipIndex,
+          align: 'auto',
           behavior: 'auto',
         });
       }
@@ -691,6 +690,7 @@ export const ClipList: React.FC<ClipListProps> = ({
   }, [resetToken, isVertical, cardFormat]);
 
   const handleCellsRendered = (visibleCells: any) => {
+    if (!hasMore) return;
     const lastIndex = isVertical
       ? visibleCells.rowStopIndex * columnCount
       : visibleCells.columnStopIndex;

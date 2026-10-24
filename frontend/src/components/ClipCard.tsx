@@ -55,20 +55,20 @@ const getRelativeTime = (dateStr: string, lang: string) => {
 interface ClipCardProps {
   clip: ClipboardItem;
   isSelected: boolean;
-  onPaste: (forcePaste?: boolean) => void;
-  onCopy?: () => void;
+  onPaste: (clipId: string, forcePaste?: boolean) => void;
+  onCopy?: (clipId: string) => void;
   onCancelPeek?: () => void;
   onDragStart: (clipId: string, startX: number, startY: number) => void;
-  onContextMenu?: (e: React.MouseEvent) => void;
+  onContextMenu?: (e: React.MouseEvent, clipId: string) => void;
   reorderDropIndicator?: 'before' | 'after' | null;
   reorderEnabled?: boolean;
   clipIndex?: number;
   isDragging?: boolean;
-  onPreview?: () => void;
+  onPreview?: (clipId: string) => void;
   isBulkSelected?: boolean;
-  onToggleBulkSelect?: () => void;
-  onCardClick?: (e: React.MouseEvent) => void;
-  onRunOcr?: () => void;
+  onToggleBulkSelect?: (clipId: string) => void;
+  onCardClick?: (clipId: string, e: React.MouseEvent) => void;
+  onRunOcr?: (clipId: string) => void;
   showSourceIcon?: boolean;
   showTime?: boolean;
   showTypeIcon?: boolean;
@@ -309,7 +309,7 @@ export const ClipCard = memo(
       dismissAllTooltips();
       setMenuHighlight(true);
       setHovered(true);
-      onContextMenu?.(e);
+      onContextMenu?.(e, clip.id);
     };
 
     return (
@@ -372,16 +372,16 @@ export const ClipCard = memo(
             }}
             onClick={(e) => {
               if (onCardClick && (e.ctrlKey || e.metaKey || e.shiftKey)) {
-                onCardClick(e);
+                onCardClick(clip.id, e);
                 return;
               }
               if (!singleClickPaste && onCardClick) {
-                onCardClick(e);
+                onCardClick(clip.id, e);
               } else {
-                onPaste();
+                onPaste(clip.id);
               }
             }}
-            onDoubleClick={!singleClickPaste ? () => onPaste() : undefined}
+            onDoubleClick={!singleClickPaste ? () => onPaste(clip.id) : undefined}
             onContextMenu={handleContextMenu}
             style={
               {
@@ -419,7 +419,7 @@ export const ClipCard = memo(
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    onToggleBulkSelect();
+                    onToggleBulkSelect(clip.id);
                   }}
                   className="absolute left-0 top-0 z-20 flex h-8 w-8 items-center justify-center transition-all"
                   aria-label={isBulkSelected ? 'Deselect clip' : 'Select clip'}
@@ -590,7 +590,7 @@ export const ClipCard = memo(
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      onCopy();
+                      onCopy?.(clip.id);
                     }}
                     onDoubleClick={(e) => e.stopPropagation()}
                     className="pointer-events-auto flex items-center gap-1.5 rounded-lg border border-border/80 bg-background/90 px-3 py-1.5 text-xs font-medium text-foreground shadow-xl backdrop-blur-md transition-all hover:border-primary/60 hover:bg-background hover:text-primary active:scale-95"
@@ -620,7 +620,7 @@ export const ClipCard = memo(
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      onPaste(true);
+                      onPaste(clip.id, true);
                     }}
                     onDoubleClick={(e) => e.stopPropagation()}
                     className="pointer-events-auto flex items-center gap-1.5 rounded-lg border border-border/80 bg-background/90 px-3 py-1.5 text-xs font-medium text-foreground shadow-xl backdrop-blur-md transition-all hover:border-primary/60 hover:bg-background hover:text-primary active:scale-95"
@@ -671,7 +671,7 @@ export const ClipCard = memo(
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            onRunOcr();
+                            onRunOcr(clip.id);
                           }}
                           className="flex h-5 w-5 items-center justify-center rounded-md border border-primary/25 bg-primary/10 text-primary transition-colors hover:bg-primary/25"
                           aria-label="Open OCR text"
