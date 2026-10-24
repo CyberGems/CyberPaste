@@ -31,7 +31,7 @@ import {
 import { ClipPreviewModal } from './components/ClipPreviewModal';
 import { BulkActionBar } from './components/BulkActionBar';
 import { ClipDetailPanel } from './components/ClipDetailPanel';
-import { CompactView } from './components/CompactView';
+import { CompactView, matchesTypeFilter } from './components/CompactView';
 import { ContextMenuHost, ContextMenuHostHandle } from './components/ContextMenuHost';
 import type { ContextMenuOption } from './components/ContextMenu';
 import { FolderModal } from './components/FolderModal';
@@ -2107,8 +2107,25 @@ function App() {
     return () => document.removeEventListener('wheel', handleCompactZoom);
   }, [t]);
 
+  const effectiveNavClips = useMemo(() => {
+    if (settings?.view_mode !== 'compact') return clips;
+    let res =
+      compactTypeFilter === 'all'
+        ? clips
+        : clips.filter((c) => matchesTypeFilter(c.clip_type, compactTypeFilter));
+    if (appFilter) {
+      if (appFilter === '__unknown__' || appFilter.toLowerCase() === 'unknown') {
+        res = res.filter((c) => !c.source_app || !c.source_app.trim());
+      } else {
+        const q = appFilter.toLowerCase();
+        res = res.filter((c) => c.source_app?.toLowerCase() === q);
+      }
+    }
+    return res;
+  }, [clips, settings?.view_mode, compactTypeFilter, appFilter]);
+
   const handleNavigatePrev = useCallback(() => {
-    if (clips.length === 0) return;
+    if (effectiveNavClips.length === 0) return;
 
     if (!selectedClipId) {
       const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
@@ -2117,11 +2134,11 @@ function App() {
         searchInput.select();
         return;
       }
-      setSelectedClipId(clips[0].id);
+      setSelectedClipId(effectiveNavClips[0].id);
       return;
     }
 
-    const currentIndex = clips.findIndex((c) => c.id === selectedClipId);
+    const currentIndex = effectiveNavClips.findIndex((c) => c.id === selectedClipId);
     if (currentIndex < 0) {
       const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
       if (searchInput && (showSearch || searchInput.offsetParent !== null)) {
@@ -2129,14 +2146,14 @@ function App() {
         searchInput.select();
         return;
       }
-      setSelectedClipId(clips[0].id);
+      setSelectedClipId(effectiveNavClips[0].id);
       return;
     }
 
     if (settings?.view_mode === 'full') {
       const cols = gridColumns || 1;
       if (currentIndex >= cols) {
-        setSelectedClipId(clips[currentIndex - cols].id);
+        setSelectedClipId(effectiveNavClips[currentIndex - cols].id);
       } else {
         const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
         if (searchInput && (showSearch || searchInput.offsetParent !== null)) {
@@ -2145,94 +2162,91 @@ function App() {
           searchInput.select();
           return;
         }
-        setSelectedClipId(clips[clips.length - 1].id);
+        // At the top row: stop (no wrap-around)
       }
     } else if (currentIndex > 0) {
-      setSelectedClipId(clips[currentIndex - 1].id);
-    } else {
-      const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
-      if (searchInput && searchInput.offsetParent !== null) {
-        setSelectedClipId(null);
-        searchInput.focus();
-        searchInput.select();
-        return;
-      }
-      setSelectedClipId(clips[clips.length - 1].id);
+      setSelectedClipId(effectiveNavClips[currentIndex - 1].id);
     }
-  }, [clips, selectedClipId, settings?.view_mode, gridColumns, showSearch]);
+    // At clip 0 in compact mode: stop (no wrap-around)
+  }, [effectiveNavClips, selectedClipId, settings?.view_mode, gridColumns, showSearch]);
 
   const handleNavigateNext = useCallback(() => {
-    if (clips.length === 0) return;
+    if (effectiveNavClips.length === 0) return;
 
     if (!selectedClipId) {
-      setSelectedClipId(clips[0].id);
+      setSelectedClipId(effectiveNavClips[0].id);
       return;
     }
 
-    const currentIndex = clips.findIndex((c) => c.id === selectedClipId);
+    const currentIndex = effectiveNavClips.findIndex((c) => c.id === selectedClipId);
     if (currentIndex < 0) {
-      setSelectedClipId(clips[0].id);
+      setSelectedClipId(effectiveNavClips[0].id);
       return;
     }
 
     if (settings?.view_mode === 'full') {
       const cols = gridColumns || 1;
-      if (currentIndex + cols < clips.length) {
-        setSelectedClipId(clips[currentIndex + cols].id);
+      if (currentIndex + cols < effectiveNavClips.length) {
+        setSelectedClipId(effectiveNavClips[currentIndex + cols].id);
       } else {
-        setSelectedClipId(clips[0].id);
+        // If not in the last row yet, step to the last available clip in the last row
+        const lastRowStartIndex = Math.floor((effectiveNavClips.length - 1) / cols) * cols;
+        const currentRowStartIndex = Math.floor(currentIndex / cols) * cols;
+        if (currentRowStartIndex < lastRowStartIndex) {
+          setSelectedClipId(effectiveNavClips[effectiveNavClips.length - 1].id);
+        }
+        // Already on the last row: stop (no wrap-around)
       }
-    } else if (currentIndex < clips.length - 1) {
-      setSelectedClipId(clips[currentIndex + 1].id);
-    } else {
-      setSelectedClipId(clips[0].id);
+    } else if (currentIndex < effectiveNavClips.length - 1) {
+      setSelectedClipId(effectiveNavClips[currentIndex + 1].id);
     }
-  }, [clips, selectedClipId, settings?.view_mode, gridColumns]);
+    // At the last clip in compact mode: stop (no wrap-around)
+  }, [effectiveNavClips, selectedClipId, settings?.view_mode, gridColumns]);
 
   const handleNavigateFirst = useCallback(() => {
-    if (clips.length === 0) return;
-    setSelectedClipId(clips[0].id);
-  }, [clips]);
+    if (effectiveNavClips.length === 0) return;
+    setSelectedClipId(effectiveNavClips[0].id);
+  }, [effectiveNavClips]);
 
   const handleNavigateLast = useCallback(() => {
-    if (clips.length === 0) return;
-    setSelectedClipId(clips[clips.length - 1].id);
-  }, [clips]);
+    if (effectiveNavClips.length === 0) return;
+    setSelectedClipId(effectiveNavClips[effectiveNavClips.length - 1].id);
+  }, [effectiveNavClips]);
 
   const handleNavigatePageUp = useCallback(() => {
-    if (clips.length === 0) return;
+    if (effectiveNavClips.length === 0) return;
     if (!selectedClipId) {
-      setSelectedClipId(clips[0].id);
+      setSelectedClipId(effectiveNavClips[0].id);
       return;
     }
-    const currentIndex = clips.findIndex((c) => c.id === selectedClipId);
+    const currentIndex = effectiveNavClips.findIndex((c) => c.id === selectedClipId);
     if (currentIndex <= 0) {
-      setSelectedClipId(clips[0].id);
+      setSelectedClipId(effectiveNavClips[0].id);
       return;
     }
     const cols = settings?.view_mode === 'full' ? gridColumns || 1 : 1;
     const pageSize = settings?.view_mode === 'full' ? Math.max(cols * 2, 6) : 8;
     const targetIndex = Math.max(0, currentIndex - pageSize);
-    setSelectedClipId(clips[targetIndex].id);
-  }, [clips, selectedClipId, settings?.view_mode, gridColumns]);
+    setSelectedClipId(effectiveNavClips[targetIndex].id);
+  }, [effectiveNavClips, selectedClipId, settings?.view_mode, gridColumns]);
 
   const handleNavigatePageDown = useCallback(() => {
-    if (clips.length === 0) return;
+    if (effectiveNavClips.length === 0) return;
     const cols = settings?.view_mode === 'full' ? gridColumns || 1 : 1;
     const pageSize = settings?.view_mode === 'full' ? Math.max(cols * 2, 6) : 8;
     if (!selectedClipId) {
-      const targetIndex = Math.min(clips.length - 1, pageSize);
-      setSelectedClipId(clips[targetIndex].id);
+      const targetIndex = Math.min(effectiveNavClips.length - 1, pageSize);
+      setSelectedClipId(effectiveNavClips[targetIndex].id);
       return;
     }
-    const currentIndex = clips.findIndex((c) => c.id === selectedClipId);
-    if (currentIndex >= clips.length - 1) {
-      setSelectedClipId(clips[clips.length - 1].id);
+    const currentIndex = effectiveNavClips.findIndex((c) => c.id === selectedClipId);
+    if (currentIndex >= effectiveNavClips.length - 1) {
+      setSelectedClipId(effectiveNavClips[effectiveNavClips.length - 1].id);
       return;
     }
-    const targetIndex = Math.min(clips.length - 1, currentIndex + pageSize);
-    setSelectedClipId(clips[targetIndex].id);
-  }, [clips, selectedClipId, settings?.view_mode, gridColumns]);
+    const targetIndex = Math.min(effectiveNavClips.length - 1, currentIndex + pageSize);
+    setSelectedClipId(effectiveNavClips[targetIndex].id);
+  }, [effectiveNavClips, selectedClipId, settings?.view_mode, gridColumns]);
 
   // Folder navigation handlers (Left/Right arrows in compact mode)
   const handleFolderPrev = useCallback(() => {
@@ -2487,34 +2501,30 @@ function App() {
     [settings?.clip_numbering]
   );
 
-  // Left/Right move between cards (identical wrap-around semantics as Up/Down)
+  // Left/Right move between cards (stops at boundaries, no wrap-around)
   const handleCardPrev = useCallback(() => {
-    if (clips.length === 0) return;
+    if (effectiveNavClips.length === 0) return;
     if (!selectedClipId) {
-      setSelectedClipId(clips[0].id);
+      setSelectedClipId(effectiveNavClips[0].id);
       return;
     }
-    const currentIndex = clips.findIndex((c) => c.id === selectedClipId);
+    const currentIndex = effectiveNavClips.findIndex((c) => c.id === selectedClipId);
     if (currentIndex > 0) {
-      setSelectedClipId(clips[currentIndex - 1].id);
-    } else {
-      setSelectedClipId(clips[clips.length - 1].id);
+      setSelectedClipId(effectiveNavClips[currentIndex - 1].id);
     }
-  }, [clips, selectedClipId]);
+  }, [effectiveNavClips, selectedClipId]);
 
   const handleCardNext = useCallback(() => {
-    if (clips.length === 0) return;
+    if (effectiveNavClips.length === 0) return;
     if (!selectedClipId) {
-      setSelectedClipId(clips[0].id);
+      setSelectedClipId(effectiveNavClips[0].id);
       return;
     }
-    const currentIndex = clips.findIndex((c) => c.id === selectedClipId);
-    if (currentIndex < clips.length - 1) {
-      setSelectedClipId(clips[currentIndex + 1].id);
-    } else {
-      setSelectedClipId(clips[0].id);
+    const currentIndex = effectiveNavClips.findIndex((c) => c.id === selectedClipId);
+    if (currentIndex < effectiveNavClips.length - 1) {
+      setSelectedClipId(effectiveNavClips[currentIndex + 1].id);
     }
-  }, [clips, selectedClipId]);
+  }, [effectiveNavClips, selectedClipId]);
 
   // Ctrl+Enter — copy the selected clip as plain text, without pasting
   const handleCopyPlainTextSelected = useCallback(async () => {
@@ -3366,7 +3376,7 @@ function App() {
       setShowSearch(false);
     },
     searchActive: Boolean(showSearch || searchQuery.trim()),
-    hasItems: isEmojiMode ? true : clips.length > 0,
+    hasItems: isEmojiMode ? true : effectiveNavClips.length > 0,
     onToggleMode: toggleViewMode,
     toggleModeHotkey: settings?.view_mode_hotkey,
     onTogglePeek: handleTogglePeek,

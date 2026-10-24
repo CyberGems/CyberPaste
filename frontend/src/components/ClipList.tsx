@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 // @ts-ignore
 import { Grid, GridImperativeAPI, CellComponentProps } from 'react-window';
 import { listen } from '@tauri-apps/api/event';
@@ -61,6 +61,134 @@ const BASE_CARD_WIDTH_PANORAMIC = 250;
 const BASE_ROW_HEIGHT = 230;
 const MIN_COLUMNS = 2;
 const MAX_COLUMNS = 12;
+const SIDE_PADDING = 16;
+
+type ClipGridCellProps = {
+  isVertical: boolean;
+  columnCount: number;
+  clips: ClipboardItem[];
+  cardFormat?: 'square' | 'panoramic';
+  clipNumbering?: 'positional' | 'countdown';
+  selectedClipId: string | null;
+  bulkSelectedIds?: Set<string>;
+  onToggleBulkSelect?: (clipId: string) => void;
+  onClipClick?: (id: string, e: React.MouseEvent) => void;
+  onPaste: (id: string, forcePaste?: boolean) => void;
+  onCopy?: (id: string) => void;
+  onDragStart: (clipId: string, startX: number, startY: number) => void;
+  onCardContextMenu?: (e: React.MouseEvent, id: string) => void;
+  reorderTargetClipId?: string | null;
+  reorderTargetPosition?: 'before' | 'after' | null;
+  reorderEnabled?: boolean;
+  draggingClipId?: string | null;
+  onRequestPreview?: (id: string) => void;
+  onRequestOcr?: (id: string) => void;
+  showSourceIcon?: boolean;
+  showTime?: boolean;
+  showTypeIcon?: boolean;
+  showNumber?: boolean;
+  actionTooltip?: string;
+  singleClickPaste?: boolean;
+  onCardMouseEnter?: (e: React.MouseEvent, clip: ClipboardItem) => void;
+  onCardMouseMove?: (e: React.MouseEvent, clip: ClipboardItem) => void;
+  onCardMouseLeave?: () => void;
+  onCancelPeek?: () => void;
+  onFilterByApp?: (app: string) => void;
+  onFilterByType?: (type: ClipFilterCategory) => void;
+  typeFilter?: string;
+};
+
+function ClipGridCell({
+  columnIndex,
+  rowIndex,
+  style,
+  ariaAttributes,
+  isVertical,
+  columnCount,
+  clips,
+  cardFormat,
+  clipNumbering,
+  selectedClipId,
+  bulkSelectedIds,
+  onToggleBulkSelect,
+  onClipClick,
+  onPaste,
+  onCopy,
+  onDragStart,
+  onCardContextMenu,
+  reorderTargetClipId,
+  reorderTargetPosition,
+  reorderEnabled,
+  draggingClipId,
+  onRequestPreview,
+  onRequestOcr,
+  showSourceIcon,
+  showTime,
+  showTypeIcon,
+  showNumber,
+  actionTooltip,
+  singleClickPaste,
+  onCardMouseEnter,
+  onCardMouseMove,
+  onCardMouseLeave,
+  onCancelPeek,
+  onFilterByApp,
+  onFilterByType,
+  typeFilter,
+}: CellComponentProps<ClipGridCellProps>) {
+  const index = isVertical ? rowIndex * columnCount + columnIndex : columnIndex;
+  const clip = clips[index];
+  if (!clip) return null;
+
+  const cellWidth = style.width;
+  const calculatedStyle = {
+    ...style,
+    left: isVertical ? (style.left as number) + SIDE_PADDING / 2 : style.left,
+    width: cellWidth,
+  };
+
+  return (
+    <div
+      data-el="clip-cell"
+      data-clip-cell-id={clip.id}
+      style={calculatedStyle}
+      {...ariaAttributes}
+      className={clsx('flex items-center justify-center px-2', isVertical ? 'py-3' : 'h-full')}
+    >
+      <ClipCard
+        clip={clip}
+        cardFormat={cardFormat}
+        clipIndex={clipNumbering === 'positional' ? index + 1 : clips.length - index}
+        isSelected={selectedClipId === clip.id}
+        isBulkSelected={bulkSelectedIds?.has(clip.id)}
+        onToggleBulkSelect={onToggleBulkSelect ? () => onToggleBulkSelect(clip.id) : undefined}
+        onCardClick={(e) => onClipClick?.(clip.id, e)}
+        onPaste={(forcePaste) => onPaste(clip.id, forcePaste)}
+        onCopy={onCopy ? () => onCopy(clip.id) : undefined}
+        onDragStart={onDragStart}
+        onContextMenu={(e: React.MouseEvent) => onCardContextMenu?.(e, clip.id)}
+        reorderDropIndicator={reorderTargetClipId === clip.id ? reorderTargetPosition : null}
+        reorderEnabled={reorderEnabled}
+        isDragging={draggingClipId === clip.id}
+        onPreview={onRequestPreview ? () => onRequestPreview(clip.id) : undefined}
+        onRunOcr={onRequestOcr ? () => onRequestOcr(clip.id) : undefined}
+        showSourceIcon={showSourceIcon}
+        showTime={showTime}
+        showTypeIcon={showTypeIcon}
+        showNumber={showNumber}
+        actionTooltip={actionTooltip}
+        singleClickPaste={singleClickPaste}
+        onCardMouseEnter={onCardMouseEnter}
+        onCardMouseMove={onCardMouseMove}
+        onCardMouseLeave={onCardMouseLeave}
+        onCancelPeek={onCancelPeek}
+        onFilterByApp={onFilterByApp}
+        onFilterByType={onFilterByType}
+        typeFilter={typeFilter}
+      />
+    </div>
+  );
+}
 
 export const ClipList: React.FC<ClipListProps> = ({
   clips,
@@ -512,7 +640,6 @@ export const ClipList: React.FC<ClipListProps> = ({
         )
     : clips.length;
 
-  const SIDE_PADDING = 16; // Align with search and close buttons
   const usableWidth = containerWidth - SIDE_PADDING;
 
   const rowCount = isVertical ? Math.ceil(clips.length / columnCount) : 1;
@@ -537,14 +664,14 @@ export const ClipList: React.FC<ClipListProps> = ({
           rowIndex,
           columnIndex: selectedClipIndex % columnCount,
           rowAlign: 'smart',
-          behavior: 'smooth',
+          behavior: 'auto',
         });
       } else {
         gridRef.current.scrollToCell({
           columnIndex: selectedClipIndex,
           rowIndex: 0,
           columnAlign: 'smart',
-          behavior: 'smooth',
+          behavior: 'auto',
         });
       }
     }
@@ -572,61 +699,77 @@ export const ClipList: React.FC<ClipListProps> = ({
     }
   };
 
-  const Cell = ({ columnIndex, rowIndex, style }: CellComponentProps) => {
-    const index = isVertical ? rowIndex * columnCount + columnIndex : columnIndex;
-    const clip = clips[index];
-    if (!clip) return null;
-
-    // Width is derived from the actual column layout (see Grid columnWidth below)
-    const cellWidth = style.width;
-
-    const calculatedStyle = {
-      ...style,
-      left: isVertical ? (style.left as number) + SIDE_PADDING / 2 : style.left,
-      width: cellWidth,
-    };
-
-    return (
-      <div
-        data-el="clip-cell"
-        data-clip-cell-id={clip.id}
-        style={calculatedStyle}
-        className={clsx('flex items-center justify-center px-2', isVertical ? 'py-3' : 'h-full')}
-      >
-        <ClipCard
-          clip={clip}
-          cardFormat={cardFormat}
-          clipIndex={clipNumbering === 'positional' ? index + 1 : clips.length - index}
-          isSelected={selectedClipId === clip.id}
-          isBulkSelected={bulkSelectedIds?.has(clip.id)}
-          onToggleBulkSelect={onToggleBulkSelect ? () => onToggleBulkSelect(clip.id) : undefined}
-          onCardClick={(e) => onClipClick?.(clip.id, e)}
-          onPaste={(forcePaste) => onPaste(clip.id, forcePaste)}
-          onCopy={onCopy ? () => onCopy(clip.id) : undefined}
-          onDragStart={onDragStart}
-          onContextMenu={(e: React.MouseEvent) => onCardContextMenu?.(e, clip.id)}
-          reorderDropIndicator={reorderTargetClipId === clip.id ? reorderTargetPosition : null}
-          reorderEnabled={reorderEnabled}
-          isDragging={draggingClipId === clip.id}
-          onPreview={onRequestPreview ? () => onRequestPreview(clip.id) : undefined}
-          onRunOcr={onRequestOcr ? () => onRequestOcr(clip.id) : undefined}
-          showSourceIcon={showSourceIcon}
-          showTime={showTime}
-          showTypeIcon={showTypeIcon}
-          showNumber={showNumber}
-          actionTooltip={peekClip ? undefined : actionTooltip}
-          singleClickPaste={singleClickPaste}
-          onCardMouseEnter={handleCardMouseEnter}
-          onCardMouseMove={handleCardMouseMove}
-          onCardMouseLeave={handleCardMouseLeave}
-          onCancelPeek={handleCancelPeek}
-          onFilterByApp={onFilterByApp}
-          onFilterByType={onFilterByType}
-          typeFilter={typeFilter}
-        />
-      </div>
-    );
-  };
+  const cellProps = useMemo<ClipGridCellProps>(
+    () => ({
+      isVertical,
+      columnCount,
+      clips,
+      cardFormat,
+      clipNumbering,
+      selectedClipId,
+      bulkSelectedIds,
+      onToggleBulkSelect,
+      onClipClick,
+      onPaste,
+      onCopy,
+      onDragStart,
+      onCardContextMenu,
+      reorderTargetClipId,
+      reorderTargetPosition,
+      reorderEnabled,
+      draggingClipId,
+      onRequestPreview,
+      onRequestOcr,
+      showSourceIcon,
+      showTime,
+      showTypeIcon,
+      showNumber,
+      actionTooltip: peekClip ? undefined : actionTooltip,
+      singleClickPaste,
+      onCardMouseEnter: handleCardMouseEnter,
+      onCardMouseMove: handleCardMouseMove,
+      onCardMouseLeave: handleCardMouseLeave,
+      onCancelPeek: handleCancelPeek,
+      onFilterByApp,
+      onFilterByType,
+      typeFilter,
+    }),
+    [
+      isVertical,
+      columnCount,
+      clips,
+      cardFormat,
+      clipNumbering,
+      selectedClipId,
+      bulkSelectedIds,
+      onToggleBulkSelect,
+      onClipClick,
+      onPaste,
+      onCopy,
+      onDragStart,
+      onCardContextMenu,
+      reorderTargetClipId,
+      reorderTargetPosition,
+      reorderEnabled,
+      draggingClipId,
+      onRequestPreview,
+      onRequestOcr,
+      showSourceIcon,
+      showTime,
+      showTypeIcon,
+      showNumber,
+      peekClip,
+      actionTooltip,
+      singleClickPaste,
+      handleCardMouseEnter,
+      handleCardMouseMove,
+      handleCardMouseLeave,
+      handleCancelPeek,
+      onFilterByApp,
+      onFilterByType,
+      typeFilter,
+    ]
+  );
 
   const showLoading = isLoading && clips.length === 0;
   const showEmpty = !showLoading && clips.length === 0;
@@ -674,8 +817,8 @@ export const ClipList: React.FC<ClipListProps> = ({
       ) : (
         <Grid
           data-el="clip-list"
-          cellComponent={Cell}
-          cellProps={{}}
+          cellComponent={ClipGridCell}
+          cellProps={cellProps}
           className={clsx('no-scrollbar', showScrollbar && 'full-mode-scrollbar')}
           style={{
             height: gridHeight,

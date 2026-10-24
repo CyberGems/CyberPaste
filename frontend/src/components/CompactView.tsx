@@ -326,7 +326,7 @@ const TypeFilterDropdown: React.FC<{
   );
 };
 
-const matchesTypeFilter = (clipType: string, filter: CompactTypeFilter): boolean => {
+export const matchesTypeFilter = (clipType: string, filter: CompactTypeFilter): boolean => {
   if (filter === 'all') return true;
   if (filter === 'code') return clipType === 'code' || clipType === 'html' || clipType === 'rtf';
   if (filter === 'text') return clipType === 'text';
@@ -1237,7 +1237,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
     if (!selectedClipId) return;
     const idx = filteredClips.findIndex((c) => c.id === selectedClipId);
     if (idx >= 0) {
-      clipListApiRef.current?.scrollToRow({ index: idx, align: 'smart', behavior: 'smooth' });
+      clipListApiRef.current?.scrollToRow({ index: idx, align: 'smart', behavior: 'auto' });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- filteredClips is read, not a trigger
   }, [selectedClipId]);
