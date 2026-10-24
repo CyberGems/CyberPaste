@@ -61,14 +61,28 @@ export function dismissAllTooltips() {
   }
 }
 
-function isAnyMenuOrModalOpen(): boolean {
+function isElementBlockedByMenuOrModal(el: HTMLElement | null): boolean {
   if (typeof document === 'undefined') return false;
-  return Boolean(
-    document.querySelector('[role="dialog"], [aria-modal="true"], [role="menu"]') ||
+  if (
     document.body.dataset.titlebarMenuOpen === 'true' ||
     document.body.dataset.searchHistoryOpen === 'true' ||
     document.body.dataset.contextMenuOpen === 'true'
-  );
+  ) {
+    return true;
+  }
+  const openModal = document.querySelector('[role="dialog"], [aria-modal="true"]');
+  if (openModal) {
+    if (!el || !el.closest('[role="dialog"], [aria-modal="true"]')) {
+      return true;
+    }
+  }
+  const openMenu = document.querySelector('[role="menu"]');
+  if (openMenu) {
+    if (!el || !el.closest('[role="menu"]')) {
+      return true;
+    }
+  }
+  return false;
 }
 
 if (typeof window !== 'undefined') {
@@ -317,7 +331,7 @@ export default function Tooltip({
 
   const show = (e: ReactMouseEvent<HTMLElement>): void => {
     child.props.onMouseEnter?.(e);
-    if (isAnyMenuOrModalOpen()) {
+    if (isElementBlockedByMenuOrModal(e.currentTarget)) {
       setAnchorEl(null);
       return;
     }
@@ -341,7 +355,7 @@ export default function Tooltip({
       setAnchorEl(null);
     } else if (label) {
       delayTimer.current = setTimeout(() => {
-        if (isAnyMenuOrModalOpen()) {
+        if (isElementBlockedByMenuOrModal(currentTarget)) {
           setAnchorEl(null);
           return;
         }
@@ -370,7 +384,7 @@ export default function Tooltip({
   };
   const handleMouseMove = (e: ReactMouseEvent<HTMLElement>): void => {
     child.props.onMouseMove?.(e);
-    if (isAnyMenuOrModalOpen()) {
+    if (isElementBlockedByMenuOrModal(e.currentTarget)) {
       if (delayTimer.current) {
         clearTimeout(delayTimer.current);
         delayTimer.current = null;
@@ -395,7 +409,7 @@ export default function Tooltip({
     } else if (label) {
       if (!anchorEl && !delayTimer.current) {
         delayTimer.current = setTimeout(() => {
-          if (isAnyMenuOrModalOpen()) {
+          if (isElementBlockedByMenuOrModal(currentTarget)) {
             setAnchorEl(null);
             return;
           }
@@ -440,9 +454,9 @@ export default function Tooltip({
                 position: 'relative',
                 background: 'rgba(15, 15, 20, 0.97)',
                 backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(var(--primary-rgb, 0, 120, 215), 0.35)',
+                border: '1px solid rgba(var(--primary-rgb, 0, 120, 215), 0.18)',
                 boxShadow:
-                  '0 4px 16px rgba(0, 0, 0, 0.4), 0 0 6px rgba(var(--primary-rgb, 0, 120, 215), 0.45)',
+                  '0 4px 16px rgba(0, 0, 0, 0.4), 0 0 5px rgba(var(--primary-rgb, 0, 120, 215), 0.2)',
                 borderRadius: 8,
                 padding: '6px 10px',
                 color: 'rgba(255, 255, 255, 0.95)',
