@@ -33,7 +33,7 @@ import { BulkActionBar } from './components/BulkActionBar';
 import { ClipDetailPanel } from './components/ClipDetailPanel';
 import { CompactView, matchesTypeFilter } from './components/CompactView';
 import { ContextMenuHost, ContextMenuHostHandle } from './components/ContextMenuHost';
-import type { ContextMenuOption } from './components/ContextMenu';
+import type { ContextMenuOption, ContextMenuHeaderAction } from './components/ContextMenu';
 import { FolderModal } from './components/FolderModal';
 import { AiResultDialog } from './components/AiResultDialog';
 import { OcrResultModal } from './components/OcrResultModal';
@@ -3111,15 +3111,101 @@ function App() {
         custom && custom.trim() && custom.trim() !== englishDefault ? custom.trim() : t(key);
 
       let options: ContextMenuOption[] = [];
+      let headerActions: ContextMenuHeaderAction[] | undefined = undefined;
 
       if (type === 'card') {
         const isBulk =
           selectedClipIdsRef.current.has(itemId) && selectedClipIdsRef.current.size > 1;
         const bulkCount = selectedClipIdsRef.current.size;
         const clip = clipsRef.current.find((c) => c.id === itemId);
+        const pinLatestDisabled =
+          isLiveMainListClip(itemId, clipsRef.current, selectedFolderRef.current) &&
+          !clip?.is_pinned;
+        const isEditable = Boolean(clip && clip.clip_type !== 'image' && clip.clip_type !== 'file');
+
+        headerActions = [
+          {
+            id: 'copy',
+            label: t('contextMenu.copy'),
+            icon: <Copy size={15} />,
+            shortcut: 'Ctrl+C',
+            onClick: () => handleCopy(itemId),
+          },
+          {
+            id: 'paste',
+            label: t('contextMenu.paste'),
+            icon: <ClipboardPaste size={15} />,
+            shortcut: 'Enter',
+            onClick: () => handlePaste(itemId, true),
+          },
+          {
+            id: 'edit',
+            label: clip
+              ? t('contextMenu.editType', {
+                  type: t(`clipType.${clip.clip_type}`, { defaultValue: t('clipType.text') }),
+                })
+              : t('contextMenu.edit'),
+            icon: <Pencil size={15} />,
+            disabled: !isEditable,
+            onClick: () => {
+              if (!clip) return;
+              invoke<AppClipboardItem>('get_clip', { clipId: clip.id })
+                .then((fullClip) => {
+                  setEditClip({
+                    isOpen: true,
+                    clipId: (fullClip as any).id || (fullClip as any).uuid,
+                    content: (fullClip as any).content,
+                    clipType: (fullClip as any).clip_type,
+                  });
+                })
+                .catch((err) => {
+                  console.error('Failed to fetch clip content:', err);
+                  setEditClip({
+                    isOpen: true,
+                    clipId: clip.id,
+                    content: clip.content || clip.preview,
+                    clipType: clip.clip_type,
+                  });
+                });
+            },
+          },
+          {
+            id: 'pin',
+            label: pinLatestDisabled
+              ? t('contextMenu.pinLatestDisabled')
+              : clip?.is_pinned
+                ? t('contextMenu.unpin')
+                : t('contextMenu.pin'),
+            icon: clip?.is_pinned ? <PinOff size={15} /> : <Pin size={15} />,
+            shortcut: 'F',
+            disabled: pinLatestDisabled,
+            active: Boolean(clip?.is_pinned),
+            onClick: () => handleToggleClipPin(itemId),
+          },
+          {
+            id: 'delete',
+            label: isBulk
+              ? t('contextMenu.deleteCount', {
+                  count: bulkCount,
+                  defaultValue: `Delete (${bulkCount})`,
+                })
+              : t('contextMenu.delete'),
+            icon: <Trash2 size={15} />,
+            shortcut: 'Supr',
+            danger: true,
+            onClick: () => {
+              if (isBulk) {
+                handleBulkDelete();
+              } else {
+                handleDelete(itemId);
+              }
+            },
+          },
+        ];
+
         const opts: ContextMenuOption[] = [];
 
-        // Universal standalone viewer — available for all clip types
+        // 1. Universal standalone viewer — available for all clip types
         if (clip) {
           opts.push({
             label: t('contextMenu.openFullViewer'),
@@ -3177,52 +3263,15 @@ function App() {
                 .catch((err) => toast.error(t('toasts.viewerOpenFailed', { error: err })));
             },
           });
-        } else {
-          opts.push({
-            label: clip
-              ? t('contextMenu.editType', {
-                  type: t(`clipType.${clip.clip_type}`, { defaultValue: t('clipType.text') }),
-                })
-              : t('contextMenu.edit'),
-            icon: <Pencil size={14} />,
-            onClick: () => {
-              if (!clip) return;
-              invoke<AppClipboardItem>('get_clip', { clipId: clip.id })
-                .then((fullClip) => {
-                  setEditClip({
-                    isOpen: true,
-                    clipId: (fullClip as any).id || (fullClip as any).uuid,
-                    content: (fullClip as any).content,
-                    clipType: (fullClip as any).clip_type,
-                  });
-                })
-                .catch((err) => {
-                  console.error('Failed to fetch clip content:', err);
-                  setEditClip({
-                    isOpen: true,
-                    clipId: clip.id,
-                    content: clip.content || clip.preview,
-                    clipType: clip.clip_type,
-                  });
-                });
-            },
-          });
         }
 
-        opts.push({
-          label: t('contextMenu.paste'),
-          icon: <ClipboardPaste size={14} />,
-          onClick: () => handlePaste(itemId, true),
-        });
+        // 2. Secondary clipboard & export actions
+        const hasTextActions = clip && clip.clip_type !== 'image' && clip.clip_type !== 'file';
+        if (hasTextActions || clip) {
+          opts.push({ label: '', divider: true });
+        }
 
-        opts.push({
-          label: t('contextMenu.copy'),
-          icon: <Copy size={14} />,
-          onClick: () => handleCopy(itemId),
-        });
-
-        // Copy as plain text — only meaningful for formatted types
-        if (clip && clip.clip_type !== 'image' && clip.clip_type !== 'file') {
+        if (hasTextActions) {
           opts.push({
             label: t('contextMenu.copyPlainText'),
             icon: <ClipboardCopy size={14} />,
@@ -3246,6 +3295,15 @@ function App() {
           },
         });
 
+        // 3. Organization actions
+        opts.push({ label: '', divider: true });
+
+        opts.push({
+          label: t('contextMenu.copyToFolder') || t('contextMenu.moveToFolder'),
+          icon: <FolderInput size={14} />,
+          onClick: () => setMoveToFolderClipId(itemId),
+        });
+
         if (clip?.source_app) {
           opts.push({
             label: t('contextMenu.filterByApp', {
@@ -3260,20 +3318,6 @@ function App() {
             },
           });
         }
-
-        const pinLatestDisabled =
-          isLiveMainListClip(itemId, clipsRef.current, selectedFolderRef.current) &&
-          !clip?.is_pinned;
-        opts.push({
-          label: pinLatestDisabled
-            ? t('contextMenu.pinLatestDisabled')
-            : clip?.is_pinned
-              ? t('contextMenu.unpin')
-              : t('contextMenu.pin'),
-          icon: clip?.is_pinned ? <PinOff size={14} /> : <Pin size={14} />,
-          disabled: pinLatestDisabled,
-          onClick: () => handleToggleClipPin(itemId),
-        });
 
         const isMainList = selectedFolderRef.current === null;
         const moveTopDisabled = clipEdgeDisabled(
@@ -3303,12 +3347,6 @@ function App() {
           onClick: () => handleMoveClipToEdge(itemId, 'bottom'),
         });
 
-        opts.push({
-          label: t('contextMenu.copyToFolder') || t('contextMenu.moveToFolder'),
-          icon: <FolderInput size={14} />,
-          onClick: () => setMoveToFolderClipId(itemId),
-        });
-
         if (settings?.view_mode !== 'compact') {
           opts.push({
             label: detailPanelOpen ? t('detailPanel.collapse') : t('detailPanel.expand'),
@@ -3317,8 +3355,9 @@ function App() {
           });
         }
 
-        // AI actions — only meaningful for textual clips
+        // 4. AI actions — only meaningful for textual clips
         if (clip && clip.clip_type !== 'image' && clip.clip_type !== 'file') {
+          opts.push({ label: '', divider: true });
           opts.push({
             label: t('contextMenu.aiActions'),
             icon: <Sparkles size={14} />,
@@ -3355,24 +3394,6 @@ function App() {
           });
         }
 
-        opts.push({
-          label: isBulk
-            ? t('contextMenu.deleteCount', {
-                count: bulkCount,
-                defaultValue: `Delete (${bulkCount})`,
-              })
-            : t('contextMenu.delete'),
-          icon: <Trash2 size={14} />,
-          danger: true,
-          onClick: () => {
-            if (isBulk) {
-              handleBulkDelete();
-            } else {
-              handleDelete(itemId);
-            }
-          },
-        });
-
         options = opts;
       } else {
         options = [
@@ -3407,6 +3428,7 @@ function App() {
       contextMenuRef.current?.open({
         x: e.clientX,
         y: e.clientY,
+        headerActions,
         options,
         highlightId: itemId,
       });

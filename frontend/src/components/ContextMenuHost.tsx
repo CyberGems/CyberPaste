@@ -1,11 +1,12 @@
 import { forwardRef, useCallback, useImperativeHandle, useState } from 'react';
-import { ContextMenu, ContextMenuOption } from './ContextMenu';
+import { ContextMenu, ContextMenuOption, ContextMenuHeaderAction } from './ContextMenu';
 import { dispatchContextMenuEvent } from '../utils/contextMenuEvents';
 import { dismissAllTooltips } from './Tooltip';
 
 export interface ContextMenuOpenPayload {
   x: number;
   y: number;
+  headerActions?: ContextMenuHeaderAction[];
   options: ContextMenuOption[];
   /** Clip/folder id to keep hover-highlighted while the menu is open */
   highlightId?: string | null;
@@ -51,6 +52,14 @@ export const ContextMenuHost = forwardRef<ContextMenuHostHandle>(
 
     if (!menu) return null;
 
-    return <ContextMenu x={menu.x} y={menu.y} options={menu.options} onClose={close} />;
+    return (
+      <ContextMenu
+        x={menu.x}
+        y={menu.y}
+        headerActions={menu.headerActions}
+        options={menu.options}
+        onClose={close}
+      />
+    );
   }
 );

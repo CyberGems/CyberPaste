@@ -1,13 +1,25 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { clsx } from 'clsx';
 import { ChevronRight } from 'lucide-react';
-import { dismissAllTooltips } from './Tooltip';
+import Tooltip, { dismissAllTooltips } from './Tooltip';
+
+export interface ContextMenuHeaderAction {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+  danger?: boolean;
+  disabled?: boolean;
+  shortcut?: string;
+  active?: boolean;
+}
 
 export interface ContextMenuOption {
   label: string;
   onClick?: () => void;
   danger?: boolean;
   disabled?: boolean;
+  divider?: boolean;
   subMenu?: ContextMenuOption[];
   icon?: React.ReactNode;
 }
@@ -15,6 +27,7 @@ export interface ContextMenuOption {
 interface ContextMenuProps {
   x: number;
   y: number;
+  headerActions?: ContextMenuHeaderAction[];
   options: ContextMenuOption[];
   onClose: () => void;
   subMenuPlacement?: 'side' | 'below';
@@ -24,8 +37,12 @@ interface ContextMenuProps {
   };
 }
 
+function isSelectable(o: ContextMenuOption | undefined): boolean {
+  return !!o && !o.disabled && !o.divider;
+}
+
 function firstEnabledIndex(options: ContextMenuOption[]): number {
-  const i = options.findIndex((o) => !o.disabled);
+  const i = options.findIndex((o) => isSelectable(o));
   return i >= 0 ? i : 0;
 }
 
@@ -34,13 +51,13 @@ function nextEnabledIndex(options: ContextMenuOption[], from: number, dir: 1 | -
   let i = from;
   for (let n = 0; n < options.length; n++) {
     i = (i + dir + options.length) % options.length;
-    if (!options[i]?.disabled) return i;
+    if (isSelectable(options[i])) return i;
   }
   return from;
 }
 
 function activateOption(option: ContextMenuOption | undefined, onClose: () => void) {
-  if (!option || option.disabled) return;
+  if (!option || option.disabled || option.divider) return;
   if (option.subMenu && option.subMenu.length > 0) return;
   option.onClick?.();
   onClose();
@@ -215,6 +232,7 @@ function ContextMenuItem({
 export function ContextMenu({
   x,
   y,
+  headerActions,
   options,
   onClose,
   subMenuPlacement = 'side',
@@ -263,7 +281,7 @@ export function ContextMenu({
     el.style.left = `${left}px`;
     el.style.top = `${top}px`;
     el.style.visibility = 'visible';
-  }, [x, y, options.length]);
+  }, [x, y, options.length, headerActions]);
 
   useEffect(() => {
     const isInsideMenu = (target: EventTarget | null) => {
@@ -413,7 +431,7 @@ export function ContextMenu({
   return (
     <div
       ref={menuRef}
-      className="custom-scrollbar fixed z-[200] max-h-[calc(100vh-16px)] min-w-[180px] overflow-y-auto overflow-x-hidden rounded-xl border border-border bg-popover/95 p-1 shadow-2xl backdrop-blur-md"
+      className="custom-scrollbar fixed z-[200] max-h-[calc(100vh-16px)] min-w-[200px] overflow-y-auto overflow-x-hidden rounded-xl border border-border bg-popover/95 p-1 shadow-2xl backdrop-blur-md"
       style={{
         left: x,
         top: y,
@@ -436,22 +454,72 @@ export function ContextMenu({
       )}
       {header && <div className="mx-1.5 my-1 h-px bg-border/60" />}
 
+      {headerActions && headerActions.length > 0 && (
+        <>
+          <div className="mb-1 flex items-center justify-between gap-1 rounded-lg border border-border/40 bg-muted/25 p-1">
+            {headerActions.map((action) => {
+              const tooltipLabel = action.shortcut
+                ? `${action.label} (${action.shortcut})`
+                : action.label;
+              return (
+                <Tooltip key={action.id} label={tooltipLabel} placement="top">
+                  <button
+                    type="button"
+                    disabled={action.disabled}
+                    onClick={() => {
+                      action.onClick();
+                      dismissAllTooltips();
+                      onClose();
+                    }}
+                    aria-label={action.label}
+                    className={clsx(
+                      'flex h-8 min-w-[32px] flex-1 items-center justify-center rounded-md transition-all duration-150',
+                      action.disabled
+                        ? 'pointer-events-none cursor-default text-muted-foreground opacity-25'
+                        : action.danger
+                          ? 'text-muted-foreground hover:bg-destructive/15 hover:text-destructive active:scale-95'
+                          : action.active
+                            ? 'bg-primary/20 text-primary hover:bg-primary/30 active:scale-95'
+                            : 'text-muted-foreground hover:bg-accent hover:text-foreground active:scale-95'
+                    )}
+                  >
+                    {action.icon}
+                  </button>
+                </Tooltip>
+              );
+            })}
+          </div>
+          <div className="mx-1.5 my-1 h-px bg-border/50" role="separator" />
+        </>
+      )}
+
       <div className="flex flex-col gap-0.5">
-        {options.map((option, index) => (
-          <ContextMenuItem
-            key={index}
-            option={option}
-            onClose={onClose}
-            subMenuPlacement={subMenuPlacement}
-            focused={activeIndex === index}
-            forceSubOpen={openSubIndex === index}
-            subFocusedIndex={openSubIndex === index ? subActiveIndex : -1}
-            onHover={() => {
-              setActiveIndex(index);
-              if (!option.subMenu?.length) setOpenSubIndex(null);
-            }}
-          />
-        ))}
+        {options.map((option, index) => {
+          if (option.divider) {
+            return (
+              <div
+                key={`divider-${index}`}
+                className="mx-1.5 my-1 h-px bg-border/40"
+                role="separator"
+              />
+            );
+          }
+          return (
+            <ContextMenuItem
+              key={index}
+              option={option}
+              onClose={onClose}
+              subMenuPlacement={subMenuPlacement}
+              focused={activeIndex === index}
+              forceSubOpen={openSubIndex === index}
+              subFocusedIndex={openSubIndex === index ? subActiveIndex : -1}
+              onHover={() => {
+                setActiveIndex(index);
+                if (!option.subMenu?.length) setOpenSubIndex(null);
+              }}
+            />
+          );
+        })}
       </div>
     </div>
   );
