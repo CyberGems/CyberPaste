@@ -552,6 +552,10 @@
     -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
   }
 
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+  }
   .custom-scrollbar::-webkit-scrollbar {
     display: block;
     width: 6px;
@@ -561,17 +565,20 @@
     background: transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.22);
     border-radius: 9999px;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.35);
+  }
+  .light .custom-scrollbar {
+    scrollbar-color: rgba(0, 0, 0, 0.22) transparent;
   }
   .light .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.18);
+    background: rgba(0, 0, 0, 0.22);
   }
   .light .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.32);
+    background: rgba(0, 0, 0, 0.35);
   }
 
   /* Thin, unobtrusive scrollbar for the Full-mode clip grid. */

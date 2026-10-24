@@ -284,7 +284,7 @@ export function TrayMenuWindow() {
       onContextMenu={(e) => e.preventDefault()}
     >
       <div
-        className="relative select-none overflow-hidden rounded-2xl border border-border bg-card/95 backdrop-blur-xl"
+        className="relative select-none overflow-hidden rounded-2xl border border-border bg-card"
         style={{
           width: MENU_WIDTH,
           boxShadow:
@@ -400,7 +400,7 @@ export function TrayMenuWindow() {
               onBack={() => goView('main')}
             />
             <TrayDivider />
-            <div className="flex max-h-[360px] flex-col gap-0.5 overflow-y-auto px-1.5 py-1">
+            <div className="custom-scrollbar flex max-h-[360px] flex-col gap-0.5 overflow-y-auto px-1.5 py-1">
               <TrayItem
                 compact
                 icon={<Pin size={14} strokeWidth={1.75} />}
@@ -471,7 +471,7 @@ export function TrayMenuWindow() {
               onBack={() => goView('main')}
             />
             <TrayDivider />
-            <div className="flex max-h-[310px] flex-col gap-0.5 overflow-y-auto px-1.5 py-1">
+            <div className="custom-scrollbar flex max-h-[310px] flex-col gap-0.5 overflow-y-auto px-1.5 py-1">
               {RECOMMENDED_SUITE_APPS.map((app) => (
                 <TrayItem
                   key={app.slug}
