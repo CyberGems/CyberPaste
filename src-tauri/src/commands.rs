@@ -4777,7 +4777,7 @@ async fn dispatch_toast(app: AppHandle, payload: ToastPayload) -> Result<(), Str
         return Ok(());
     }
 
-    if crate::app_lock::is_locked() {
+    if settings.app_lock_hide_toasts && crate::app_lock::is_locked() {
         let clip_like = payload.clip_uuid.is_some()
             || payload.image_preview.is_some()
             || matches!(
@@ -4863,7 +4863,10 @@ pub async fn click_toast(app: AppHandle, clip_uuid: String) -> Result<(), String
 
     if crate::app_lock::is_locked() {
         if let Some(main_win) = app.get_webview_window("main") {
+            let _ = main_win.unminimize();
             crate::position_window_at_bottom(&main_win);
+            let _ = main_win.show();
+            let _ = main_win.set_focus();
         }
         return Ok(());
     }
@@ -5905,6 +5908,14 @@ pub async fn tray_menu_action(app: AppHandle, action: String) -> Result<(), Stri
         }
         "lock" => {
             crate::app_lock::lock_now(&app);
+        }
+        "unlock" => {
+            if let Some(win) = app.get_webview_window("main") {
+                let _ = win.unminimize();
+                crate::position_window_at_bottom(&win);
+                let _ = win.show();
+                let _ = win.set_focus();
+            }
         }
         "quit" => {
             app.exit(0);

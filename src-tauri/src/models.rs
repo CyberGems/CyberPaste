@@ -173,6 +173,8 @@ pub struct AppSettings {
     pub app_lock_idle_seconds: i64,
     #[serde(default)]
     pub app_lock_pause_capture: bool,
+    #[serde(default)]
+    pub app_lock_hide_toasts: bool,
     #[serde(default = "default_true")]
     pub achievements_enabled: bool,
     #[serde(default = "default_true")]
@@ -318,6 +320,7 @@ impl Default for AppSettings {
             app_lock_on_windows_lock: true,
             app_lock_idle_seconds: 0,
             app_lock_pause_capture: false,
+            app_lock_hide_toasts: false,
             achievements_enabled: true,
             achievement_notifications_enabled: true,
             first_used_at: None,

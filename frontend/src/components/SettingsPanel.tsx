@@ -637,6 +637,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         app_lock_on_windows_lock: 'settings.appLockOnWindowsLock',
         app_lock_idle_seconds: 'settings.appLockIdle',
         app_lock_pause_capture: 'settings.appLockPauseCapture',
+        app_lock_hide_toasts: 'settings.appLockHideToasts',
         achievements_enabled: 'settings.enableAchievements',
         achievement_notifications_enabled: 'settings.achievementNotifications',
       };
@@ -2098,6 +2099,21 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               checked={settings.app_lock_pause_capture ?? false}
                               onChange={(val) => updateSetting('app_lock_pause_capture', val)}
                               aria-label={t('settings.appLockPauseCapture')}
+                            />
+                          </label>
+                          <label className="flex items-center justify-between gap-3">
+                            <span>
+                              <span className="block text-sm">
+                                {t('settings.appLockHideToasts')}
+                              </span>
+                              <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                                {t('settings.appLockHideToastsDesc')}
+                              </span>
+                            </span>
+                            <Switch
+                              checked={settings.app_lock_hide_toasts ?? false}
+                              onChange={(val) => updateSetting('app_lock_hide_toasts', val)}
+                              aria-label={t('settings.appLockHideToasts')}
                             />
                           </label>
 

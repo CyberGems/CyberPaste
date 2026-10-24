@@ -14,6 +14,7 @@ import {
   Info,
   Gem,
   Lock,
+  Unlock,
   Pause,
   Pin,
   Play,
@@ -65,7 +66,8 @@ type TrayAction =
   | 'about'
   | 'check_updates'
   | 'quit'
-  | 'lock';
+  | 'lock'
+  | 'unlock';
 type TrayView = 'main' | 'help' | 'suite';
 
 const DONATE_URL = 'https://github.com/CyberGems/CyberPaste#%EF%B8%8F-donate';
@@ -347,12 +349,20 @@ export function TrayMenuWindow() {
                 warning={Boolean(state?.is_paused)}
                 onClick={() => runAction('toggle_pause')}
               />
-              {state?.lock_enabled && !state?.locked ? (
-                <TrayItem
-                  icon={<Lock size={16} strokeWidth={1.75} />}
-                  label={t('tray.lock', { defaultValue: 'Lock now' })}
-                  onClick={() => runAction('lock')}
-                />
+              {state?.lock_enabled ? (
+                state?.locked ? (
+                  <TrayItem
+                    icon={<Unlock size={16} strokeWidth={1.75} />}
+                    label={t('tray.unlock', { defaultValue: 'Unlock...' })}
+                    onClick={() => runAction('unlock')}
+                  />
+                ) : (
+                  <TrayItem
+                    icon={<Lock size={16} strokeWidth={1.75} />}
+                    label={t('tray.lock', { defaultValue: 'Lock now' })}
+                    onClick={() => runAction('lock')}
+                  />
+                )
               ) : null}
               <TrayItem
                 icon={<Settings size={16} strokeWidth={1.75} />}

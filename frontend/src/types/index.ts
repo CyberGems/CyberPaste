@@ -137,6 +137,7 @@ export interface Settings {
   app_lock_on_windows_lock?: boolean;
   app_lock_idle_seconds?: number;
   app_lock_pause_capture?: boolean;
+  app_lock_hide_toasts?: boolean;
   ai_api_key_configured?: boolean;
   achievements_enabled?: boolean;
   achievement_notifications_enabled?: boolean;
