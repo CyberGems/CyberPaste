@@ -144,6 +144,8 @@
     "compactFolderLayoutVertical": "Vertikal",
     "clipboardSound": "Clipborad-Sound",
     "clipboardSoundDesc": "Sound abspielen, wenn ein neuer Clip erfasst wird",
+    "soundPathPlaceholder": "C:\\pfad\\zur\\datei.mp3",
+    "restoreDefaultSound": "Standard-Sound wiederherstellen",
     "launchAtLogin": "Beim Anmelden starten",
     "launchAtLoginDesc": "Automatisch beim Anmelden starten",
     "accessibilityPermission": "Bedienungshilfen-Berechtigung",

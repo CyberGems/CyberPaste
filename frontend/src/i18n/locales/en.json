@@ -21,6 +21,7 @@
     "pasteSuccess": "Pasted successfully",
     "image": "Image",
     "browse": "Browse",
+    "none": "None",
     "resetWindowSize": "Reset Window Size",
     "pinWindow": "Pin Window",
     "unpinWindow": "Unpin Window",
@@ -341,6 +342,7 @@
     "clipboardSound": "Clipboard Sound",
     "clipboardSoundDesc": "Play a sound when a new clip is captured",
     "soundPathPlaceholder": "C:\\path\\to\\file.mp3",
+    "restoreDefaultSound": "Restore default sound",
     "startupSound": "Startup Sound",
     "startupSoundDesc": "Play a sound when the application starts",
     "launchAtLogin": "Launch at Login",
@@ -846,7 +848,6 @@
     "copied": "Copied!",
     "clear": "Clear",
     "clearText": "Clear text",
-    "none": "None",
     "saveShortcutHint": "Ctrl+Enter or Ctrl+S to save · Esc to cancel"
   },
   "ai": {

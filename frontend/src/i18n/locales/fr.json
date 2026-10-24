@@ -144,6 +144,8 @@
     "compactFolderLayoutVertical": "Vertical",
     "clipboardSound": "Son du presse-papiers",
     "clipboardSoundDesc": "Jouer un son lorsqu'un nouveau clip est capturé",
+    "soundPathPlaceholder": "C:\\chemin\\vers\\fichier.mp3",
+    "restoreDefaultSound": "Rétablir le son par défaut",
     "launchAtLogin": "Lancer à la connexion",
     "launchAtLoginDesc": "Démarrer automatiquement lors de la connexion",
     "accessibilityPermission": "Autorisation d'accessibilité",

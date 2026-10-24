@@ -21,6 +21,7 @@
     "pasteSuccess": "Pegado con éxito",
     "image": "Imagen",
     "browse": "Examinar",
+    "none": "Ninguno",
     "resetWindowSize": "Restablecer tamaño de ventana",
     "pinWindow": "Fijar ventana",
     "unpinWindow": "Desfijar ventana",
@@ -341,6 +342,7 @@
     "clipboardSound": "Sonido del Portapapeles",
     "clipboardSoundDesc": "Reproducir un sonido cuando se captura un nuevo clip",
     "soundPathPlaceholder": "C:\\ruta\\al\\archivo.mp3",
+    "restoreDefaultSound": "Restablecer sonido por defecto",
     "startupSound": "Sonido de inicio",
     "startupSoundDesc": "Reproducir un sonido cuando la aplicación se inicia",
     "launchAtLogin": "Arrancar al iniciar sesión",
@@ -846,7 +848,6 @@
     "copied": "¡Copiado!",
     "clear": "Limpiar",
     "clearText": "Limpiar texto",
-    "none": "Ninguno",
     "saveShortcutHint": "Ctrl+Enter o Ctrl+S para guardar · Esc para cancelar"
   },
   "ai": {

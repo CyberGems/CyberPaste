@@ -1693,19 +1693,16 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             >
                               {t('common.browse')}
                             </button>
-                            {settings.clipboard_sound_path && (
-                              <Tooltip
-                                label={t('common.reset', { defaultValue: 'Reset to default' })}
-                                placement="top"
+                            <Tooltip label={t('settings.restoreDefaultSound')} placement="top">
+                              <button
+                                type="button"
+                                disabled={!settings.clipboard_sound_path}
+                                onClick={() => updateSetting('clipboard_sound_path', '')}
+                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 hover:text-primary disabled:pointer-events-none disabled:opacity-30"
                               >
-                                <button
-                                  onClick={() => updateSetting('clipboard_sound_path', '')}
-                                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80"
-                                >
-                                  <RotateCcw size={14} />
-                                </button>
-                              </Tooltip>
-                            )}
+                                <RotateCcw size={14} />
+                              </button>
+                            </Tooltip>
                             <Tooltip label={t('settings.previewSound')} placement="top">
                               <button
                                 onClick={async () => {
@@ -1768,19 +1765,16 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             >
                               {t('common.browse')}
                             </button>
-                            {settings.startup_sound_path && (
-                              <Tooltip
-                                label={t('common.reset', { defaultValue: 'Reset to default' })}
-                                placement="top"
+                            <Tooltip label={t('settings.restoreDefaultSound')} placement="top">
+                              <button
+                                type="button"
+                                disabled={!settings.startup_sound_path}
+                                onClick={() => updateSetting('startup_sound_path', '')}
+                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 hover:text-primary disabled:pointer-events-none disabled:opacity-30"
                               >
-                                <button
-                                  onClick={() => updateSetting('startup_sound_path', '')}
-                                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80"
-                                >
-                                  <RotateCcw size={14} />
-                                </button>
-                              </Tooltip>
-                            )}
+                                <RotateCcw size={14} />
+                              </button>
+                            </Tooltip>
                             <Tooltip label={t('settings.previewSound')} placement="top">
                               <button
                                 onClick={async () => {
@@ -1859,7 +1853,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                               >
                                 {settings.hotkey || t('common.none')}
                               </span>
-                              <span className="ml-auto text-[10px] italic text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
+                              <span
+                                className={clsx(
+                                  'ml-auto text-[10px] italic text-muted-foreground transition-opacity',
+                                  settings.hotkey
+                                    ? 'opacity-0 group-hover:opacity-100'
+                                    : 'opacity-70 group-hover:opacity-100'
+                                )}
+                              >
                                 {t('settings.hotkeyPlaceholder')}
                               </span>
                             </button>
@@ -1940,7 +1941,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                   ? t('common.none')
                                   : settings.view_mode_hotkey || 'Ctrl+M'}
                               </span>
-                              <span className="ml-auto text-[10px] italic text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
+                              <span
+                                className={clsx(
+                                  'ml-auto text-[10px] italic text-muted-foreground transition-opacity',
+                                  settings.view_mode_hotkey === ''
+                                    ? 'opacity-70 group-hover:opacity-100'
+                                    : 'opacity-0 group-hover:opacity-100'
+                                )}
+                              >
                                 {t('settings.hotkeyPlaceholder')}
                               </span>
                             </button>

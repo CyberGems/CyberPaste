@@ -144,6 +144,8 @@
     "compactFolderLayoutVertical": "垂直",
     "clipboardSound": "クリップボードサウンド",
     "clipboardSoundDesc": "新しいクリップがキャプチャされたときにサウンドを再生",
+    "soundPathPlaceholder": "C:\\path\\to\\file.mp3",
+    "restoreDefaultSound": "既定のサウンドに戻す",
     "launchAtLogin": "ログイン時に起動",
     "launchAtLoginDesc": "ログイン時に自動的に起動します",
     "accessibilityPermission": "アクセシビリティ権限",

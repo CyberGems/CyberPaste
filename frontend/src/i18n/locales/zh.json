@@ -144,6 +144,8 @@
     "compactFolderLayoutVertical": "垂直",
     "clipboardSound": "剪贴板提示音",
     "clipboardSoundDesc": "捕获新剪贴项时播放提示音",
+    "soundPathPlaceholder": "C:\\path\\to\\file.mp3",
+    "restoreDefaultSound": "恢复默认声音",
     "launchAtLogin": "开机启动",
     "launchAtLoginDesc": "登录时自动启动",
     "accessibilityPermission": "辅助功能权限",
