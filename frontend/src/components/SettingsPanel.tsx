@@ -1693,16 +1693,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             >
                               {t('common.browse')}
                             </button>
-                            <Tooltip label={t('settings.restoreDefaultSound')} placement="top">
-                              <button
-                                type="button"
-                                disabled={!settings.clipboard_sound_path}
-                                onClick={() => updateSetting('clipboard_sound_path', '')}
-                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 hover:text-primary disabled:pointer-events-none disabled:opacity-30"
-                              >
-                                <RotateCcw size={14} />
-                              </button>
-                            </Tooltip>
                             <Tooltip label={t('settings.previewSound')} placement="top">
                               <button
                                 onClick={async () => {
@@ -1717,6 +1707,16 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                 className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80"
                               >
                                 <Volume2 size={14} />
+                              </button>
+                            </Tooltip>
+                            <Tooltip label={t('settings.restoreDefaultSound')} placement="top">
+                              <button
+                                type="button"
+                                disabled={!settings.clipboard_sound_path}
+                                onClick={() => updateSetting('clipboard_sound_path', '')}
+                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 hover:text-primary disabled:pointer-events-none disabled:opacity-30"
+                              >
+                                <RotateCcw size={14} />
                               </button>
                             </Tooltip>
                           </div>
@@ -1765,16 +1765,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             >
                               {t('common.browse')}
                             </button>
-                            <Tooltip label={t('settings.restoreDefaultSound')} placement="top">
-                              <button
-                                type="button"
-                                disabled={!settings.startup_sound_path}
-                                onClick={() => updateSetting('startup_sound_path', '')}
-                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 hover:text-primary disabled:pointer-events-none disabled:opacity-30"
-                              >
-                                <RotateCcw size={14} />
-                              </button>
-                            </Tooltip>
                             <Tooltip label={t('settings.previewSound')} placement="top">
                               <button
                                 onClick={async () => {
@@ -1789,6 +1779,16 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                 className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80"
                               >
                                 <Volume2 size={14} />
+                              </button>
+                            </Tooltip>
+                            <Tooltip label={t('settings.restoreDefaultSound')} placement="top">
+                              <button
+                                type="button"
+                                disabled={!settings.startup_sound_path}
+                                onClick={() => updateSetting('startup_sound_path', '')}
+                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 hover:text-primary disabled:pointer-events-none disabled:opacity-30"
+                              >
+                                <RotateCcw size={14} />
                               </button>
                             </Tooltip>
                           </div>
