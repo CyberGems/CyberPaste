@@ -252,9 +252,11 @@
     "clipsMovedToFolder": "{{count}} éléments déplacés",
     "clipsMovedToMain": "{{count}} éléments déplacés vers le presse-papiers",
     "copiedToFolder": "Copié dans le dossier",
+    "copiedToFolderNamed": "Copié dans le dossier \"{{name}}\"",
     "copiedToMainClipboard": "Copié dans le presse-papiers",
     "clipCopyFailed": "Échec de la copie du clip",
     "clipsCopiedToFolder": "{{count}} éléments copiés dans le dossier",
+    "clipsCopiedToFolderNamed": "{{count}} éléments copiés dans le dossier \"{{name}}\"",
     "clipsCopiedToMain": "{{count}} éléments copiés dans le presse-papiers"
   },
   "tray": {

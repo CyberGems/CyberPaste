@@ -252,9 +252,11 @@
     "clipsMovedToFolder": "{{count}} 件を移動しました",
     "clipsMovedToMain": "{{count}} 件をクリップボードに移動しました",
     "copiedToFolder": "フォルダーにコピーしました",
+    "copiedToFolderNamed": "フォルダー \"{{name}}\" にコピーしました",
     "copiedToMainClipboard": "クリップボードにコピーしました",
     "clipCopyFailed": "クリップのコピーに失敗しました",
     "clipsCopiedToFolder": "{{count}} 件をフォルダーにコピーしました",
+    "clipsCopiedToFolderNamed": "{{count}} 件をフォルダー \"{{name}}\" にコピーしました",
     "clipsCopiedToMain": "{{count}} 件をクリップボードにコピーしました"
   },
   "tray": {

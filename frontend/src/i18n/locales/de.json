@@ -242,9 +242,11 @@
     "clipsMovedToFolder": "{{count}} Elemente verschoben",
     "clipsMovedToMain": "{{count}} Elemente in Zwischenablage verschoben",
     "copiedToFolder": "In Ordner kopiert",
+    "copiedToFolderNamed": "In Ordner \"{{name}}\" kopiert",
     "copiedToMainClipboard": "In Zwischenablage kopiert",
     "clipCopyFailed": "Fehler beim Kopieren des Clips",
     "clipsCopiedToFolder": "{{count}} Elemente in Ordner kopiert",
+    "clipsCopiedToFolderNamed": "{{count}} Elemente in Ordner \"{{name}}\" kopiert",
     "clipsCopiedToMain": "{{count}} Elemente in Zwischenablage kopiert"
   },
   "tray": {

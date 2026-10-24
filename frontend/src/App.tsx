@@ -1816,8 +1816,17 @@ function App() {
               position: reorderPos,
             });
             await loadClips(selectedFolderRef.current);
-            refreshTotalCount();
-            toast.success(t('toasts.copiedToFolder'));
+            const targetFolderId = selectedFolderRef.current;
+            const targetFolderName = targetFolderId
+              ? folders.find((f) => f.id === targetFolderId)?.name
+              : null;
+            toast.success(
+              targetFolderId
+                ? targetFolderName
+                  ? t('toasts.copiedToFolderNamed', { name: targetFolderName })
+                  : t('toasts.copiedToFolder')
+                : t('toasts.copiedToMainClipboard')
+            );
           } catch (e) {
             const errMsg = typeof e === 'string' ? e : t('toasts.clipCopyFailed');
             console.error('[finishDrag] Cross-folder drag failed:', e);
@@ -2624,9 +2633,12 @@ function App() {
         loadFolders();
         refreshTotalCount();
         setSelectedClipIds(new Set());
+        const folderName = folderId ? folders.find((f) => f.id === folderId)?.name : null;
         toast.success(
           folderId
-            ? t('toasts.clipsCopiedToFolder', { count: copied })
+            ? folderName
+              ? t('toasts.clipsCopiedToFolderNamed', { count: copied, name: folderName })
+              : t('toasts.clipsCopiedToFolder', { count: copied })
             : t('toasts.clipsCopiedToMain', { count: copied })
         );
       } catch (e) {
@@ -2870,7 +2882,14 @@ function App() {
       loadFolders();
       refreshTotalCount();
 
-      toast.success(t('toasts.copiedToFolder'));
+      const folderName = folderId ? folders.find((f) => f.id === folderId)?.name : null;
+      toast.success(
+        folderId
+          ? folderName
+            ? t('toasts.copiedToFolderNamed', { name: folderName })
+            : t('toasts.copiedToFolder')
+          : t('toasts.copiedToMainClipboard')
+      );
     } catch (error) {
       console.error('Failed to copy clip:', error);
       const errMsg = typeof error === 'string' ? error : t('toasts.clipCopyFailed');
@@ -3484,7 +3503,14 @@ function App() {
         await loadClips(selectedFolderRef.current);
         await loadFolders();
         refreshTotalCount();
-        toast.success(folderId ? t('toasts.copiedToFolder') : t('toasts.copiedToMainClipboard'));
+        const folderName = folderId ? folders.find((f) => f.id === folderId)?.name : null;
+        toast.success(
+          folderId
+            ? folderName
+              ? t('toasts.copiedToFolderNamed', { name: folderName })
+              : t('toasts.copiedToFolder')
+            : t('toasts.copiedToMainClipboard')
+        );
       } catch (e) {
         console.error('Failed to copy clip to folder:', e);
         const errMsg = typeof e === 'string' ? e : t('toasts.clipCopyFailed');

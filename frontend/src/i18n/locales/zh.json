@@ -254,9 +254,11 @@
     "clipsMovedToFolder": "已移动 {{count}} 个剪辑",
     "clipsMovedToMain": "已将 {{count}} 个剪辑移动到剪贴板",
     "copiedToFolder": "已复制到文件夹",
+    "copiedToFolderNamed": "已复制到文件夹 \"{{name}}\"",
     "copiedToMainClipboard": "已复制到剪贴板",
     "clipCopyFailed": "复制剪辑失败",
     "clipsCopiedToFolder": "已将 {{count}} 个剪辑复制到文件夹",
+    "clipsCopiedToFolderNamed": "已将 {{count}} 个剪辑复制到文件夹 \"{{name}}\"",
     "clipsCopiedToMain": "已将 {{count}} 个剪辑复制到剪贴板"
   },
   "tray": {
