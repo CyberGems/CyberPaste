@@ -65,6 +65,7 @@ import { SearchHistoryMenu } from './SearchHistoryMenu';
 import { TitleBarMenu } from './TitleBarMenu';
 import { TitleBarUpdateButton } from './TitleBarUpdateButton';
 import { useFolderFlash } from '../hooks/useFolderFlash';
+import { useHoldToScroll } from '../hooks/useHoldToScroll';
 import { TITLEBAR_HOTKEYS } from '../hooks/useKeyboard';
 import { useClipboardMonitoring } from '../hooks/useClipboardMonitoring';
 import { invoke } from '@tauri-apps/api/core';
@@ -330,15 +331,21 @@ export const ControlBar: React.FC<ControlBarProps> = ({
     setCanScrollRight(overflow && scrollLeft + clientWidth < scrollWidth - 2);
   }, []);
 
-  const scrollFolders = React.useCallback((direction: 'left' | 'right') => {
-    const el = foldersRef.current;
-    if (!el) return;
-    const distance = Math.max(el.clientWidth * 0.65, 160);
-    el.scrollBy({
-      left: direction === 'left' ? -distance : distance,
-      behavior: 'smooth',
-    });
-  }, []);
+  const scrollLeftHandlers = useHoldToScroll({
+    containerRef: foldersRef,
+    direction: 'left',
+    disabled: !canScrollLeft,
+    onScrollChanged: updateScrollState,
+    stepDistance: () => Math.max((foldersRef.current?.clientWidth || 300) * 0.65, 160),
+  });
+
+  const scrollRightHandlers = useHoldToScroll({
+    containerRef: foldersRef,
+    direction: 'right',
+    disabled: !canScrollRight,
+    onScrollChanged: updateScrollState,
+    stepDistance: () => Math.max((foldersRef.current?.clientWidth || 300) * 0.65, 160),
+  });
 
   useEffect(() => {
     const el = foldersRef.current;
@@ -902,8 +909,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                 <button
                   type="button"
                   disabled={!canScrollLeft}
-                  onClick={() => scrollFolders('left')}
                   aria-label={t('folders.scrollBack')}
+                  {...scrollLeftHandlers}
                   className={clsx(
                     'flex h-8 w-5 items-center justify-center rounded-md border transition-all',
                     canScrollLeft
@@ -1018,8 +1025,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                 <button
                   type="button"
                   disabled={!canScrollRight}
-                  onClick={() => scrollFolders('right')}
                   aria-label={t('folders.scrollForward')}
+                  {...scrollRightHandlers}
                   className={clsx(
                     'flex h-8 w-5 items-center justify-center rounded-md border transition-all',
                     canScrollRight

@@ -109,6 +109,7 @@ import { CompactBulkBar } from './CompactBulkBar';
 import { CompactPeek } from './CompactPeek';
 import { usePinFlash } from '../hooks/usePinFlash';
 import { useFolderFlash } from '../hooks/useFolderFlash';
+import { useHoldToScroll } from '../hooks/useHoldToScroll';
 import { useDeleteFlash } from '../hooks/useDeleteFlash';
 import { useClipboardMonitoring } from '../hooks/useClipboardMonitoring';
 import { usePeekPointerArm } from '../hooks/usePeekPointerArm';
@@ -842,15 +843,21 @@ export const CompactView: React.FC<CompactViewProps> = ({
     setCanScrollRight(overflow && scrollLeft + clientWidth < scrollWidth - 2);
   }, [isVertical]);
 
-  const scrollFolders = useCallback((direction: 'left' | 'right') => {
-    const el = folderScrollRef.current;
-    if (!el) return;
-    const distance = Math.max(el.clientWidth * 0.65, 140);
-    el.scrollBy({
-      left: direction === 'left' ? -distance : distance,
-      behavior: 'smooth',
-    });
-  }, []);
+  const scrollLeftHandlers = useHoldToScroll({
+    containerRef: folderScrollRef,
+    direction: 'left',
+    disabled: !canScrollLeft,
+    onScrollChanged: updateScrollState,
+    stepDistance: () => Math.max((folderScrollRef.current?.clientWidth || 300) * 0.65, 140),
+  });
+
+  const scrollRightHandlers = useHoldToScroll({
+    containerRef: folderScrollRef,
+    direction: 'right',
+    disabled: !canScrollRight,
+    onScrollChanged: updateScrollState,
+    stepDistance: () => Math.max((folderScrollRef.current?.clientWidth || 300) * 0.65, 140),
+  });
 
   useEffect(() => {
     if (isVertical) return;
@@ -2365,8 +2372,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
                       <button
                         type="button"
                         disabled={!canScrollLeft}
-                        onClick={() => scrollFolders('left')}
                         aria-label={t('folders.scrollBack')}
+                        {...scrollLeftHandlers}
                         className={cn(
                           'flex h-7 w-5 items-center justify-center rounded-md border transition-all',
                           canScrollLeft
@@ -2463,8 +2470,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
                       <button
                         type="button"
                         disabled={!canScrollRight}
-                        onClick={() => scrollFolders('right')}
                         aria-label={t('folders.scrollForward')}
+                        {...scrollRightHandlers}
                         className={cn(
                           'flex h-7 w-5 items-center justify-center rounded-md border transition-all',
                           canScrollRight
