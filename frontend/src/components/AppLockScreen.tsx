@@ -154,6 +154,7 @@ export function AppLockScreen({
 
   return (
     <div
+      data-tauri-drag-region
       className="absolute inset-0 z-[220] flex select-none flex-col bg-background/[0.80] backdrop-blur-xl"
       onCopy={(e) => {
         const target = e.target as HTMLElement | null;
@@ -161,30 +162,45 @@ export function AppLockScreen({
         e.preventDefault();
       }}
     >
-      <Tooltip label={t('appLock.close')} placement="bottom">
-        <button
-          type="button"
-          onClick={() => invoke('hide_window').catch(console.error)}
-          aria-label={t('appLock.close')}
-          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      <div
+        data-tauri-drag-region
+        className="relative flex h-11 w-full shrink-0 select-none items-center justify-between px-3"
+      >
+        <div data-tauri-drag-region className="min-h-full min-w-0 flex-1 self-stretch" />
+        <Tooltip label={t('appLock.close')} placement="bottom">
+          <button
+            type="button"
+            onClick={() => invoke('hide_window').catch(console.error)}
+            aria-label={t('appLock.close')}
+            className="no-drag flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            <X size={17} />
+          </button>
+        </Tooltip>
+      </div>
+      <div
+        data-tauri-drag-region
+        className="flex min-h-0 flex-1 flex-col items-center justify-center px-8 pb-11"
+      >
+        <div
+          data-tauri-drag-region
+          className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/30 bg-primary/10 shadow-[0_0_24px_rgba(var(--primary-rgb),0.28)]"
         >
-          <X size={17} />
-        </button>
-      </Tooltip>
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-8">
-        <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/30 bg-primary/10 shadow-[0_0_24px_rgba(var(--primary-rgb),0.28)]">
-          <Lock size={22} className="text-primary" />
+          <Lock size={22} className="pointer-events-none text-primary" />
         </div>
-        <h1 className="text-lg font-semibold tracking-tight text-foreground">
+        <h1 data-tauri-drag-region className="text-lg font-semibold tracking-tight text-foreground">
           {showForgot ? t('appLock.forgotTitle') : t('appLock.unlockTitle')}
         </h1>
-        <p className="mt-1.5 max-w-sm text-center text-xs leading-relaxed text-muted-foreground">
+        <p
+          data-tauri-drag-region
+          className="mt-1.5 max-w-sm text-center text-xs leading-relaxed text-muted-foreground"
+        >
           {showForgot ? t('appLock.forgotBody') : t('appLock.unlockSubtitle')}
         </p>
 
         {showForgot ? (
           <form
-            className="mt-6 w-full max-w-xs"
+            className="no-drag mt-6 w-full max-w-xs"
             onSubmit={(e) => {
               e.preventDefault();
               void submitRecover();
@@ -207,7 +223,7 @@ export function AppLockScreen({
                 setError('');
               }}
               placeholder={t('appLock.recoveryKeyPlaceholder')}
-              className="w-full select-text rounded-lg border border-border bg-input px-3 py-2.5 text-center font-mono text-sm tracking-wide text-foreground placeholder:font-sans placeholder:tracking-normal placeholder:text-muted-foreground focus:border-ring focus:outline-none"
+              className="no-drag w-full select-text rounded-lg border border-border bg-input px-3 py-2.5 text-center font-mono text-sm tracking-wide text-foreground placeholder:font-sans placeholder:tracking-normal placeholder:text-muted-foreground focus:border-ring focus:outline-none"
             />
             <p className="mt-3 text-center text-[11px] text-muted-foreground">
               {t('appLock.setNewSecret')}
@@ -225,7 +241,7 @@ export function AppLockScreen({
                 setError('');
               }}
               placeholder={isPin ? t('appLock.pinPlaceholder') : t('appLock.passwordPlaceholder')}
-              className="mt-2 w-full select-text rounded-lg border border-border bg-input px-3 py-2 text-center text-sm text-foreground focus:border-ring focus:outline-none"
+              className="no-drag mt-2 w-full select-text rounded-lg border border-border bg-input px-3 py-2 text-center text-sm text-foreground focus:border-ring focus:outline-none"
             />
             <input
               type={showSecret ? 'text' : 'password'}
@@ -239,7 +255,7 @@ export function AppLockScreen({
                 setError('');
               }}
               placeholder={t('settings.appLockConfirmSecret')}
-              className="mt-2 w-full select-text rounded-lg border border-border bg-input px-3 py-2 text-center text-sm text-foreground focus:border-ring focus:outline-none"
+              className="no-drag mt-2 w-full select-text rounded-lg border border-border bg-input px-3 py-2 text-center text-sm text-foreground focus:border-ring focus:outline-none"
             />
 
             {lockedOut ? (
@@ -259,13 +275,13 @@ export function AppLockScreen({
                 !newSecret.trim() ||
                 newSecret !== newConfirm
               }
-              className="mt-4 w-full rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+              className="no-drag mt-4 w-full rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
             >
               {busy ? t('appLock.recovering') : t('appLock.recover')}
             </button>
             <button
               type="button"
-              className="mt-3 w-full text-[11px] text-muted-foreground hover:text-foreground"
+              className="no-drag mt-3 w-full text-[11px] text-muted-foreground hover:text-foreground"
               onClick={() => {
                 setShowForgot(false);
                 setError('');
@@ -279,7 +295,7 @@ export function AppLockScreen({
           </form>
         ) : (
           <form
-            className="mt-6 w-full max-w-xs"
+            className="no-drag mt-6 w-full max-w-xs"
             onSubmit={(e) => {
               e.preventDefault();
               void submitUnlock();
@@ -307,12 +323,12 @@ export function AppLockScreen({
                   setError('');
                 }}
                 placeholder={isPin ? t('appLock.pinPlaceholder') : t('appLock.passwordPlaceholder')}
-                className="w-full select-text rounded-lg border border-border bg-input py-2.5 pl-3 pr-10 text-center text-sm tracking-[0.18em] text-foreground placeholder:tracking-normal placeholder:text-muted-foreground focus:border-ring focus:outline-none [&::-ms-clear]:hidden [&::-ms-reveal]:hidden"
+                className="no-drag w-full select-text rounded-lg border border-border bg-input py-2.5 pl-3 pr-10 text-center text-sm tracking-[0.18em] text-foreground placeholder:tracking-normal placeholder:text-muted-foreground focus:border-ring focus:outline-none [&::-ms-clear]:hidden [&::-ms-reveal]:hidden"
               />
               <button
                 type="button"
                 onClick={() => setShowSecret((v) => !v)}
-                className="absolute right-2.5 top-1/2 z-10 -translate-y-1/2 text-foreground/75 hover:text-foreground"
+                className="no-drag absolute right-2.5 top-1/2 z-10 -translate-y-1/2 text-foreground/75 hover:text-foreground"
                 tabIndex={-1}
                 aria-label={showSecret ? t('appLock.hideSecret') : t('appLock.showSecret')}
               >
@@ -331,7 +347,7 @@ export function AppLockScreen({
             <button
               type="submit"
               disabled={busy || lockedOut || !secret.trim()}
-              className="mt-4 w-full rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+              className="no-drag mt-4 w-full rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
             >
               {busy ? t('appLock.unlocking') : t('appLock.unlock')}
             </button>
@@ -341,7 +357,7 @@ export function AppLockScreen({
         {!showForgot && (
           <button
             type="button"
-            className="mt-4 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            className="no-drag mt-4 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
             onClick={() => {
               setShowForgot(true);
               setError('');
