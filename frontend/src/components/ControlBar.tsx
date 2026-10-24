@@ -467,6 +467,32 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   };
 
   useEffect(() => {
+    let reorderScrollRaf: number | null = null;
+    let reorderScrollSpeed = 0;
+
+    const stopReorderScroll = () => {
+      if (reorderScrollRaf !== null) {
+        cancelAnimationFrame(reorderScrollRaf);
+        reorderScrollRaf = null;
+      }
+      reorderScrollSpeed = 0;
+    };
+
+    const startReorderScroll = () => {
+      if (reorderScrollRaf !== null) return;
+      const step = () => {
+        if (!wasFolderDraggingRef.current || !foldersRef.current) {
+          stopReorderScroll();
+          return;
+        }
+        if (reorderScrollSpeed !== 0) {
+          foldersRef.current.scrollLeft += reorderScrollSpeed;
+        }
+        reorderScrollRaf = requestAnimationFrame(step);
+      };
+      reorderScrollRaf = requestAnimationFrame(step);
+    };
+
     const handleGlobalMouseMove = (e: MouseEvent) => {
       const pending = pendingFolderDragRef.current;
       if (!pending) return;
@@ -481,9 +507,35 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           document.body.classList.add('is-dragging-folder');
         }
       }
+
+      if (wasFolderDraggingRef.current && foldersRef.current) {
+        const el = foldersRef.current;
+        const rect = el.getBoundingClientRect();
+        const EDGE_THRESHOLD = 50;
+        const MAX_SPEED = 8;
+        const MIN_SPEED = 2;
+
+        if (e.clientX <= rect.left + EDGE_THRESHOLD && el.scrollLeft > 0) {
+          const dist = Math.max(0, e.clientX - rect.left);
+          const factor = Math.max(0, Math.min(1, (EDGE_THRESHOLD - dist) / EDGE_THRESHOLD));
+          reorderScrollSpeed = -Math.max(MIN_SPEED, Math.round(MAX_SPEED * factor));
+          startReorderScroll();
+        } else if (
+          e.clientX >= rect.right - EDGE_THRESHOLD &&
+          el.scrollLeft + el.clientWidth < el.scrollWidth - 1
+        ) {
+          const dist = Math.max(0, rect.right - e.clientX);
+          const factor = Math.max(0, Math.min(1, (EDGE_THRESHOLD - dist) / EDGE_THRESHOLD));
+          reorderScrollSpeed = Math.max(MIN_SPEED, Math.round(MAX_SPEED * factor));
+          startReorderScroll();
+        } else {
+          reorderScrollSpeed = 0;
+        }
+      }
     };
 
     const handleGlobalMouseUp = () => {
+      stopReorderScroll();
       const pending = pendingFolderDragRef.current;
       if (pending) {
         const isDragging = wasFolderDraggingRef.current;
@@ -509,6 +561,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
     window.addEventListener('mousemove', handleGlobalMouseMove);
     window.addEventListener('mouseup', handleGlobalMouseUp);
     return () => {
+      stopReorderScroll();
       window.removeEventListener('mousemove', handleGlobalMouseMove);
       window.removeEventListener('mouseup', handleGlobalMouseUp);
     };
@@ -860,6 +913,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           {/* Folders List - Cybernetic Transition */}
           <div
             ref={foldersRef}
+            data-folder-container="horizontal"
             onScroll={updateScrollState}
             className={clsx(
               'no-scrollbar flex flex-1 items-center gap-1 overflow-x-auto transition-all duration-500 ease-in-out',

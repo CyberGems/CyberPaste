@@ -386,12 +386,18 @@ function App() {
     rafId: number | null;
     vx: number;
     vy: number;
+    folderVx: number;
+    folderVy: number;
+    folderContainer: HTMLElement | null;
     lastClientX: number;
     lastClientY: number;
   }>({
     rafId: null,
     vx: 0,
     vy: 0,
+    folderVx: 0,
+    folderVy: 0,
+    folderContainer: null,
     lastClientX: 0,
     lastClientY: 0,
   });
@@ -1296,6 +1302,9 @@ function App() {
       }
       autoScrollRef.current.vx = 0;
       autoScrollRef.current.vy = 0;
+      autoScrollRef.current.folderVx = 0;
+      autoScrollRef.current.folderVy = 0;
+      autoScrollRef.current.folderContainer = null;
     };
 
     const startAutoScrollLoop = () => {
@@ -1307,7 +1316,10 @@ function App() {
           return;
         }
 
-        const { vx, vy, lastClientX, lastClientY } = autoScrollRef.current;
+        const { vx, vy, folderVx, folderVy, folderContainer, lastClientX, lastClientY } =
+          autoScrollRef.current;
+
+        // Clip list auto-scroll
         if (vx !== 0 || vy !== 0) {
           const clipList = document.querySelector('[data-clip-list="true"]') as HTMLElement | null;
           if (clipList) {
@@ -1316,6 +1328,56 @@ function App() {
               if (vy !== 0) scrollContainer.scrollTop += vy;
               if (vx !== 0) scrollContainer.scrollLeft += vx;
               updateReorderTarget(lastClientX, lastClientY);
+            }
+          }
+        }
+
+        // Folder container auto-scroll
+        if (folderContainer && (folderVx !== 0 || folderVy !== 0)) {
+          if (folderVx !== 0) {
+            folderContainer.scrollLeft += folderVx;
+            if (folderVx < 0 && folderContainer.scrollLeft <= 0) {
+              autoScrollRef.current.folderVx = 0;
+            } else if (
+              folderVx > 0 &&
+              folderContainer.scrollLeft + folderContainer.clientWidth >=
+                folderContainer.scrollWidth - 1
+            ) {
+              autoScrollRef.current.folderVx = 0;
+            }
+          }
+
+          if (folderVy !== 0) {
+            folderContainer.scrollTop += folderVy;
+            if (folderVy < 0 && folderContainer.scrollTop <= 0) {
+              autoScrollRef.current.folderVy = 0;
+            } else if (
+              folderVy > 0 &&
+              folderContainer.scrollTop + folderContainer.clientHeight >=
+                folderContainer.scrollHeight - 1
+            ) {
+              autoScrollRef.current.folderVy = 0;
+            }
+          }
+
+          // As folders scroll under cursor, detect folder currently under cursor
+          const elem = document.elementFromPoint(lastClientX, lastClientY);
+          const folderBtn = elem?.closest('[data-folder-id]');
+          if (folderBtn) {
+            const folderId = folderBtn.getAttribute('data-folder-id');
+            const targetId = folderId === 'clipboard' ? null : folderId;
+            if (targetId !== selectedFolderRef.current) {
+              if (dragStateRef.current.targetFolderId !== targetId) {
+                handleDragHover(targetId);
+              }
+            } else {
+              if (dragStateRef.current.targetFolderId !== undefined) {
+                handleDragLeave();
+              }
+            }
+          } else {
+            if (dragStateRef.current.targetFolderId !== undefined) {
+              handleDragLeave();
             }
           }
         }
@@ -1341,39 +1403,180 @@ function App() {
         autoScrollRef.current.lastClientX = e.clientX;
         autoScrollRef.current.lastClientY = e.clientY;
 
-        // Detect folder hover (for moving clips from main clipboard to regular folders)
-        const elem = document.elementFromPoint(e.clientX, e.clientY);
-        const folderBtn = elem?.closest('[data-folder-id]');
-        if (folderBtn) {
-          // Stop auto-scroll when hovering over folders
-          autoScrollRef.current.vx = 0;
-          autoScrollRef.current.vy = 0;
+        // Check if cursor is over or near the folder bar
+        const folderContainer = document.querySelector(
+          '[data-folder-container]'
+        ) as HTMLElement | null;
+        let isOverFolderBar = false;
 
-          const folderId = folderBtn.getAttribute('data-folder-id');
-          const targetId = folderId === 'clipboard' ? null : folderId;
+        if (folderContainer && !folderContainer.classList.contains('invisible')) {
+          const fRect = folderContainer.getBoundingClientRect();
+          if (fRect.width > 0 && fRect.height > 0) {
+            const orientation =
+              folderContainer.getAttribute('data-folder-container') || 'horizontal';
 
-          // Allow dropping to any folder as long as it's different from the currently viewed folder
-          if (targetId !== selectedFolderRef.current) {
-            if (dragStateRef.current.targetFolderId !== targetId) {
-              handleDragHover(targetId);
-            }
-            // Clear reorder target visual indicators when hovering over a folder
-            if (dragStateRef.current.reorderTargetClipId !== null) {
-              setReorderTargetClipId(null);
-              setReorderTargetPosition(null);
-              dragStateRef.current.reorderTargetClipId = null;
-              dragStateRef.current.reorderTargetPosition = null;
-            }
-          } else {
-            if (dragStateRef.current.targetFolderId !== undefined) {
-              handleDragLeave();
+            if (orientation === 'horizontal') {
+              const inV = e.clientY >= fRect.top - 20 && e.clientY <= fRect.bottom + 20;
+              const inH = e.clientX >= fRect.left - 35 && e.clientX <= fRect.right + 35;
+              isOverFolderBar = inV && inH;
+
+              if (isOverFolderBar) {
+                // Clear clip list scroll velocities & reorder targets
+                autoScrollRef.current.vx = 0;
+                autoScrollRef.current.vy = 0;
+                if (dragStateRef.current.reorderTargetClipId !== null) {
+                  setReorderTargetClipId(null);
+                  setReorderTargetPosition(null);
+                  dragStateRef.current.reorderTargetClipId = null;
+                  dragStateRef.current.reorderTargetPosition = null;
+                }
+
+                // Detect folder button under cursor
+                const elem = document.elementFromPoint(e.clientX, e.clientY);
+                const folderBtn = elem?.closest('[data-folder-id]');
+                if (folderBtn) {
+                  const folderId = folderBtn.getAttribute('data-folder-id');
+                  const targetId = folderId === 'clipboard' ? null : folderId;
+                  if (targetId !== selectedFolderRef.current) {
+                    if (dragStateRef.current.targetFolderId !== targetId) {
+                      handleDragHover(targetId);
+                    }
+                  } else {
+                    if (dragStateRef.current.targetFolderId !== undefined) {
+                      handleDragLeave();
+                    }
+                  }
+                } else {
+                  if (dragStateRef.current.targetFolderId !== undefined) {
+                    handleDragLeave();
+                  }
+                }
+
+                // Calculate edge scroll for horizontal folder container
+                let fVx = 0;
+                const hasOverflow = folderContainer.scrollWidth > folderContainer.clientWidth + 2;
+                if (hasOverflow) {
+                  const EDGE_THRESHOLD = 55;
+                  const MAX_SPEED = 9;
+                  const MIN_SPEED = 2;
+
+                  if (e.clientX <= fRect.left + EDGE_THRESHOLD && folderContainer.scrollLeft > 0) {
+                    const dist = Math.max(0, e.clientX - fRect.left);
+                    const factor = Math.max(
+                      0,
+                      Math.min(1, (EDGE_THRESHOLD - dist) / EDGE_THRESHOLD)
+                    );
+                    fVx = -Math.max(MIN_SPEED, Math.round(MAX_SPEED * factor));
+                  } else if (
+                    e.clientX >= fRect.right - EDGE_THRESHOLD &&
+                    folderContainer.scrollLeft + folderContainer.clientWidth <
+                      folderContainer.scrollWidth - 1
+                  ) {
+                    const dist = Math.max(0, fRect.right - e.clientX);
+                    const factor = Math.max(
+                      0,
+                      Math.min(1, (EDGE_THRESHOLD - dist) / EDGE_THRESHOLD)
+                    );
+                    fVx = Math.max(MIN_SPEED, Math.round(MAX_SPEED * factor));
+                  }
+                }
+
+                autoScrollRef.current.folderContainer = folderContainer;
+                autoScrollRef.current.folderVx = fVx;
+                autoScrollRef.current.folderVy = 0;
+
+                if (fVx !== 0) {
+                  startAutoScrollLoop();
+                }
+                return;
+              }
+            } else {
+              // orientation === 'vertical'
+              const inH = e.clientX >= fRect.left - 20 && e.clientX <= fRect.right + 30;
+              const inV = e.clientY >= fRect.top - 20 && e.clientY <= fRect.bottom + 20;
+              isOverFolderBar = inH && inV;
+
+              if (isOverFolderBar) {
+                // Clear clip list scroll velocities & reorder targets
+                autoScrollRef.current.vx = 0;
+                autoScrollRef.current.vy = 0;
+                if (dragStateRef.current.reorderTargetClipId !== null) {
+                  setReorderTargetClipId(null);
+                  setReorderTargetPosition(null);
+                  dragStateRef.current.reorderTargetClipId = null;
+                  dragStateRef.current.reorderTargetPosition = null;
+                }
+
+                // Detect folder button under cursor
+                const elem = document.elementFromPoint(e.clientX, e.clientY);
+                const folderBtn = elem?.closest('[data-folder-id]');
+                if (folderBtn) {
+                  const folderId = folderBtn.getAttribute('data-folder-id');
+                  const targetId = folderId === 'clipboard' ? null : folderId;
+                  if (targetId !== selectedFolderRef.current) {
+                    if (dragStateRef.current.targetFolderId !== targetId) {
+                      handleDragHover(targetId);
+                    }
+                  } else {
+                    if (dragStateRef.current.targetFolderId !== undefined) {
+                      handleDragLeave();
+                    }
+                  }
+                } else {
+                  if (dragStateRef.current.targetFolderId !== undefined) {
+                    handleDragLeave();
+                  }
+                }
+
+                // Calculate edge scroll for vertical folder container
+                let fVy = 0;
+                const hasOverflow = folderContainer.scrollHeight > folderContainer.clientHeight + 2;
+                if (hasOverflow) {
+                  const EDGE_THRESHOLD = 45;
+                  const MAX_SPEED = 9;
+                  const MIN_SPEED = 2;
+
+                  if (e.clientY <= fRect.top + EDGE_THRESHOLD && folderContainer.scrollTop > 0) {
+                    const dist = Math.max(0, e.clientY - fRect.top);
+                    const factor = Math.max(
+                      0,
+                      Math.min(1, (EDGE_THRESHOLD - dist) / EDGE_THRESHOLD)
+                    );
+                    fVy = -Math.max(MIN_SPEED, Math.round(MAX_SPEED * factor));
+                  } else if (
+                    e.clientY >= fRect.bottom - EDGE_THRESHOLD &&
+                    folderContainer.scrollTop + folderContainer.clientHeight <
+                      folderContainer.scrollHeight - 1
+                  ) {
+                    const dist = Math.max(0, fRect.bottom - e.clientY);
+                    const factor = Math.max(
+                      0,
+                      Math.min(1, (EDGE_THRESHOLD - dist) / EDGE_THRESHOLD)
+                    );
+                    fVy = Math.max(MIN_SPEED, Math.round(MAX_SPEED * factor));
+                  }
+                }
+
+                autoScrollRef.current.folderContainer = folderContainer;
+                autoScrollRef.current.folderVx = 0;
+                autoScrollRef.current.folderVy = fVy;
+
+                if (fVy !== 0) {
+                  startAutoScrollLoop();
+                }
+                return;
+              }
             }
           }
-          return;
-        } else {
-          if (dragStateRef.current.targetFolderId !== undefined) {
-            handleDragLeave();
-          }
+        }
+
+        // If not over folder bar, reset folder container auto-scroll
+        autoScrollRef.current.folderContainer = null;
+        autoScrollRef.current.folderVx = 0;
+        autoScrollRef.current.folderVy = 0;
+
+        if (dragStateRef.current.targetFolderId !== undefined) {
+          handleDragLeave();
         }
 
         // Calculate auto-scroll velocity and update reorder target
@@ -1538,6 +1741,9 @@ function App() {
     }
     autoScrollRef.current.vx = 0;
     autoScrollRef.current.vy = 0;
+    autoScrollRef.current.folderVx = 0;
+    autoScrollRef.current.folderVy = 0;
+    autoScrollRef.current.folderContainer = null;
 
     const { clipId, targetFolderId, reorderTargetClipId, reorderTargetPosition } =
       dragStateRef.current;

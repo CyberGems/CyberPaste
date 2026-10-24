@@ -1119,6 +1119,36 @@ export const CompactView: React.FC<CompactViewProps> = ({
   };
 
   useEffect(() => {
+    let reorderScrollRaf: number | null = null;
+    let reorderScrollSpeed = 0;
+
+    const stopReorderScroll = () => {
+      if (reorderScrollRaf !== null) {
+        cancelAnimationFrame(reorderScrollRaf);
+        reorderScrollRaf = null;
+      }
+      reorderScrollSpeed = 0;
+    };
+
+    const startReorderScroll = () => {
+      if (reorderScrollRaf !== null) return;
+      const step = () => {
+        if (!wasFolderDraggingRef.current || !folderScrollRef.current) {
+          stopReorderScroll();
+          return;
+        }
+        if (reorderScrollSpeed !== 0) {
+          if (isVertical) {
+            folderScrollRef.current.scrollTop += reorderScrollSpeed;
+          } else {
+            folderScrollRef.current.scrollLeft += reorderScrollSpeed;
+          }
+        }
+        reorderScrollRaf = requestAnimationFrame(step);
+      };
+      reorderScrollRaf = requestAnimationFrame(step);
+    };
+
     const handleGlobalMouseMove = (e: MouseEvent) => {
       const pending = pendingFolderDragRef.current;
       if (!pending) return;
@@ -1133,9 +1163,54 @@ export const CompactView: React.FC<CompactViewProps> = ({
           document.body.classList.add('is-dragging-folder');
         }
       }
+
+      if (wasFolderDraggingRef.current && folderScrollRef.current) {
+        const el = folderScrollRef.current;
+        const rect = el.getBoundingClientRect();
+        const EDGE_THRESHOLD = isVertical ? 45 : 50;
+        const MAX_SPEED = 8;
+        const MIN_SPEED = 2;
+
+        if (isVertical) {
+          if (e.clientY <= rect.top + EDGE_THRESHOLD && el.scrollTop > 0) {
+            const dist = Math.max(0, e.clientY - rect.top);
+            const factor = Math.max(0, Math.min(1, (EDGE_THRESHOLD - dist) / EDGE_THRESHOLD));
+            reorderScrollSpeed = -Math.max(MIN_SPEED, Math.round(MAX_SPEED * factor));
+            startReorderScroll();
+          } else if (
+            e.clientY >= rect.bottom - EDGE_THRESHOLD &&
+            el.scrollTop + el.clientHeight < el.scrollHeight - 1
+          ) {
+            const dist = Math.max(0, rect.bottom - e.clientY);
+            const factor = Math.max(0, Math.min(1, (EDGE_THRESHOLD - dist) / EDGE_THRESHOLD));
+            reorderScrollSpeed = Math.max(MIN_SPEED, Math.round(MAX_SPEED * factor));
+            startReorderScroll();
+          } else {
+            reorderScrollSpeed = 0;
+          }
+        } else {
+          if (e.clientX <= rect.left + EDGE_THRESHOLD && el.scrollLeft > 0) {
+            const dist = Math.max(0, e.clientX - rect.left);
+            const factor = Math.max(0, Math.min(1, (EDGE_THRESHOLD - dist) / EDGE_THRESHOLD));
+            reorderScrollSpeed = -Math.max(MIN_SPEED, Math.round(MAX_SPEED * factor));
+            startReorderScroll();
+          } else if (
+            e.clientX >= rect.right - EDGE_THRESHOLD &&
+            el.scrollLeft + el.clientWidth < el.scrollWidth - 1
+          ) {
+            const dist = Math.max(0, rect.right - e.clientX);
+            const factor = Math.max(0, Math.min(1, (EDGE_THRESHOLD - dist) / EDGE_THRESHOLD));
+            reorderScrollSpeed = Math.max(MIN_SPEED, Math.round(MAX_SPEED * factor));
+            startReorderScroll();
+          } else {
+            reorderScrollSpeed = 0;
+          }
+        }
+      }
     };
 
     const handleGlobalMouseUp = () => {
+      stopReorderScroll();
       const pending = pendingFolderDragRef.current;
       if (pending) {
         const isDragging = wasFolderDraggingRef.current;
@@ -1161,10 +1236,17 @@ export const CompactView: React.FC<CompactViewProps> = ({
     window.addEventListener('mousemove', handleGlobalMouseMove);
     window.addEventListener('mouseup', handleGlobalMouseUp);
     return () => {
+      stopReorderScroll();
       window.removeEventListener('mousemove', handleGlobalMouseMove);
       window.removeEventListener('mouseup', handleGlobalMouseUp);
     };
-  }, [draggingFolderId, folderReorderTargetId, folderReorderTargetPosition, onReorderFolder]);
+  }, [
+    draggingFolderId,
+    folderReorderTargetId,
+    folderReorderTargetPosition,
+    isVertical,
+    onReorderFolder,
+  ]);
 
   const handleFolderMouseMove = (
     e: React.MouseEvent,
@@ -1700,6 +1782,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 >
                   <div
                     ref={folderScrollRef}
+                    data-folder-container="vertical"
                     onWheel={handleWheel}
                     className="no-scrollbar flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto py-2"
                   >
@@ -2294,6 +2377,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 )}
                 <div
                   ref={folderScrollRef}
+                  data-folder-container="horizontal"
                   onWheel={handleWheel}
                   onScroll={updateScrollState}
                   className="no-scrollbar flex min-w-0 flex-1 gap-1 overflow-x-auto pb-1"
