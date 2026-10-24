@@ -452,6 +452,12 @@ export function useKeyboard(options: KeyboardOptions) {
       }
 
       if (e.key === 'ArrowRight' && (!isTyping || isSearchInput)) {
+        const isSearchCaretAtEnd =
+          isSearchInput &&
+          e.target instanceof HTMLInputElement &&
+          e.target.selectionStart === e.target.value.length &&
+          e.target.selectionEnd === e.target.value.length;
+
         if (e.ctrlKey || e.metaKey) {
           if (options.onFolderNext) {
             e.preventDefault();
@@ -460,7 +466,11 @@ export function useKeyboard(options: KeyboardOptions) {
             lockListHover();
             options.onFolderNext();
           }
-        } else if (options.onNavigateRight && !isSearchInput) {
+        } else if (
+          options.onNavigateRight &&
+          (!isSearchInput ||
+            (isSearchCaretAtEnd && !options.isEmojiMode && options.hasItems !== false))
+        ) {
           e.preventDefault();
           e.stopPropagation();
           leaveSearchInput();
