@@ -5716,6 +5716,7 @@ pub async fn open_about(app: AppHandle) -> Result<(), String> {
 
 fn open_about_window(app: &AppHandle) {
     if let Some(about_win) = app.get_webview_window("about") {
+        crate::suppress_window_border(&about_win);
         let _ = about_win.unminimize();
         let _ = about_win.set_always_on_top(true);
         let _ = about_win.show();
@@ -5741,7 +5742,7 @@ fn open_about_window(app: &AppHandle) {
     .resizable(true)
     .maximizable(false)
     .decorations(false)
-    .transparent(false)
+    .transparent(true)
     .always_on_top(true)
     .visible(false);
 
@@ -5768,7 +5769,9 @@ fn open_about_window(app: &AppHandle) {
     }
 
     if let Ok(_webview_create_guard) = crate::WEBVIEW_CREATE_LOCK.lock() {
-        let _ = builder.build();
+        if let Ok(win) = builder.build() {
+            crate::suppress_window_border(&win);
+        }
     } else {
         log::error!("WebView creation lock poisoned while opening About");
     }
@@ -5776,6 +5779,7 @@ fn open_about_window(app: &AppHandle) {
 
 fn open_settings_window(app: &AppHandle, tab: Option<&str>) {
     if let Some(settings_win) = app.get_webview_window("settings") {
+        crate::suppress_window_border(&settings_win);
         let _ = settings_win.unminimize();
         let _ = settings_win.show();
         let _ = settings_win.set_focus();
@@ -5807,7 +5811,7 @@ fn open_settings_window(app: &AppHandle, tab: Option<&str>) {
     .resizable(true)
     .maximizable(true)
     .decorations(false)
-    .transparent(false)
+    .transparent(true)
     .visible(false);
 
     if let (Some(x), Some(y)) = (settings.settings_window_x, settings.settings_window_y) {
@@ -5833,7 +5837,9 @@ fn open_settings_window(app: &AppHandle, tab: Option<&str>) {
     }
 
     if let Ok(_webview_create_guard) = crate::WEBVIEW_CREATE_LOCK.lock() {
-        let _ = builder.build();
+        if let Ok(win) = builder.build() {
+            crate::suppress_window_border(&win);
+        }
     } else {
         log::error!("WebView creation lock poisoned while opening Settings");
     }

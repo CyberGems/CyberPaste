@@ -1781,6 +1781,32 @@ pub fn apply_window_effect(
     }
 }
 
+pub fn suppress_window_border(window: &tauri::WebviewWindow) {
+    #[cfg(target_os = "windows")]
+    {
+        if let Ok(handle) = window.hwnd() {
+            use windows::Win32::Foundation::HWND;
+            use windows::Win32::Graphics::Dwm::{DwmSetWindowAttribute, DWMWINDOWATTRIBUTE};
+            let hwnd = HWND(handle.0 as _);
+            // DWMWA_BORDER_COLOR (attribute 34 in Windows 11 Build 22000+)
+            // Setting to 0xFFFFFFFE (DWMWA_COLOR_NONE) suppresses the active/inactive window border
+            let color_none: u32 = 0xFFFFFFFE;
+            unsafe {
+                let _ = DwmSetWindowAttribute(
+                    hwnd,
+                    DWMWINDOWATTRIBUTE(34),
+                    &color_none as *const _ as *const _,
+                    std::mem::size_of::<u32>() as u32,
+                );
+            }
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = window;
+    }
+}
+
 pub fn update_tray_icon(tray: &TrayIcon, theme: &tauri::Theme) {
     let icon_data: &[u8] = match theme {
         tauri::Theme::Dark => include_bytes!("../icons/tray_white.png"),
