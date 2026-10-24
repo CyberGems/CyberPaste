@@ -30,16 +30,25 @@ struct TrayPinTipShow {
     edge: TaskbarEdge,
 }
 
-pub async fn show_if_needed(app: AppHandle) -> Result<(), String> {
-    let manager = app.state::<Arc<SettingsManager>>();
-    if manager.get().has_seen_tray_pin_tip {
-        return Ok(());
-    }
-    if app.get_webview_window(WINDOW_LABEL).is_some() {
+pub async fn show_pin_tip(app: &AppHandle) -> Result<(), String> {
+    if let Some(win) = app.get_webview_window(WINDOW_LABEL) {
+        let (anchor, edge) = resolve_anchor_and_edge(app);
+        if let Ok(mut lock) = LAST_EDGE.lock() {
+            *lock = edge;
+        }
+
+        let est_w = CARD_WIDTH + 2.0 * SHADOW_PAD + TAIL;
+        let est_h = EST_CARD_HEIGHT + 2.0 * SHADOW_PAD + TAIL;
+
+        apply_geometry(&win, &anchor, edge, est_w, est_h);
+        PENDING_SHOW.store(false, Ordering::SeqCst);
+        let _ = win.show();
+        let _ = win.set_focus();
+        let _ = app.emit("tray-pin-tip-show", TrayPinTipShow { edge });
         return Ok(());
     }
 
-    let (anchor, edge) = resolve_anchor_and_edge(&app);
+    let (anchor, edge) = resolve_anchor_and_edge(app);
     if let Ok(mut lock) = LAST_EDGE.lock() {
         *lock = edge;
     }
@@ -51,7 +60,7 @@ pub async fn show_if_needed(app: AppHandle) -> Result<(), String> {
         .lock()
         .map_err(|_| "WebView creation lock poisoned".to_string())?;
     let result = tauri::WebviewWindowBuilder::new(
-        &app,
+        app,
         WINDOW_LABEL,
         tauri::WebviewUrl::App("index.html?window=tray_pin_tip".into()),
     )
@@ -63,11 +72,14 @@ pub async fn show_if_needed(app: AppHandle) -> Result<(), String> {
     .skip_taskbar(true)
     .resizable(false)
     .shadow(false)
-    .focused(false)
+    .focused(true)
     .visible(false)
     .build();
     drop(webview_create_guard);
     let win = result.map_err(|e| format!("Failed to create tray pin tip: {e}"))?;
+
+    crate::disable_window_transitions(&win);
+    crate::suppress_window_border(&win);
 
     apply_geometry(&win, &anchor, edge, est_w, est_h);
     PENDING_SHOW.store(true, Ordering::SeqCst);
@@ -83,6 +95,7 @@ pub async fn show_if_needed(app: AppHandle) -> Result<(), String> {
             }
             if let Some(w) = app_retry.get_webview_window(WINDOW_LABEL) {
                 let _ = w.show();
+                let _ = w.set_focus();
             } else {
                 break;
             }
@@ -90,6 +103,19 @@ pub async fn show_if_needed(app: AppHandle) -> Result<(), String> {
     });
 
     Ok(())
+}
+
+pub async fn show_if_needed(app: AppHandle) -> Result<(), String> {
+    let manager = app.state::<Arc<SettingsManager>>();
+    if manager.get().has_seen_tray_pin_tip {
+        return Ok(());
+    }
+    show_pin_tip(&app).await
+}
+
+#[tauri::command]
+pub async fn show_tray_pin_tip(app: AppHandle) -> Result<(), String> {
+    show_pin_tip(&app).await
 }
 
 fn resolve_anchor_and_edge(app: &AppHandle) -> (PhysicalRect, TaskbarEdge) {

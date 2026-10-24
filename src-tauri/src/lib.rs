@@ -946,6 +946,7 @@ pub fn run_app() {
             tray_pin_tip::get_tray_pin_tip_edge,
             tray_pin_tip::tray_pin_tip_ready,
             tray_pin_tip::dismiss_tray_pin_tip,
+            tray_pin_tip::show_tray_pin_tip,
             app_lock::get_app_lock_status,
             app_lock::app_lock_ping,
             app_lock::lock_app,

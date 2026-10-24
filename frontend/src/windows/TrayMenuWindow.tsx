@@ -406,7 +406,7 @@ export function TrayMenuWindow() {
                 compact
                 icon={<Pin size={14} strokeWidth={1.75} />}
                 label={t('tray.pinTrayIcon', { defaultValue: 'Pin icon to taskbar...' })}
-                onClick={() => hideThenInvoke('open_tray_icon_settings')}
+                onClick={() => hideThenInvoke('show_tray_pin_tip')}
               />
               <div className="mx-2 my-1 h-px bg-border/70" />
               <TrayItem

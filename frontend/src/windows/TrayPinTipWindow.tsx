@@ -24,8 +24,8 @@ export function TrayPinTipWindow() {
   const { t } = useTranslation();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [edge, setEdge] = useState<TaskbarEdge>('bottom');
-  const [dontShowAgain, setDontShowAgain] = useState(true);
-  const dontShowAgainRef = useRef(true);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+  const dontShowAgainRef = useRef(false);
   const closingRef = useRef(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
