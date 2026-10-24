@@ -581,6 +581,41 @@
     background: rgba(0, 0, 0, 0.35);
   }
 
+  /* Slim, CyberClock-matching scrollbar for tray submenus */
+  .tray-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--primary-rgb), 0.35) transparent;
+  }
+  .tray-scrollbar::-webkit-scrollbar {
+    display: block;
+    width: 4px;
+  }
+  .tray-scrollbar::-webkit-scrollbar-button {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  .tray-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 6px 0;
+  }
+  .tray-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(var(--primary-rgb), 0.35);
+    border-radius: 4px;
+  }
+  .tray-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--primary-rgb), 0.7);
+  }
+  .light .tray-scrollbar {
+    scrollbar-color: rgba(var(--primary-rgb), 0.45) transparent;
+  }
+  .light .tray-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(var(--primary-rgb), 0.45);
+  }
+  .light .tray-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--primary-rgb), 0.8);
+  }
+
   /* Thin, unobtrusive scrollbar for the Full-mode clip grid. */
   .full-mode-scrollbar,
   .compact-mode-scrollbar {

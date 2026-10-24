@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import Tooltip from '../components/Tooltip';
 import { resolveLanguage, useLanguage } from '../hooks/useLanguage';
 import type { Settings as AppSettings } from '../types';
 import { RECOMMENDED_SUITE_APPS, suiteLanguage } from '../data/suiteApps';
@@ -294,36 +295,36 @@ export function TrayMenuWindow() {
       >
         {view === 'main' ? (
           <div key="main">
-            <button
-              type="button"
-              onPointerDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                runAction('about');
-              }}
-              title={t('tray.about', { defaultValue: 'About...' })}
-              aria-label={t('tray.about', { defaultValue: 'About...' })}
-              className="group flex w-full select-none items-center justify-center gap-1.5 px-3 pb-2.5 pt-3.5 text-[12px] font-medium tracking-wide text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <img
-                src="/logo.png"
-                alt=""
-                className="h-3.5 w-3.5 shrink-0 object-contain grayscale transition-[filter] duration-150 group-hover:grayscale-0"
-              />
-              <span>
-                Cyber<span className="text-primary">Paste</span>{' '}
-                <span className="text-[11px] tracking-wide text-muted-foreground/70 group-hover:text-muted-foreground">
-                  v{state?.version ?? '…'}
-                </span>
-              </span>
-              {state?.update_available ? (
-                <span
-                  className="h-2 w-2 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.85)]"
-                  title={t('tray.updateAvailable', { defaultValue: 'Update available' })}
-                  aria-label={t('tray.updateAvailable', { defaultValue: 'Update available' })}
+            <Tooltip label={t('tray.about', { defaultValue: 'About...' })} placement="bottom">
+              <button
+                type="button"
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  runAction('about');
+                }}
+                aria-label={t('tray.about', { defaultValue: 'About...' })}
+                className="group flex w-full select-none items-center justify-center gap-1.5 px-3 pb-2.5 pt-3.5 text-[12px] font-medium tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <img
+                  src="/logo.png"
+                  alt=""
+                  className="h-3.5 w-3.5 shrink-0 object-contain grayscale transition-[filter] duration-150 group-hover:grayscale-0"
                 />
-              ) : null}
-            </button>
+                <span>
+                  Cyber<span className="text-primary">Paste</span>{' '}
+                  <span className="text-[11px] tracking-wide text-muted-foreground/70 group-hover:text-muted-foreground">
+                    v{state?.version ?? '…'}
+                  </span>
+                </span>
+                {state?.update_available ? (
+                  <span
+                    className="h-2 w-2 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.85)]"
+                    aria-label={t('tray.updateAvailable', { defaultValue: 'Update available' })}
+                  />
+                ) : null}
+              </button>
+            </Tooltip>
 
             <TrayDivider />
 
@@ -400,7 +401,7 @@ export function TrayMenuWindow() {
               onBack={() => goView('main')}
             />
             <TrayDivider />
-            <div className="custom-scrollbar flex max-h-[360px] flex-col gap-0.5 overflow-y-auto px-1.5 py-1">
+            <div className="tray-scrollbar flex max-h-[360px] flex-col gap-0.5 overflow-y-auto px-1.5 py-1">
               <TrayItem
                 compact
                 icon={<Pin size={14} strokeWidth={1.75} />}
@@ -471,7 +472,7 @@ export function TrayMenuWindow() {
               onBack={() => goView('main')}
             />
             <TrayDivider />
-            <div className="custom-scrollbar flex max-h-[310px] flex-col gap-0.5 overflow-y-auto px-1.5 py-1">
+            <div className="tray-scrollbar flex max-h-[310px] flex-col gap-0.5 overflow-y-auto px-1.5 py-1">
               {RECOMMENDED_SUITE_APPS.map((app) => (
                 <TrayItem
                   key={app.slug}
