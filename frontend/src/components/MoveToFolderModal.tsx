@@ -223,22 +223,22 @@ export const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
 
   return (
     <div
-      className="animate-in fade-in fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm duration-200"
+      className="animate-in fade-in xs:p-2 fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-1.5 backdrop-blur-sm duration-200 sm:p-4"
       onClick={onClose}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="copy-folder-title"
-        className="animate-in zoom-in-95 flex max-h-[min(85vh,520px)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-primary/20 bg-card shadow-[0_0_50px_rgba(var(--primary-rgb),0.15)] duration-300"
+        className="animate-in zoom-in-95 flex max-h-[calc(100vh-12px)] w-full max-w-md flex-col overflow-hidden rounded-xl border border-primary/20 bg-card shadow-[0_0_50px_rgba(var(--primary-rgb),0.15)] duration-300 sm:max-h-[min(85vh,520px)] sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex flex-shrink-0 items-center justify-between border-b border-border px-4 py-3">
+        <div className="flex flex-shrink-0 items-center justify-between border-b border-border px-3 py-2 sm:px-4 sm:py-3">
           <h3
             id="copy-folder-title"
-            className="flex items-center gap-2 text-sm font-semibold tracking-tight text-primary"
+            className="flex items-center gap-2 truncate text-xs font-semibold tracking-tight text-primary sm:text-sm"
           >
-            <FolderIcon size={16} />
+            <FolderIcon size={15} />
             {t('folders.copyToFolder')}
           </h3>
           <Tooltip label={t('common.close')} placement="bottom">
@@ -246,14 +246,14 @@ export const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
               type="button"
               onClick={onClose}
               aria-label={t('common.close')}
-              className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground"
+              className="rounded-lg p-1 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground sm:p-1.5"
             >
-              <X size={16} />
+              <X size={15} />
             </button>
           </Tooltip>
         </div>
 
-        <div className="flex-shrink-0 px-4 pb-2 pt-3">
+        <div className="flex-shrink-0 px-3 pb-2 pt-2.5 sm:px-4 sm:pt-3">
           <div className="relative">
             <Search
               size={14}

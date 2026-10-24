@@ -165,31 +165,32 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
   const typeLabel = t(`clipType.${clipType}`, { defaultValue: t('clipType.text') });
 
   return (
-    <div className="animate-in fade-in fixed inset-0 z-[100] flex items-center justify-center bg-black/65 p-3 backdrop-blur-sm duration-200 sm:p-4">
+    <div className="animate-in fade-in xs:p-2 fixed inset-0 z-[100] flex items-center justify-center bg-black/65 p-1.5 backdrop-blur-sm duration-200 sm:p-4">
       <div
-        className="animate-in zoom-in-95 flex h-[75vh] max-h-[calc(100vh-2rem)] min-h-[360px] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-primary/30 bg-card shadow-[0_0_50px_rgba(var(--primary-rgb),0.18),0_20px_50px_rgba(0,0,0,0.6)] duration-300 sm:max-h-[min(88vh,560px)]"
+        className="animate-in zoom-in-95 flex h-[calc(100vh-12px)] max-h-[calc(100vh-12px)] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-primary/30 bg-card shadow-[0_0_50px_rgba(var(--primary-rgb),0.18),0_20px_50px_rgba(0,0,0,0.6)] duration-300 sm:h-[80vh] sm:max-h-[580px] sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Editor Window Header */}
-        <div className="flex flex-shrink-0 items-center justify-between border-b border-border bg-muted/40 px-4 py-2.5">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <ModalIcon className="h-7 w-7">
-              {isCode ? <FileCode size={15} /> : <FileText size={15} />}
+        <div className="flex flex-shrink-0 items-center justify-between gap-1.5 border-b border-border bg-muted/40 px-2.5 py-1.5 sm:px-4 sm:py-2.5">
+          <div className="flex min-w-0 items-center gap-2">
+            <ModalIcon className="h-6 w-6 shrink-0 sm:h-7 sm:w-7">
+              {isCode ? <FileCode size={14} /> : <FileText size={14} />}
             </ModalIcon>
-            <div className="flex min-w-0 items-center gap-2">
-              <h3 className="truncate text-sm font-bold tracking-tight text-foreground">
+            <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
+              <h3 className="truncate text-xs font-bold tracking-tight text-foreground sm:text-sm">
                 {t('settings.editClip', { type: typeLabel })}
               </h3>
-              <span className="rounded border border-primary/25 bg-primary/10 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-primary">
+              <span className="xs:inline-block hidden shrink-0 rounded border border-primary/25 bg-primary/10 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-primary">
                 {typeLabel.toUpperCase()}
               </span>
             </div>
           </div>
 
           {/* Mini-toolbar */}
-          <div className="flex items-center gap-1">
+          <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
             <Tooltip label={t('editor.wordWrap')} placement="bottom">
               <button
+                type="button"
                 onClick={() => setWordWrap(!wordWrap)}
                 className={clsx(
                   'flex h-7 w-7 items-center justify-center rounded-md border transition-all',
@@ -204,9 +205,10 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
 
             <Tooltip label={copied ? t('editor.copied') : t('editor.copyAll')} placement="bottom">
               <button
+                type="button"
                 onClick={handleCopyAll}
                 className={clsx(
-                  'flex h-7 items-center gap-1.5 rounded-md border px-2 text-xs transition-all',
+                  'flex h-7 items-center gap-1.5 rounded-md border px-1.5 text-xs transition-all sm:px-2',
                   copied
                     ? 'border-emerald-500/30 bg-emerald-500/15 font-semibold text-emerald-400'
                     : 'border-transparent text-muted-foreground hover:bg-accent hover:text-foreground'
@@ -220,27 +222,30 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
             </Tooltip>
             <Tooltip label={t('export.saveAs')} placement="bottom">
               <button
+                type="button"
                 onClick={handleExport}
                 className="flex h-7 w-7 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-all hover:bg-accent hover:text-foreground"
               >
-                <Download size={14} />
+                <Download size={13} />
               </button>
             </Tooltip>
 
             {editedContent.length > 0 && (
               <Tooltip label={t('editor.clearText')} placement="bottom">
                 <button
+                  type="button"
                   onClick={handleClear}
                   className="flex h-7 w-7 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-all hover:border-amber-500/30 hover:bg-amber-500/15 hover:text-amber-400 active:scale-95"
                 >
-                  <Eraser size={14} />
+                  <Eraser size={13} />
                 </button>
               </Tooltip>
             )}
 
-            <div className="mx-1 h-4 w-px bg-border/60" />
+            <div className="mx-0.5 h-4 w-px bg-border/60 sm:mx-1" />
 
             <button
+              type="button"
               onClick={onClose}
               className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
@@ -255,7 +260,7 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
             {/* Line Numbers Gutter */}
             <div
               ref={gutterRef}
-              className="no-scrollbar w-12 flex-shrink-0 select-none overflow-y-hidden border-r border-border/40 bg-muted/40 py-3 pr-2.5 text-right font-mono text-[12px] leading-[22px] text-muted-foreground/60"
+              className="no-scrollbar w-9 flex-shrink-0 select-none overflow-y-hidden border-r border-border/40 bg-muted/40 py-2 pr-1.5 text-right font-mono text-[11px] leading-[20px] text-muted-foreground/60 sm:w-12 sm:py-3 sm:pr-2.5 sm:text-[12px] sm:leading-[22px]"
               aria-hidden="true"
             >
               {lines.map((_, i) => (
@@ -288,39 +293,39 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
               wrap={wordWrap ? 'soft' : 'off'}
               spellCheck={false}
               autoFocus
-              className="custom-scrollbar min-h-0 flex-1 resize-none bg-transparent p-3 font-mono text-[13px] leading-[22px] text-foreground transition-all placeholder:text-muted-foreground/40 focus:outline-none"
+              className="custom-scrollbar min-h-0 flex-1 resize-none bg-transparent p-2.5 font-mono text-xs leading-[20px] text-foreground transition-all placeholder:text-muted-foreground/40 focus:outline-none sm:p-3 sm:text-[13px] sm:leading-[22px]"
               placeholder={t('common.typeHere', { defaultValue: '...' })}
             />
           </div>
 
           {/* IDE Status Bar */}
-          <div className="flex flex-shrink-0 select-none items-center justify-between border-t border-border/50 bg-muted/50 px-3 py-1.5 font-mono text-[11px] text-muted-foreground/75">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <span className="font-semibold text-primary/90">
+          <div className="flex flex-shrink-0 select-none items-center justify-between border-t border-border/50 bg-muted/50 px-2.5 py-1 font-mono text-[10px] text-muted-foreground/75 sm:px-3 sm:py-1.5 sm:text-[11px]">
+            <div className="flex min-w-0 items-center gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap sm:gap-2.5">
+              <span className="shrink-0 font-semibold text-primary/90">
                 {t('editor.line')} {cursorPos.line}, {t('editor.col')} {cursorPos.col}
               </span>
-              <span className="text-muted-foreground/40">•</span>
-              <span>
+              <span className="shrink-0 text-muted-foreground/40">•</span>
+              <span className="shrink-0">
                 {lines.length} {t('editor.lines')}
               </span>
-              <span className="text-muted-foreground/40">•</span>
-              <span>
+              <span className="shrink-0 text-muted-foreground/40">•</span>
+              <span className="shrink-0">
                 {editedContent.length} {t('editor.chars')}
               </span>
-              <span className="text-muted-foreground/40">•</span>
-              <span>
+              <span className="hidden shrink-0 text-muted-foreground/40 sm:inline">•</span>
+              <span className="hidden shrink-0 sm:inline">
                 {wordCount} {t('editor.words')}
               </span>
             </div>
-            <div className="flex items-center gap-3 text-muted-foreground/60">
+            <div className="hidden shrink-0 items-center gap-2 text-muted-foreground/60 sm:flex">
               <span className="rounded bg-white/5 px-1.5 py-0.5 text-[10px]">UTF-8</span>
             </div>
           </div>
         </div>
 
         {/* Modal Action Footer */}
-        <div className="flex flex-shrink-0 items-center justify-between border-t border-border bg-muted/40 px-4 py-3">
-          <span className="hidden select-none font-mono text-[11px] text-muted-foreground/60 sm:inline-block">
+        <div className="flex flex-shrink-0 items-center justify-between gap-2 border-t border-border bg-muted/40 px-2.5 py-2 sm:px-4 sm:py-2.5">
+          <span className="hidden select-none font-mono text-[11px] text-muted-foreground/60 md:inline-block">
             {t('editor.saveShortcutHint')}
           </span>
           <div className="ml-auto flex items-center gap-2">
@@ -328,7 +333,7 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="inline-flex items-center gap-2 rounded-lg border border-border bg-transparent px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-accent hover:text-foreground"
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-transparent px-3 py-1 text-xs font-medium text-muted-foreground transition-all hover:bg-accent hover:text-foreground sm:gap-2 sm:px-3.5 sm:py-1.5"
               >
                 {t('common.cancel')}
                 <EscGlyph />
@@ -338,7 +343,7 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
               <button
                 type="button"
                 onClick={() => onSave(editedContent)}
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] hover:shadow-primary/35 active:scale-[0.98]"
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] hover:shadow-primary/35 active:scale-[0.98] sm:gap-2 sm:px-4 sm:py-1.5"
               >
                 {t('common.save')}
                 <EnterGlyph />

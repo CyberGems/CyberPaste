@@ -182,14 +182,13 @@ export function AchievementProgressPanel({
           <h3 className="text-[13px] font-semibold text-primary/80">
             {t('settings.progressTypeBreakdown')}
           </h3>
-          <div className="grid grid-cols-2 gap-2 rounded-xl border border-border bg-card p-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 rounded-xl border border-border bg-card p-3 sm:grid-cols-3">
             {[
               ['text', progress.totals.captured_text],
               ['code', progress.totals.captured_code],
               ['image', progress.totals.captured_image],
               ['url', progress.totals.captured_url],
               ['file', progress.totals.captured_file],
-              ['html', progress.totals.captured_html],
               ['rtf', progress.totals.captured_rtf],
             ].map(([type, value]) => (
               <div

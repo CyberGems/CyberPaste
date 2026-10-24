@@ -143,16 +143,16 @@ export const FolderModal: React.FC<FolderModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="animate-in fade-in fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm duration-200">
+    <div className="animate-in fade-in xs:p-2 fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-1.5 backdrop-blur-sm duration-200 sm:p-4">
       <div
-        className="animate-in zoom-in-95 flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-primary/20 bg-card shadow-[0_0_50px_rgba(var(--primary-rgb),0.15)] duration-300"
+        className="animate-in zoom-in-95 flex max-h-[calc(100vh-12px)] w-full max-w-md flex-col overflow-hidden rounded-xl border border-primary/20 bg-card shadow-[0_0_50px_rgba(var(--primary-rgb),0.15)] duration-300 sm:max-h-[90vh] sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex flex-shrink-0 items-center justify-between border-b border-border bg-muted/30 px-5 py-3">
+        <div className="flex flex-shrink-0 items-center justify-between border-b border-border bg-muted/30 px-3 py-2 sm:px-5 sm:py-3">
           <div className="flex min-w-0 items-center gap-2 text-primary">
-            <Folder className="shrink-0" size={18} />
-            <h3 className="whitespace-nowrap text-sm font-bold leading-none tracking-tight">
+            <Folder className="shrink-0" size={16} />
+            <h3 className="truncate text-xs font-bold leading-none tracking-tight sm:text-sm">
               {mode === 'create' ? t('folders.createNew') : t('folders.rename')}
             </h3>
           </div>
@@ -160,14 +160,14 @@ export const FolderModal: React.FC<FolderModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="rounded-lg p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:p-1.5"
             >
-              <X size={18} />
+              <X size={16} />
             </button>
           </Tooltip>
         </div>
 
-        <div className="custom-scrollbar flex-1 space-y-6 overflow-y-auto p-5">
+        <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto p-3.5 sm:space-y-6 sm:p-5">
           {/* Name Input */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-muted-foreground">

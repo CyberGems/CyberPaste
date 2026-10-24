@@ -462,7 +462,7 @@ export function ContextMenu({
                 ? `${action.label} (${action.shortcut})`
                 : action.label;
               return (
-                <Tooltip key={action.id} label={tooltipLabel} placement="top">
+                <Tooltip key={action.id} label={tooltipLabel} placement="top" delay={180}>
                   <button
                     type="button"
                     disabled={action.disabled}
@@ -514,6 +514,7 @@ export function ContextMenu({
               forceSubOpen={openSubIndex === index}
               subFocusedIndex={openSubIndex === index ? subActiveIndex : -1}
               onHover={() => {
+                dismissAllTooltips();
                 setActiveIndex(index);
                 if (!option.subMenu?.length) setOpenSubIndex(null);
               }}

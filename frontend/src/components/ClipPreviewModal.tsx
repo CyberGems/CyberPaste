@@ -100,17 +100,17 @@ export const ClipPreviewModal: React.FC<ClipPreviewModalProps> = ({
 
   return (
     <div
-      className="animate-in fade-in fixed inset-0 z-[150] flex items-center justify-center bg-black/45 p-6 backdrop-blur-sm duration-200"
+      className="animate-in fade-in xs:p-2 fixed inset-0 z-[150] flex items-center justify-center bg-black/45 p-1.5 backdrop-blur-sm duration-200 sm:p-6"
       onClick={onClose}
     >
       <div
-        className="animate-in zoom-in-95 flex h-full max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[0_0_50px_rgba(0,0,0,0.25)]"
+        className="animate-in zoom-in-95 flex h-full max-h-[calc(100vh-12px)] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[0_0_50px_rgba(0,0,0,0.25)] sm:max-h-[85vh] sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex flex-shrink-0 items-center justify-between gap-2 border-b border-border bg-muted/65 px-4 py-2.5">
-          <div className="flex min-w-0 flex-1 items-center gap-2">
-            <span className="truncate text-sm font-bold text-foreground">
+        <div className="flex flex-shrink-0 items-center justify-between gap-1.5 border-b border-border bg-muted/65 px-2.5 py-1.5 sm:px-4 sm:py-2.5">
+          <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2">
+            <span className="truncate text-xs font-bold text-foreground sm:text-sm">
               {clip.source_app || clip.clip_type.toUpperCase()}
             </span>
             {detectedLang && (

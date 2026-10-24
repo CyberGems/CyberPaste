@@ -9,6 +9,7 @@ interface TooltipProps {
   placement?: Placement;
   children: ReactElement;
   disabled?: boolean;
+  delay?: number;
 }
 
 const VIEWPORT_MARGIN = 8; // separación mínima respecto al borde de la ventana
@@ -65,10 +66,14 @@ function isElementBlockedByMenuOrModal(el: HTMLElement | null): boolean {
   if (typeof document === 'undefined') return false;
   if (
     document.body.dataset.titlebarMenuOpen === 'true' ||
-    document.body.dataset.searchHistoryOpen === 'true' ||
-    document.body.dataset.contextMenuOpen === 'true'
+    document.body.dataset.searchHistoryOpen === 'true'
   ) {
     return true;
+  }
+  if (document.body.dataset.contextMenuOpen === 'true') {
+    if (!el || !el.closest('[role="menu"]')) {
+      return true;
+    }
   }
   const openModal = document.querySelector('[role="dialog"], [aria-modal="true"]');
   if (openModal) {
@@ -136,6 +141,7 @@ export default function Tooltip({
   placement = 'bottom',
   children,
   disabled = false,
+  delay = 300,
 }: TooltipProps) {
   // Se guarda el ELEMENTO ancla (no un rect congelado): la posición se mide
   // en vivo al mostrar, así un scroll durante el retardo no deja el tooltip
@@ -200,11 +206,25 @@ export default function Tooltip({
     const borderStyle = '1px solid rgba(255, 255, 255, 0.1)';
 
     if (placement === 'top' || placement === 'bottom') {
+      let actualPlacement = placement;
+      if (placement === 'top' && anchor.top - GAP - card.height < VIEWPORT_MARGIN) {
+        if (anchor.bottom + GAP + card.height <= vh - VIEWPORT_MARGIN) {
+          actualPlacement = 'bottom';
+        }
+      } else if (
+        placement === 'bottom' &&
+        anchor.bottom + GAP + card.height > vh - VIEWPORT_MARGIN
+      ) {
+        if (anchor.top - GAP - card.height >= VIEWPORT_MARGIN) {
+          actualPlacement = 'top';
+        }
+      }
+
       left = clamp(cx - card.width / 2, VIEWPORT_MARGIN, vw - card.width - VIEWPORT_MARGIN);
-      top = placement === 'bottom' ? anchor.bottom + GAP : anchor.top - GAP - card.height;
+      top = actualPlacement === 'bottom' ? anchor.bottom + GAP : anchor.top - GAP - card.height;
       const ax = clamp(cx - left, 12, card.width - 12); // flecha alineada al centro del ancla
       arrow =
-        placement === 'bottom'
+        actualPlacement === 'bottom'
           ? {
               top: -4,
               left: ax,
@@ -363,7 +383,7 @@ export default function Tooltip({
           new CustomEvent('cyberpaste:tooltip-active', { detail: { id: tooltipId.current } })
         );
         setAnchorEl(currentTarget);
-      }, 300);
+      }, delay);
     }
   };
   const hide = (e: ReactMouseEvent<HTMLElement>): void => {
@@ -417,7 +437,7 @@ export default function Tooltip({
             new CustomEvent('cyberpaste:tooltip-active', { detail: { id: tooltipId.current } })
           );
           setAnchorEl(currentTarget);
-        }, 300);
+        }, delay);
       }
     }
   };
