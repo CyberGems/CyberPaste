@@ -1237,7 +1237,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
     if (!selectedClipId) return;
     const idx = filteredClips.findIndex((c) => c.id === selectedClipId);
     if (idx >= 0) {
-      clipListApiRef.current?.scrollToRow({ index: idx, align: 'smart', behavior: 'auto' });
+      clipListApiRef.current?.scrollToRow({ index: idx, align: 'auto', behavior: 'auto' });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- filteredClips is read, not a trigger
   }, [selectedClipId]);
@@ -2544,7 +2544,8 @@ const ClipRow = memo(function ClipRow({
   clip,
   index,
   totalCount,
-  selectedClipId,
+  isNavigationSelected = false,
+  isDefaultFirst = false,
   selectedFolder,
   onPaste,
   onSelectClip,
@@ -2578,7 +2579,8 @@ const ClipRow = memo(function ClipRow({
   clip: AppClip;
   index: number;
   totalCount: number;
-  selectedClipId: string | null;
+  isNavigationSelected?: boolean;
+  isDefaultFirst?: boolean;
   selectedFolder: string | null;
   onPaste: (id: string) => void;
   onSelectClip?: (id: string, event: React.MouseEvent) => void;
@@ -2655,13 +2657,12 @@ const ClipRow = memo(function ClipRow({
   const leftWhileMenuRef = useRef(false);
   const foreignMenuOpenRef = useRef(false);
   menuHighlightRef.current = menuHighlight;
-  const isNavigationSelected = selectedClipId === clip.id && !(isPeekVisible && index === 0);
+  const isNavTarget = isNavigationSelected && !(isPeekVisible && index === 0);
   const pointerHover = hovered && !hoverLocked && !foreignMenuOpenRef.current;
   const isDeleting = useDeleteFlash(clip.id);
-  const isActiveTarget =
-    !isDeleting && (isNavigationSelected || (!selectedClipId && index === 0) || menuHighlight);
+  const isActiveTarget = !isDeleting && (isNavTarget || isDefaultFirst || menuHighlight);
   const isHovered = !isDeleting && pointerHover && !isActiveTarget && !isSelected;
-  const showActions = !isDeleting && (menuHighlight || pointerHover || isNavigationSelected);
+  const showActions = !isDeleting && (menuHighlight || pointerHover || isNavTarget);
   const shouldBlurForPeek = isPeekVisible && peekClipId !== clip.id;
   const pinFlash = usePinFlash(clip.id);
 
@@ -3118,6 +3119,8 @@ function CompactListRow({
 }: RowComponentProps<CompactListRowProps>) {
   const clip = clips[index];
   if (!clip) return null;
+  const isNavigationSelected = selectedClipId === clip.id;
+  const isDefaultFirst = !selectedClipId && index === 0;
   return (
     <div
       style={style}
@@ -3129,7 +3132,8 @@ function CompactListRow({
         clip={clip}
         index={index}
         totalCount={clips.length}
-        selectedClipId={selectedClipId}
+        isNavigationSelected={isNavigationSelected}
+        isDefaultFirst={isDefaultFirst}
         selectedFolder={selectedFolder}
         onPaste={onPaste}
         onSelectClip={onSelectClip}

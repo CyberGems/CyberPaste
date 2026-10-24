@@ -52,6 +52,7 @@ function ensureListeners() {
 /** Freeze clip hover/peek so a still cursor cannot steal keyboard navigation. */
 export function lockListHover() {
   ensureListeners();
+  if (locked) return;
   locked = true;
   origin = null;
   dispatch();

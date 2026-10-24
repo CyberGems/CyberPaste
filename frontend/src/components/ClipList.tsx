@@ -663,14 +663,14 @@ export const ClipList: React.FC<ClipListProps> = ({
         gridRef.current.scrollToCell({
           rowIndex,
           columnIndex: selectedClipIndex % columnCount,
-          rowAlign: 'smart',
+          rowAlign: 'auto',
           behavior: 'auto',
         });
       } else {
         gridRef.current.scrollToCell({
           columnIndex: selectedClipIndex,
           rowIndex: 0,
-          columnAlign: 'smart',
+          columnAlign: 'auto',
           behavior: 'auto',
         });
       }

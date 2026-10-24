@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { lockListHover } from './useListHoverLock';
 
 export const TITLEBAR_HOTKEYS = {
@@ -74,8 +74,12 @@ interface KeyboardOptions {
 }
 
 export function useKeyboard(options: KeyboardOptions) {
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const options = optionsRef.current;
       // Ignore all keyboard shortcuts when dragging
       if (document.body.classList.contains('is-dragging')) {
         return;
@@ -509,5 +513,5 @@ export function useKeyboard(options: KeyboardOptions) {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [options]);
+  }, []);
 }

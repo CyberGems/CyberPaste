@@ -194,6 +194,7 @@ function App() {
   const [hasMore, setHasMore] = useState(true);
   const hasMoreRef = useRef(hasMore);
   hasMoreRef.current = hasMore;
+  const loadMoreRef = useRef<() => void>(() => {});
   const [theme, setTheme] = useState('cyberpaste');
   const [settings, setSettings] = useState<Settings | null>(null);
   const [lockReady, setLockReady] = useState(false);
@@ -860,7 +861,7 @@ function App() {
       folderId: string | null,
       append: boolean = false,
       searchQuery: string = '',
-      limit: number = 20,
+      limit: number = 50,
       typeFilter: FullTypeFilter = 'all',
       appFilterOverride?: string | null
     ) => {
@@ -1033,7 +1034,7 @@ function App() {
   }, [loadSourceApps]);
 
   const refreshCurrentFolder = useCallback(() => {
-    const clipLimit = settingsRef.current?.view_mode === 'compact' ? 9999 : 20;
+    const clipLimit = settingsRef.current?.view_mode === 'compact' ? 9999 : 50;
     loadClips(selectedFolderRef.current, false, searchQuery, clipLimit, fullTypeFilter, appFilter);
     void loadSourceApps();
   }, [loadClips, searchQuery, fullTypeFilter, appFilter, loadSourceApps]);
@@ -1074,10 +1075,11 @@ function App() {
     }
     loadFolders();
     // Load all clips for compact view, paginate for full view
-    const clipLimit = settings?.view_mode === 'compact' ? 9999 : 20;
+    const clipLimit = settings?.view_mode === 'compact' ? 9999 : 50;
+    const delay = searchQuery.trim() ? 120 : 0;
     const loadTimer = window.setTimeout(() => {
       loadClips(selectedFolder, false, searchQuery, clipLimit, fullTypeFilter, appFilter);
-    }, 120);
+    }, delay);
     return () => window.clearTimeout(loadTimer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -2184,6 +2186,10 @@ function App() {
       return;
     }
 
+    if (currentIndex >= effectiveNavClips.length - 15) {
+      loadMoreRef.current();
+    }
+
     if (settings?.view_mode === 'full') {
       const cols = gridColumns || 1;
       if (currentIndex + cols < effectiveNavClips.length) {
@@ -2245,6 +2251,9 @@ function App() {
       return;
     }
     const targetIndex = Math.min(effectiveNavClips.length - 1, currentIndex + pageSize);
+    if (targetIndex >= effectiveNavClips.length - 15) {
+      loadMoreRef.current();
+    }
     setSelectedClipId(effectiveNavClips[targetIndex].id);
   }, [effectiveNavClips, selectedClipId, settings?.view_mode, gridColumns]);
 
@@ -2521,6 +2530,9 @@ function App() {
       return;
     }
     const currentIndex = effectiveNavClips.findIndex((c) => c.id === selectedClipId);
+    if (currentIndex >= effectiveNavClips.length - 15) {
+      loadMoreRef.current();
+    }
     if (currentIndex < effectiveNavClips.length - 1) {
       setSelectedClipId(effectiveNavClips[currentIndex + 1].id);
     }
@@ -2609,9 +2621,10 @@ function App() {
 
   const loadMore = useCallback(() => {
     if (hasMore && !isLoading) {
-      loadClips(selectedFolder, true, searchQuery, 20, fullTypeFilter);
+      loadClips(selectedFolder, true, searchQuery, 50, fullTypeFilter);
     }
   }, [hasMore, isLoading, selectedFolder, loadClips, searchQuery, fullTypeFilter]);
+  loadMoreRef.current = loadMore;
 
   const handleGridScaleChange = useCallback((next: number) => {
     setSettings((prev) => {
