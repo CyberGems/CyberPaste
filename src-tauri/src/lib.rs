@@ -721,7 +721,9 @@ pub fn run_app() {
             // Give OS time to release the registration
             std::thread::sleep(std::time::Duration::from_millis(100));
 
-            if let Ok(shortcut) = Shortcut::from_str(&saved_hotkey) {
+            if saved_hotkey.trim().is_empty() {
+                log::info!("Global hotkey is cleared/disabled");
+            } else if let Ok(shortcut) = Shortcut::from_str(&saved_hotkey) {
                 let win_clone = win.clone();
                 match app_handle.global_shortcut().on_shortcut(shortcut, move |_app, _shortcut, event| {
                     if event.state() == ShortcutState::Pressed {

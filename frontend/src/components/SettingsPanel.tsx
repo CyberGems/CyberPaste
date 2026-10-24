@@ -547,8 +547,8 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
           await invoke('save_settings', { settings: newSettings });
           await emit('settings-changed', newSettings);
 
-          if (updates.hotkey) {
-            await invoke('register_global_shortcut', { hotkey: updates.hotkey });
+          if ('hotkey' in updates) {
+            await invoke('register_global_shortcut', { hotkey: updates.hotkey || '' });
           }
           if ('round_corners' in updates || 'theme' in updates) {
             await invoke('refresh_window');
@@ -561,6 +561,8 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
       // Feedback for changes
       const SETTING_LABELS: Record<string, string> = {
+        hotkey: 'settings.hotkey',
+        view_mode_hotkey: 'settings.viewModeHotkey',
         startup_with_windows: 'settings.startupWithWindows',
         hide_on_blur: 'settings.hideOnBlur',
         ignore_ghost_clips: 'settings.ignoreGhostClips',
@@ -969,6 +971,15 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     stopRecordingLib();
     clearLastRecording();
     setRecordingTarget(null);
+  };
+
+  const handleClearHotkey = (target: 'hotkey' | 'view_mode_hotkey') => {
+    updateSetting(target, '');
+  };
+
+  const handleRestoreHotkey = (target: 'hotkey' | 'view_mode_hotkey') => {
+    const defaultValue = target === 'hotkey' ? 'Ctrl+Shift+V' : 'Ctrl+M';
+    updateSetting(target, defaultValue);
   };
 
   return (
@@ -1833,17 +1844,46 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             </div>
                           </div>
                         ) : (
-                          <button
-                            onClick={() => handleStartRecording('hotkey')}
-                            className="group flex w-full items-center gap-2 rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] text-foreground transition-colors hover:border-ring focus:border-ring focus:outline-none focus:ring-0"
-                          >
-                            <span className="rounded bg-accent px-2 py-0.5 font-mono text-xs font-medium transition-colors group-hover:text-primary">
-                              {settings.hotkey}
-                            </span>
-                            <span className="ml-auto text-[10px] italic text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
-                              {t('settings.hotkeyPlaceholder')}
-                            </span>
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleStartRecording('hotkey')}
+                              className="group flex flex-1 items-center gap-2 rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] text-foreground transition-colors hover:border-ring focus:border-ring focus:outline-none focus:ring-0"
+                            >
+                              <span
+                                className={clsx(
+                                  'rounded px-2 py-0.5 font-mono text-xs font-medium transition-colors',
+                                  settings.hotkey
+                                    ? 'bg-accent group-hover:text-primary'
+                                    : 'bg-muted italic text-muted-foreground'
+                                )}
+                              >
+                                {settings.hotkey || t('common.none')}
+                              </span>
+                              <span className="ml-auto text-[10px] italic text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
+                                {t('settings.hotkeyPlaceholder')}
+                              </span>
+                            </button>
+                            <Tooltip label={t('settings.clearHotkey')} placement="top">
+                              <button
+                                type="button"
+                                disabled={!settings.hotkey}
+                                onClick={() => handleClearHotkey('hotkey')}
+                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 hover:text-destructive disabled:pointer-events-none disabled:opacity-30"
+                              >
+                                <X size={14} />
+                              </button>
+                            </Tooltip>
+                            <Tooltip label={t('settings.restoreDefaultHotkey')} placement="top">
+                              <button
+                                type="button"
+                                disabled={settings.hotkey === 'Ctrl+Shift+V'}
+                                onClick={() => handleRestoreHotkey('hotkey')}
+                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 hover:text-primary disabled:pointer-events-none disabled:opacity-30"
+                              >
+                                <RotateCcw size={14} />
+                              </button>
+                            </Tooltip>
+                          </div>
                         )}
                       </div>
                       <div className="space-y-3">
@@ -1883,17 +1923,51 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             </div>
                           </div>
                         ) : (
-                          <button
-                            onClick={() => handleStartRecording('view_mode_hotkey')}
-                            className="group flex w-full items-center gap-2 rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] text-foreground transition-colors hover:border-ring focus:border-ring focus:outline-none focus:ring-0"
-                          >
-                            <span className="rounded bg-accent px-2 py-0.5 font-mono text-xs font-medium transition-colors group-hover:text-primary">
-                              {settings.view_mode_hotkey || 'Ctrl+M'}
-                            </span>
-                            <span className="ml-auto text-[10px] italic text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
-                              {t('settings.hotkeyPlaceholder')}
-                            </span>
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleStartRecording('view_mode_hotkey')}
+                              className="group flex flex-1 items-center gap-2 rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] text-foreground transition-colors hover:border-ring focus:border-ring focus:outline-none focus:ring-0"
+                            >
+                              <span
+                                className={clsx(
+                                  'rounded px-2 py-0.5 font-mono text-xs font-medium transition-colors',
+                                  settings.view_mode_hotkey === ''
+                                    ? 'bg-muted italic text-muted-foreground'
+                                    : 'bg-accent group-hover:text-primary'
+                                )}
+                              >
+                                {settings.view_mode_hotkey === ''
+                                  ? t('common.none')
+                                  : settings.view_mode_hotkey || 'Ctrl+M'}
+                              </span>
+                              <span className="ml-auto text-[10px] italic text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
+                                {t('settings.hotkeyPlaceholder')}
+                              </span>
+                            </button>
+                            <Tooltip label={t('settings.clearHotkey')} placement="top">
+                              <button
+                                type="button"
+                                disabled={settings.view_mode_hotkey === ''}
+                                onClick={() => handleClearHotkey('view_mode_hotkey')}
+                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 hover:text-destructive disabled:pointer-events-none disabled:opacity-30"
+                              >
+                                <X size={14} />
+                              </button>
+                            </Tooltip>
+                            <Tooltip label={t('settings.restoreDefaultHotkey')} placement="top">
+                              <button
+                                type="button"
+                                disabled={
+                                  settings.view_mode_hotkey === 'Ctrl+M' ||
+                                  settings.view_mode_hotkey === undefined
+                                }
+                                onClick={() => handleRestoreHotkey('view_mode_hotkey')}
+                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 hover:text-primary disabled:pointer-events-none disabled:opacity-30"
+                              >
+                                <RotateCcw size={14} />
+                              </button>
+                            </Tooltip>
+                          </div>
                         )}
                       </div>
                     </div>

@@ -1693,10 +1693,14 @@ export const CompactView: React.FC<CompactViewProps> = ({
 
           {/* View-toggle — primary action pill */}
           <Tooltip
-            label={t('common.tooltipWithHotkey', {
-              label: t('common.switchToFull'),
-              hotkey: toggleModeHotkey,
-            })}
+            label={
+              toggleModeHotkey
+                ? t('common.tooltipWithHotkey', {
+                    label: t('common.switchToFull'),
+                    hotkey: toggleModeHotkey,
+                  })
+                : t('common.switchToFull')
+            }
             placement="bottom"
           >
             <button

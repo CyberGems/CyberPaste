@@ -18,6 +18,7 @@
     "zoomIn": "Zoom avant",
     "zoomOut": "Zoom arrière",
     "yes": "Oui",
+    "none": "Aucun",
     "clipDetails": "Détails du clip"
   },
   "bulk": {
@@ -165,6 +166,8 @@
     "hotkey": "Raccourci global",
     "hotkeyDesc": "Raccourci pour afficher ou masquer CyberPaste",
     "hotkeyPlaceholder": "Cliquez pour enregistrer...",
+    "clearHotkey": "Effacer le raccourci",
+    "restoreDefaultHotkey": "Rétablir le raccourci par défaut",
     "hotkeyRecording": "Appuyez sur les touches...",
     "ignoredApps": "Applications ignorées",
     "ignoredAppsDesc": "Ne pas capturer le presse-papiers de ces apps (cherchez l'exécutable, ou saisissez le nom et appuyez sur Entrée)",

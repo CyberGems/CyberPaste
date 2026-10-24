@@ -3331,6 +3331,14 @@ pub async fn register_global_shortcut(
     use tauri_plugin_global_shortcut::ShortcutState;
 
     let app = window.app_handle();
+
+    if hotkey.trim().is_empty() {
+        if let Err(e) = app.global_shortcut().unregister_all() {
+            log::warn!("Failed to unregister existing shortcuts: {:?}", e);
+        }
+        return Ok(());
+    }
+
     let shortcut = Shortcut::from_str(&hotkey).map_err(|e| format!("Invalid hotkey: {:?}", e))?;
 
     if let Err(e) = app.global_shortcut().unregister_all() {

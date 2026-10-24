@@ -386,6 +386,8 @@
     "hotkey": "Global Hotkey",
     "hotkeyDesc": "Shortcut to show/hide CyberPaste",
     "hotkeyPlaceholder": "Click to record...",
+    "clearHotkey": "Clear shortcut",
+    "restoreDefaultHotkey": "Restore default shortcut",
     "viewModeHotkey": "Toggle View Hotkey",
     "viewModeHotkeyDesc": "Shortcut to switch between full and compact views",
     "compactAutoHeight": "Auto-Resize Height",
@@ -844,6 +846,7 @@
     "copied": "Copied!",
     "clear": "Clear",
     "clearText": "Clear text",
+    "none": "None",
     "saveShortcutHint": "Ctrl+Enter or Ctrl+S to save · Esc to cancel"
   },
   "ai": {

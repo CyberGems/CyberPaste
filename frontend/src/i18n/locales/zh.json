@@ -18,6 +18,7 @@
     "zoomIn": "放大",
     "zoomOut": "缩小",
     "yes": "是",
+    "none": "无",
     "clipDetails": "剪辑详情"
   },
   "bulk": {
@@ -165,6 +166,8 @@
     "hotkey": "全局快捷键",
     "hotkeyDesc": "显示/隐藏 CyberPaste 的快捷键",
     "hotkeyPlaceholder": "点击以录制...",
+    "clearHotkey": "清除快捷键",
+    "restoreDefaultHotkey": "恢复默认快捷键",
     "hotkeyRecording": "按下按键...",
     "ignoredApps": "忽略的应用",
     "ignoredAppsDesc": "不从这些应用捕获剪贴板（浏览可执行文件，或输入名称后按 Enter）",

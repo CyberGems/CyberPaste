@@ -18,6 +18,7 @@
     "zoomIn": "拡大",
     "zoomOut": "縮小",
     "yes": "はい",
+    "none": "なし",
     "clipDetails": "クリップ詳細"
   },
   "bulk": {
@@ -165,6 +166,8 @@
     "hotkey": "グローバルホットキー",
     "hotkeyDesc": "CyberPaste を表示または非表示にするショートカット",
     "hotkeyPlaceholder": "クリックして記録...",
+    "clearHotkey": "ショートカットをクリア",
+    "restoreDefaultHotkey": "既定のショートカットに戻す",
     "hotkeyRecording": "キーを押してください...",
     "ignoredApps": "除外するアプリ",
     "ignoredAppsDesc": "これらのアプリからはクリップボードを取得しません（実行ファイルを探すか、名前を入力して Enter）",

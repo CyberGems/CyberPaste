@@ -383,6 +383,8 @@
     "hotkey": "Atajo Global",
     "hotkeyDesc": "Atajo para mostrar/ocultar CyberPaste",
     "hotkeyPlaceholder": "Haz click para grabar...",
+    "clearHotkey": "Borrar atajo",
+    "restoreDefaultHotkey": "Restablecer atajo por defecto",
     "viewModeHotkey": "Atajo de Cambio de Vista",
     "viewModeHotkeyDesc": "Atajo para alternar entre vista completa y compacta",
     "compactAutoHeight": "Altura Automática",
@@ -844,6 +846,7 @@
     "copied": "¡Copiado!",
     "clear": "Limpiar",
     "clearText": "Limpiar texto",
+    "none": "Ninguno",
     "saveShortcutHint": "Ctrl+Enter o Ctrl+S para guardar · Esc para cancelar"
   },
   "ai": {

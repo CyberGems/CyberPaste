@@ -795,10 +795,17 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           )}
 
           <Tooltip
-            label={t('common.tooltipWithHotkey', {
-              label: viewMode === 'full' ? t('common.switchToCompact') : t('common.switchToFull'),
-              hotkey: toggleModeHotkey,
-            })}
+            label={
+              toggleModeHotkey
+                ? t('common.tooltipWithHotkey', {
+                    label:
+                      viewMode === 'full' ? t('common.switchToCompact') : t('common.switchToFull'),
+                    hotkey: toggleModeHotkey,
+                  })
+                : viewMode === 'full'
+                  ? t('common.switchToCompact')
+                  : t('common.switchToFull')
+            }
             placement="bottom"
           >
             <button
