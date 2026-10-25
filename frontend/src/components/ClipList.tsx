@@ -323,38 +323,29 @@ export const ClipList: React.FC<ClipListProps> = ({
     closePeek();
   }, [closePeek]);
 
-  const handleCardMouseMove = useCallback(
-    (e: React.MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.closest('button') || target.closest('[data-el="clip-card-hover-actions"]')) {
-        handleCancelPeek();
-      }
-    },
-    [handleCancelPeek]
-  );
-
-  const handleCardMouseEnter = useCallback(
+  const armPeekForCard = useCallback(
     (e: React.MouseEvent, clip: ClipboardItem) => {
       if (isListHoverLocked()) return;
       if (searchHistoryOpenRef.current) return;
       if (!fullPeekEnabled || !!draggingClipId) return;
 
+      const target = e.target as HTMLElement;
+      // Solo activar peek si el cursor está en el área central (clip-card-content)
+      // Nunca activar en el header, footer ni botones
+      if (
+        !target.closest('[data-el="clip-card-content"]') ||
+        target.closest('[data-el="clip-card-header"]') ||
+        target.closest('[data-el="clip-card-footer"]') ||
+        target.closest('button') ||
+        target.closest('[data-el="clip-card-hover-actions"]')
+      ) {
+        return;
+      }
+
       notePeekPointer(e.screenX, e.screenY);
       if (!peekArmedRef.current) return;
 
-      // Cerrar peek si cambiamos a otro clip
       if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
-      setPeekClip((prev) => {
-        if (prev && prev.id !== clip.id) {
-          setPeekAnchor(null);
-          return null;
-        }
-        return prev;
-      });
-
-      // No iniciar peek si el cursor está sobre un botón de acción o los botones flotantes
-      const target = e.target as HTMLElement;
-      if (target.closest('button') || target.closest('[data-el="clip-card-hover-actions"]')) return;
 
       // Evitar peek en textos, URLs o archivos individuales que caben perfectamente en la tarjeta
       const isTextOrFileType =
@@ -381,12 +372,15 @@ export const ClipList: React.FC<ClipListProps> = ({
       peekOriginMousePosRef.current = { x: startX, y: startY };
 
       peekTimerRef.current = setTimeout(() => {
-        // Evitar activar peek si el cursor terminó posicionándose sobre un botón o los botones de acción
+        // Evitar activar peek si el cursor ya no está en el área central
         const elUnderCursor = document.querySelector(':hover');
         if (
-          elUnderCursor &&
-          (elUnderCursor.closest('button') ||
-            elUnderCursor.closest('[data-el="clip-card-hover-actions"]'))
+          !elUnderCursor ||
+          !elUnderCursor.closest('[data-el="clip-card-content"]') ||
+          elUnderCursor.closest('[data-el="clip-card-header"]') ||
+          elUnderCursor.closest('[data-el="clip-card-footer"]') ||
+          elUnderCursor.closest('button') ||
+          elUnderCursor.closest('[data-el="clip-card-hover-actions"]')
         ) {
           return;
         }
@@ -396,6 +390,43 @@ export const ClipList: React.FC<ClipListProps> = ({
       }, 750);
     },
     [fullPeekEnabled, draggingClipId, notePeekPointer, peekArmedRef]
+  );
+
+  const handleCardMouseMove = useCallback(
+    (e: React.MouseEvent, clip?: ClipboardItem) => {
+      const target = e.target as HTMLElement;
+      const isOverNonContent = Boolean(
+        target.closest('button') ||
+          target.closest('[data-el="clip-card-hover-actions"]') ||
+          target.closest('[data-el="clip-card-header"]') ||
+          target.closest('[data-el="clip-card-footer"]') ||
+          !target.closest('[data-el="clip-card-content"]')
+      );
+
+      if (isOverNonContent) {
+        handleCancelPeek();
+      } else if (clip && !peekClip && !peekTimerRef.current) {
+        armPeekForCard(e, clip);
+      }
+    },
+    [handleCancelPeek, peekClip, armPeekForCard]
+  );
+
+  const handleCardMouseEnter = useCallback(
+    (e: React.MouseEvent, clip: ClipboardItem) => {
+      // Cerrar peek si cambiamos a otro clip
+      if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
+      setPeekClip((prev) => {
+        if (prev && prev.id !== clip.id) {
+          setPeekAnchor(null);
+          return null;
+        }
+        return prev;
+      });
+
+      armPeekForCard(e, clip);
+    },
+    [armPeekForCard]
   );
 
   const handleCardMouseLeave = useCallback(() => {

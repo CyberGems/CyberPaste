@@ -199,7 +199,7 @@ export const ClipCard = memo(
           <div
             className={clsx(
               'flex h-full w-full select-none items-center justify-center',
-              cardFormat === 'panoramic' ? 'pb-5' : 'pb-6'
+              cardFormat === 'panoramic' ? 'pb-6' : 'pb-7'
             )}
           >
             {clip.content ? (
@@ -420,6 +420,12 @@ export const ClipCard = memo(
 
             <div
               data-el="clip-card-header"
+              onMouseEnter={() => {
+                onCancelPeek?.();
+              }}
+              onMouseMove={() => {
+                onCancelPeek?.();
+              }}
               className={clsx(
                 'relative z-10 flex flex-shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2.5 backdrop-blur-sm',
                 cardFormat === 'panoramic' ? 'py-1.5' : 'py-2'
@@ -613,62 +619,165 @@ export const ClipCard = memo(
 
             <div
               data-el="clip-card-footer"
+              onMouseEnter={() => {
+                onCancelPeek?.();
+              }}
+              onMouseMove={() => {
+                onCancelPeek?.();
+              }}
               className={clsx(
-                'absolute bottom-0 left-0 right-0 z-10 px-3 py-1.5',
+                'absolute bottom-0 left-0 right-0 z-10 flex min-h-[30px] items-center justify-between px-2.5 py-1',
                 clip.clip_type === 'image'
-                  ? 'bg-gradient-to-t from-card/95 via-card/50 to-transparent'
-                  : 'bg-gradient-to-t from-card via-card/100 to-transparent/0'
+                  ? 'bg-gradient-to-t from-card/95 via-card/80 to-transparent'
+                  : 'bg-gradient-to-t from-card via-card/95 to-transparent'
               )}
             >
-              <span
-                className={clsx(
-                  'text-[11px] font-medium transition-colors',
-                  clip.clip_type === 'image'
-                    ? 'font-semibold text-muted-foreground/90'
-                    : 'text-muted-foreground/50'
-                )}
-              >
-                {clip.clip_type === 'image' ? (
-                  <div className="flex w-full items-center justify-between pr-6">
-                    <div className="flex items-center gap-1.5">
-                      <span className="flex items-center gap-0.5">
-                        <MoveHorizontal size={10} className="text-muted-foreground/60" />
-                        <span>{imageMetadata.width}</span>
-                      </span>
-                      <span className="text-[8px] opacity-40">×</span>
-                      <span className="flex items-center gap-0.5">
-                        <MoveVertical size={10} className="text-muted-foreground/60" />
-                        <span>{imageMetadata.height}</span>
-                      </span>
-                      <span className="ml-1 opacity-40">•</span>
-                      <span>{imageMetadata.sizeKb}KB</span>
+              {/* Content area: Metadata in rest, Quick Actions in hover */}
+              {showQuickActions && onCopy ? (
+                <div
+                  data-el="clip-card-hover-actions"
+                  className="animate-in fade-in flex flex-1 min-w-0 items-center gap-1.5 duration-150"
+                >
+                  <button
+                    type="button"
+                    onMouseEnter={(e) => {
+                      e.stopPropagation();
+                      setIsOverActions(true);
+                      dismissAllTooltips();
+                      onCancelPeek?.();
+                    }}
+                    onMouseMove={(e) => {
+                      e.stopPropagation();
+                      setIsOverActions(true);
+                      dismissAllTooltips();
+                      onCancelPeek?.();
+                    }}
+                    onMouseLeave={() => {
+                      setIsOverActions(false);
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onCopy?.(clip.id);
+                    }}
+                    onDoubleClick={(e) => e.stopPropagation()}
+                    className="flex h-[22px] flex-shrink-0 items-center gap-1 rounded border border-border/80 bg-background/85 px-2 text-[11px] font-medium text-foreground shadow-sm backdrop-blur-sm transition-all hover:border-primary/60 hover:bg-background hover:text-primary active:scale-95"
+                    aria-label={t('common.copy')}
+                  >
+                    <Copy size={11} className="opacity-80" />
+                    <span>{t('common.copy')}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onMouseEnter={(e) => {
+                      e.stopPropagation();
+                      setIsOverActions(true);
+                      dismissAllTooltips();
+                      onCancelPeek?.();
+                    }}
+                    onMouseMove={(e) => {
+                      e.stopPropagation();
+                      setIsOverActions(true);
+                      dismissAllTooltips();
+                      onCancelPeek?.();
+                    }}
+                    onMouseLeave={() => {
+                      setIsOverActions(false);
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onPaste(clip.id, true);
+                    }}
+                    onDoubleClick={(e) => e.stopPropagation()}
+                    className="flex h-[22px] flex-shrink-0 items-center gap-1 rounded border border-border/80 bg-background/85 px-2 text-[11px] font-medium text-foreground shadow-sm backdrop-blur-sm transition-all hover:border-primary/60 hover:bg-background hover:text-primary active:scale-95"
+                    aria-label={t('common.paste')}
+                  >
+                    <ClipboardPaste size={11} className="opacity-80" />
+                    <span>{t('common.paste')}</span>
+                  </button>
+
+                  {/* Quick OCR shortcut — accessible during hover as well if available */}
+                  {clip.clip_type === 'image' && hasOcr && onRunOcr && (
+                    <Tooltip label={t('viewer.openOcrText')} placement="top">
+                      <button
+                        type="button"
+                        onMouseEnter={(e) => {
+                          e.stopPropagation();
+                          setIsOverActions(true);
+                          onCancelPeek?.();
+                        }}
+                        onMouseLeave={() => setIsOverActions(false)}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onRunOcr(clip.id);
+                        }}
+                        className="flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center rounded border border-primary/25 bg-primary/10 text-primary transition-colors hover:bg-primary/25 active:scale-95"
+                        aria-label="Open OCR text"
+                      >
+                        <ScanText size={10} />
+                      </button>
+                    </Tooltip>
+                  )}
+                </div>
+              ) : (
+                <span
+                  className={clsx(
+                    'animate-in fade-in flex flex-1 min-w-0 items-center text-[11px] font-medium transition-colors duration-150',
+                    clip.clip_type === 'image'
+                      ? 'font-semibold text-muted-foreground/90'
+                      : 'text-muted-foreground/50'
+                  )}
+                >
+                  {clip.clip_type === 'image' ? (
+                    <div className="flex w-full items-center justify-between pr-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="flex items-center gap-0.5">
+                          <MoveHorizontal size={10} className="text-muted-foreground/60" />
+                          <span>{imageMetadata.width}</span>
+                        </span>
+                        <span className="text-[8px] opacity-40">×</span>
+                        <span className="flex items-center gap-0.5">
+                          <MoveVertical size={10} className="text-muted-foreground/60" />
+                          <span>{imageMetadata.height}</span>
+                        </span>
+                        <span className="ml-1 opacity-40">•</span>
+                        <span>{imageMetadata.sizeKb}KB</span>
+                      </div>
+                      {/* Quick OCR shortcut in rest state */}
+                      {hasOcr && onRunOcr && (
+                        <Tooltip label={t('viewer.openOcrText')} placement="top">
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onRunOcr(clip.id);
+                            }}
+                            className="flex h-5 w-5 items-center justify-center rounded-md border border-primary/25 bg-primary/10 text-primary transition-colors hover:bg-primary/25"
+                            aria-label="Open OCR text"
+                          >
+                            <ScanText size={10} />
+                          </button>
+                        </Tooltip>
+                      )}
                     </div>
-                    {/* Quick OCR shortcut — pre-cached results open instantly */}
-                    {hasOcr && onRunOcr && (
-                      <Tooltip label={t('viewer.openOcrText')} placement="top">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onRunOcr(clip.id);
-                          }}
-                          className="flex h-5 w-5 items-center justify-center rounded-md border border-primary/25 bg-primary/10 text-primary transition-colors hover:bg-primary/25"
-                          aria-label="Open OCR text"
-                        >
-                          <ScanText size={10} />
-                        </button>
-                      </Tooltip>
-                    )}
-                  </div>
-                ) : clip.clip_type === 'file' ? (
-                  `${clip.preview || t('common.file')}`
-                ) : (
-                  t('clipList.textLength', { count: clip.content_length })
-                )}
-              </span>
+                  ) : clip.clip_type === 'file' ? (
+                    <span className="truncate pr-2">{clip.preview || t('common.file')}</span>
+                  ) : (
+                    t('clipList.textLength', { count: clip.content_length })
+                  )}
+                </span>
+              )}
+
               {showTypeIcon && (
                 <div
                   className={clsx(
-                    'absolute bottom-1.5 right-3 flex items-center transition-opacity',
+                    'flex flex-shrink-0 items-center pl-1.5 transition-opacity',
                     showHover ? 'opacity-100' : 'opacity-70'
                   )}
                 >
