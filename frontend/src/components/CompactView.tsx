@@ -2807,6 +2807,9 @@ const ClipRow = memo(function ClipRow({
           if ((e.ctrlKey || e.metaKey) && onToggleSelect) {
             e.stopPropagation();
             onToggleSelect(clip.id, true);
+          } else if (e.shiftKey && onSelectClip) {
+            e.stopPropagation();
+            onSelectClip(clip.id, e);
           } else if (!singleClickPaste && onSelectClip) {
             onSelectClip(clip.id, e);
           } else {

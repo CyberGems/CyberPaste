@@ -52,6 +52,9 @@ const getRelativeTime = (dateStr: string, lang: string) => {
   }
 };
 
+const SELECTED_CARD_BORDER = 'hsl(216 60% 55%)';
+const SELECTED_CARD_SHADOW = '0 0 18px hsl(216 60% 45% / 0.28)';
+
 interface ClipCardProps {
   clip: ClipboardItem;
   isSelected: boolean;
@@ -245,20 +248,6 @@ export const ClipCard = memo(
       }
     }, [clip.clip_type, clip.content, clip.preview, imageSrc, filePaths]);
 
-    // Generate stable color index based on source app name
-    const getAppColorIndex = (name: string) => {
-      let hash = 0;
-      for (let i = 0; i < name.length; i++) {
-        hash = name.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      return Math.abs(hash) % 15;
-    };
-
-    const appHue = useMemo(() => {
-      const index = getAppColorIndex(title);
-      const hueStep = 360 / 15;
-      return Math.round(index * hueStep);
-    }, [title]);
 
     const [menuHighlight, setMenuHighlight] = useState(false);
     const menuHighlightRef = useRef(false);
@@ -385,8 +374,8 @@ export const ClipCard = memo(
             onContextMenu={handleContextMenu}
             style={
               {
-                borderColor: isSelected ? `hsl(${appHue} 60% 55%)` : undefined,
-                boxShadow: isSelected ? `0 0 18px hsl(${appHue} 60% 45% / 0.28)` : undefined,
+                borderColor: isSelected ? SELECTED_CARD_BORDER : undefined,
+                boxShadow: isSelected ? SELECTED_CARD_SHADOW : undefined,
               } as React.CSSProperties
             }
             className={clsx(

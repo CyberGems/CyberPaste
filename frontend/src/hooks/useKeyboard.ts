@@ -14,6 +14,10 @@ export const TITLEBAR_HOTKEYS = {
   emoji: 'Alt+E',
 } as const;
 
+export interface NavEventOptions {
+  shiftKey?: boolean;
+}
+
 interface KeyboardOptions {
   onClose?: () => void;
   onSearch?: () => void;
@@ -21,14 +25,14 @@ interface KeyboardOptions {
   searchHistoryHotkey?: string;
   onDelete?: () => void;
   onPin?: () => void;
-  onNavigatePrev?: () => void;
-  onNavigateNext?: () => void;
-  onNavigateFirst?: () => void;
-  onNavigateLast?: () => void;
-  onNavigatePageUp?: () => void;
-  onNavigatePageDown?: () => void;
-  onNavigateLeft?: () => void;
-  onNavigateRight?: () => void;
+  onNavigatePrev?: (e?: NavEventOptions) => void;
+  onNavigateNext?: (e?: NavEventOptions) => void;
+  onNavigateFirst?: (e?: NavEventOptions) => void;
+  onNavigateLast?: (e?: NavEventOptions) => void;
+  onNavigatePageUp?: (e?: NavEventOptions) => void;
+  onNavigatePageDown?: (e?: NavEventOptions) => void;
+  onNavigateLeft?: (e?: NavEventOptions) => void;
+  onNavigateRight?: (e?: NavEventOptions) => void;
   onFolderPrev?: () => void;
   onFolderNext?: () => void;
   onPaste?: () => void;
@@ -48,6 +52,9 @@ interface KeyboardOptions {
   onPasteByIndex?: (n: number) => void;
   /** Esc pressed while search input is focused and has text */
   onClearSearch?: () => void;
+  /** Esc pressed while multiple items are selected */
+  onClearSelection?: () => void;
+  hasSelection?: boolean;
   /** True while the full-mode search overlay is open or a query is active. */
   searchActive?: boolean;
   /** Whether there are navigable items in the current view. */
@@ -141,6 +148,13 @@ export function useKeyboard(options: KeyboardOptions) {
         if (options.onClearSearch && options.searchActive) {
           e.preventDefault();
           options.onClearSearch();
+          return;
+        }
+
+        // If bulk selection is active, Escape clears selection first.
+        if (options.hasSelection && options.onClearSelection) {
+          e.preventDefault();
+          options.onClearSelection();
           return;
         }
 
@@ -391,7 +405,7 @@ export function useKeyboard(options: KeyboardOptions) {
         e.preventDefault();
         e.stopPropagation();
         lockListHover();
-        options.onNavigatePrev();
+        options.onNavigatePrev({ shiftKey: e.shiftKey });
       }
 
       if (e.key === 'ArrowDown' && options.onNavigateNext) {
@@ -406,7 +420,7 @@ export function useKeyboard(options: KeyboardOptions) {
         e.stopPropagation();
         leaveSearchInput();
         lockListHover();
-        options.onNavigateNext();
+        options.onNavigateNext({ shiftKey: e.shiftKey });
       }
 
       if ((e.key === 'Home' || e.key === 'Start') && options.onNavigateFirst) {
@@ -417,7 +431,7 @@ export function useKeyboard(options: KeyboardOptions) {
         e.stopPropagation();
         leaveSearchInput();
         lockListHover();
-        options.onNavigateFirst();
+        options.onNavigateFirst({ shiftKey: e.shiftKey });
       }
 
       if (e.key === 'End' && options.onNavigateLast) {
@@ -428,7 +442,7 @@ export function useKeyboard(options: KeyboardOptions) {
         e.stopPropagation();
         leaveSearchInput();
         lockListHover();
-        options.onNavigateLast();
+        options.onNavigateLast({ shiftKey: e.shiftKey });
       }
 
       if (e.key === 'PageUp' && options.onNavigatePageUp) {
@@ -439,7 +453,7 @@ export function useKeyboard(options: KeyboardOptions) {
         e.stopPropagation();
         leaveSearchInput();
         lockListHover();
-        options.onNavigatePageUp();
+        options.onNavigatePageUp({ shiftKey: e.shiftKey });
       }
 
       if (e.key === 'PageDown' && options.onNavigatePageDown) {
@@ -450,7 +464,7 @@ export function useKeyboard(options: KeyboardOptions) {
         e.stopPropagation();
         leaveSearchInput();
         lockListHover();
-        options.onNavigatePageDown();
+        options.onNavigatePageDown({ shiftKey: e.shiftKey });
       }
 
       // Left/Right: with Ctrl (or Cmd) → switch folders; plain → move between cards.
@@ -470,8 +484,8 @@ export function useKeyboard(options: KeyboardOptions) {
           e.stopPropagation();
           leaveSearchInput();
           lockListHover();
-          options.onNavigateLeft();
-        } else if (options.onFolderPrev && !isSearchInput) {
+          options.onNavigateLeft({ shiftKey: e.shiftKey });
+        } else if (options.onFolderPrev && !isSearchInput && !e.shiftKey) {
           e.preventDefault();
           e.stopPropagation();
           lockListHover();
@@ -503,8 +517,8 @@ export function useKeyboard(options: KeyboardOptions) {
           e.stopPropagation();
           leaveSearchInput();
           lockListHover();
-          options.onNavigateRight();
-        } else if (options.onFolderNext && !isSearchInput) {
+          options.onNavigateRight({ shiftKey: e.shiftKey });
+        } else if (options.onFolderNext && !isSearchInput && !e.shiftKey) {
           e.preventDefault();
           e.stopPropagation();
           lockListHover();

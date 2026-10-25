@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { clsx } from 'clsx';
 import { ChevronRight } from 'lucide-react';
 import Tooltip, { dismissAllTooltips } from './Tooltip';
@@ -85,42 +86,69 @@ function ContextMenuItem({
   const containerRef = useRef<HTMLDivElement>(null);
   const subMenuRef = useRef<HTMLDivElement>(null);
   const openTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [subPos, setSubPos] = useState<{ left?: string; right?: string; top?: string }>({
-    left: '100%',
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [subCoords, setSubCoords] = useState<{ left: number; top: number; ready: boolean }>({
+    left: 0,
+    top: 0,
+    ready: false,
   });
 
   const hasSubMenu = !!(option.subMenu && option.subMenu.length > 0);
   const isOpen = hoverOpen || forceSubOpen;
 
+  const clearTimers = () => {
+    if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
+    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+  };
+
   useEffect(() => {
     return () => {
-      if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
+      clearTimers();
     };
   }, []);
 
   useLayoutEffect(() => {
-    if (!isOpen || !subMenuRef.current || !containerRef.current) return;
+    if (!isOpen || !subMenuRef.current || !containerRef.current) {
+      setSubCoords((prev) => (prev.ready ? { ...prev, ready: false } : prev));
+      return;
+    }
     const subEl = subMenuRef.current;
     const parentRect = containerRef.current.getBoundingClientRect();
     const subRect = subEl.getBoundingClientRect();
-    const pad = 5;
+    const pad = 6;
 
-    let newLeft: string | undefined = '100%';
-    let newRight: string | undefined = undefined;
-    let newTop: string | undefined = '0px';
-
-    if (parentRect.right + subRect.width > window.innerWidth - pad) {
-      newLeft = undefined;
-      newRight = '100%';
+    let left: number;
+    if (subMenuPlacement === 'below') {
+      left = parentRect.left;
+      if (left + subRect.width > window.innerWidth - pad) {
+        left = window.innerWidth - subRect.width - pad;
+      }
+      left = Math.max(pad, left);
+      let top = parentRect.bottom + 2;
+      if (top + subRect.height > window.innerHeight - pad) {
+        top = parentRect.top - subRect.height - 2;
+      }
+      setSubCoords({ left, top, ready: true });
+      return;
     }
 
-    if (parentRect.top + subRect.height > window.innerHeight - pad) {
-      const offset = parentRect.top + subRect.height - (window.innerHeight - pad);
-      newTop = `-${offset}px`;
+    // Default 'side': check if fits to the right, otherwise flip to the left
+    if (parentRect.right + subRect.width <= window.innerWidth - pad) {
+      left = parentRect.right + 2;
+    } else if (parentRect.left - subRect.width >= pad) {
+      left = parentRect.left - subRect.width - 2;
+    } else {
+      left = Math.max(pad, window.innerWidth - subRect.width - pad);
     }
 
-    setSubPos({ left: newLeft, right: newRight, top: newTop });
-  }, [isOpen]);
+    let top = parentRect.top - 4;
+    if (top + subRect.height > window.innerHeight - pad) {
+      top = window.innerHeight - subRect.height - pad;
+    }
+    top = Math.max(pad, top);
+
+    setSubCoords({ left, top, ready: true });
+  }, [isOpen, subMenuPlacement]);
 
   useEffect(() => {
     if (focused && containerRef.current) {
@@ -128,20 +156,50 @@ function ContextMenuItem({
     }
   }, [focused]);
 
+  // When scrolling the parent context menu, close hover-opened submenus to prevent floating detaches
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleScroll = () => {
+      if (hoverOpen) setHoverOpen(false);
+    };
+    window.addEventListener('scroll', handleScroll, true);
+    return () => window.removeEventListener('scroll', handleScroll, true);
+  }, [isOpen, hoverOpen]);
+
+  const handleMouseEnter = () => {
+    clearTimers();
+    onHover?.();
+    if (!hasSubMenu) return;
+    openTimeoutRef.current = setTimeout(() => {
+      setHoverOpen(true);
+    }, SUBMENU_HOVER_DELAY);
+  };
+
+  const handleMouseLeave = () => {
+    if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
+    closeTimeoutRef.current = setTimeout(() => {
+      setHoverOpen(false);
+    }, 200);
+  };
+
+  const handleSubMouseEnter = () => {
+    clearTimers();
+    setHoverOpen(true);
+  };
+
+  const handleSubMouseLeave = () => {
+    clearTimers();
+    closeTimeoutRef.current = setTimeout(() => {
+      setHoverOpen(false);
+    }, 150);
+  };
+
   return (
     <div
       ref={containerRef}
       className="relative"
-      onMouseEnter={() => {
-        onHover?.();
-        if (!hasSubMenu) return;
-        if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
-        openTimeoutRef.current = setTimeout(() => setHoverOpen(true), SUBMENU_HOVER_DELAY);
-      }}
-      onMouseLeave={() => {
-        if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
-        setHoverOpen(false);
-      }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <button
         type="button"
@@ -150,7 +208,11 @@ function ContextMenuItem({
         aria-expanded={hasSubMenu ? isOpen : undefined}
         onClick={(e) => {
           e.stopPropagation();
-          if (hasSubMenu) return;
+          if (hasSubMenu) {
+            clearTimers();
+            setHoverOpen((prev) => !prev);
+            return;
+          }
           if (!option.disabled && option.onClick) {
             option.onClick();
             onClose();
@@ -159,7 +221,11 @@ function ContextMenuItem({
         onContextMenu={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          if (hasSubMenu) return;
+          if (hasSubMenu) {
+            clearTimers();
+            setHoverOpen(true);
+            return;
+          }
           if (!option.disabled && option.onClick) {
             option.onClick();
             onClose();
@@ -192,39 +258,37 @@ function ContextMenuItem({
         {hasSubMenu && <ChevronRight size={14} className="ml-2 opacity-60" />}
       </button>
 
-      {hasSubMenu && isOpen && (
-        <div
-          ref={subMenuRef}
-          className="custom-scrollbar absolute z-[210] max-h-[calc(100vh-16px)] min-w-[180px] overflow-y-auto overflow-x-hidden rounded-xl border border-border bg-popover/95 p-1 shadow-2xl backdrop-blur-md"
-          style={
-            subMenuPlacement === 'below'
-              ? {
-                  left: 0,
-                  top: '100%',
-                  boxShadow: '0 10px 30px -10px rgba(0,0,0,0.25)',
-                }
-              : {
-                  left: subPos.left,
-                  right: subPos.right,
-                  top: subPos.top,
-                  boxShadow: '0 10px 30px -10px rgba(0,0,0,0.25)',
-                }
-          }
-          role="menu"
-        >
-          <div className="flex flex-col gap-0.5">
-            {option.subMenu!.map((subOpt, index) => (
-              <ContextMenuItem
-                key={index}
-                option={subOpt}
-                onClose={onClose}
-                subMenuPlacement={subMenuPlacement}
-                focused={forceSubOpen && subFocusedIndex === index}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      {hasSubMenu &&
+        isOpen &&
+        createPortal(
+          <div
+            ref={subMenuRef}
+            data-context-submenu="true"
+            onMouseEnter={handleSubMouseEnter}
+            onMouseLeave={handleSubMouseLeave}
+            className="custom-scrollbar fixed z-[250] max-h-[calc(100vh-16px)] min-w-[190px] overflow-y-auto overflow-x-hidden rounded-xl border border-border bg-popover/95 p-1 shadow-2xl backdrop-blur-md"
+            style={{
+              left: `${subCoords.left}px`,
+              top: `${subCoords.top}px`,
+              visibility: subCoords.ready ? 'visible' : 'hidden',
+              boxShadow: '0 10px 30px -10px rgba(0,0,0,0.3)',
+            }}
+            role="menu"
+          >
+            <div className="flex flex-col gap-0.5">
+              {option.subMenu!.map((subOpt, index) => (
+                <ContextMenuItem
+                  key={index}
+                  option={subOpt}
+                  onClose={onClose}
+                  subMenuPlacement={subMenuPlacement}
+                  focused={forceSubOpen && subFocusedIndex === index}
+                />
+              ))}
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
@@ -239,7 +303,7 @@ export function ContextMenu({
   header,
 }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState(() => firstEnabledIndex(options));
+  const [activeIndex, setActiveIndex] = useState<number>(-1);
   const [openSubIndex, setOpenSubIndex] = useState<number | null>(null);
   const [subActiveIndex, setSubActiveIndex] = useState(0);
   const activeIndexRef = useRef(activeIndex);
@@ -286,7 +350,12 @@ export function ContextMenu({
   useEffect(() => {
     const isInsideMenu = (target: EventTarget | null) => {
       const el = menuRef.current;
-      return !!(el && target && el.contains(target as Node));
+      if (!target || !(target instanceof Element)) return false;
+      return !!(
+        (el && el.contains(target)) ||
+        target.closest('[data-context-menu]') ||
+        target.closest('[data-context-submenu]')
+      );
     };
 
     const onPointerDown = (e: PointerEvent) => {
@@ -347,7 +416,10 @@ export function ContextMenu({
       }
 
       if (e.key === 'ArrowDown') {
-        const next = nextEnabledIndex(list, current, 1);
+        const next =
+          !inSub && current < 0
+            ? firstEnabledIndex(list)
+            : nextEnabledIndex(list, current, 1);
         if (inSub) setSubActiveIndex(next);
         else {
           setActiveIndex(next);
@@ -357,7 +429,10 @@ export function ContextMenu({
       }
 
       if (e.key === 'ArrowUp') {
-        const next = nextEnabledIndex(list, current, -1);
+        const next =
+          !inSub && current < 0
+            ? nextEnabledIndex(list, firstEnabledIndex(list), -1)
+            : nextEnabledIndex(list, current, -1);
         if (inSub) setSubActiveIndex(next);
         else {
           setActiveIndex(next);
@@ -387,7 +462,7 @@ export function ContextMenu({
       }
 
       if (e.key === 'ArrowRight') {
-        if (inSub) return;
+        if (inSub || activeIndexRef.current < 0) return;
         const option = opts[activeIndexRef.current];
         if (option?.subMenu && option.subMenu.length > 0 && !option.disabled) {
           setOpenSubIndex(activeIndexRef.current);
@@ -406,6 +481,7 @@ export function ContextMenu({
           activateOption(list[current], close);
           return;
         }
+        if (activeIndexRef.current < 0) return;
         const option = opts[activeIndexRef.current];
         if (option?.subMenu && option.subMenu.length > 0 && !option.disabled) {
           setOpenSubIndex(activeIndexRef.current);
@@ -431,6 +507,7 @@ export function ContextMenu({
   return (
     <div
       ref={menuRef}
+      data-context-menu="true"
       className="custom-scrollbar fixed z-[200] max-h-[calc(100vh-16px)] min-w-[200px] overflow-y-auto overflow-x-hidden rounded-xl border border-border bg-popover/95 p-1 shadow-2xl backdrop-blur-md"
       style={{
         left: x,
@@ -489,7 +566,6 @@ export function ContextMenu({
               );
             })}
           </div>
-          <div className="mx-1.5 my-1 h-px bg-border/50" role="separator" />
         </>
       )}
 

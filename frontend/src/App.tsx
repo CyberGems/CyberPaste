@@ -44,7 +44,7 @@ import { UndoWarningDialog } from './components/UndoWarningDialog';
 import { dismissAllTooltips } from './components/Tooltip';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { AppLockScreen } from './components/AppLockScreen';
-import { TITLEBAR_HOTKEYS, useKeyboard } from './hooks/useKeyboard';
+import { NavEventOptions, TITLEBAR_HOTKEYS, useKeyboard } from './hooks/useKeyboard';
 import { TITLE_BAR_MENU_TOGGLE_EVENT } from './components/TitleBarMenu';
 import { lockListHover } from './hooks/useListHoverLock';
 import { useTheme } from './hooks/useTheme';
@@ -182,6 +182,7 @@ function App() {
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [selectedClipIds, setSelectedClipIds] = useState<Set<string>>(new Set());
   const selectedClipIdsRef = useRef<Set<string>>(selectedClipIds);
+  const selectionAnchorIdRef = useRef<string | null>(null);
   useEffect(() => {
     selectedClipIdsRef.current = selectedClipIds;
   }, [selectedClipIds]);
@@ -321,7 +322,12 @@ function App() {
 
     const visibilityPromise = listen<boolean>('window-visibility', (event) => {
       setIsWindowActive(event.payload);
-      if (event.payload) lockListHover();
+      if (event.payload) {
+        lockListHover();
+        if (selectedClipIdsRef.current.size === 0) {
+          selectionAnchorIdRef.current = null;
+        }
+      }
     });
 
     updateVisibility();
@@ -1071,6 +1077,7 @@ function App() {
     // Reset view-level selection state whenever user switches/re-clicks folders.
     setSelectedClipId(null);
     setSelectedClipIds(new Set());
+    selectionAnchorIdRef.current = null;
     setClipListResetToken((prev) => prev + 1);
     setSelectedFolder(folderId);
   }, []);
@@ -2341,136 +2348,206 @@ function App() {
     return res;
   }, [clips, settings?.view_mode, compactTypeFilter, appFilter]);
 
-  const handleNavigatePrev = useCallback(() => {
-    if (effectiveNavClips.length === 0) return;
+  const updateNavSelection = useCallback(
+    (targetIndex: number, isShift?: boolean) => {
+      if (targetIndex < 0 || targetIndex >= effectiveNavClips.length) return;
+      const targetClip = effectiveNavClips[targetIndex];
+      if (!targetClip) return;
 
-    if (!selectedClipId) {
-      const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
-      if (searchInput && (showSearch || searchInput.offsetParent !== null)) {
-        searchInput.focus();
-        searchInput.select();
+      if (isShift) {
+        // When extending range, preserve anchor only if multi-selection is actively in progress.
+        // If starting a fresh selection (size === 0), anchor MUST be the current clip (or index 0).
+        let anchorId: string | null = null;
+        if (selectedClipIdsRef.current.size > 0 && selectionAnchorIdRef.current) {
+          anchorId = selectionAnchorIdRef.current;
+        } else {
+          anchorId = selectedClipId || effectiveNavClips[0]?.id;
+          selectionAnchorIdRef.current = anchorId;
+        }
+
+        let anchorIdx = anchorId ? effectiveNavClips.findIndex((c) => c.id === anchorId) : -1;
+        if (anchorIdx < 0) {
+          anchorIdx = selectedClipId
+            ? effectiveNavClips.findIndex((c) => c.id === selectedClipId)
+            : 0;
+          if (anchorIdx < 0) anchorIdx = 0;
+          selectionAnchorIdRef.current = effectiveNavClips[anchorIdx]?.id || targetClip.id;
+        }
+        const [start, end] =
+          anchorIdx <= targetIndex ? [anchorIdx, targetIndex] : [targetIndex, anchorIdx];
+        const rangeIds = new Set(effectiveNavClips.slice(start, end + 1).map((c) => c.id));
+        setSelectedClipIds(rangeIds);
+        setSelectedClipId(targetClip.id);
+      } else {
+        selectionAnchorIdRef.current = targetClip.id;
+        if (selectedClipIdsRef.current.size > 0) {
+          setSelectedClipIds(new Set());
+        }
+        setSelectedClipId(targetClip.id);
+      }
+    },
+    [effectiveNavClips, selectedClipId]
+  );
+
+  const handleNavigatePrev = useCallback(
+    (opts?: NavEventOptions) => {
+      if (effectiveNavClips.length === 0) return;
+
+      const currentIndex = selectedClipId
+        ? effectiveNavClips.findIndex((c) => c.id === selectedClipId)
+        : 0;
+      const validIndex = currentIndex >= 0 ? currentIndex : 0;
+
+      if (validIndex === 0) {
+        if (!opts?.shiftKey) {
+          const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+          if (searchInput && (showSearch || searchInput.offsetParent !== null)) {
+            setSelectedClipId(null);
+            selectionAnchorIdRef.current = null;
+            searchInput.focus();
+            searchInput.select();
+            return;
+          }
+        }
+        updateNavSelection(0, opts?.shiftKey);
         return;
       }
-      setSelectedClipId(effectiveNavClips[0].id);
-      return;
-    }
 
-    const currentIndex = effectiveNavClips.findIndex((c) => c.id === selectedClipId);
-    if (currentIndex < 0) {
-      const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
-      if (searchInput && (showSearch || searchInput.offsetParent !== null)) {
-        searchInput.focus();
-        searchInput.select();
+      if (settings?.view_mode === 'full') {
+        const cols = gridColumns || 1;
+        if (validIndex >= cols) {
+          updateNavSelection(validIndex - cols, opts?.shiftKey);
+        } else if (!opts?.shiftKey) {
+          const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+          if (searchInput && (showSearch || searchInput.offsetParent !== null)) {
+            setSelectedClipId(null);
+            selectionAnchorIdRef.current = null;
+            searchInput.focus();
+            searchInput.select();
+            return;
+          }
+        } else {
+          updateNavSelection(0, opts?.shiftKey);
+        }
+      } else if (validIndex > 0) {
+        updateNavSelection(validIndex - 1, opts?.shiftKey);
+      }
+    },
+    [
+      effectiveNavClips,
+      selectedClipId,
+      settings?.view_mode,
+      gridColumns,
+      showSearch,
+      updateNavSelection,
+    ]
+  );
+
+  const handleNavigateNext = useCallback(
+    (opts?: NavEventOptions) => {
+      if (effectiveNavClips.length === 0) return;
+
+      const currentIndex = selectedClipId
+        ? effectiveNavClips.findIndex((c) => c.id === selectedClipId)
+        : 0;
+      const validIndex = currentIndex >= 0 ? currentIndex : 0;
+
+      if (hasMore && validIndex >= effectiveNavClips.length - 15) {
+        loadMoreRef.current();
+      }
+
+      if (settings?.view_mode === 'full') {
+        const cols = gridColumns || 1;
+        if (validIndex + cols < effectiveNavClips.length) {
+          updateNavSelection(validIndex + cols, opts?.shiftKey);
+        } else {
+          // If not in the last row yet, step to the last available clip in the last row
+          const lastRowStartIndex = Math.floor((effectiveNavClips.length - 1) / cols) * cols;
+          const currentRowStartIndex = Math.floor(validIndex / cols) * cols;
+          if (currentRowStartIndex < lastRowStartIndex) {
+            updateNavSelection(effectiveNavClips.length - 1, opts?.shiftKey);
+          }
+        }
+      } else if (validIndex < effectiveNavClips.length - 1) {
+        updateNavSelection(validIndex + 1, opts?.shiftKey);
+      }
+    },
+    [
+      effectiveNavClips,
+      selectedClipId,
+      settings?.view_mode,
+      gridColumns,
+      hasMore,
+      updateNavSelection,
+    ]
+  );
+
+  const handleNavigateFirst = useCallback(
+    (opts?: NavEventOptions) => {
+      if (effectiveNavClips.length === 0) return;
+      updateNavSelection(0, opts?.shiftKey);
+    },
+    [effectiveNavClips, updateNavSelection]
+  );
+
+  const handleNavigateLast = useCallback(
+    (opts?: NavEventOptions) => {
+      if (effectiveNavClips.length === 0) return;
+      updateNavSelection(effectiveNavClips.length - 1, opts?.shiftKey);
+    },
+    [effectiveNavClips, updateNavSelection]
+  );
+
+  const handleNavigatePageUp = useCallback(
+    (opts?: NavEventOptions) => {
+      if (effectiveNavClips.length === 0) return;
+      if (!selectedClipId) {
+        updateNavSelection(0, opts?.shiftKey);
         return;
       }
-      setSelectedClipId(effectiveNavClips[0].id);
-      return;
-    }
-
-    if (settings?.view_mode === 'full') {
-      const cols = gridColumns || 1;
-      if (currentIndex >= cols) {
-        setSelectedClipId(effectiveNavClips[currentIndex - cols].id);
-      } else {
-        const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
-        if (searchInput && (showSearch || searchInput.offsetParent !== null)) {
-          setSelectedClipId(null);
-          searchInput.focus();
-          searchInput.select();
-          return;
-        }
-        // At the top row: stop (no wrap-around)
+      const currentIndex = effectiveNavClips.findIndex((c) => c.id === selectedClipId);
+      if (currentIndex <= 0) {
+        updateNavSelection(0, opts?.shiftKey);
+        return;
       }
-    } else if (currentIndex > 0) {
-      setSelectedClipId(effectiveNavClips[currentIndex - 1].id);
-    }
-    // At clip 0 in compact mode: stop (no wrap-around)
-  }, [effectiveNavClips, selectedClipId, settings?.view_mode, gridColumns, showSearch]);
+      const cols = settings?.view_mode === 'full' ? gridColumns || 1 : 1;
+      const pageSize = settings?.view_mode === 'full' ? Math.max(cols * 2, 6) : 8;
+      const targetIndex = Math.max(0, currentIndex - pageSize);
+      updateNavSelection(targetIndex, opts?.shiftKey);
+    },
+    [effectiveNavClips, selectedClipId, settings?.view_mode, gridColumns, updateNavSelection]
+  );
 
-  const handleNavigateNext = useCallback(() => {
-    if (effectiveNavClips.length === 0) return;
-
-    if (!selectedClipId) {
-      setSelectedClipId(effectiveNavClips[0].id);
-      return;
-    }
-
-    const currentIndex = effectiveNavClips.findIndex((c) => c.id === selectedClipId);
-    if (currentIndex < 0) {
-      setSelectedClipId(effectiveNavClips[0].id);
-      return;
-    }
-
-    if (hasMore && currentIndex >= effectiveNavClips.length - 15) {
-      loadMoreRef.current();
-    }
-
-    if (settings?.view_mode === 'full') {
-      const cols = gridColumns || 1;
-      if (currentIndex + cols < effectiveNavClips.length) {
-        setSelectedClipId(effectiveNavClips[currentIndex + cols].id);
-      } else {
-        // If not in the last row yet, step to the last available clip in the last row
-        const lastRowStartIndex = Math.floor((effectiveNavClips.length - 1) / cols) * cols;
-        const currentRowStartIndex = Math.floor(currentIndex / cols) * cols;
-        if (currentRowStartIndex < lastRowStartIndex) {
-          setSelectedClipId(effectiveNavClips[effectiveNavClips.length - 1].id);
-        }
-        // Already on the last row: stop (no wrap-around)
+  const handleNavigatePageDown = useCallback(
+    (opts?: NavEventOptions) => {
+      if (effectiveNavClips.length === 0) return;
+      const cols = settings?.view_mode === 'full' ? gridColumns || 1 : 1;
+      const pageSize = settings?.view_mode === 'full' ? Math.max(cols * 2, 6) : 8;
+      if (!selectedClipId) {
+        const targetIndex = Math.min(effectiveNavClips.length - 1, pageSize);
+        updateNavSelection(targetIndex, opts?.shiftKey);
+        return;
       }
-    } else if (currentIndex < effectiveNavClips.length - 1) {
-      setSelectedClipId(effectiveNavClips[currentIndex + 1].id);
-    }
-    // At the last clip in compact mode: stop (no wrap-around)
-  }, [effectiveNavClips, selectedClipId, settings?.view_mode, gridColumns, hasMore]);
-
-  const handleNavigateFirst = useCallback(() => {
-    if (effectiveNavClips.length === 0) return;
-    setSelectedClipId(effectiveNavClips[0].id);
-  }, [effectiveNavClips]);
-
-  const handleNavigateLast = useCallback(() => {
-    if (effectiveNavClips.length === 0) return;
-    setSelectedClipId(effectiveNavClips[effectiveNavClips.length - 1].id);
-  }, [effectiveNavClips]);
-
-  const handleNavigatePageUp = useCallback(() => {
-    if (effectiveNavClips.length === 0) return;
-    if (!selectedClipId) {
-      setSelectedClipId(effectiveNavClips[0].id);
-      return;
-    }
-    const currentIndex = effectiveNavClips.findIndex((c) => c.id === selectedClipId);
-    if (currentIndex <= 0) {
-      setSelectedClipId(effectiveNavClips[0].id);
-      return;
-    }
-    const cols = settings?.view_mode === 'full' ? gridColumns || 1 : 1;
-    const pageSize = settings?.view_mode === 'full' ? Math.max(cols * 2, 6) : 8;
-    const targetIndex = Math.max(0, currentIndex - pageSize);
-    setSelectedClipId(effectiveNavClips[targetIndex].id);
-  }, [effectiveNavClips, selectedClipId, settings?.view_mode, gridColumns]);
-
-  const handleNavigatePageDown = useCallback(() => {
-    if (effectiveNavClips.length === 0) return;
-    const cols = settings?.view_mode === 'full' ? gridColumns || 1 : 1;
-    const pageSize = settings?.view_mode === 'full' ? Math.max(cols * 2, 6) : 8;
-    if (!selectedClipId) {
-      const targetIndex = Math.min(effectiveNavClips.length - 1, pageSize);
-      setSelectedClipId(effectiveNavClips[targetIndex].id);
-      return;
-    }
-    const currentIndex = effectiveNavClips.findIndex((c) => c.id === selectedClipId);
-    if (currentIndex >= effectiveNavClips.length - 1) {
-      setSelectedClipId(effectiveNavClips[effectiveNavClips.length - 1].id);
-      return;
-    }
-    const targetIndex = Math.min(effectiveNavClips.length - 1, currentIndex + pageSize);
-    if (hasMore && targetIndex >= effectiveNavClips.length - 15) {
-      loadMoreRef.current();
-    }
-    setSelectedClipId(effectiveNavClips[targetIndex].id);
-  }, [effectiveNavClips, selectedClipId, settings?.view_mode, gridColumns, hasMore]);
+      const currentIndex = effectiveNavClips.findIndex((c) => c.id === selectedClipId);
+      if (currentIndex >= effectiveNavClips.length - 1) {
+        updateNavSelection(effectiveNavClips.length - 1, opts?.shiftKey);
+        return;
+      }
+      const targetIndex = Math.min(effectiveNavClips.length - 1, currentIndex + pageSize);
+      if (hasMore && targetIndex >= effectiveNavClips.length - 15) {
+        loadMoreRef.current();
+      }
+      updateNavSelection(targetIndex, opts?.shiftKey);
+    },
+    [
+      effectiveNavClips,
+      selectedClipId,
+      settings?.view_mode,
+      gridColumns,
+      hasMore,
+      updateNavSelection,
+    ]
+  );
 
   // Folder navigation handlers (Left/Right arrows in compact mode)
   const handleFolderPrev = useCallback(() => {
@@ -2525,16 +2602,22 @@ function App() {
   // Range selection up to `id` using the current `clips` ordering (Shift+Click)
   const handleClipRangeSelect = useCallback(
     (id: string) => {
-      const idx = clipsRef.current.findIndex((c) => c.id === id);
+      const idx = effectiveNavClips.findIndex((c) => c.id === id);
       if (idx < 0) return;
-      const anchorIdx = selectedClipId
-        ? clipsRef.current.findIndex((c) => c.id === selectedClipId)
-        : 0;
+      let anchorId = selectionAnchorIdRef.current || selectedClipId;
+      let anchorIdx = anchorId ? effectiveNavClips.findIndex((c) => c.id === anchorId) : -1;
+      if (anchorIdx < 0) {
+        anchorIdx = selectedClipId
+          ? effectiveNavClips.findIndex((c) => c.id === selectedClipId)
+          : 0;
+        if (anchorIdx < 0) anchorIdx = 0;
+        selectionAnchorIdRef.current = effectiveNavClips[anchorIdx]?.id || id;
+      }
       const [start, end] = anchorIdx <= idx ? [anchorIdx, idx] : [idx, anchorIdx];
-      setSelectedClipIds(new Set(clipsRef.current.slice(start, end + 1).map((c) => c.id)));
+      setSelectedClipIds(new Set(effectiveNavClips.slice(start, end + 1).map((c) => c.id)));
       setSelectedClipId(id);
     },
-    [selectedClipId]
+    [effectiveNavClips, selectedClipId]
   );
 
   const executeBulkDelete = useCallback(
@@ -2664,6 +2747,7 @@ function App() {
       } else if (event.shiftKey) {
         handleClipRangeSelect(id);
       } else {
+        selectionAnchorIdRef.current = id;
         setSelectedClipIds(new Set());
         setSelectedClipId(id);
       }
@@ -2671,7 +2755,10 @@ function App() {
     [handleClipToggleSelect, handleClipRangeSelect]
   );
 
-  const handleClearBulkSelection = useCallback(() => setSelectedClipIds(new Set()), []);
+  const handleClearBulkSelection = useCallback(() => {
+    setSelectedClipIds(new Set());
+    selectionAnchorIdRef.current = null;
+  }, []);
 
   // Ctrl+A — select every clip currently rendered (Full grid) or filtered list (Compact)
   const handleSelectAllClips = useCallback(() => {
@@ -2729,32 +2816,38 @@ function App() {
   );
 
   // Left/Right move between cards (stops at boundaries, no wrap-around)
-  const handleCardPrev = useCallback(() => {
-    if (effectiveNavClips.length === 0) return;
-    if (!selectedClipId) {
-      setSelectedClipId(effectiveNavClips[0].id);
-      return;
-    }
-    const currentIndex = effectiveNavClips.findIndex((c) => c.id === selectedClipId);
-    if (currentIndex > 0) {
-      setSelectedClipId(effectiveNavClips[currentIndex - 1].id);
-    }
-  }, [effectiveNavClips, selectedClipId]);
+  const handleCardPrev = useCallback(
+    (opts?: NavEventOptions) => {
+      if (effectiveNavClips.length === 0) return;
+      const currentIndex = selectedClipId
+        ? effectiveNavClips.findIndex((c) => c.id === selectedClipId)
+        : 0;
+      const validIndex = currentIndex >= 0 ? currentIndex : 0;
+      if (validIndex > 0) {
+        updateNavSelection(validIndex - 1, opts?.shiftKey);
+      } else {
+        updateNavSelection(0, opts?.shiftKey);
+      }
+    },
+    [effectiveNavClips, selectedClipId, updateNavSelection]
+  );
 
-  const handleCardNext = useCallback(() => {
-    if (effectiveNavClips.length === 0) return;
-    if (!selectedClipId) {
-      setSelectedClipId(effectiveNavClips[0].id);
-      return;
-    }
-    const currentIndex = effectiveNavClips.findIndex((c) => c.id === selectedClipId);
-    if (currentIndex >= effectiveNavClips.length - 15) {
-      loadMoreRef.current();
-    }
-    if (currentIndex < effectiveNavClips.length - 1) {
-      setSelectedClipId(effectiveNavClips[currentIndex + 1].id);
-    }
-  }, [effectiveNavClips, selectedClipId]);
+  const handleCardNext = useCallback(
+    (opts?: NavEventOptions) => {
+      if (effectiveNavClips.length === 0) return;
+      const currentIndex = selectedClipId
+        ? effectiveNavClips.findIndex((c) => c.id === selectedClipId)
+        : 0;
+      const validIndex = currentIndex >= 0 ? currentIndex : 0;
+      if (validIndex >= effectiveNavClips.length - 15) {
+        loadMoreRef.current();
+      }
+      if (validIndex < effectiveNavClips.length - 1) {
+        updateNavSelection(validIndex + 1, opts?.shiftKey);
+      }
+    },
+    [effectiveNavClips, selectedClipId, updateNavSelection]
+  );
 
   // Ctrl+Enter — copy the selected clip as plain text, without pasting
   const handleCopyPlainTextSelected = useCallback(async () => {
@@ -3615,7 +3708,13 @@ function App() {
       setSearchHistoryToggleToken((prev) => prev + 1);
     },
     searchHistoryHotkey: TITLEBAR_HOTKEYS.searchHistory,
-    onDelete: () => handleDelete(selectedClipId),
+    onDelete: () => {
+      if (selectedClipIdsRef.current.size > 0) {
+        handleBulkDelete();
+      } else {
+        handleDelete(selectedClipId);
+      }
+    },
     onPin: () => handleToggleClipPin(selectedClipId),
     onNavigatePrev: handleNavigatePrev,
     onNavigateNext: handleNavigateNext,
@@ -3637,6 +3736,8 @@ function App() {
     onToggleDetailPanel: handleToggleDetailPanel,
     onOpenContextMenu: handleOpenSelectedContextMenu,
     onSelectAll: handleSelectAllClips,
+    hasSelection: selectedClipIds.size > 0,
+    onClearSelection: handleClearBulkSelection,
     onPasteByIndex: handlePasteByIndex,
     onClearSearch: () => {
       handleSearch('');

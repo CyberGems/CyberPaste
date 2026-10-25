@@ -144,7 +144,7 @@ export const CompactPeek: React.FC<CompactPeekProps> = ({
             onMouseLeave={onClose}
           >
             <div
-              className="flex w-full flex-col overflow-hidden rounded-xl border border-primary/40 bg-popover shadow-[0_0_20px_rgba(var(--primary-rgb),0.18),0_12px_32px_rgba(0,0,0,0.5)]"
+              className="flex w-full flex-col overflow-hidden rounded-xl border border-primary/25 bg-popover shadow-[0_0_10px_rgba(var(--primary-rgb),0.07),0_12px_32px_rgba(0,0,0,0.5)]"
               style={{ maxHeight: calculatedMaxHeight }}
             >
               {/* Header info bar */}

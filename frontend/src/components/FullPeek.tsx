@@ -143,7 +143,7 @@ export const FullPeek: React.FC<FullPeekProps> = ({
             style={style}
           >
             <div
-              className="flex w-full flex-col overflow-hidden rounded-2xl border border-primary/45 bg-popover shadow-[0_0_35px_rgba(var(--primary-rgb),0.25),0_20px_50px_rgba(0,0,0,0.7)]"
+              className="flex w-full flex-col overflow-hidden rounded-2xl border border-primary/25 bg-popover shadow-[0_0_16px_rgba(var(--primary-rgb),0.10),0_20px_50px_rgba(0,0,0,0.7)]"
               style={{ maxHeight: calculatedMaxHeight }}
             >
               {/* Header Info Bar */}
