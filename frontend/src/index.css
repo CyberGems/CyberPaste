@@ -224,6 +224,11 @@
   );
 }
 
+.title-marquee-mask {
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 14px), transparent);
+  mask-image: linear-gradient(to right, black calc(100% - 14px), transparent);
+}
+
 @keyframes toast-shrink {
   from {
     transform: scaleX(1);

@@ -212,8 +212,8 @@
   },
   "full": {
     "actionCopy": "Copy to clipboard",
-    "actionPaste": "Copy to clipboard and paste",
-    "actionAutoInject": "Copy to clipboard and simulate Ctrl+V",
+    "actionPaste": "Move to top and Paste (Click/Enter)",
+    "actionAutoInject": "Move to top and Paste (Click/Enter)",
     "actionSelect": "Click to select, press Enter or double-click to paste"
   },
   "clipList": {

@@ -1,6 +1,6 @@
 import { ClipboardItem, getFilterForClipType, type ClipFilterCategory } from '../types';
 import { clsx } from 'clsx';
-import { useMemo, memo, useState, forwardRef, useEffect, useRef } from 'react';
+import { useMemo, memo, useState, forwardRef, useEffect, useRef, useCallback } from 'react';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 import { LAYOUT, PREVIEW_CHAR_LIMIT } from '../constants';
@@ -263,6 +263,31 @@ export const ClipCard = memo(
       !isDragging &&
       !isDeleting;
 
+    const titleContainerRef = useRef<HTMLDivElement>(null);
+    const titleTextRef = useRef<HTMLSpanElement>(null);
+    const [titleOverflow, setTitleOverflow] = useState(0);
+
+    const checkTitleOverflow = useCallback(() => {
+      if (titleContainerRef.current && titleTextRef.current) {
+        const cWidth = titleContainerRef.current.clientWidth;
+        const sWidth = titleTextRef.current.scrollWidth;
+        if (sWidth > cWidth + 1) {
+          setTitleOverflow(sWidth - cWidth);
+        } else {
+          setTitleOverflow(0);
+        }
+      }
+    }, []);
+
+    useEffect(() => {
+      checkTitleOverflow();
+      if (titleContainerRef.current) {
+        const ro = new ResizeObserver(checkTitleOverflow);
+        ro.observe(titleContainerRef.current);
+        return () => ro.disconnect();
+      }
+    }, [title, checkTitleOverflow]);
+
     useEffect(() => {
       if (hoverLocked) setHovered(false);
     }, [hoverLocked]);
@@ -299,7 +324,11 @@ export const ClipCard = memo(
     };
 
     return (
-      <Tooltip label={actionTooltip} placement="top" disabled={!actionTooltip || isOverActions}>
+      <Tooltip
+        label={actionTooltip ? <span>{actionTooltip}</span> : undefined}
+        placement="top"
+        disabled={!actionTooltip || isOverActions}
+      >
         <div
           ref={ref}
           data-el="clip-card"
@@ -492,20 +521,41 @@ export const ClipCard = memo(
                 <span className="select-none font-mono text-[9px] opacity-20">#{clipIndex}</span>
               )}
               <div className="relative flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
-                <span
-                  onClick={(e) => {
-                    if (clip.source_app && onFilterByApp) {
-                      e.stopPropagation();
-                      onFilterByApp(clip.source_app);
-                    }
-                  }}
+                <div
+                  ref={titleContainerRef}
                   className={clsx(
-                    'min-w-0 flex-1 truncate whitespace-nowrap text-[10px] font-bold uppercase tracking-normal text-secondary-foreground transition-colors',
-                    clip.source_app && onFilterByApp && 'cursor-pointer hover:text-primary'
+                    'relative flex min-w-0 flex-1 items-center overflow-hidden',
+                    showHover && titleOverflow > 0 && 'title-marquee-mask'
                   )}
                 >
-                  {title}
-                </span>
+                  <span
+                    ref={titleTextRef}
+                    onClick={(e) => {
+                      if (clip.source_app && onFilterByApp) {
+                        e.stopPropagation();
+                        onFilterByApp(clip.source_app);
+                      }
+                    }}
+                    style={
+                      showHover && titleOverflow > 0
+                        ? ({
+                            '--overflow-dist': `-${titleOverflow + 8}px`,
+                            animation: `marquee-ping-pong ${Math.max(4, Math.min(8, 2.5 + titleOverflow / 20))}s ease-in-out infinite alternate`,
+                          } as React.CSSProperties)
+                        : undefined
+                    }
+                    className={clsx(
+                      'whitespace-nowrap text-[10px] font-bold uppercase tracking-normal transition-colors duration-150',
+                      showHover ? 'text-primary' : 'text-secondary-foreground',
+                      showHover && titleOverflow > 0
+                        ? 'inline-block will-change-transform'
+                        : 'min-w-0 flex-1 truncate',
+                      clip.source_app && onFilterByApp && 'cursor-pointer'
+                    )}
+                  >
+                    {title}
+                  </span>
+                </div>
                 {showTime && (
                   <Tooltip
                     label={new Date(clip.created_at).toLocaleString(i18n.language || undefined, {
