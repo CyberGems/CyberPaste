@@ -121,17 +121,19 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
                 )}
               >
                 <Icon size={12} className="shrink-0" />
-                <span className="whitespace-nowrap leading-normal">{label}</span>
-                {typeof count === 'number' && (
-                  <span
-                    className={clsx(
-                      'font-mono text-[10px] tabular-nums leading-normal',
-                      selected ? 'opacity-70' : 'opacity-40'
-                    )}
-                  >
-                    {count}
-                  </span>
-                )}
+                <span className="flex items-baseline gap-1 whitespace-nowrap">
+                  <span>{label}</span>
+                  {typeof count === 'number' && (
+                    <span
+                      className={clsx(
+                        'text-[10px] tabular-nums',
+                        selected ? 'font-semibold opacity-75' : 'opacity-45'
+                      )}
+                    >
+                      {count}
+                    </span>
+                  )}
+                </span>
               </button>
             </Tooltip>
           );

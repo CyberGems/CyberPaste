@@ -529,7 +529,9 @@ export const ClipCard = memo(
                 </Tooltip>
               )}
               {showNumber && clipIndex !== undefined && (
-                <span className="select-none font-mono text-[9px] opacity-20">#{clipIndex}</span>
+                <span className="select-none font-mono text-[9px] opacity-45 transition-opacity group-hover:opacity-70">
+                  #{clipIndex}
+                </span>
               )}
               <div className="relative flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
                 <div

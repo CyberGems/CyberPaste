@@ -19,6 +19,7 @@ import {
   searchEmojis,
   type EmojiItem,
 } from '../data/emojis';
+import Tooltip from './Tooltip';
 
 const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
   Clock,
@@ -228,32 +229,32 @@ export const EmojiPickerView: React.FC<EmojiPickerViewProps> = ({
             const title = isSpanish ? item.nameEs : item.name;
 
             return (
-              <button
-                key={`${item.char}-${index}`}
-                data-emoji-index={index}
-                type="button"
-                title={title}
-                style={{
-                  fontFamily:
-                    '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif',
-                }}
-                onClick={() => handleSelectEmoji(item.char)}
-                onMouseEnter={() => {
-                  setSelectedIndex(index);
-                  setHoveredEmoji(item);
-                }}
-                className={clsx(
-                  'group relative flex select-none items-center justify-center rounded-xl transition-all duration-150 active:scale-90',
-                  mode === 'full'
-                    ? 'hover:scale-115 h-12 w-12 text-2xl'
-                    : 'h-10 w-10 text-xl hover:scale-110',
-                  isSelected
-                    ? 'border border-primary/50 bg-primary/20 shadow-[0_0_12px_rgba(var(--primary-rgb),0.3)] ring-1 ring-primary/40'
-                    : 'border border-transparent hover:border-border/60 hover:bg-accent/60'
-                )}
-              >
-                <span>{item.char}</span>
-              </button>
+              <Tooltip key={`${item.char}-${index}`} label={title} placement="top">
+                <button
+                  data-emoji-index={index}
+                  type="button"
+                  style={{
+                    fontFamily:
+                      '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif',
+                  }}
+                  onClick={() => handleSelectEmoji(item.char)}
+                  onMouseEnter={() => {
+                    setSelectedIndex(index);
+                    setHoveredEmoji(item);
+                  }}
+                  className={clsx(
+                    'group relative flex select-none items-center justify-center rounded-xl transition-all duration-150 active:scale-90',
+                    mode === 'full'
+                      ? 'hover:scale-115 h-12 w-12 text-2xl'
+                      : 'h-10 w-10 text-xl hover:scale-110',
+                    isSelected
+                      ? 'border border-primary/50 bg-primary/20 shadow-[0_0_12px_rgba(var(--primary-rgb),0.3)] ring-1 ring-primary/40'
+                      : 'border border-transparent hover:border-border/60 hover:bg-accent/60'
+                  )}
+                >
+                  <span>{item.char}</span>
+                </button>
+              </Tooltip>
             );
           })
         )}
