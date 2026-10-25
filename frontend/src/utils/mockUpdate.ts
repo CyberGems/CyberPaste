@@ -1,7 +1,7 @@
 export const MOCK_UPDATE_PREVIEW = {
   isMock: true,
-  version: '1.28.0',
-  currentVersion: '1.27.0',
+  version: '1.29.0',
+  currentVersion: '1.28.0',
   date: new Date().toISOString(),
   body: `### Novedades de esta versión
 Esta es una previsualización interactiva de las notas de actualización para verificar la interfaz y desplazamientos.

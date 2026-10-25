@@ -2,6 +2,29 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.28.0] — 2026-10-25
+
+### ⚙️ Dedicated Clipboard Settings & Settings Layout Polish
+- **New "Clipboard" tab**: Capturing limits, retention quotas, and pasting behaviors now reside in their own dedicated settings tab, decluttering the General panel.
+- **Structured sub-sections**: Organized into "Limits & Storage" (clip limits, retention days, text/image sizes, storage quota) and "Behavior & Pasting" (monitoring, auto-paste, instant search, external image editor).
+- **Settings tab hierarchy**: Reordered navigation putting Notifications second, followed by Full/Compact view mode tabs.
+- **Streamlined General tab**: Grouped window animation and blur behavior into an organized "Other" category.
+
+### 🎨 Pixel-Perfect Theme Cards & Folder Air
+- **Pixel-aligned theme previews**: Standardized card frame geometry (90x62px) and constant border widths, eliminating subpixel jitter and ensuring all theme cards align flush with header text.
+- **Expanded folder management**: Adjusted folder list height to display up to 7 folders simultaneously without scrolling, adding an inline pencil edit icon for quick renaming.
+- **Titlebar menu divider fix**: Removed redundant double divider after the Donate option in the More menu.
+
+### 🔔 Titlebar Update Notification Redesign & Interactive Live Preview
+- **Seamless titlebar update button**: Removed the bulky pill container in favor of a sleek, unboxed 32x32 button matching standard titlebar icons, with softened pulse animation.
+- **Interactive release preview helper**: Added console function `__CYBERPASTE_SHOW_UPDATE_PREVIEW__()` to inspect update dialogs and release notes layout anytime during development.
+- **About modal scroll**: Fixed release notes container height and scrollbar overflow in the update dialog.
+
+### 🔍 Peek Preview & Interaction Polish
+- **Full mode peek restoration**: Re-enabled and tuned hover peek preview with balanced mouse-leave sensitivity to prevent premature closing.
+- **Type icon tooltips**: Added contextual type tooltips in Full mode for complete parity with Compact mode.
+- **Copyable release checksums**: Formatted installer and portable hashes in fenced code blocks for instant one-click copying.
+
 ## [1.27.0] — 2026-10-25
 
 ### ✨ Multi-Selection & Bulk Actions
