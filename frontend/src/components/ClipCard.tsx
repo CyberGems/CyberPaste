@@ -539,82 +539,6 @@ export const ClipCard = memo(
                 />
               )}
 
-              {/* Hover Quick Actions: Copy & Paste */}
-              {showQuickActions && onCopy && (
-                <div
-                  data-el="clip-card-hover-actions"
-                  onMouseEnter={(e) => {
-                    e.stopPropagation();
-                    onCancelPeek?.();
-                  }}
-                  onMouseMove={(e) => {
-                    e.stopPropagation();
-                    onCancelPeek?.();
-                  }}
-                  className="animate-in fade-in zoom-in-95 pointer-events-none absolute inset-0 z-20 flex items-center justify-center gap-2 p-2 duration-150"
-                >
-                  <button
-                    type="button"
-                    onMouseEnter={(e) => {
-                      e.stopPropagation();
-                      setIsOverActions(true);
-                      dismissAllTooltips();
-                      onCancelPeek?.();
-                    }}
-                    onMouseMove={(e) => {
-                      e.stopPropagation();
-                      setIsOverActions(true);
-                      dismissAllTooltips();
-                      onCancelPeek?.();
-                    }}
-                    onMouseLeave={() => {
-                      setIsOverActions(false);
-                    }}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onCopy?.(clip.id);
-                    }}
-                    onDoubleClick={(e) => e.stopPropagation()}
-                    className="pointer-events-auto flex items-center gap-1.5 rounded-lg border border-border/80 bg-background/90 px-3 py-1.5 text-xs font-medium text-foreground shadow-xl backdrop-blur-md transition-all hover:border-primary/60 hover:bg-background hover:text-primary active:scale-95"
-                    aria-label={t('common.copy')}
-                  >
-                    <Copy size={13} className="opacity-80" />
-                    <span>{t('common.copy')}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onMouseEnter={(e) => {
-                      e.stopPropagation();
-                      setIsOverActions(true);
-                      dismissAllTooltips();
-                      onCancelPeek?.();
-                    }}
-                    onMouseMove={(e) => {
-                      e.stopPropagation();
-                      setIsOverActions(true);
-                      dismissAllTooltips();
-                      onCancelPeek?.();
-                    }}
-                    onMouseLeave={() => {
-                      setIsOverActions(false);
-                    }}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onPaste(clip.id, true);
-                    }}
-                    onDoubleClick={(e) => e.stopPropagation()}
-                    className="pointer-events-auto flex items-center gap-1.5 rounded-lg border border-border/80 bg-background/90 px-3 py-1.5 text-xs font-medium text-foreground shadow-xl backdrop-blur-md transition-all hover:border-primary/60 hover:bg-background hover:text-primary active:scale-95"
-                    aria-label={t('common.paste')}
-                  >
-                    <ClipboardPaste size={13} className="opacity-80" />
-                    <span>{t('common.paste')}</span>
-                  </button>
-                </div>
-              )}
             </div>
 
             <div
@@ -626,18 +550,45 @@ export const ClipCard = memo(
                 onCancelPeek?.();
               }}
               className={clsx(
-                'absolute bottom-0 left-0 right-0 z-10 flex min-h-[30px] items-center justify-between px-2.5 py-1',
+                'absolute bottom-0 left-0 right-0 z-10 flex min-h-[32px] items-center justify-center px-2.5 py-1',
                 clip.clip_type === 'image'
                   ? 'bg-gradient-to-t from-card/95 via-card/80 to-transparent'
                   : 'bg-gradient-to-t from-card via-card/95 to-transparent'
               )}
             >
-              {/* Content area: Metadata in rest, Quick Actions in hover */}
+              {/* Content area: Metadata in rest, Quick Actions centered in hover */}
               {showQuickActions && onCopy ? (
                 <div
                   data-el="clip-card-hover-actions"
-                  className="animate-in fade-in flex flex-1 min-w-0 items-center gap-1.5 duration-150"
+                  className="animate-in fade-in flex w-full items-center justify-center gap-2 duration-150"
                 >
+                  {/* OCR button on the left if present, so Copy & Paste stay dead-center */}
+                  {clip.clip_type === 'image' && hasOcr && onRunOcr && (
+                    <div className="absolute left-2.5 top-1/2 -translate-y-1/2">
+                      <Tooltip label={t('viewer.openOcrText')} placement="top">
+                        <button
+                          type="button"
+                          onMouseEnter={(e) => {
+                            e.stopPropagation();
+                            setIsOverActions(true);
+                            onCancelPeek?.();
+                          }}
+                          onMouseLeave={() => setIsOverActions(false)}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onRunOcr(clip.id);
+                          }}
+                          className="flex h-[24px] w-[24px] items-center justify-center rounded-lg border border-primary/25 bg-primary/10 text-primary transition-colors hover:bg-primary/25 active:scale-95"
+                          aria-label="Open OCR text"
+                        >
+                          <ScanText size={11} />
+                        </button>
+                      </Tooltip>
+                    </div>
+                  )}
+
                   <button
                     type="button"
                     onMouseEnter={(e) => {
@@ -662,10 +613,10 @@ export const ClipCard = memo(
                       onCopy?.(clip.id);
                     }}
                     onDoubleClick={(e) => e.stopPropagation()}
-                    className="flex h-[22px] flex-shrink-0 items-center gap-1 rounded border border-border/80 bg-background/85 px-2 text-[11px] font-medium text-foreground shadow-sm backdrop-blur-sm transition-all hover:border-primary/60 hover:bg-background hover:text-primary active:scale-95"
+                    className="flex h-[26px] items-center gap-1.5 rounded-lg border border-border/60 bg-muted/50 px-2.5 text-[11px] font-medium text-foreground/85 shadow-sm backdrop-blur-md transition-all hover:border-primary/60 hover:bg-primary/15 hover:text-primary active:scale-95 dark:border-white/10 dark:bg-muted/40"
                     aria-label={t('common.copy')}
                   >
-                    <Copy size={11} className="opacity-80" />
+                    <Copy size={12} className="opacity-80" />
                     <span>{t('common.copy')}</span>
                   </button>
                   <button
@@ -692,37 +643,12 @@ export const ClipCard = memo(
                       onPaste(clip.id, true);
                     }}
                     onDoubleClick={(e) => e.stopPropagation()}
-                    className="flex h-[22px] flex-shrink-0 items-center gap-1 rounded border border-border/80 bg-background/85 px-2 text-[11px] font-medium text-foreground shadow-sm backdrop-blur-sm transition-all hover:border-primary/60 hover:bg-background hover:text-primary active:scale-95"
+                    className="flex h-[26px] items-center gap-1.5 rounded-lg border border-border/60 bg-muted/50 px-2.5 text-[11px] font-medium text-foreground/85 shadow-sm backdrop-blur-md transition-all hover:border-primary/60 hover:bg-primary/15 hover:text-primary active:scale-95 dark:border-white/10 dark:bg-muted/40"
                     aria-label={t('common.paste')}
                   >
-                    <ClipboardPaste size={11} className="opacity-80" />
+                    <ClipboardPaste size={12} className="opacity-80" />
                     <span>{t('common.paste')}</span>
                   </button>
-
-                  {/* Quick OCR shortcut — accessible during hover as well if available */}
-                  {clip.clip_type === 'image' && hasOcr && onRunOcr && (
-                    <Tooltip label={t('viewer.openOcrText')} placement="top">
-                      <button
-                        type="button"
-                        onMouseEnter={(e) => {
-                          e.stopPropagation();
-                          setIsOverActions(true);
-                          onCancelPeek?.();
-                        }}
-                        onMouseLeave={() => setIsOverActions(false)}
-                        onMouseDown={(e) => e.stopPropagation()}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          onRunOcr(clip.id);
-                        }}
-                        className="flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center rounded border border-primary/25 bg-primary/10 text-primary transition-colors hover:bg-primary/25 active:scale-95"
-                        aria-label="Open OCR text"
-                      >
-                        <ScanText size={10} />
-                      </button>
-                    </Tooltip>
-                  )}
                 </div>
               ) : (
                 <span
@@ -734,7 +660,7 @@ export const ClipCard = memo(
                   )}
                 >
                   {clip.clip_type === 'image' ? (
-                    <div className="flex w-full items-center justify-between pr-2">
+                    <div className="flex w-full items-center justify-between pr-7">
                       <div className="flex items-center gap-1.5">
                         <span className="flex items-center gap-0.5">
                           <MoveHorizontal size={10} className="text-muted-foreground/60" />
@@ -767,9 +693,11 @@ export const ClipCard = memo(
                       )}
                     </div>
                   ) : clip.clip_type === 'file' ? (
-                    <span className="truncate pr-2">{clip.preview || t('common.file')}</span>
+                    <span className="truncate pr-7">{clip.preview || t('common.file')}</span>
                   ) : (
-                    t('clipList.textLength', { count: clip.content_length })
+                    <span className="truncate pr-7">
+                      {t('clipList.textLength', { count: clip.content_length })}
+                    </span>
                   )}
                 </span>
               )}
@@ -777,7 +705,7 @@ export const ClipCard = memo(
               {showTypeIcon && (
                 <div
                   className={clsx(
-                    'flex flex-shrink-0 items-center pl-1.5 transition-opacity',
+                    'absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center transition-opacity',
                     showHover ? 'opacity-100' : 'opacity-70'
                   )}
                 >
