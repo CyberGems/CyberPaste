@@ -2,7 +2,20 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { useTranslation } from 'react-i18next';
-import { Activity, Award, CalendarDays, ShieldCheck, Trophy } from 'lucide-react';
+import {
+  Activity,
+  Award,
+  CalendarDays,
+  ShieldCheck,
+  Trophy,
+  Flame,
+  FileText,
+  Code,
+  Image as ImageIcon,
+  Link,
+  File as LucideFile,
+} from 'lucide-react';
+import { clsx } from 'clsx';
 import { Settings, ProgressData } from '../types';
 import { Switch } from './ui/Switch';
 
@@ -23,6 +36,16 @@ function formatDate(value: string | null, locale: string) {
   return new Intl.DateTimeFormat(locale || undefined, {
     dateStyle: 'long',
   }).format(date);
+}
+
+function getDaysSince(value: string | null): number | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  if (diffMs < 0) return 1;
+  return Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
 }
 
 export function AchievementProgressPanel({
@@ -133,29 +156,61 @@ export function AchievementProgressPanel({
           ))}
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-medium text-foreground">
-                {t('settings.progressInstalledOn')}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {formatDate(progress?.first_used_at ?? settings.first_used_at ?? null, locale)}
-              </p>
-              <p className="mt-1 max-w-[420px] text-[10px] leading-relaxed text-muted-foreground/70">
-                {t('settings.progressInstalledOnDesc')}
-              </p>
+        {(() => {
+          const firstUsedAt = progress?.first_used_at ?? settings.first_used_at ?? null;
+          const totalDays = getDaysSince(firstUsedAt);
+
+          return (
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+                    <CalendarDays size={20} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      {t('settings.progressInstalledOn')}
+                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground/90">{formatDate(firstUsedAt, locale)}</span>
+                      {totalDays !== null && (
+                        <>
+                          <span className="opacity-30">•</span>
+                          <span className="font-mono font-medium tabular-nums text-primary">
+                            {t('settings.progressTotalDays', {
+                              count: totalDays,
+                              defaultValue: `${formatNumber(totalDays, locale)} días totales`,
+                            })}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    <p className="mt-1 max-w-[480px] text-[11px] leading-relaxed text-muted-foreground/75">
+                      {t('settings.progressInstalledOnDesc')}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-2.5 sm:self-center">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500">
+                    <Flame size={18} />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-[11px] font-medium text-muted-foreground">
+                      {t('settings.progressCurrentStreak')}
+                    </p>
+                    <p className="font-mono text-base font-bold tabular-nums text-foreground">
+                      {formatNumber(progress?.current_streak ?? 0, locale)}{' '}
+                      <span className="font-sans text-xs font-normal text-muted-foreground">
+                        {t('settings.progressDays')}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="text-left sm:text-right">
-              <p className="text-sm font-medium text-foreground">
-                {t('settings.progressCurrentStreak')}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {formatNumber(progress?.current_streak ?? 0, locale)} {t('settings.progressDays')}
-              </p>
-            </div>
-          </div>
-        </div>
+          );
+        })()}
       </section>
 
       {progress && (
@@ -177,32 +232,109 @@ export function AchievementProgressPanel({
         </section>
       )}
 
-      {progress && (
-        <section className="space-y-3">
-          <h3 className="text-[13px] font-semibold text-primary/80">
-            {t('settings.progressTypeBreakdown')}
-          </h3>
-          <div className="grid grid-cols-2 gap-2 rounded-xl border border-border bg-card p-3 sm:grid-cols-3 lg:grid-cols-5">
-            {[
-              ['text', progress.totals.captured_text],
-              ['code', progress.totals.captured_code],
-              ['image', progress.totals.captured_image],
-              ['url', progress.totals.captured_url],
-              ['file', progress.totals.captured_file],
-            ].map(([type, value]) => (
-              <div
-                key={String(type)}
-                className="flex items-center justify-between gap-2 px-2 py-1.5"
-              >
-                <span className="text-xs text-muted-foreground">{t(`clipType.${type}`)}</span>
-                <span className="font-mono text-xs font-semibold tabular-nums text-foreground">
-                  {formatNumber(Number(value), locale)}
+      {progress && (() => {
+        const typeItems = [
+          {
+            type: 'text',
+            label: t('clipType.text'),
+            count: Number(progress.totals.captured_text || 0),
+            icon: FileText,
+            color: 'text-sky-400',
+            bg: 'bg-sky-500/10 border-sky-500/20',
+            bar: 'bg-sky-400',
+          },
+          {
+            type: 'code',
+            label: t('clipType.code'),
+            count: Number(progress.totals.captured_code || 0),
+            icon: Code,
+            color: 'text-purple-400',
+            bg: 'bg-purple-500/10 border-purple-500/20',
+            bar: 'bg-purple-400',
+          },
+          {
+            type: 'image',
+            label: t('clipType.image'),
+            count: Number(progress.totals.captured_image || 0),
+            icon: ImageIcon,
+            color: 'text-emerald-400',
+            bg: 'bg-emerald-500/10 border-emerald-500/20',
+            bar: 'bg-emerald-400',
+          },
+          {
+            type: 'url',
+            label: t('clipType.url'),
+            count: Number(progress.totals.captured_url || 0),
+            icon: Link,
+            color: 'text-cyan-400',
+            bg: 'bg-cyan-500/10 border-cyan-500/20',
+            bar: 'bg-cyan-400',
+          },
+          {
+            type: 'file',
+            label: t('clipType.file'),
+            count: Number(progress.totals.captured_file || 0),
+            icon: LucideFile,
+            color: 'text-amber-400',
+            bg: 'bg-amber-500/10 border-amber-500/20',
+            bar: 'bg-amber-400',
+          },
+        ];
+
+        const totalCaptured = typeItems.reduce((acc, item) => acc + item.count, 0);
+
+        return (
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[13px] font-semibold text-primary/80">
+                {t('settings.progressTypeBreakdown')}
+              </h3>
+              {totalCaptured > 0 && (
+                <span className="font-mono text-[11px] text-muted-foreground/80">
+                  {t('settings.progressTotalCaptured', {
+                    count: totalCaptured,
+                    defaultValue: `${formatNumber(totalCaptured, locale)} clips capturados`,
+                  })}
                 </span>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
+              {typeItems.map(({ type, label, count, icon: Icon, color, bg, bar }) => {
+                const pct = totalCaptured > 0 ? Math.round((count / totalCaptured) * 100) : 0;
+                return (
+                  <div
+                    key={type}
+                    className="flex flex-col justify-between rounded-xl border border-border/70 bg-card/75 p-3.5 transition-all hover:border-border hover:bg-card"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className={clsx('flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border', bg, color)}>
+                          <Icon size={14} />
+                        </div>
+                        <span className="font-mono text-[10px] font-semibold tabular-nums text-muted-foreground/75">
+                          {pct}%
+                        </span>
+                      </div>
+                      <p className="mt-2 text-xs font-medium text-foreground/85 truncate">{label}</p>
+                      <p className="mt-0.5 font-mono text-base font-bold tabular-nums text-foreground">
+                        {formatNumber(count, locale)}
+                      </p>
+                    </div>
+
+                    <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-muted/40">
+                      <div
+                        className={clsx('h-full rounded-full transition-all duration-500', bar)}
+                        style={{ width: `${count > 0 ? Math.max(pct, 4) : 0}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })()}
 
       <section className="space-y-3">
         <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
