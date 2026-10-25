@@ -262,30 +262,23 @@ export const FolderModal: React.FC<FolderModalProps> = ({
 
         {/* Footer */}
         <div className="flex flex-shrink-0 justify-end gap-2 border-t border-border bg-muted/30 px-5 py-3">
-          <Tooltip label={`${t('common.cancel')} (${t('common.escape')})`} placement="top">
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
-            >
-              {t('common.cancel')}
-              <EscGlyph />
-            </button>
-          </Tooltip>
-          <Tooltip
-            label={`${mode === 'create' ? t('common.create') : t('common.save')} (${t('common.enter')})`}
-            placement="top"
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
           >
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={!name.trim()}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {mode === 'create' ? t('common.create') : t('common.save')}
-              <EnterGlyph />
-            </button>
-          </Tooltip>
+            {t('common.cancel')}
+            <EscGlyph />
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!name.trim()}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {mode === 'create' ? t('common.create') : t('common.save')}
+            <EnterGlyph />
+          </button>
         </div>
       </div>
 

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { useTranslation } from 'react-i18next';
 import { clsx } from 'clsx';
 import { EnterGlyph, EscGlyph, useModalKeys } from './ModalActions';
-import Tooltip, { dismissAllTooltips } from './Tooltip';
+import { dismissAllTooltips } from './Tooltip';
 
 interface UndoWarningDialogProps {
   isOpen: boolean;
@@ -81,26 +81,22 @@ export function UndoWarningDialog({
         </p>
 
         <div className="mt-6 flex justify-end gap-2.5">
-          <Tooltip label={`${t('undoWarning.keepOpen')} (${t('common.escape')})`} placement="top">
-            <button
-              type="button"
-              onClick={onKeepOpen}
-              className="inline-flex items-center justify-center gap-2 rounded-md border border-border bg-transparent px-4 py-2.5 text-base font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:bg-accent hover:text-foreground"
-            >
-              {t('undoWarning.keepOpen')}
-              <EscGlyph />
-            </button>
-          </Tooltip>
-          <Tooltip label={`${t('undoWarning.continue')} (${t('common.enter')})`} placement="top">
-            <button
-              type="button"
-              onClick={onContinue}
-              className="inline-flex items-center justify-center gap-2 rounded-md border border-primary/60 bg-primary px-4 py-2.5 text-base font-semibold text-primary-foreground shadow-[0_0_10px_rgba(var(--primary-rgb),0.18)] transition-colors hover:bg-primary/90"
-            >
-              {t('undoWarning.continue')}
-              <EnterGlyph />
-            </button>
-          </Tooltip>
+          <button
+            type="button"
+            onClick={onKeepOpen}
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-border bg-transparent px-4 py-2.5 text-base font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:bg-accent hover:text-foreground"
+          >
+            {t('undoWarning.keepOpen')}
+            <EscGlyph />
+          </button>
+          <button
+            type="button"
+            onClick={onContinue}
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-primary/60 bg-primary px-4 py-2.5 text-base font-semibold text-primary-foreground shadow-[0_0_10px_rgba(var(--primary-rgb),0.18)] transition-colors hover:bg-primary/90"
+          >
+            {t('undoWarning.continue')}
+            <EnterGlyph />
+          </button>
         </div>
       </div>
     </div>

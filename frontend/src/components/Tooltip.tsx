@@ -203,7 +203,7 @@ export default function Tooltip({
     let top = 0;
     let arrow: CSSProperties = {};
 
-    const borderStyle = '1px solid rgba(255, 255, 255, 0.1)';
+    const borderStyle = '1px solid rgba(255, 255, 255, 0.08)';
 
     if (placement === 'top' || placement === 'bottom') {
       let actualPlacement = placement;
@@ -474,9 +474,9 @@ export default function Tooltip({
                 position: 'relative',
                 background: 'rgba(15, 15, 20, 0.97)',
                 backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(var(--primary-rgb, 0, 120, 215), 0.18)',
+                border: '1px solid rgba(var(--primary-rgb, 0, 120, 215), 0.12)',
                 boxShadow:
-                  '0 4px 16px rgba(0, 0, 0, 0.4), 0 0 5px rgba(var(--primary-rgb, 0, 120, 215), 0.2)',
+                  '0 4px 16px rgba(0, 0, 0, 0.4), 0 0 3px rgba(var(--primary-rgb, 0, 120, 215), 0.08)',
                 borderRadius: 8,
                 padding: '6px 10px',
                 color: 'rgba(255, 255, 255, 0.95)',

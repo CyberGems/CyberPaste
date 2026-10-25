@@ -64,36 +64,26 @@ export function ConfirmDialog({
         <p className="mb-6 text-sm text-muted-foreground">{message}</p>
 
         <div className="flex justify-end gap-3">
-          <Tooltip
-            label={`${cancelText || t('common.cancel')} (${t('common.escape')})`}
-            placement="top"
+          <button
+            type="button"
+            onClick={onCancel}
+            className="inline-flex items-center gap-2 rounded-md border border-input bg-transparent px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
           >
-            <button
-              type="button"
-              onClick={onCancel}
-              className="inline-flex items-center gap-2 rounded-md border border-input bg-transparent px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
-            >
-              {cancelText || t('common.cancel')}
-              <EscGlyph />
-            </button>
-          </Tooltip>
-          <Tooltip
-            label={`${confirmText || t('common.confirm')} (${t('common.enter')})`}
-            placement="top"
+            {cancelText || t('common.cancel')}
+            <EscGlyph />
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-white transition-colors ${
+              variant === 'danger'
+                ? 'bg-destructive hover:bg-destructive/90'
+                : 'bg-primary hover:bg-primary/90'
+            }`}
           >
-            <button
-              type="button"
-              onClick={onConfirm}
-              className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-white transition-colors ${
-                variant === 'danger'
-                  ? 'bg-destructive hover:bg-destructive/90'
-                  : 'bg-primary hover:bg-primary/90'
-              }`}
-            >
-              {confirmText || t('common.confirm')}
-              <EnterGlyph />
-            </button>
-          </Tooltip>
+            {confirmText || t('common.confirm')}
+            <EnterGlyph />
+          </button>
         </div>
       </div>
     </div>

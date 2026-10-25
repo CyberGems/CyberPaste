@@ -165,29 +165,22 @@ export const OcrResultModal: React.FC<OcrResultModalProps> = ({
               <Download size={13} />
               <span className="text-xs">{t('export.saveAs')}</span>
             </button>
-            <Tooltip
-              label={`${t('common.cancel') || 'Cancel'} (${t('common.escape')})`}
-              placement="top"
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-transparent px-2.5 py-1 text-xs font-medium text-muted-foreground transition-all hover:bg-white/5 sm:gap-2 sm:px-3 sm:py-1.5"
             >
-              <button
-                type="button"
-                onClick={onClose}
-                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-transparent px-2.5 py-1 text-xs font-medium text-muted-foreground transition-all hover:bg-white/5 sm:gap-2 sm:px-3 sm:py-1.5"
-              >
-                {t('common.cancel') || 'Cancel'}
-                <EscGlyph />
-              </button>
-            </Tooltip>
-            <Tooltip label={`${t('common.save') || 'Save'} (${t('common.enter')})`} placement="top">
-              <button
-                type="button"
-                onClick={() => onSave(editedText)}
-                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-primary px-3 py-1 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] sm:gap-2 sm:px-4 sm:py-1.5"
-              >
-                {t('common.save') || 'Save'}
-                <EnterGlyph />
-              </button>
-            </Tooltip>
+              {t('common.cancel') || 'Cancel'}
+              <EscGlyph />
+            </button>
+            <button
+              type="button"
+              onClick={() => onSave(editedText)}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-primary px-3 py-1 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] sm:gap-2 sm:px-4 sm:py-1.5"
+            >
+              {t('common.save') || 'Save'}
+              <EnterGlyph />
+            </button>
           </div>
         </div>
       </div>

@@ -329,26 +329,22 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
             {t('editor.saveShortcutHint')}
           </span>
           <div className="ml-auto flex items-center gap-2">
-            <Tooltip label={`${t('common.cancel')} (${t('common.escape')})`} placement="top">
-              <button
-                type="button"
-                onClick={onClose}
-                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-transparent px-3 py-1 text-xs font-medium text-muted-foreground transition-all hover:bg-accent hover:text-foreground sm:gap-2 sm:px-3.5 sm:py-1.5"
-              >
-                {t('common.cancel')}
-                <EscGlyph />
-              </button>
-            </Tooltip>
-            <Tooltip label={`${t('common.save')} (${t('common.enter')})`} placement="top">
-              <button
-                type="button"
-                onClick={() => onSave(editedContent)}
-                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] hover:shadow-primary/35 active:scale-[0.98] sm:gap-2 sm:px-4 sm:py-1.5"
-              >
-                {t('common.save')}
-                <EnterGlyph />
-              </button>
-            </Tooltip>
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-transparent px-3 py-1 text-xs font-medium text-muted-foreground transition-all hover:bg-accent hover:text-foreground sm:gap-2 sm:px-3.5 sm:py-1.5"
+            >
+              {t('common.cancel')}
+              <EscGlyph />
+            </button>
+            <button
+              type="button"
+              onClick={() => onSave(editedContent)}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] hover:shadow-primary/35 active:scale-[0.98] sm:gap-2 sm:px-4 sm:py-1.5"
+            >
+              {t('common.save')}
+              <EnterGlyph />
+            </button>
           </div>
         </div>
       </div>

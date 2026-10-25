@@ -88,26 +88,22 @@ export function CloseWindowDialog({ isOpen, onCancel, onAction }: CloseWindowDia
         </label>
 
         <div className="mt-6 flex justify-end gap-2.5">
-          <Tooltip label={`${t('closeDialog.quit')} (${t('common.space')})`} placement="top">
-            <button
-              type="button"
-              onClick={handleQuit}
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-transparent px-3.5 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
-            >
-              {t('closeDialog.quit')}
-              <SpaceGlyph compact label={t('common.space')} />
-            </button>
-          </Tooltip>
-          <Tooltip label={`${t('closeDialog.minimize')} (${t('common.enter')})`} placement="top">
-            <button
-              type="button"
-              onClick={handleMinimize}
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-primary/60 bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground shadow-[0_0_10px_rgba(var(--primary-rgb),0.18)] transition-colors hover:bg-primary/90"
-            >
-              {t('closeDialog.minimize')}
-              <EnterGlyph compact />
-            </button>
-          </Tooltip>
+          <button
+            type="button"
+            onClick={handleQuit}
+            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-transparent px-3.5 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
+          >
+            {t('closeDialog.quit')}
+            <SpaceGlyph compact label={t('common.space')} />
+          </button>
+          <button
+            type="button"
+            onClick={handleMinimize}
+            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-primary/60 bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground shadow-[0_0_10px_rgba(var(--primary-rgb),0.18)] transition-colors hover:bg-primary/90"
+          >
+            {t('closeDialog.minimize')}
+            <EnterGlyph compact />
+          </button>
         </div>
       </div>
     </div>
