@@ -93,8 +93,15 @@ La multiselección ahora admite rangos con Shift+Flechas y arrastre de recuadro 
 
 ### 🔐 Checksums
 
-- **`CyberPaste_{{VERSION_NUM}}_x64-setup.exe`** — SHA256: `{{INSTALLER_HASH}}`
-- **`CyberPaste_{{VERSION_NUM}}_x64-portable.zip`** — SHA256: `{{PORTABLE_HASH}}`
+- **`CyberPaste_{{VERSION_NUM}}_x64-setup.exe`** — SHA256:
+  ```text
+  {{INSTALLER_HASH}}
+  ```
+
+- **`CyberPaste_{{VERSION_NUM}}_x64-portable.zip`** — SHA256:
+  ```text
+  {{PORTABLE_HASH}}
+  ```
 {{MSI_BLOCK}}
 ---
 

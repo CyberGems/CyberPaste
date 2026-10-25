@@ -113,7 +113,7 @@ jobs:
           if (Test-Path ".github/release-template.md") {
             $msiBlock = ""
             if ($msiHash) {
-              $msiBlock = "- **CyberPaste_${versionNum}_x64_en-US.msi** — SHA256: ``$msiHash```r`n"
+              $msiBlock = "`r`n- **CyberPaste_${versionNum}_x64_en-US.msi** — SHA256:`r`n  ``````text`r`n  $msiHash`r`n  ```````r`n"
             }
 
             $template = [System.IO.File]::ReadAllText(".github/release-template.md", [System.Text.Encoding]::UTF8)
@@ -169,7 +169,7 @@ jobs:
           $msiHash = if ($msi) { (Get-FileHash $msi.FullName -Algorithm SHA256).Hash.ToLower() } else { $null }
           $msiBlock = ""
           if ($msiHash) {
-            $msiBlock = "- **CyberPaste_${versionNum}_x64_en-US.msi** — SHA256: ``$msiHash```r`n"
+            $msiBlock = "`r`n- **CyberPaste_${versionNum}_x64_en-US.msi** — SHA256:`r`n  ``````text`r`n  $msiHash`r`n  ```````r`n"
           }
           $template = [System.IO.File]::ReadAllText(".github/release-template.md", [System.Text.Encoding]::UTF8)
           $notes = $template.
