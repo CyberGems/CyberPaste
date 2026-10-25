@@ -337,32 +337,6 @@ export function TitleBarMenu({
 
             <div role="separator" className="mx-2 my-1 h-px shrink-0 bg-foreground/15" />
 
-            {variant === 'main' && (
-              <button
-                type="button"
-                role="menuitem"
-                className={itemClass}
-                onClick={() =>
-                  closeAnd(async () => {
-                    try {
-                      await invoke('hide_window', { skipLock: true });
-                    } catch {}
-                    try {
-                      await invoke('open_settings', { tab: 'achievements' });
-                    } catch (e) {
-                      console.error('Failed to open achievements:', e);
-                    }
-                  })
-                }
-              >
-                <Trophy
-                  size={14}
-                  className="shrink-0 text-amber-400 group-hover:drop-shadow-[0_0_4px_rgba(251,191,36,0.6)]"
-                />
-                <span>{t('settings.achievementsList')}</span>
-              </button>
-            )}
-
             {onAddFolder && (
               <button
                 type="button"
@@ -532,6 +506,32 @@ export function TitleBarMenu({
             </button>
 
             <div role="separator" className="mx-2 my-1 h-px shrink-0 bg-foreground/15" />
+
+            {variant === 'main' && (
+              <button
+                type="button"
+                role="menuitem"
+                className={itemClass}
+                onClick={() =>
+                  closeAnd(async () => {
+                    try {
+                      await invoke('hide_window', { skipLock: true });
+                    } catch {}
+                    try {
+                      await invoke('open_settings', { tab: 'achievements' });
+                    } catch (e) {
+                      console.error('Failed to open achievements:', e);
+                    }
+                  })
+                }
+              >
+                <Trophy
+                  size={14}
+                  className="shrink-0 text-amber-400 group-hover:drop-shadow-[0_0_4px_rgba(251,191,36,0.6)]"
+                />
+                <span>{t('settings.achievementsList')}</span>
+              </button>
+            )}
 
             <button
               type="button"
