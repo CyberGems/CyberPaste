@@ -461,11 +461,18 @@ export const ClipCard = memo(
               )}
             >
               {clipIndex === 1 && (
-                <Tooltip label={t('common.latest')} placement="top">
-                  <span className="flex items-center text-cyan-400 opacity-90">
-                    <Zap size={11} className="fill-cyan-400/20" />
-                  </span>
-                </Tooltip>
+                <div
+                  className={clsx(
+                    'transition-opacity duration-150',
+                    showHover || isBulkSelected ? 'pointer-events-none opacity-0' : 'opacity-100'
+                  )}
+                >
+                  <Tooltip label={t('common.latest')} placement="top">
+                    <span className="flex items-center text-cyan-400 opacity-90">
+                      <Zap size={11} className="fill-cyan-400/20" />
+                    </span>
+                  </Tooltip>
+                </div>
               )}
               {showSourceIcon && clip.source_icon && (
                 <div
@@ -600,7 +607,7 @@ export const ClipCard = memo(
                 onCancelPeek?.();
               }}
               className={clsx(
-                'absolute bottom-0 left-0 right-0 z-10 flex min-h-[32px] items-center justify-center px-2.5 py-1',
+                'absolute bottom-0 left-0 right-0 z-10 flex h-8 items-center justify-center px-2.5 py-1',
                 clip.clip_type === 'image'
                   ? 'bg-gradient-to-t from-card/95 via-card/80 to-transparent'
                   : 'bg-gradient-to-t from-card via-card/95 to-transparent'
@@ -614,7 +621,7 @@ export const ClipCard = memo(
                 >
                   {/* OCR button on the left if present, so Copy & Paste stay dead-center */}
                   {clip.clip_type === 'image' && hasOcr && onRunOcr && (
-                    <div className="absolute left-2.5 top-1/2 -translate-y-1/2">
+                    <div className="absolute left-2.5 bottom-[4px]">
                       <Tooltip label={t('viewer.openOcrText')} placement="top">
                         <button
                           type="button"
@@ -755,7 +762,7 @@ export const ClipCard = memo(
               {showTypeIcon && (
                 <div
                   className={clsx(
-                    'absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center transition-opacity',
+                    'absolute right-2.5 bottom-[6px] flex items-center transition-opacity',
                     showHover ? 'opacity-100' : 'opacity-70'
                   )}
                 >
@@ -793,10 +800,10 @@ export const ClipCard = memo(
                           className={clsx(
                             'flex items-center justify-center rounded p-0.5 transition-all focus:outline-none',
                             onFilterByType &&
-                              'cursor-pointer hover:scale-110 hover:text-primary active:scale-95',
+                              'cursor-pointer hover:scale-110 hover:text-foreground active:scale-95',
                             isFilterActive
                               ? 'bg-primary/20 text-primary ring-1 ring-primary/40'
-                              : 'text-primary/75 hover:text-primary'
+                              : 'text-muted-foreground/60 hover:text-foreground'
                           )}
                           aria-label={tooltipText}
                         >

@@ -3036,10 +3036,10 @@ const ClipRow = memo(function ClipRow({
                       className={clsx(
                         'flex items-center justify-center rounded p-0.5 transition-all focus:outline-none',
                         onTypeFilterChange &&
-                          'cursor-pointer hover:scale-110 hover:text-primary active:scale-95',
+                          'cursor-pointer hover:scale-110 hover:text-foreground active:scale-95',
                         isFilterActive
                           ? 'bg-primary/20 text-primary ring-1 ring-primary/40'
-                          : 'text-primary/75 hover:text-primary'
+                          : 'text-muted-foreground/60 hover:text-foreground'
                       )}
                       aria-label={tooltipText}
                     >
