@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Boxes, ChevronDown, Check, X, Search, Layers, HelpCircle } from 'lucide-react';
+import { Filter, ChevronDown, Check, X, Search, Layers, HelpCircle } from 'lucide-react';
 import { listen } from '@tauri-apps/api/event';
 import { useTranslation } from 'react-i18next';
 import { clsx } from 'clsx';
@@ -162,7 +162,7 @@ export const AppFilterDropdown: React.FC<AppFilterDropdownProps> = ({
                   className="h-3.5 w-3.5 object-contain"
                 />
               ) : (
-                <Boxes size={12} className="shrink-0" />
+                <Filter size={12} className="shrink-0" />
               )}
               <span className="max-w-[80px] truncate whitespace-nowrap">{displayLabel}</span>
             </button>
@@ -207,7 +207,7 @@ export const AppFilterDropdown: React.FC<AppFilterDropdownProps> = ({
               isOpen && 'border-primary/60 bg-primary/15 text-primary'
             )}
           >
-            <Boxes size={12} className="shrink-0" />
+            <Filter size={12} className="shrink-0" />
             {variant === 'full' && (
               <span className="whitespace-nowrap">
                 {t('compact.filterAppTitle', { defaultValue: 'Filter by application' })}
@@ -309,7 +309,7 @@ export const AppFilterDropdown: React.FC<AppFilterDropdownProps> = ({
                       className="h-3.5 w-3.5 shrink-0 object-contain"
                     />
                   ) : (
-                    <Boxes
+                    <Filter
                       size={12}
                       className={clsx(isSel ? 'text-primary' : 'text-muted-foreground/80')}
                     />

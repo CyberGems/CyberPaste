@@ -60,7 +60,7 @@ export function TitleBarMenu({
   const [menuPointerActive, setMenuPointerActive] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
   const [lockEnabled, setLockEnabled] = useState(false);
-  const [pos, setPos] = useState({ top: 0, right: 0, maxHeight: 120 });
+  const [pos, setPos] = useState({ top: 0, right: 0, maxHeight: 800 });
   const wrapRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -91,13 +91,14 @@ export function TitleBarMenu({
       const spaceAbove = Math.max(0, anchorRect.top - gap - viewportMargin);
       const opensAbove = naturalHeight > spaceBelow && spaceAbove > spaceBelow;
       const availableHeight = Math.max(120, opensAbove ? spaceAbove : spaceBelow);
-      const maxHeight = Math.min(naturalHeight || availableHeight, availableHeight);
-      const top = opensAbove ? anchorRect.top - gap - maxHeight : anchorRect.bottom + gap;
+      const effectiveHeight =
+        naturalHeight > 0 ? Math.min(naturalHeight, availableHeight) : availableHeight;
+      const top = opensAbove ? anchorRect.top - gap - effectiveHeight : anchorRect.bottom + gap;
 
       setPos({
         top,
         right: Math.max(8, window.innerWidth - anchorRect.right),
-        maxHeight,
+        maxHeight: availableHeight,
       });
     };
 

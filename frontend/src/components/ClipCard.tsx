@@ -52,9 +52,6 @@ const getRelativeTime = (dateStr: string, lang: string) => {
   }
 };
 
-const SELECTED_CARD_BORDER = 'hsl(216 60% 55%)';
-const SELECTED_CARD_SHADOW = '0 0 18px hsl(216 60% 45% / 0.28)';
-
 interface ClipCardProps {
   clip: ClipboardItem;
   isSelected: boolean;
@@ -372,23 +369,15 @@ export const ClipCard = memo(
             }}
             onDoubleClick={!singleClickPaste ? () => onPaste(clip.id) : undefined}
             onContextMenu={handleContextMenu}
-            style={
-              {
-                borderColor: isSelected ? SELECTED_CARD_BORDER : undefined,
-                boxShadow: isSelected ? SELECTED_CARD_SHADOW : undefined,
-              } as React.CSSProperties
-            }
             className={clsx(
               'relative isolate flex h-full w-full cursor-pointer select-none flex-col overflow-hidden rounded-2xl border bg-card/85 transition-[border-color,box-shadow,opacity,transform] duration-150',
               isDeleting &&
                 'clip-deleting-card pointer-events-none border-destructive/70 bg-destructive/10 shadow-[0_0_20px_rgba(239,68,68,0.25)]',
-              isSelected
-                ? 'z-10 border'
-                : isBulkSelected
-                  ? 'border-primary bg-primary/5'
-                  : showHover
-                    ? 'border-primary/50'
-                    : 'border-border',
+              isSelected || isBulkSelected
+                ? 'z-10 border-primary bg-primary/5 shadow-[0_0_14px_rgba(var(--primary-rgb),0.25)] ring-1 ring-primary/40'
+                : showHover
+                  ? 'border-primary/50'
+                  : 'border-border',
               isDragging && 'pointer-events-none scale-95 cursor-grabbing opacity-40',
               !hoverLocked && 'group'
             )}
