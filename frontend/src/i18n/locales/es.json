@@ -165,6 +165,9 @@
       "changelog": "Registro de cambios",
       "github": "GitHub",
       "about": "Acerca de CyberPaste...",
+      "achievements": "Logros...",
+      "previewUpdate": "Previsualizar actualización...",
+      "stopPreviewUpdate": "Detener previsualización",
       "lock": "Bloquear ahora"
     }
   },

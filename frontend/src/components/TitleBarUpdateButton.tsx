@@ -7,7 +7,7 @@ export function TitleBarUpdateButton({
   visible,
   version,
   onClick,
-  iconSize = 13,
+  iconSize = 14,
 }: {
   visible: boolean;
   version?: string;
@@ -18,7 +18,7 @@ export function TitleBarUpdateButton({
   if (!visible) return null;
 
   const tooltip = version ? t('titleBar.updateAvailable', { version }) : t('tray.updateAvailable');
-  const arrowSize = Math.max(10, Math.min(iconSize || 11, 12));
+  const size = Math.max(12, Math.min(iconSize || 14, 16));
 
   return (
     <Tooltip label={tooltip} placement="bottom">
@@ -27,23 +27,21 @@ export function TitleBarUpdateButton({
         onClick={onClick}
         aria-label={tooltip}
         className={clsx(
-          'group mr-1 inline-flex h-[22px] shrink-0 items-center self-center overflow-hidden rounded-full border',
-          'border-primary/50 bg-primary text-primary-foreground',
-          'shadow-sm',
-          'transition-all duration-200 ease-out',
-          'hover:shadow-md hover:brightness-105 active:scale-95',
+          'relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all duration-200',
+          'border-primary/40 bg-primary/10 text-primary',
+          'hover:border-primary hover:bg-primary/25 hover:text-primary hover:shadow-[0_0_10px_rgba(var(--primary-rgb),0.35)]',
+          'active:scale-95 active:bg-primary/30',
           'focus:outline-none focus-visible:ring-1 focus-visible:ring-primary'
         )}
       >
-        <span className="grid h-[22px] grid-cols-[0fr] items-center overflow-hidden opacity-0 transition-[grid-template-columns,opacity] duration-200 ease-out group-hover:grid-cols-[1fr] group-hover:opacity-100">
-          <span className="flex h-[22px] min-w-0 items-center overflow-hidden">
-            <span className="whitespace-nowrap pl-2 pr-0.5 text-[10px] font-bold leading-none tracking-wide text-primary-foreground">
-              {t('titleBar.update')}
-            </span>
-          </span>
-        </span>
-        <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center">
-          <ArrowDown size={arrowSize} strokeWidth={2.6} className="block text-primary-foreground" />
+        <ArrowDown
+          size={size}
+          strokeWidth={2.4}
+          className="transition-transform group-hover:translate-y-0.5"
+        />
+        <span className="absolute right-1.5 top-1.5 flex h-2 w-2">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-primary shadow-[0_0_6px_rgba(var(--primary-rgb),0.9)]" />
         </span>
       </button>
     </Tooltip>

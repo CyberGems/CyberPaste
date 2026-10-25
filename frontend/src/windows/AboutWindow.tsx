@@ -21,6 +21,7 @@ import {
   RotateCcw,
   Tag,
   WifiOff,
+  Sparkles,
   X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -36,6 +37,7 @@ import {
   isUpdaterNetworkError,
 } from '../utils/updater';
 import { UpdateModal } from '../components/UpdateModal';
+import { MOCK_UPDATE_PREVIEW } from '../utils/mockUpdate';
 import Tooltip from '../components/Tooltip';
 import { RECOMMENDED_SUITE_APPS, suiteLanguage } from '../data/suiteApps';
 
@@ -274,11 +276,40 @@ export function AboutWindow() {
     }
   }, []);
 
-  const handleSkipUpdateVersion = useCallback(async (version: string) => {
-    await invoke('skip_update_version', { version });
-    setUpdateAvailable(null);
-    await invoke('set_update_available', { available: false });
+  const handleSkipUpdateVersion = useCallback(
+    async (version: string) => {
+      if ((updateAvailable as any)?.isMock) {
+        setUpdateAvailable(null);
+        await invoke('set_update_available', { available: false });
+        return;
+      }
+      await invoke('skip_update_version', { version });
+      setUpdateAvailable(null);
+      await invoke('set_update_available', { available: false });
+    },
+    [updateAvailable]
+  );
+
+  const toggleUpdatePreview = useCallback(() => {
+    setUpdateAvailable((prev) => {
+      if ((prev as any)?.isMock) {
+        setShowUpdateModal(false);
+        return null;
+      }
+      setShowUpdateModal(true);
+      return MOCK_UPDATE_PREVIEW as any;
+    });
   }, []);
+
+  useEffect(() => {
+    const handleToggle = () => toggleUpdatePreview();
+    window.addEventListener('cyberpaste:toggle-update-preview', handleToggle);
+    (window as any).__CYBERPASTE_TOGGLE_UPDATE_PREVIEW__ = toggleUpdatePreview;
+    return () => {
+      window.removeEventListener('cyberpaste:toggle-update-preview', handleToggle);
+      delete (window as any).__CYBERPASTE_TOGGLE_UPDATE_PREVIEW__;
+    };
+  }, [toggleUpdatePreview]);
 
   useEffect(() => {
     const unlisten = listen('about-check-updates', () => {
@@ -398,29 +429,61 @@ export function AboutWindow() {
                       </p>
                     </div>
                     {updateAvailable ? (
-                      <button
-                        type="button"
-                        onClick={() => setShowUpdateModal(true)}
-                        className="btn min-w-[108px] rounded-[4px] border border-primary/20 bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
-                      >
-                        {t('settings.updatesUpdateNow')}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={checkForUpdates}
-                        disabled={checkStatus === 'checking'}
-                        className="btn min-w-[108px] rounded-[4px] border border-primary/20 bg-input px-3 py-2 text-xs text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-60"
-                      >
-                        {checkStatus === 'checking' ? (
-                          <span className="inline-flex items-center justify-center gap-1.5">
-                            <Loader2 size={12} className="animate-spin" />
-                            {t('settings.checkNow')}
-                          </span>
-                        ) : (
-                          t('settings.checkNow')
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowUpdateModal(true)}
+                          className="btn min-w-[108px] rounded-[4px] border border-primary/20 bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                        >
+                          {t('settings.updatesUpdateNow')}
+                        </button>
+                        {(updateAvailable as any)?.isMock && (
+                          <button
+                            type="button"
+                            onClick={toggleUpdatePreview}
+                            className="text-xs text-muted-foreground underline hover:text-foreground"
+                          >
+                            {t('titleBar.moreMenu.stopPreviewUpdate', {
+                              defaultValue: 'Cerrar preview',
+                            })}
+                          </button>
                         )}
-                      </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={checkForUpdates}
+                          disabled={checkStatus === 'checking'}
+                          className="btn min-w-[108px] rounded-[4px] border border-primary/20 bg-input px-3 py-2 text-xs text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-60"
+                        >
+                          {checkStatus === 'checking' ? (
+                            <span className="inline-flex items-center justify-center gap-1.5">
+                              <Loader2 size={12} className="animate-spin" />
+                              {t('settings.checkNow')}
+                            </span>
+                          ) : (
+                            t('settings.checkNow')
+                          )}
+                        </button>
+                        <Tooltip
+                          label={t('titleBar.moreMenu.previewUpdate', {
+                            defaultValue: 'Previsualizar actualización...',
+                          })}
+                          placement="top"
+                        >
+                          <button
+                            type="button"
+                            onClick={toggleUpdatePreview}
+                            aria-label={t('titleBar.moreMenu.previewUpdate', {
+                              defaultValue: 'Previsualizar actualización',
+                            })}
+                            className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-border/60 bg-input text-muted-foreground transition-colors hover:border-primary/40 hover:bg-accent hover:text-primary"
+                          >
+                            <Sparkles size={13} className="text-primary" />
+                          </button>
+                        </Tooltip>
+                      </div>
                     )}
                   </div>
 

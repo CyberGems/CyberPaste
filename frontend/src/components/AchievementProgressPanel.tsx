@@ -177,7 +177,9 @@ export function AchievementProgressPanel({
                       {t('settings.progressInstalledOn')}
                     </p>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                      <span className="font-medium text-foreground/90">{formatDate(firstUsedAt, locale)}</span>
+                      <span className="font-medium text-foreground/90">
+                        {formatDate(firstUsedAt, locale)}
+                      </span>
                       {totalDays !== null && (
                         <>
                           <span className="opacity-30">•</span>
@@ -218,179 +220,195 @@ export function AchievementProgressPanel({
         })()}
       </section>
 
-      {progress && (() => {
-        const actionItems = [
-          {
-            key: 'copies',
-            label: t('settings.progressCopies'),
-            value: Number(progress.totals.copies || 0),
-            icon: Copy,
-            color: 'text-cyan-400',
-            bg: 'bg-cyan-500/10 border-cyan-500/20',
-          },
-          {
-            key: 'searches',
-            label: t('settings.progressSearches'),
-            value: Number(progress.totals.searches || 0),
-            icon: Search,
-            color: 'text-indigo-400',
-            bg: 'bg-indigo-500/10 border-indigo-500/20',
-          },
-          {
-            key: 'folders',
-            label: t('settings.progressFolders'),
-            value: Number(progress.totals.folders_created || 0),
-            icon: FolderPlus,
-            color: 'text-amber-400',
-            bg: 'bg-amber-500/10 border-amber-500/20',
-          },
-          {
-            key: 'pins',
-            label: t('settings.progressPins'),
-            value: Number(progress.totals.pins || 0),
-            icon: Pin,
-            color: 'text-rose-400',
-            bg: 'bg-rose-500/10 border-rose-500/20',
-          },
-          {
-            key: 'ai_actions',
-            label: t('settings.progressAiActions'),
-            value: Number(progress.totals.ai_actions || 0),
-            icon: Sparkles,
-            color: 'text-emerald-400',
-            bg: 'bg-emerald-500/10 border-emerald-500/20',
-          },
-        ];
+      {progress &&
+        (() => {
+          const actionItems = [
+            {
+              key: 'copies',
+              label: t('settings.progressCopies'),
+              value: Number(progress.totals.copies || 0),
+              icon: Copy,
+              color: 'text-cyan-400',
+              bg: 'bg-cyan-500/10 border-cyan-500/20',
+            },
+            {
+              key: 'searches',
+              label: t('settings.progressSearches'),
+              value: Number(progress.totals.searches || 0),
+              icon: Search,
+              color: 'text-indigo-400',
+              bg: 'bg-indigo-500/10 border-indigo-500/20',
+            },
+            {
+              key: 'folders',
+              label: t('settings.progressFolders'),
+              value: Number(progress.totals.folders_created || 0),
+              icon: FolderPlus,
+              color: 'text-amber-400',
+              bg: 'bg-amber-500/10 border-amber-500/20',
+            },
+            {
+              key: 'pins',
+              label: t('settings.progressPins'),
+              value: Number(progress.totals.pins || 0),
+              icon: Pin,
+              color: 'text-rose-400',
+              bg: 'bg-rose-500/10 border-rose-500/20',
+            },
+            {
+              key: 'ai_actions',
+              label: t('settings.progressAiActions'),
+              value: Number(progress.totals.ai_actions || 0),
+              icon: Sparkles,
+              color: 'text-emerald-400',
+              bg: 'bg-emerald-500/10 border-emerald-500/20',
+            },
+          ];
 
-        return (
-          <section className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
-            {actionItems.map(({ key, label, value, icon: Icon, color, bg }) => (
-              <div
-                key={key}
-                className="flex flex-col justify-between rounded-xl border border-border/70 bg-card/75 p-3.5 transition-all hover:border-border hover:bg-card"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className={clsx('flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border', bg, color)}>
-                    <Icon size={14} />
+          return (
+            <section className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
+              {actionItems.map(({ key, label, value, icon: Icon, color, bg }) => (
+                <div
+                  key={key}
+                  className="flex flex-col justify-between rounded-xl border border-border/70 bg-card/75 p-3.5 transition-all hover:border-border hover:bg-card"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div
+                      className={clsx(
+                        'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border',
+                        bg,
+                        color
+                      )}
+                    >
+                      <Icon size={14} />
+                    </div>
+                  </div>
+                  <div className="mt-2.5">
+                    <p className="font-mono text-xl font-bold tabular-nums text-foreground">
+                      {formatNumber(value, locale)}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs font-medium text-muted-foreground/80">
+                      {label}
+                    </p>
                   </div>
                 </div>
-                <div className="mt-2.5">
-                  <p className="font-mono text-xl font-bold tabular-nums text-foreground">
-                    {formatNumber(value, locale)}
-                  </p>
-                  <p className="mt-0.5 text-xs font-medium text-muted-foreground/80 truncate">
-                    {label}
-                  </p>
-                </div>
+              ))}
+            </section>
+          );
+        })()}
+
+      {progress &&
+        (() => {
+          const typeItems = [
+            {
+              type: 'text',
+              label: t('clipType.text'),
+              count: Number(progress.totals.captured_text || 0),
+              icon: FileText,
+              color: 'text-sky-400',
+              bg: 'bg-sky-500/10 border-sky-500/20',
+              bar: 'bg-sky-400',
+            },
+            {
+              type: 'code',
+              label: t('clipType.code'),
+              count: Number(progress.totals.captured_code || 0),
+              icon: Code,
+              color: 'text-purple-400',
+              bg: 'bg-purple-500/10 border-purple-500/20',
+              bar: 'bg-purple-400',
+            },
+            {
+              type: 'image',
+              label: t('clipType.image'),
+              count: Number(progress.totals.captured_image || 0),
+              icon: ImageIcon,
+              color: 'text-emerald-400',
+              bg: 'bg-emerald-500/10 border-emerald-500/20',
+              bar: 'bg-emerald-400',
+            },
+            {
+              type: 'url',
+              label: t('clipType.url'),
+              count: Number(progress.totals.captured_url || 0),
+              icon: Link,
+              color: 'text-cyan-400',
+              bg: 'bg-cyan-500/10 border-cyan-500/20',
+              bar: 'bg-cyan-400',
+            },
+            {
+              type: 'file',
+              label: t('clipType.file'),
+              count: Number(progress.totals.captured_file || 0),
+              icon: LucideFile,
+              color: 'text-amber-400',
+              bg: 'bg-amber-500/10 border-amber-500/20',
+              bar: 'bg-amber-400',
+            },
+          ];
+
+          const totalCaptured = typeItems.reduce((acc, item) => acc + item.count, 0);
+
+          return (
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-[13px] font-semibold text-primary/80">
+                  {t('settings.progressTypeBreakdown')}
+                </h3>
+                {totalCaptured > 0 && (
+                  <span className="font-mono text-[11px] text-muted-foreground/80">
+                    {t('settings.progressTotalCaptured', {
+                      count: totalCaptured,
+                      defaultValue: `${formatNumber(totalCaptured, locale)} clips capturados`,
+                    })}
+                  </span>
+                )}
               </div>
-            ))}
-          </section>
-        );
-      })()}
 
-      {progress && (() => {
-        const typeItems = [
-          {
-            type: 'text',
-            label: t('clipType.text'),
-            count: Number(progress.totals.captured_text || 0),
-            icon: FileText,
-            color: 'text-sky-400',
-            bg: 'bg-sky-500/10 border-sky-500/20',
-            bar: 'bg-sky-400',
-          },
-          {
-            type: 'code',
-            label: t('clipType.code'),
-            count: Number(progress.totals.captured_code || 0),
-            icon: Code,
-            color: 'text-purple-400',
-            bg: 'bg-purple-500/10 border-purple-500/20',
-            bar: 'bg-purple-400',
-          },
-          {
-            type: 'image',
-            label: t('clipType.image'),
-            count: Number(progress.totals.captured_image || 0),
-            icon: ImageIcon,
-            color: 'text-emerald-400',
-            bg: 'bg-emerald-500/10 border-emerald-500/20',
-            bar: 'bg-emerald-400',
-          },
-          {
-            type: 'url',
-            label: t('clipType.url'),
-            count: Number(progress.totals.captured_url || 0),
-            icon: Link,
-            color: 'text-cyan-400',
-            bg: 'bg-cyan-500/10 border-cyan-500/20',
-            bar: 'bg-cyan-400',
-          },
-          {
-            type: 'file',
-            label: t('clipType.file'),
-            count: Number(progress.totals.captured_file || 0),
-            icon: LucideFile,
-            color: 'text-amber-400',
-            bg: 'bg-amber-500/10 border-amber-500/20',
-            bar: 'bg-amber-400',
-          },
-        ];
-
-        const totalCaptured = typeItems.reduce((acc, item) => acc + item.count, 0);
-
-        return (
-          <section className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-[13px] font-semibold text-primary/80">
-                {t('settings.progressTypeBreakdown')}
-              </h3>
-              {totalCaptured > 0 && (
-                <span className="font-mono text-[11px] text-muted-foreground/80">
-                  {t('settings.progressTotalCaptured', {
-                    count: totalCaptured,
-                    defaultValue: `${formatNumber(totalCaptured, locale)} clips capturados`,
-                  })}
-                </span>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
-              {typeItems.map(({ type, label, count, icon: Icon, color, bg, bar }) => {
-                const pct = totalCaptured > 0 ? Math.round((count / totalCaptured) * 100) : 0;
-                return (
-                  <div
-                    key={type}
-                    className="flex flex-col justify-between rounded-xl border border-border/70 bg-card/75 p-3.5 transition-all hover:border-border hover:bg-card"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-2">
-                        <div className={clsx('flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border', bg, color)}>
-                          <Icon size={14} />
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
+                {typeItems.map(({ type, label, count, icon: Icon, color, bg, bar }) => {
+                  const pct = totalCaptured > 0 ? Math.round((count / totalCaptured) * 100) : 0;
+                  return (
+                    <div
+                      key={type}
+                      className="flex flex-col justify-between rounded-xl border border-border/70 bg-card/75 p-3.5 transition-all hover:border-border hover:bg-card"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-2">
+                          <div
+                            className={clsx(
+                              'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border',
+                              bg,
+                              color
+                            )}
+                          >
+                            <Icon size={14} />
+                          </div>
+                          <span className="font-mono text-[10px] font-semibold tabular-nums text-muted-foreground/75">
+                            {pct}%
+                          </span>
                         </div>
-                        <span className="font-mono text-[10px] font-semibold tabular-nums text-muted-foreground/75">
-                          {pct}%
-                        </span>
+                        <p className="mt-2 truncate text-xs font-medium text-foreground/85">
+                          {label}
+                        </p>
+                        <p className="mt-0.5 font-mono text-base font-bold tabular-nums text-foreground">
+                          {formatNumber(count, locale)}
+                        </p>
                       </div>
-                      <p className="mt-2 text-xs font-medium text-foreground/85 truncate">{label}</p>
-                      <p className="mt-0.5 font-mono text-base font-bold tabular-nums text-foreground">
-                        {formatNumber(count, locale)}
-                      </p>
-                    </div>
 
-                    <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-muted/40">
-                      <div
-                        className={clsx('h-full rounded-full transition-all duration-500', bar)}
-                        style={{ width: `${count > 0 ? Math.max(pct, 4) : 0}%` }}
-                      />
+                      <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-muted/40">
+                        <div
+                          className={clsx('h-full rounded-full transition-all duration-500', bar)}
+                          style={{ width: `${count > 0 ? Math.max(pct, 4) : 0}%` }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        );
-      })()}
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })()}
 
       <section className="space-y-3">
         <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">

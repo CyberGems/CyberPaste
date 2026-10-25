@@ -112,6 +112,17 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
       setStatus('downloading');
       setProgress(0);
 
+      if ((update as any)?.isMock || typeof update.downloadAndInstall !== 'function') {
+        for (let pct = 0; pct <= 100; pct += 25) {
+          setProgress(pct);
+          await new Promise((r) => setTimeout(r, 250));
+        }
+        await new Promise((r) => setTimeout(r, 500));
+        setStatus('prompt');
+        onClose();
+        return;
+      }
+
       let downloaded = 0;
       let contentLength = 0;
 
@@ -165,15 +176,17 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
   };
 
   return (
-    <div className="animate-in fade-in fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md duration-300">
-      <div className="animate-in zoom-in-95 relative flex h-[min(90vh,600px)] w-[min(94vw,580px)] max-w-xl flex-col overflow-hidden rounded-xl border border-primary/20 bg-background/95 shadow-2xl shadow-primary/10 duration-300">
+    <div className="animate-in fade-in fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/60 p-2 backdrop-blur-md duration-300 sm:p-4">
+      <div className="animate-in zoom-in-95 relative my-auto flex max-h-[min(580px,calc(100vh-1.5rem))] w-[min(94vw,560px)] max-w-xl flex-col overflow-hidden rounded-xl border border-primary/20 bg-background/95 shadow-2xl shadow-primary/10 duration-300">
         <div className="absolute -left-16 -top-16 h-32 w-32 rounded-full bg-primary/10 blur-2xl" />
         <div className="absolute -bottom-16 -right-16 h-32 w-32 rounded-full bg-cyan-500/10 blur-2xl" />
 
-        <div className="relative flex shrink-0 items-center justify-between px-6 pb-3 pt-5">
+        <div className="relative flex shrink-0 items-center justify-between px-5 pb-2.5 pt-4 sm:px-6">
           <div className="flex items-center gap-2 text-primary">
-            <Sparkles size={20} className="animate-pulse" />
-            <h3 className="text-lg font-bold tracking-wide">{t('settings.updatesTitle')}</h3>
+            <Sparkles size={18} className="animate-pulse" />
+            <h3 className="text-base font-bold tracking-wide sm:text-lg">
+              {t('settings.updatesTitle')}
+            </h3>
           </div>
           {status !== 'downloading' && (
             <Tooltip label={t('common.close')} placement="bottom">
@@ -192,9 +205,9 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
         <div className="relative z-10 flex min-h-0 flex-1 flex-col">
           {status === 'prompt' && (
             <>
-              <div className="relative z-10 flex min-h-0 flex-1 flex-col px-6 pb-2">
+              <div className="relative z-10 flex min-h-0 flex-1 flex-col px-5 pb-2 sm:px-6">
                 {/* Version & Notice Banner */}
-                <div className="flex shrink-0 items-center justify-between gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5">
+                <div className="flex shrink-0 items-center justify-between gap-3 rounded-lg border border-primary/20 bg-primary/5 px-3.5 py-2">
                   <p className="truncate text-xs font-medium text-foreground/90">
                     {t('settings.updatesNewVersionAvailable')}
                   </p>
@@ -210,8 +223,8 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
                 </div>
 
                 {/* Changelog & Release Notes Hero Area */}
-                <div className="mt-3 flex min-h-0 flex-1 flex-col">
-                  <div className="mb-2 flex shrink-0 items-center justify-between px-0.5 text-xs">
+                <div className="mt-2.5 flex min-h-0 flex-1 flex-col">
+                  <div className="mb-1.5 flex shrink-0 items-center justify-between px-0.5 text-xs">
                     <span className="flex items-center gap-1.5 font-semibold text-foreground/90">
                       <FileText size={13} className="text-primary" />
                       {t('settings.updatesChangelog')}
@@ -255,12 +268,12 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
                   <div
                     ref={notesScrollRef}
                     onScroll={checkScroll}
-                    className="custom-scrollbar min-h-[160px] flex-1 select-text overflow-y-auto rounded-lg border border-border/60 bg-black/25 px-4 py-3 text-[12.5px] leading-relaxed text-foreground/85"
+                    className="custom-scrollbar max-h-[300px] min-h-[80px] flex-1 select-text overflow-y-auto rounded-lg border border-border/60 bg-black/25 px-4 py-2.5 text-[12.5px] leading-relaxed text-foreground/85"
                   >
                     {releaseBody ? (
                       <ReleaseNotes body={releaseBody} />
                     ) : (
-                      <div className="flex h-full min-h-[140px] items-center justify-center text-xs text-muted-foreground">
+                      <div className="flex h-full min-h-[100px] items-center justify-center text-xs text-muted-foreground">
                         <Loader2 className="mr-2 h-4 w-4 animate-spin text-primary" />
                         <span>{t('common.loading')}</span>
                       </div>
@@ -270,7 +283,7 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
               </div>
 
               {/* Action Buttons Footer */}
-              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-border/60 bg-background/95 px-6 py-3.5">
+              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-border/60 bg-background/95 px-5 py-3 sm:px-6">
                 {skipError && (
                   <p className="mr-auto self-center text-xs text-destructive">
                     {t('settings.updatesSkipError')}

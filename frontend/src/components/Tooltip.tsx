@@ -213,7 +213,14 @@ export default function Tooltip({
 
     if (placement === 'top' || placement === 'bottom') {
       let actualPlacement = placement;
-      if (placement === 'top' && anchor.top - GAP - card.height < VIEWPORT_MARGIN) {
+      const container = anchorEl.closest(
+        '[data-el="clip-list-area"], [data-clip-list="true"], main'
+      );
+      const minTop = container
+        ? Math.max(VIEWPORT_MARGIN, container.getBoundingClientRect().top + 2)
+        : VIEWPORT_MARGIN;
+
+      if (placement === 'top' && anchor.top - GAP - card.height < minTop) {
         if (anchor.bottom + GAP + card.height <= vh - VIEWPORT_MARGIN) {
           actualPlacement = 'bottom';
         }
@@ -221,13 +228,23 @@ export default function Tooltip({
         placement === 'bottom' &&
         anchor.bottom + GAP + card.height > vh - VIEWPORT_MARGIN
       ) {
-        if (anchor.top - GAP - card.height >= VIEWPORT_MARGIN) {
+        if (anchor.top - GAP - card.height >= minTop) {
           actualPlacement = 'top';
         }
       }
 
       left = clamp(cx - card.width / 2, VIEWPORT_MARGIN, vw - card.width - VIEWPORT_MARGIN);
       top = actualPlacement === 'bottom' ? anchor.bottom + GAP : anchor.top - GAP - card.height;
+
+      if (actualPlacement === 'top' && top < minTop) {
+        if (anchor.bottom + GAP + card.height <= vh - VIEWPORT_MARGIN) {
+          actualPlacement = 'bottom';
+          top = anchor.bottom + GAP;
+        } else {
+          top = minTop;
+        }
+      }
+
       const ax = clamp(cx - left, 12, card.width - 12); // flecha alineada al centro del ancla
       arrow =
         actualPlacement === 'bottom'

@@ -373,14 +373,16 @@ export const ClipList: React.FC<ClipListProps> = ({
 
       peekTimerRef.current = setTimeout(() => {
         // Evitar activar peek si el cursor ya no está en el área central
-        const elUnderCursor = document.querySelector(':hover');
+        const checkX = peekOriginMousePosRef.current?.x ?? startX;
+        const checkY = peekOriginMousePosRef.current?.y ?? startY;
+        const elUnderPoint = document.elementFromPoint(checkX, checkY);
         if (
-          !elUnderCursor ||
-          !elUnderCursor.closest('[data-el="clip-card-content"]') ||
-          elUnderCursor.closest('[data-el="clip-card-header"]') ||
-          elUnderCursor.closest('[data-el="clip-card-footer"]') ||
-          elUnderCursor.closest('button') ||
-          elUnderCursor.closest('[data-el="clip-card-hover-actions"]')
+          !elUnderPoint ||
+          !elUnderPoint.closest('[data-el="clip-card-content"]') ||
+          elUnderPoint.closest('[data-el="clip-card-header"]') ||
+          elUnderPoint.closest('[data-el="clip-card-footer"]') ||
+          elUnderPoint.closest('button') ||
+          elUnderPoint.closest('[data-el="clip-card-hover-actions"]')
         ) {
           return;
         }
@@ -397,10 +399,10 @@ export const ClipList: React.FC<ClipListProps> = ({
       const target = e.target as HTMLElement;
       const isOverNonContent = Boolean(
         target.closest('button') ||
-          target.closest('[data-el="clip-card-hover-actions"]') ||
-          target.closest('[data-el="clip-card-header"]') ||
-          target.closest('[data-el="clip-card-footer"]') ||
-          !target.closest('[data-el="clip-card-content"]')
+        target.closest('[data-el="clip-card-hover-actions"]') ||
+        target.closest('[data-el="clip-card-header"]') ||
+        target.closest('[data-el="clip-card-footer"]') ||
+        !target.closest('[data-el="clip-card-content"]')
       );
 
       if (isOverNonContent) {

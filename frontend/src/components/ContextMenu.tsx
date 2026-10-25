@@ -417,9 +417,7 @@ export function ContextMenu({
 
       if (e.key === 'ArrowDown') {
         const next =
-          !inSub && current < 0
-            ? firstEnabledIndex(list)
-            : nextEnabledIndex(list, current, 1);
+          !inSub && current < 0 ? firstEnabledIndex(list) : nextEnabledIndex(list, current, 1);
         if (inSub) setSubActiveIndex(next);
         else {
           setActiveIndex(next);

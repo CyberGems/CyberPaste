@@ -39,6 +39,7 @@ import { AiResultDialog } from './components/AiResultDialog';
 import { OcrResultModal } from './components/OcrResultModal';
 import { check } from '@tauri-apps/plugin-updater';
 import { UpdateModal } from './components/UpdateModal';
+import { MOCK_UPDATE_PREVIEW } from './utils/mockUpdate';
 import { CloseWindowDialog } from './components/CloseWindowDialog';
 import { UndoWarningDialog } from './components/UndoWarningDialog';
 import { dismissAllTooltips } from './components/Tooltip';
@@ -645,11 +646,41 @@ function App() {
   }, []);
 
   const handleSkipUpdateVersion = useCallback(async (version: string) => {
+    if (updateAvailableRef.current?.isMock) {
+      updateAvailableRef.current = null;
+      setUpdateAvailable(null);
+      await invoke('set_update_available', { available: false });
+      return;
+    }
     await invoke('skip_update_version', { version });
     updateAvailableRef.current = null;
     setUpdateAvailable(null);
     await invoke('set_update_available', { available: false });
   }, []);
+
+  const toggleUpdatePreview = useCallback(() => {
+    if (updateAvailableRef.current?.isMock) {
+      updateAvailableRef.current = null;
+      setUpdateAvailable(null);
+      setShowUpdateModal(false);
+      invoke('set_update_available', { available: false }).catch(console.error);
+    } else {
+      updateAvailableRef.current = MOCK_UPDATE_PREVIEW;
+      setUpdateAvailable(MOCK_UPDATE_PREVIEW);
+      setShowUpdateModal(true);
+      invoke('set_update_available', { available: true }).catch(console.error);
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleToggle = () => toggleUpdatePreview();
+    window.addEventListener('cyberpaste:toggle-update-preview', handleToggle);
+    (window as any).__CYBERPASTE_TOGGLE_UPDATE_PREVIEW__ = toggleUpdatePreview;
+    return () => {
+      window.removeEventListener('cyberpaste:toggle-update-preview', handleToggle);
+      delete (window as any).__CYBERPASTE_TOGGLE_UPDATE_PREVIEW__;
+    };
+  }, [toggleUpdatePreview]);
 
   const handleCloseChoice = useCallback(async (action: 'minimize' | 'quit', remember: boolean) => {
     try {

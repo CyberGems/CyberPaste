@@ -245,7 +245,6 @@ export const ClipCard = memo(
       }
     }, [clip.clip_type, clip.content, clip.preview, imageSrc, filePaths]);
 
-
     const [menuHighlight, setMenuHighlight] = useState(false);
     const menuHighlightRef = useRef(false);
     const leftWhileMenuRef = useRef(false);
@@ -601,7 +600,6 @@ export const ClipCard = memo(
                   )}
                 />
               )}
-
             </div>
 
             <div
@@ -627,7 +625,7 @@ export const ClipCard = memo(
                 >
                   {/* OCR button on the left if present, so Copy & Paste stay dead-center */}
                   {clip.clip_type === 'image' && hasOcr && onRunOcr && (
-                    <div className="absolute left-2.5 bottom-[4px]">
+                    <div className="absolute bottom-[4px] left-2.5">
                       <Tooltip label={t('viewer.openOcrText')} placement="top">
                         <button
                           type="button"
@@ -716,7 +714,7 @@ export const ClipCard = memo(
               ) : (
                 <span
                   className={clsx(
-                    'animate-in fade-in flex flex-1 min-w-0 items-center text-[11px] font-medium transition-colors duration-150',
+                    'animate-in fade-in flex min-w-0 flex-1 items-center text-[11px] font-medium transition-colors duration-150',
                     clip.clip_type === 'image'
                       ? 'font-semibold text-muted-foreground/90'
                       : 'text-muted-foreground/50'
@@ -768,7 +766,7 @@ export const ClipCard = memo(
               {showTypeIcon && (
                 <div
                   className={clsx(
-                    'absolute right-2.5 bottom-[6px] flex items-center transition-opacity',
+                    'absolute bottom-[6px] right-2.5 flex items-center transition-opacity',
                     showHover ? 'opacity-100' : 'opacity-70'
                   )}
                 >
@@ -797,6 +795,19 @@ export const ClipCard = memo(
                       <Tooltip label={tooltipText} placement="top">
                         <button
                           type="button"
+                          onMouseEnter={(e) => {
+                            e.stopPropagation();
+                            setIsOverActions(true);
+                            onCancelPeek?.();
+                          }}
+                          onMouseMove={(e) => {
+                            e.stopPropagation();
+                            setIsOverActions(true);
+                            onCancelPeek?.();
+                          }}
+                          onMouseLeave={() => {
+                            setIsOverActions(false);
+                          }}
                           onClick={(e) => {
                             if (onFilterByType) {
                               e.stopPropagation();
