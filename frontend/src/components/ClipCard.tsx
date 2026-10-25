@@ -464,7 +464,9 @@ export const ClipCard = memo(
                 <div
                   className={clsx(
                     'transition-opacity duration-150',
-                    showHover || isBulkSelected ? 'pointer-events-none opacity-0' : 'opacity-100'
+                    onToggleBulkSelect && (showHover || isBulkSelected)
+                      ? 'pointer-events-none opacity-0'
+                      : 'opacity-100'
                   )}
                 >
                   <Tooltip label={t('common.latest')} placement="top">
@@ -478,7 +480,9 @@ export const ClipCard = memo(
                 <div
                   className={clsx(
                     'transition-opacity duration-150',
-                    hovered || isBulkSelected ? 'pointer-events-none opacity-0' : 'opacity-100'
+                    onToggleBulkSelect && clipIndex !== 1 && (showHover || isBulkSelected)
+                      ? 'pointer-events-none opacity-0'
+                      : 'opacity-100'
                   )}
                 >
                   <Tooltip

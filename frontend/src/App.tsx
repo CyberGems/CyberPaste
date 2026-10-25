@@ -2024,7 +2024,7 @@ function App() {
     setCompactTypeFilter('all');
     setFullTypeFilter('all');
     setAppFilter(null);
-    setSelectedClipId(null);
+    setSelectedClipId(clipsRef.current[0]?.id ?? null);
     setSelectedClipIds(new Set());
     setDetailPanelOpen(false);
     setIsEmojiMode(false);
@@ -2032,14 +2032,14 @@ function App() {
     window.dispatchEvent(new CustomEvent('cyberpaste-reset-view'));
   }, []);
 
-  // Reset search and view (if enabled) when the window closes or reopens.
+  // Reset search and view (if enabled) when the window closes.
   useEffect(() => {
     const unlisten = listen<boolean>('window-visibility', (event) => {
       if (!event.payload) {
         setShowCloseWindowDialog(false);
         setShowUndoWarning(false);
+        if (settingsRef.current?.reset_view_on_paste) resetViewOnWindowVisibility();
       }
-      if (settingsRef.current?.reset_view_on_paste) resetViewOnWindowVisibility();
     });
     return () => {
       unlisten.then((u) => {
