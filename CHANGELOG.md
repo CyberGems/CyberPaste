@@ -2,6 +2,31 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.27.0] — 2026-10-25
+
+### ✨ Multi-Selection & Bulk Actions
+- **Keyboard range selection**: Use `Shift + Arrow` keys (Down/Up in Compact, Left/Right in Full) to initiate range-based bulk selection of clips, matching Windows Explorer behavior.
+- **Marquee rectangle drag**: Drag a selection box over multiple clips with the mouse (or `Shift + Drag` across card faces) to select or toggle bulk items.
+- **Unified multi-selection style**: Full mode and Compact mode share identical selection highlight rings, background tints, and active state styles.
+
+### 🎯 Card Layout & Quick Actions Redesign
+- **Footer action buttons**: Quick action buttons (`Copy` and `Paste`) are relocated to the bottom footer on card hover, centered and non-intrusive, keeping clip content unobstructed.
+- **Peek popup isolation**: Peek previews now trigger strictly when hovering over the central content area, preventing unwanted popups over headers, footers, and buttons.
+- **Card title marquee & hover highlight**: Card headers instantly highlight in primary cyan upon card hover, and long titles marquee back and forth on hover for easy inspection.
+- **Refined action tooltips**: Clear, descriptive tooltips without confusing shortcut badges on simulated click actions.
+
+### 🏆 Achievements Dashboard Facelift & Direct Menu Shortcut
+- **Comprehensive metrics facelift**: Captured clip types and action statistics now feature dedicated dashboard cards with distinct colored badges, counts, and proportional progress bars.
+- **Activity start & total days**: Streamlined history tracking showing initial activity date alongside total elapsed days, without confusing profile terminology.
+- **Direct menu access**: Added a direct shortcut to Achievements in the TitleBar "More" menu across both Full and Compact modes.
+
+### 🎨 Visual Consistency & Polish
+- **Emoji tooltips**: Emoji picker now utilizes the app's custom glassmorphism tooltips, replacing default browser tooltips.
+- **Tooltip shortcut regex fix**: Punctuation slashes in text descriptions no longer generate false keyboard shortcut key badges.
+- **Clip number legibility**: Increased positional index opacity in Full mode for effortless readability.
+- **Filter count baseline alignment**: Category counters now match text baselines and proportional type styling across all filter pills.
+- **Selection flicker fix**: Eliminated initial selection blink when opening the window by preserving selection during view resets.
+
 ## [1.26.0] — 2026-10-14
 
 ### 📋 Independent Copy & Paste Actions
