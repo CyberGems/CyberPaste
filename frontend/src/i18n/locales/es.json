@@ -579,6 +579,7 @@
     "testNotificationDesc": "Envía un toast de prueba para comprobar posición y duración.",
     "editClip": "Editar {{type}}",
     "appearanceSection": "Apariencia",
+    "otherSection": "Otros",
     "interfaceTitle": "Interfaz",
     "languageTitle": "Idioma de la interfaz",
     "languageDesc": "Elige tu idioma preferido para CyberPaste.",

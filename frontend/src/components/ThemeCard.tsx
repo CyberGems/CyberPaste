@@ -58,9 +58,9 @@ export const THEME_PALETTES: Record<ThemeMode, ThemePalette> = {
   },
 };
 
-const CARD_W = 120;
+const CARD_W = 90;
 const PREVIEW_ASPECT = 70 / 108; // height / width of the mini-window
-const CARD_PAD = 9; // metallic frame around the preview
+const CARD_PAD = 6; // metallic frame around the preview
 
 interface ThemeCardProps {
   mode: ThemeMode;
@@ -74,7 +74,7 @@ interface ThemeCardProps {
 function WindowContent({ pal, w }: { pal: ThemePalette; w: number }) {
   const inset = w * 0.085;
   const inner = w - inset * 2;
-  const line: React.CSSProperties = { height: 4, borderRadius: 2 };
+  const line: React.CSSProperties = { height: 3, borderRadius: 1.5 };
   return (
     <div
       className="relative flex h-full w-full items-center"
@@ -84,15 +84,15 @@ function WindowContent({ pal, w }: { pal: ThemePalette; w: number }) {
       <div
         className="absolute rounded-full"
         style={{
-          width: 9,
-          height: 9,
+          width: 7,
+          height: 7,
           top: inset * 0.9,
           left: inset,
-          border: `1.4px solid ${pal.textMuted}`,
+          border: `1.2px solid ${pal.textMuted}`,
         }}
       />
       {/* three text lines */}
-      <div className="flex w-full flex-col" style={{ gap: 6 }}>
+      <div className="flex w-full flex-col" style={{ gap: 4.5 }}>
         <div
           style={{
             ...line,
@@ -124,7 +124,7 @@ function WindowContent({ pal, w }: { pal: ThemePalette; w: number }) {
       {/* accent dot, bottom-right */}
       <div
         className="absolute rounded-full"
-        style={{ width: 8, height: 8, right: inset, bottom: inset * 0.9, background: pal.accent }}
+        style={{ width: 6, height: 6, right: inset, bottom: inset * 0.9, background: pal.accent }}
       />
     </div>
   );
@@ -180,16 +180,16 @@ export function ThemeCard({
       {/* accent glow UNDER the card when selected */}
       <div className="relative" style={{ width: cardWidth }}>
         <div
-          className="pointer-events-none absolute -inset-px rounded-[12px] transition-opacity duration-150"
+          className="pointer-events-none absolute -inset-px rounded-[10px] transition-opacity duration-150"
           style={{
             background: selected ? glowAccent : 'transparent',
-            boxShadow: selected ? `0 0 9px 1px ${glowAccent}80` : 'none',
+            boxShadow: selected ? `0 0 7px 1px ${glowAccent}80` : 'none',
             opacity: selected ? 1 : 0,
           }}
         />
         {/* metallic card frame */}
         <div
-          className="relative rounded-[11px] border transition-all duration-150"
+          className="relative rounded-[9px] border transition-all duration-150"
           style={{
             width: cardWidth,
             padding: CARD_PAD,
@@ -199,17 +199,17 @@ export function ThemeCard({
               : hover
                 ? 'rgba(255,255,255,0.35)'
                 : 'rgba(255,255,255,0.16)',
-            borderWidth: selected ? 1.6 : 1,
+            borderWidth: selected ? 1.5 : 1,
           }}
         >
           {/* mini "app window" preview */}
           <div
-            className="relative overflow-hidden rounded-[7px]"
+            className="relative overflow-hidden rounded-[5px]"
             style={{
               width: previewW,
               height: previewH,
               background: pal.background,
-              boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
             }}
           >
             {mode === 'system' ? (
@@ -222,9 +222,9 @@ export function ThemeCard({
       </div>
       {/* caption */}
       <span
-        className="mt-2 text-center transition-colors duration-150"
+        className="mt-1.5 text-center transition-colors duration-150"
         style={{
-          fontSize: 12.5,
+          fontSize: 11.5,
           fontWeight: selected ? 600 : 400,
           color: selected ? '#F0F2F6' : '#969AA2',
         }}

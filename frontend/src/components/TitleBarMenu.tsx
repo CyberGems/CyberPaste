@@ -244,6 +244,7 @@ export function TitleBarMenu({
 
   const showClearHistory = variant === 'main';
   const showOpenSettings = variant === 'viewer';
+  const hasMiddleItems = Boolean(onAddFolder || variant === 'main' || showOpenSettings);
 
   return (
     <div ref={wrapRef} className="no-drag relative flex items-center">
@@ -335,7 +336,9 @@ export function TitleBarMenu({
               <span>{t('common.donate')}</span>
             </button>
 
-            <div role="separator" className="mx-2 my-1 h-px shrink-0 bg-foreground/15" />
+            {hasMiddleItems && (
+              <div role="separator" className="mx-2 my-1 h-px shrink-0 bg-foreground/15" />
+            )}
 
             {onAddFolder && (
               <button

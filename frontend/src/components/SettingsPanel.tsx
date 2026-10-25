@@ -10,6 +10,7 @@ import {
   Settings as SettingsIcon,
   BrainCircuit,
   Folder as FolderIcon,
+  MoreHorizontal,
   Pencil,
   Eye,
   EyeOff,
@@ -1251,7 +1252,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             </span>
                           </div>
                         </div>
-                        <div role="radiogroup" className="flex flex-shrink-0 flex-wrap gap-4 pt-1">
+                        <div
+                          role="radiogroup"
+                          className="flex flex-shrink-0 flex-wrap gap-2.5 pt-1"
+                        >
                           {(['cyberpaste', 'dark', 'light', 'system'] as ThemeMode[]).map(
                             (mode) => (
                               <ThemeCard
@@ -1301,48 +1305,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       checked={settings.hide_on_blur !== false}
                       onChange={(val) => updateSetting('hide_on_blur', val)}
                       aria-label={t('settings.hideOnBlur')}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">
-                    <div className="flex min-w-0 gap-3">
-                      <Pin className="mt-0.5 h-5 w-5 flex-shrink-0 text-muted-foreground/80" />
-                      <div>
-                        <span className="text-sm font-medium">
-                          {t('settings.keepVisibleInTray')}
-                        </span>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {t('settings.keepVisibleInTrayDesc')}
-                        </p>
-                      </div>
-                    </div>
-                    <Tooltip label={t('settings.keepVisibleInTrayTooltip')} placement="top">
-                      <button
-                        type="button"
-                        onClick={() => invoke('open_tray_icon_settings').catch(console.error)}
-                        className="btn btn-primary shrink-0 rounded-[4px] px-3 py-1.5 text-xs"
-                      >
-                        {t('settings.openWindowsSettings')}
-                      </button>
-                    </Tooltip>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">
-                    <div className="flex min-w-0 gap-3">
-                      <Sparkles className="mt-0.5 h-5 w-5 flex-shrink-0 text-muted-foreground/80" />
-                      <div>
-                        <span className="text-sm font-medium">
-                          {t('settings.showAppRecommendations')}
-                        </span>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {t('settings.showAppRecommendationsDesc')}
-                        </p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={settings.show_app_recommendations ?? true}
-                      onChange={(val) => updateSetting('show_app_recommendations', val)}
-                      aria-label={t('settings.showAppRecommendations')}
                     />
                   </div>
 
@@ -1978,6 +1940,57 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             </Tooltip>
                           </div>
                         )}
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* Other Section */}
+                  <section className="space-y-4">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
+                      <MoreHorizontal size={14} />{' '}
+                      {t('settings.otherSection', { defaultValue: 'Otros' })}
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">
+                        <div className="flex min-w-0 gap-3">
+                          <Pin className="mt-0.5 h-5 w-5 flex-shrink-0 text-muted-foreground/80" />
+                          <div>
+                            <span className="text-sm font-medium">
+                              {t('settings.keepVisibleInTray')}
+                            </span>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {t('settings.keepVisibleInTrayDesc')}
+                            </p>
+                          </div>
+                        </div>
+                        <Tooltip label={t('settings.keepVisibleInTrayTooltip')} placement="top">
+                          <button
+                            type="button"
+                            onClick={() => invoke('open_tray_icon_settings').catch(console.error)}
+                            className="btn btn-primary shrink-0 rounded-[4px] px-3 py-1.5 text-xs"
+                          >
+                            {t('settings.openWindowsSettings')}
+                          </button>
+                        </Tooltip>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">
+                        <div className="flex min-w-0 gap-3">
+                          <Sparkles className="mt-0.5 h-5 w-5 flex-shrink-0 text-muted-foreground/80" />
+                          <div>
+                            <span className="text-sm font-medium">
+                              {t('settings.showAppRecommendations')}
+                            </span>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {t('settings.showAppRecommendationsDesc')}
+                            </p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={settings.show_app_recommendations ?? true}
+                          onChange={(val) => updateSetting('show_app_recommendations', val)}
+                          aria-label={t('settings.showAppRecommendations')}
+                        />
                       </div>
                     </div>
                   </section>
