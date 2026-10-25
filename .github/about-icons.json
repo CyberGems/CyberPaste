@@ -1,0 +1,14 @@
+{
+  "destinations": [
+    "frontend/public/suite"
+  ],
+  "catalogs": [
+    {
+      "path": "frontend/src/data/suiteApps.ts",
+      "pattern": "\\bslug\\s*:\\s*['\"](cyber[a-z0-9-]+)['\"]"
+    }
+  ],
+  "exclude": [
+    "cyberpaste"
+  ]
+}

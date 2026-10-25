@@ -21,6 +21,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Refresh About icons from official app repositories
+        uses: CyberGems/CyberSnap/.github/actions/sync-suite-icons@80266c5b4ad7fa4c5768e2543a4c7c7a461fc8f7
+        with:
+          config: .github/about-icons.json
+
       - name: Validate release summary
         run: node .github/scripts/validate-release-summary.mjs
 
@@ -108,7 +113,7 @@ jobs:
           if (Test-Path ".github/release-template.md") {
             $msiBlock = ""
             if ($msiHash) {
-              $msiBlock = "- **CyberPaste_${versionNum}_x64_en-US.msi** — SHA256: ``$msiHash```r`n"
+              $msiBlock = "- **CyberPaste_${versionNum}_x64_en-US.msi** â€” SHA256: ``$msiHash```r`n"
             }
 
             $template = [System.IO.File]::ReadAllText(".github/release-template.md", [System.Text.Encoding]::UTF8)
@@ -164,7 +169,7 @@ jobs:
           $msiHash = if ($msi) { (Get-FileHash $msi.FullName -Algorithm SHA256).Hash.ToLower() } else { $null }
           $msiBlock = ""
           if ($msiHash) {
-            $msiBlock = "- **CyberPaste_${versionNum}_x64_en-US.msi** — SHA256: ``$msiHash```r`n"
+            $msiBlock = "- **CyberPaste_${versionNum}_x64_en-US.msi** â€” SHA256: ``$msiHash```r`n"
           }
           $template = [System.IO.File]::ReadAllText(".github/release-template.md", [System.Text.Encoding]::UTF8)
           $notes = $template.
