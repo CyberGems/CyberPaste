@@ -66,13 +66,13 @@ interface SettingsPanelProps {
 
 const SETTINGS_TABS = [
   'general',
+  'notifications',
   'achievements',
   'security',
   'folders',
   'full',
   'compact',
   'ai',
-  'notifications',
   'maintenance',
 ] as const;
 type Tab = (typeof SETTINGS_TABS)[number];
@@ -1094,6 +1094,18 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 {t('settings.general')}
               </button>
               <button
+                onClick={() => setActiveTab('notifications')}
+                className={clsx(
+                  'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
+                  activeTab === 'notifications'
+                    ? 'border-l-[3px] border-primary bg-primary/10 text-primary shadow-none'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                )}
+              >
+                <Bell size={14} />
+                {t('settings.toasts')}
+              </button>
+              <button
                 onClick={() => setActiveTab('security')}
                 className={clsx(
                   'flex items-center gap-2 whitespace-nowrap rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
@@ -1152,18 +1164,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               >
                 <BrainCircuit size={14} />
                 {t('settings.ai')}
-              </button>
-              <button
-                onClick={() => setActiveTab('notifications')}
-                className={clsx(
-                  'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
-                  activeTab === 'notifications'
-                    ? 'border-l-[3px] border-primary bg-primary/10 text-primary shadow-none'
-                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                )}
-              >
-                <Bell size={14} />
-                {t('settings.toasts')}
               </button>
               <button
                 onClick={() => setActiveTab('maintenance')}
@@ -2318,7 +2318,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         </button>
                       </div>
 
-                      <div className="custom-scrollbar max-h-40 space-y-1.5 overflow-y-auto pr-1">
+                      <div className="custom-scrollbar max-h-[320px] space-y-1.5 overflow-y-auto pr-1">
                         {folders.filter((f) => !f.is_system).length === 0 ? (
                           <p className="rounded-lg border border-dashed border-border py-3 text-center text-xs text-muted-foreground">
                             {t('settings.noFolders')}

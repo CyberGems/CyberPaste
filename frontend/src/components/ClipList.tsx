@@ -444,8 +444,8 @@ export const ClipList: React.FC<ClipListProps> = ({
     const onWindowMouseMove = (e: MouseEvent) => {
       if (origin) {
         const dist = Math.hypot(e.clientX - origin.x, e.clientY - origin.y);
-        // Umbral de 6px para evitar jitter del sensor
-        if (dist > 6) {
+        // Umbral de 18px para amortiguar micro-movimientos y evitar cierre accidental
+        if (dist > 18) {
           closePeek();
         }
       } else {

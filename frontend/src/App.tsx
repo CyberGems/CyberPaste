@@ -499,6 +499,11 @@ function App() {
       setSettings(event.payload);
       recentSearchesRef.current = event.payload.recent_searches ?? [];
       setRecentSearches(recentSearchesRef.current);
+      if (!event.payload.auto_check_updates && !updateAvailableRef.current?.isMock) {
+        updateAvailableRef.current = null;
+        setUpdateAvailable(null);
+        invoke('set_update_available', { available: false }).catch(console.error);
+      }
     });
 
     const unlistenAchievements = listen<{ achievement_id: string }[]>(
