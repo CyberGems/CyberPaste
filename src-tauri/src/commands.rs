@@ -894,12 +894,12 @@ pub enum ClipTypeFilter {
     File,
 }
 
-/// Types matched by the filter. `code` groups code+html+rtf (matches frontend semantics).
+/// Types matched by the filter. `code` groups code+html (matches frontend semantics).
 fn type_matches_filter(filter: &Option<ClipTypeFilter>) -> Vec<&'static str> {
     match filter {
         None | Some(ClipTypeFilter::All) => Vec::new(),
         Some(ClipTypeFilter::Text) => vec!["text"],
-        Some(ClipTypeFilter::Code) => vec!["code", "html", "rtf"],
+        Some(ClipTypeFilter::Code) => vec!["code", "html"],
         Some(ClipTypeFilter::Image) => vec!["image"],
         Some(ClipTypeFilter::Url) => vec!["url"],
         Some(ClipTypeFilter::File) => vec!["file"],

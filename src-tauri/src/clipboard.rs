@@ -626,14 +626,19 @@ async fn process_clipboard_change(
                                 clip_type
                             );
                         } else {
-                            clip_content = trimmed.as_bytes().to_vec();
+                            clip_content = stripped.as_bytes().to_vec();
                             clip_hash = calculate_hash(&clip_content);
-                            clip_type = "rtf";
+                            clip_type = if is_url(&stripped) {
+                                "url"
+                            } else {
+                                "text"
+                            };
                             clip_preview = stripped.chars().take(200).collect::<String>();
-                            metadata = serde_json::json!({"format": "rtf"}).to_string();
+                            metadata =
+                                serde_json::json!({"format": "rtf", "converted": true}).to_string();
                             found_content = true;
                             log::debug!(
-                                "CLIPBOARD: Found RTF: {} (type={})",
+                                "CLIPBOARD: Found RTF converted to text: {} (type={})",
                                 clip_preview,
                                 clip_type
                             );

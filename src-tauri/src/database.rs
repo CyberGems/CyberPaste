@@ -593,6 +593,15 @@ impl Database {
         .execute(&self.pool)
         .await?;
 
+        // Normalize any legacy RTF clips to text
+        let _ = sqlx::query(
+            r#"
+            UPDATE clips SET clip_type = 'text' WHERE clip_type = 'rtf'
+            "#,
+        )
+        .execute(&self.pool)
+        .await;
+
         sqlx::query(
             r#"
             CREATE TABLE IF NOT EXISTS clip_images (

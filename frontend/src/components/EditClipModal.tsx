@@ -126,7 +126,7 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
   };
 
   const handleExport = async () => {
-    const extension = clipType === 'html' ? 'html' : clipType === 'rtf' ? 'rtf' : 'txt';
+    const extension = clipType === 'html' ? 'html' : 'txt';
     try {
       await saveTextToFile(
         editedContent,
@@ -161,7 +161,7 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
 
   if (!isOpen) return null;
 
-  const isCode = clipType === 'code' || clipType === 'html' || clipType === 'rtf';
+  const isCode = clipType === 'code' || clipType === 'html';
   const typeLabel = t(`clipType.${clipType}`, { defaultValue: t('clipType.text') });
 
   return (
