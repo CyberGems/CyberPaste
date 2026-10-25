@@ -21,7 +21,6 @@ import {
   RotateCcw,
   Tag,
   WifiOff,
-  Sparkles,
   X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -429,61 +428,29 @@ export function AboutWindow() {
                       </p>
                     </div>
                     {updateAvailable ? (
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setShowUpdateModal(true)}
-                          className="btn min-w-[108px] rounded-[4px] border border-primary/20 bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
-                        >
-                          {t('settings.updatesUpdateNow')}
-                        </button>
-                        {(updateAvailable as any)?.isMock && (
-                          <button
-                            type="button"
-                            onClick={toggleUpdatePreview}
-                            className="text-xs text-muted-foreground underline hover:text-foreground"
-                          >
-                            {t('titleBar.moreMenu.stopPreviewUpdate', {
-                              defaultValue: 'Cerrar preview',
-                            })}
-                          </button>
-                        )}
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowUpdateModal(true)}
+                        className="btn min-w-[108px] rounded-[4px] border border-primary/20 bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                      >
+                        {t('settings.updatesUpdateNow')}
+                      </button>
                     ) : (
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={checkForUpdates}
-                          disabled={checkStatus === 'checking'}
-                          className="btn min-w-[108px] rounded-[4px] border border-primary/20 bg-input px-3 py-2 text-xs text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-60"
-                        >
-                          {checkStatus === 'checking' ? (
-                            <span className="inline-flex items-center justify-center gap-1.5">
-                              <Loader2 size={12} className="animate-spin" />
-                              {t('settings.checkNow')}
-                            </span>
-                          ) : (
-                            t('settings.checkNow')
-                          )}
-                        </button>
-                        <Tooltip
-                          label={t('titleBar.moreMenu.previewUpdate', {
-                            defaultValue: 'Previsualizar actualización...',
-                          })}
-                          placement="top"
-                        >
-                          <button
-                            type="button"
-                            onClick={toggleUpdatePreview}
-                            aria-label={t('titleBar.moreMenu.previewUpdate', {
-                              defaultValue: 'Previsualizar actualización',
-                            })}
-                            className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-border/60 bg-input text-muted-foreground transition-colors hover:border-primary/40 hover:bg-accent hover:text-primary"
-                          >
-                            <Sparkles size={13} className="text-primary" />
-                          </button>
-                        </Tooltip>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={checkForUpdates}
+                        disabled={checkStatus === 'checking'}
+                        className="btn min-w-[108px] rounded-[4px] border border-primary/20 bg-input px-3 py-2 text-xs text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-60"
+                      >
+                        {checkStatus === 'checking' ? (
+                          <span className="inline-flex items-center justify-center gap-1.5">
+                            <Loader2 size={12} className="animate-spin" />
+                            {t('settings.checkNow')}
+                          </span>
+                        ) : (
+                          t('settings.checkNow')
+                        )}
+                      </button>
                     )}
                   </div>
 

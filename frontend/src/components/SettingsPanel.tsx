@@ -10,7 +10,7 @@ import {
   Settings as SettingsIcon,
   BrainCircuit,
   Folder as FolderIcon,
-  MoreHorizontal,
+  Pencil,
   Eye,
   EyeOff,
   Maximize2,
@@ -67,11 +67,11 @@ interface SettingsPanelProps {
 const SETTINGS_TABS = [
   'general',
   'notifications',
+  'compact',
+  'full',
   'achievements',
   'security',
   'folders',
-  'full',
-  'compact',
   'ai',
   'maintenance',
 ] as const;
@@ -1106,6 +1106,30 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 {t('settings.toasts')}
               </button>
               <button
+                onClick={() => setActiveTab('compact')}
+                className={clsx(
+                  'flex items-center gap-2 whitespace-nowrap rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
+                  activeTab === 'compact'
+                    ? 'border-l-[3px] border-primary bg-primary/10 text-primary shadow-none'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                )}
+              >
+                <Layers size={14} />
+                {t('settings.compactTab')}
+              </button>
+              <button
+                onClick={() => setActiveTab('full')}
+                className={clsx(
+                  'flex items-center gap-2 whitespace-nowrap rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
+                  activeTab === 'full'
+                    ? 'border-l-[3px] border-primary bg-primary/10 text-primary shadow-none'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                )}
+              >
+                <Maximize2 size={14} />
+                {t('settings.fullTab')}
+              </button>
+              <button
                 onClick={() => setActiveTab('security')}
                 className={clsx(
                   'flex items-center gap-2 whitespace-nowrap rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
@@ -1128,30 +1152,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               >
                 <FolderIcon size={14} />
                 {t('settings.folders')}
-              </button>
-              <button
-                onClick={() => setActiveTab('full')}
-                className={clsx(
-                  'flex items-center gap-2 whitespace-nowrap rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
-                  activeTab === 'full'
-                    ? 'border-l-[3px] border-primary bg-primary/10 text-primary shadow-none'
-                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                )}
-              >
-                <Maximize2 size={14} />
-                {t('settings.fullTab')}
-              </button>
-              <button
-                onClick={() => setActiveTab('compact')}
-                className={clsx(
-                  'flex items-center gap-2 whitespace-nowrap rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
-                  activeTab === 'compact'
-                    ? 'border-l-[3px] border-primary bg-primary/10 text-primary shadow-none'
-                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                )}
-              >
-                <Layers size={14} />
-                {t('settings.compactTab')}
               </button>
               <button
                 onClick={() => setActiveTab('ai')}
@@ -2318,7 +2318,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         </button>
                       </div>
 
-                      <div className="custom-scrollbar max-h-[320px] space-y-1.5 overflow-y-auto pr-1">
+                      <div className="custom-scrollbar max-h-[252px] space-y-1.5 overflow-y-auto pr-1">
                         {folders.filter((f) => !f.is_system).length === 0 ? (
                           <p className="rounded-lg border border-dashed border-border py-3 text-center text-xs text-muted-foreground">
                             {t('settings.noFolders')}
@@ -2375,7 +2375,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                           onClick={() => startRenameFolder(folder)}
                                           className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                                         >
-                                          <MoreHorizontal size={13} />
+                                          <Pencil size={13} />
                                         </button>
                                       </Tooltip>
                                       <Tooltip label={t('common.delete')} placement="top">

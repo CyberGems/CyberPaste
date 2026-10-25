@@ -17,7 +17,6 @@ import {
   Play,
   Undo2,
   Trophy,
-  Sparkles,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { openUrl } from '@tauri-apps/plugin-opener';
@@ -547,22 +546,6 @@ export function TitleBarMenu({
               <Info size={14} className={iconClass} />
               <span>{t('titleBar.moreMenu.about')}</span>
             </button>
-
-            {variant === 'main' && (
-              <button
-                type="button"
-                role="menuitem"
-                className={itemClass}
-                onClick={() =>
-                  closeAnd(() => {
-                    window.dispatchEvent(new CustomEvent('cyberpaste:toggle-update-preview'));
-                  })
-                }
-              >
-                <Sparkles size={14} className="shrink-0 text-cyan-400" />
-                <span>{t('titleBar.moreMenu.previewUpdate')}</span>
-              </button>
-            )}
           </div>,
           document.body
         )}
