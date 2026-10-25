@@ -12,7 +12,7 @@ interface TooltipProps {
   delay?: number;
 }
 
-const VIEWPORT_MARGIN = 8; // separación mínima respecto al borde de la ventana
+const VIEWPORT_MARGIN = 10; // separación mínima respecto al borde de la ventana
 const GAP = 8; // separación respecto al elemento ancla
 
 function clamp(value: number, min: number, max: number) {
@@ -195,8 +195,14 @@ export default function Tooltip({
     }
     const anchor = anchorEl.getBoundingClientRect();
     const card = cardRef.current.getBoundingClientRect();
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
+    const vw = Math.min(
+      window.innerWidth,
+      document.documentElement?.clientWidth || window.innerWidth
+    );
+    const vh = Math.min(
+      window.innerHeight,
+      document.documentElement?.clientHeight || window.innerHeight
+    );
     const cx = anchor.left + anchor.width / 2;
     const cy = anchor.top + anchor.height / 2;
     let left = 0;
@@ -482,10 +488,9 @@ export default function Tooltip({
                 color: 'rgba(255, 255, 255, 0.95)',
                 fontSize: 11,
                 fontWeight: 600,
-                maxWidth: 'calc(100vw - 16px)',
+                maxWidth: 'calc(100vw - 20px)',
                 boxSizing: 'border-box',
-                whiteSpace: 'normal',
-                overflowWrap: 'break-word',
+                whiteSpace: 'nowrap',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',

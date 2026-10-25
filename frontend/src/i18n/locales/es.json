@@ -185,7 +185,7 @@
     "filterUrl": "URL",
     "filterFile": "Archivo",
     "filterByApp": "Filtrar por app: {{app}}",
-    "filterAppTitle": "Filtrar por app",
+    "filterAppTitle": "Filtrar por aplicación",
     "allApps": "Todas las aplicaciones",
     "unknownApp": "Sin aplicación detectada",
     "searchApps": "Buscar apps...",

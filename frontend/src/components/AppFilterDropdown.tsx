@@ -122,12 +122,12 @@ export const AppFilterDropdown: React.FC<AppFilterDropdownProps> = ({
     ? value === '__unknown__'
       ? t('compact.unknownApp', { defaultValue: 'Sin aplicación detectada' })
       : selectedAppItem?.app || value
-    : t('compact.filterAppTitle', { defaultValue: 'Filter by app' });
+    : t('compact.filterAppTitle', { defaultValue: 'Filter by application' });
 
   // Tooltip
   const tooltipLabel = isActive
     ? `${t('compact.filterAppActive', { app: displayLabel, defaultValue: `Filtering by ${displayLabel}` })}`
-    : t('compact.filterAppTitle', { defaultValue: 'Filter by app' });
+    : t('compact.filterAppTitle', { defaultValue: 'Filter by application' });
 
   return (
     <>
@@ -187,7 +187,11 @@ export const AppFilterDropdown: React.FC<AppFilterDropdownProps> = ({
           </Tooltip>
         </div>
       ) : (
-        <Tooltip label={tooltipLabel} placement="bottom">
+        <Tooltip
+          label={tooltipLabel}
+          placement="bottom"
+          disabled={isOpen || (variant === 'full' && !isActive)}
+        >
           <button
             ref={buttonRef as React.RefObject<HTMLButtonElement>}
             type="button"
@@ -206,7 +210,7 @@ export const AppFilterDropdown: React.FC<AppFilterDropdownProps> = ({
             <Boxes size={12} className="shrink-0" />
             {variant === 'full' && (
               <span className="whitespace-nowrap">
-                {t('compact.allApps', { defaultValue: 'Apps' })}
+                {t('compact.filterAppTitle', { defaultValue: 'Filter by application' })}
               </span>
             )}
             <ChevronDown
