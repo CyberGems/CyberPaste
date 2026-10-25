@@ -67,6 +67,7 @@ interface SettingsPanelProps {
 
 const SETTINGS_TABS = [
   'general',
+  'clipboard',
   'notifications',
   'compact',
   'full',
@@ -1095,6 +1096,18 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 {t('settings.general')}
               </button>
               <button
+                onClick={() => setActiveTab('clipboard')}
+                className={clsx(
+                  'flex items-center gap-2 whitespace-nowrap rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
+                  activeTab === 'clipboard'
+                    ? 'border-l-[3px] border-primary bg-primary/10 text-primary shadow-none'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                )}
+              >
+                <Clipboard size={14} />
+                {t('settings.clipboardTab', { defaultValue: 'Portapapeles' })}
+              </button>
+              <button
                 onClick={() => setActiveTab('notifications')}
                 className={clsx(
                   'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
@@ -1240,7 +1253,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
 
                       {/* Row 2: Theme */}
-                      <div className="flex flex-col justify-between gap-4 p-4 lg:flex-row lg:items-center">
+                      <div className="flex flex-col gap-3 p-4">
                         <div className="flex gap-3">
                           <Palette className="h-5 w-5 flex-shrink-0 text-muted-foreground/80" />
                           <div>
@@ -1254,7 +1267,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         </div>
                         <div
                           role="radiogroup"
-                          className="flex flex-shrink-0 flex-wrap gap-2.5 pt-1"
+                          className="flex flex-shrink-0 flex-wrap gap-3 pt-1 sm:pl-8"
                         >
                           {(['cyberpaste', 'dark', 'light', 'system'] as ThemeMode[]).map(
                             (mode) => (
@@ -1307,290 +1320,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       aria-label={t('settings.hideOnBlur')}
                     />
                   </div>
-
-                  {/* Clipboard & Capture */}
-                  <section className="space-y-4">
-                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
-                      <Clipboard size={14} /> {t('settings.clipboardCapture')}
-                    </h3>
-                    <div className="space-y-4 rounded-xl border border-border bg-card p-4">
-                      <div className="space-y-3">
-                        <label className="block">
-                          <span className="text-sm font-medium">{t('settings.historyLimit')}</span>
-                          <p className="text-xs text-muted-foreground">
-                            {t('settings.historyLimitDesc')}
-                          </p>
-                        </label>
-                        <div className="flex items-center gap-4 rounded-xl border border-border/40 bg-accent/10 p-3">
-                          <input
-                            type="range"
-                            min="50"
-                            max="1000"
-                            step="50"
-                            value={settings.max_items || 300}
-                            onChange={(e) => updateSetting('max_items', parseInt(e.target.value))}
-                            className="h-1.5 flex-1 cursor-pointer appearance-none rounded-lg bg-accent accent-primary"
-                          />
-                          <span className="min-w-[3rem] rounded-lg border border-primary/20 bg-primary/10 px-2 py-1 text-center font-mono text-sm font-bold text-primary shadow-sm">
-                            {settings.max_items || 300}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-3 rounded-[4px] border border-border bg-secondary p-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="min-w-0 pr-4">
-                          <span className="text-sm font-medium">
-                            {t('settings.autoDeleteHistory')}
-                          </span>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {t('settings.autoDeleteHistoryDesc')}
-                          </p>
-                        </div>
-                        <div className="w-full flex-shrink-0 sm:w-[180px]">
-                          <Select
-                            value={String(settings.auto_delete_days ?? 0)}
-                            onChange={(value) =>
-                              updateSetting('auto_delete_days', parseInt(value, 10))
-                            }
-                            options={(() => {
-                              const currentValStr = String(settings.auto_delete_days ?? 0);
-                              const baseOptions = AUTO_DELETE_DAYS_OPTIONS.map((opt) => ({
-                                value: opt.value,
-                                label: t(opt.labelKey),
-                              }));
-                              if (AUTO_DELETE_DAYS_OPTIONS.some((o) => o.value === currentValStr)) {
-                                return baseOptions;
-                              }
-                              return [
-                                ...baseOptions,
-                                {
-                                  value: currentValStr,
-                                  label: t('settings.autoDeleteCustomDays', {
-                                    days: settings.auto_delete_days,
-                                    defaultValue: `${settings.auto_delete_days} days`,
-                                  }),
-                                },
-                              ];
-                            })()}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        <label className="block">
-                          <span className="text-sm font-medium">
-                            {t('settings.clipboardTextLimit')}
-                          </span>
-                          <p className="text-xs text-muted-foreground">
-                            {t('settings.clipboardTextLimitDesc')}
-                          </p>
-                        </label>
-                        <Select
-                          value={String(
-                            Math.round(
-                              (settings.max_clipboard_text_bytes ??
-                                DEFAULT_CLIPBOARD_TEXT_LIMIT_BYTES) /
-                                (1024 * 1024)
-                            )
-                          )}
-                          onChange={(value) =>
-                            updateSetting(
-                              'max_clipboard_text_bytes',
-                              parseInt(value, 10) * 1024 * 1024
-                            )
-                          }
-                          options={CLIPBOARD_TEXT_LIMIT_OPTIONS_MB.map((size) => ({
-                            value: String(size),
-                            label: t('settings.clipboardTextLimitOption', { size }),
-                          }))}
-                          className="sm:max-w-[180px]"
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <label className="block">
-                          <span className="text-sm font-medium">
-                            {t('settings.clipboardImageLimit')}
-                          </span>
-                          <p className="text-xs text-muted-foreground">
-                            {t('settings.clipboardImageLimitDesc')}
-                          </p>
-                        </label>
-                        <Select
-                          value={String(
-                            Math.round(
-                              (settings.max_clipboard_image_bytes ??
-                                DEFAULT_CLIPBOARD_IMAGE_LIMIT_BYTES) /
-                                (1024 * 1024)
-                            )
-                          )}
-                          onChange={(value) =>
-                            updateSetting(
-                              'max_clipboard_image_bytes',
-                              parseInt(value, 10) * 1024 * 1024
-                            )
-                          }
-                          options={CLIPBOARD_IMAGE_LIMIT_OPTIONS_MB.map((size) => ({
-                            value: String(size),
-                            label: t('settings.clipboardImageLimitOption', { size }),
-                          }))}
-                          className="sm:max-w-[180px]"
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <label className="block">
-                          <span className="text-sm font-medium">{t('settings.storageQuota')}</span>
-                          <p className="text-xs text-muted-foreground">
-                            {t('settings.storageQuotaDesc')}
-                          </p>
-                        </label>
-                        <Select
-                          value={String(
-                            Math.round(
-                              (settings.storage_quota_bytes ?? DEFAULT_STORAGE_QUOTA_BYTES) /
-                                (1024 * 1024 * 1024)
-                            )
-                          )}
-                          onChange={(value) =>
-                            updateSetting(
-                              'storage_quota_bytes',
-                              parseInt(value, 10) * 1024 * 1024 * 1024
-                            )
-                          }
-                          options={STORAGE_QUOTA_OPTIONS_GB.map((size) => ({
-                            value: String(size),
-                            label: t('settings.storageQuotaOption', { size }),
-                          }))}
-                          className="sm:max-w-[180px]"
-                        />
-                      </div>
-                      <div className="border-b border-border/60 pb-4">
-                        <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                          <div>
-                            <span className="text-sm font-medium">
-                              {t('settings.pauseMonitoring')}
-                            </span>
-                            <p className="text-xs text-muted-foreground">
-                              {t('settings.pauseMonitoringDesc')}
-                            </p>
-                          </div>
-                          <Switch
-                            checked={isPaused}
-                            onChange={handleTogglePause}
-                            aria-label={t('settings.pauseMonitoring')}
-                          />
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                        <div className="min-w-0 pr-4">
-                          <span className="text-sm font-medium">
-                            {t('settings.singleClickPaste')}
-                          </span>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {t('settings.singleClickPasteDesc')}
-                          </p>
-                        </div>
-                        <Switch
-                          checked={settings.single_click_paste ?? true}
-                          onChange={(val) => updateSetting('single_click_paste', val)}
-                          aria-label={t('settings.singleClickPaste')}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                        <div>
-                          <span className="text-sm font-medium">{t('settings.autoPaste')}</span>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {t('settings.autoPasteDesc')}
-                          </p>
-                        </div>
-                        <Switch
-                          checked={settings.auto_paste}
-                          onChange={(enabled) => {
-                            updateSettings({
-                              auto_paste: enabled,
-                              ...(!enabled ? { auto_inject_paste: false } : {}),
-                            });
-                          }}
-                          aria-label={t('settings.autoPaste')}
-                        />
-                      </div>
-                      <div className="ml-4 flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                        <div className="min-w-0 flex-1 pr-4">
-                          <span className="text-sm font-medium">
-                            {t('settings.autoInjectPaste')}
-                          </span>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {t('settings.autoInjectPasteDesc')}
-                          </p>
-                        </div>
-                        <Switch
-                          disabled={!settings.auto_paste}
-                          checked={settings.auto_paste && settings.auto_inject_paste}
-                          onChange={(val) => updateSetting('auto_inject_paste', val)}
-                          aria-label={t('settings.autoInjectPaste')}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                        <div>
-                          <span className="text-sm font-medium">{t('settings.typeToSearch')}</span>
-                          <p className="text-xs text-muted-foreground">
-                            {t('settings.typeToSearchDesc')}
-                          </p>
-                        </div>
-                        <Switch
-                          checked={settings.type_to_search ?? true}
-                          onChange={(val) => updateSetting('type_to_search', val)}
-                          aria-label={t('settings.typeToSearch')}
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
-                        <div className="min-w-0 flex-1 pr-4">
-                          <span className="text-sm font-medium">
-                            {t('settings.resetViewOnPaste')}
-                          </span>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {t('settings.resetViewOnPasteDesc')}
-                          </p>
-                        </div>
-                        <Switch
-                          checked={settings.reset_view_on_paste}
-                          onChange={(val) => updateSetting('reset_view_on_paste', val)}
-                          aria-label={t('settings.resetViewOnPaste')}
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <label className="block">
-                          <span className="text-sm font-medium">
-                            {t('settings.externalImageEditor')}
-                          </span>
-                          <p className="text-xs text-muted-foreground">
-                            {t('settings.externalImageEditorDesc')}
-                          </p>
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={settings.image_editor_path || ''}
-                            onChange={(e) => updateSetting('image_editor_path', e.target.value)}
-                            placeholder={t('settings.externalViewerPlaceholder')}
-                            className="flex-1 rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
-                          />
-                          <button
-                            onClick={async () => {
-                              try {
-                                const path = await invoke<string>('pick_file', {
-                                  filterName: 'Executables',
-                                  extensions: ['exe', 'app'],
-                                });
-                                if (path) updateSetting('image_editor_path', path);
-                              } catch (e) {}
-                            }}
-                            className="rounded-[4px] bg-accent px-3 py-2 text-sm font-medium transition-all hover:bg-accent/80"
-                          >
-                            {t('common.browse')}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </section>
 
                   <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
                     <div>
@@ -1991,6 +1720,319 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           onChange={(val) => updateSetting('show_app_recommendations', val)}
                           aria-label={t('settings.showAppRecommendations')}
                         />
+                      </div>
+                    </div>
+                  </section>
+                </>
+              )}
+
+              {/* --- CLIPBOARD TAB --- */}
+              {activeTab === 'clipboard' && (
+                <>
+                  {/* Limits & Storage */}
+                  <section className="space-y-4">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
+                      <Database size={14} />{' '}
+                      {t('settings.clipboardLimitsSection', {
+                        defaultValue: 'Límites y Almacenamiento',
+                      })}
+                    </h3>
+                    <div className="space-y-4 rounded-xl border border-border bg-card p-4">
+                      {/* History limit slider */}
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-sm font-medium">{t('settings.historyLimit')}</span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.historyLimitDesc')}
+                          </p>
+                        </label>
+                        <div className="flex items-center gap-4 rounded-xl border border-border/40 bg-accent/10 p-3">
+                          <input
+                            type="range"
+                            min="50"
+                            max="1000"
+                            step="50"
+                            value={settings.max_items || 300}
+                            onChange={(e) => updateSetting('max_items', parseInt(e.target.value))}
+                            className="h-1.5 flex-1 cursor-pointer appearance-none rounded-lg bg-accent accent-primary"
+                          />
+                          <span className="min-w-[3rem] rounded-lg border border-primary/20 bg-primary/10 px-2 py-1 text-center font-mono text-sm font-bold text-primary shadow-sm">
+                            {settings.max_items || 300}
+                          </span>
+                        </div>
+                      </div>
+                      {/* Auto delete */}
+                      <div className="flex flex-col gap-3 rounded-[4px] border border-border bg-secondary p-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0 pr-4">
+                          <span className="text-sm font-medium">
+                            {t('settings.autoDeleteHistory')}
+                          </span>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {t('settings.autoDeleteHistoryDesc')}
+                          </p>
+                        </div>
+                        <div className="w-full flex-shrink-0 sm:w-[180px]">
+                          <Select
+                            value={String(settings.auto_delete_days ?? 0)}
+                            onChange={(value) =>
+                              updateSetting('auto_delete_days', parseInt(value, 10))
+                            }
+                            options={(() => {
+                              const currentValStr = String(settings.auto_delete_days ?? 0);
+                              const baseOptions = AUTO_DELETE_DAYS_OPTIONS.map((opt) => ({
+                                value: opt.value,
+                                label: t(opt.labelKey),
+                              }));
+                              if (AUTO_DELETE_DAYS_OPTIONS.some((o) => o.value === currentValStr)) {
+                                return baseOptions;
+                              }
+                              return [
+                                ...baseOptions,
+                                {
+                                  value: currentValStr,
+                                  label: t('settings.autoDeleteCustomDays', {
+                                    days: settings.auto_delete_days,
+                                    defaultValue: `${settings.auto_delete_days} days`,
+                                  }),
+                                },
+                              ];
+                            })()}
+                          />
+                        </div>
+                      </div>
+                      {/* Text limit */}
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-sm font-medium">
+                            {t('settings.clipboardTextLimit')}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.clipboardTextLimitDesc')}
+                          </p>
+                        </label>
+                        <Select
+                          value={String(
+                            Math.round(
+                              (settings.max_clipboard_text_bytes ??
+                                DEFAULT_CLIPBOARD_TEXT_LIMIT_BYTES) /
+                                (1024 * 1024)
+                            )
+                          )}
+                          onChange={(value) =>
+                            updateSetting(
+                              'max_clipboard_text_bytes',
+                              parseInt(value, 10) * 1024 * 1024
+                            )
+                          }
+                          options={CLIPBOARD_TEXT_LIMIT_OPTIONS_MB.map((size) => ({
+                            value: String(size),
+                            label: t('settings.clipboardTextLimitOption', { size }),
+                          }))}
+                          className="sm:max-w-[180px]"
+                        />
+                      </div>
+                      {/* Image limit */}
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-sm font-medium">
+                            {t('settings.clipboardImageLimit')}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.clipboardImageLimitDesc')}
+                          </p>
+                        </label>
+                        <Select
+                          value={String(
+                            Math.round(
+                              (settings.max_clipboard_image_bytes ??
+                                DEFAULT_CLIPBOARD_IMAGE_LIMIT_BYTES) /
+                                (1024 * 1024)
+                            )
+                          )}
+                          onChange={(value) =>
+                            updateSetting(
+                              'max_clipboard_image_bytes',
+                              parseInt(value, 10) * 1024 * 1024
+                            )
+                          }
+                          options={CLIPBOARD_IMAGE_LIMIT_OPTIONS_MB.map((size) => ({
+                            value: String(size),
+                            label: t('settings.clipboardImageLimitOption', { size }),
+                          }))}
+                          className="sm:max-w-[180px]"
+                        />
+                      </div>
+                      {/* Storage quota */}
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-sm font-medium">{t('settings.storageQuota')}</span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.storageQuotaDesc')}
+                          </p>
+                        </label>
+                        <Select
+                          value={String(
+                            Math.round(
+                              (settings.storage_quota_bytes ?? DEFAULT_STORAGE_QUOTA_BYTES) /
+                                (1024 * 1024 * 1024)
+                            )
+                          )}
+                          onChange={(value) =>
+                            updateSetting(
+                              'storage_quota_bytes',
+                              parseInt(value, 10) * 1024 * 1024 * 1024
+                            )
+                          }
+                          options={STORAGE_QUOTA_OPTIONS_GB.map((size) => ({
+                            value: String(size),
+                            label: t('settings.storageQuotaOption', { size }),
+                          }))}
+                          className="sm:max-w-[180px]"
+                        />
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* Behavior & Pasting */}
+                  <section className="space-y-4">
+                    <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
+                      <Clipboard size={14} />{' '}
+                      {t('settings.clipboardBehaviorSection', {
+                        defaultValue: 'Comportamiento y Pegado',
+                      })}
+                    </h3>
+                    <div className="space-y-3 rounded-xl border border-border bg-card p-4">
+                      {/* Pause monitoring */}
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div>
+                          <span className="text-sm font-medium">
+                            {t('settings.pauseMonitoring')}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.pauseMonitoringDesc')}
+                          </p>
+                        </div>
+                        <Switch
+                          checked={isPaused}
+                          onChange={handleTogglePause}
+                          aria-label={t('settings.pauseMonitoring')}
+                        />
+                      </div>
+                      {/* Single click paste */}
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div className="min-w-0 pr-4">
+                          <span className="text-sm font-medium">
+                            {t('settings.singleClickPaste')}
+                          </span>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {t('settings.singleClickPasteDesc')}
+                          </p>
+                        </div>
+                        <Switch
+                          checked={settings.single_click_paste ?? true}
+                          onChange={(val) => updateSetting('single_click_paste', val)}
+                          aria-label={t('settings.singleClickPaste')}
+                        />
+                      </div>
+                      {/* Auto paste */}
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div>
+                          <span className="text-sm font-medium">{t('settings.autoPaste')}</span>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {t('settings.autoPasteDesc')}
+                          </p>
+                        </div>
+                        <Switch
+                          checked={settings.auto_paste}
+                          onChange={(enabled) => {
+                            updateSettings({
+                              auto_paste: enabled,
+                              ...(!enabled ? { auto_inject_paste: false } : {}),
+                            });
+                          }}
+                          aria-label={t('settings.autoPaste')}
+                        />
+                      </div>
+                      {/* Auto inject paste */}
+                      <div className="ml-4 flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div className="min-w-0 flex-1 pr-4">
+                          <span className="text-sm font-medium">
+                            {t('settings.autoInjectPaste')}
+                          </span>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {t('settings.autoInjectPasteDesc')}
+                          </p>
+                        </div>
+                        <Switch
+                          disabled={!settings.auto_paste}
+                          checked={settings.auto_paste && settings.auto_inject_paste}
+                          onChange={(val) => updateSetting('auto_inject_paste', val)}
+                          aria-label={t('settings.autoInjectPaste')}
+                        />
+                      </div>
+                      {/* Type to search */}
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div>
+                          <span className="text-sm font-medium">{t('settings.typeToSearch')}</span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.typeToSearchDesc')}
+                          </p>
+                        </div>
+                        <Switch
+                          checked={settings.type_to_search ?? true}
+                          onChange={(val) => updateSetting('type_to_search', val)}
+                          aria-label={t('settings.typeToSearch')}
+                        />
+                      </div>
+                      {/* Reset view on paste */}
+                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                        <div className="min-w-0 flex-1 pr-4">
+                          <span className="text-sm font-medium">
+                            {t('settings.resetViewOnPaste')}
+                          </span>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {t('settings.resetViewOnPasteDesc')}
+                          </p>
+                        </div>
+                        <Switch
+                          checked={settings.reset_view_on_paste}
+                          onChange={(val) => updateSetting('reset_view_on_paste', val)}
+                          aria-label={t('settings.resetViewOnPaste')}
+                        />
+                      </div>
+                      {/* External image editor */}
+                      <div className="space-y-3 pt-1">
+                        <label className="block">
+                          <span className="text-sm font-medium">
+                            {t('settings.externalImageEditor')}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.externalImageEditorDesc')}
+                          </p>
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={settings.image_editor_path || ''}
+                            onChange={(e) => updateSetting('image_editor_path', e.target.value)}
+                            placeholder={t('settings.externalViewerPlaceholder')}
+                            className="flex-1 rounded-[4px] border border-border bg-input px-2.5 py-1.5 text-[12px] text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-0"
+                          />
+                          <button
+                            onClick={async () => {
+                              try {
+                                const path = await invoke<string>('pick_file', {
+                                  filterName: 'Executables',
+                                  extensions: ['exe', 'app'],
+                                });
+                                if (path) updateSetting('image_editor_path', path);
+                              } catch (e) {}
+                            }}
+                            className="rounded-[4px] bg-accent px-3 py-2 text-sm font-medium transition-all hover:bg-accent/80"
+                          >
+                            {t('common.browse')}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </section>

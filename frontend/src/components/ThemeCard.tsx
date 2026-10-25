@@ -59,7 +59,6 @@ export const THEME_PALETTES: Record<ThemeMode, ThemePalette> = {
 };
 
 const CARD_W = 90;
-const PREVIEW_ASPECT = 70 / 108; // height / width of the mini-window
 const CARD_PAD = 6; // metallic frame around the preview
 
 interface ThemeCardProps {
@@ -163,8 +162,7 @@ export function ThemeCard({
   // The glow of the "System" card uses the cyberpaste face's accent.
   const glowAccent = mode === 'system' ? THEME_PALETTES.cyberpaste.accent : pal.accent;
 
-  const previewW = cardWidth - CARD_PAD * 2;
-  const previewH = previewW * PREVIEW_ASPECT;
+  const PREVIEW_W = 76;
 
   return (
     <button
@@ -177,55 +175,45 @@ export function ThemeCard({
       className="group flex cursor-pointer flex-col items-center outline-none"
       style={{ width: cardWidth }}
     >
-      {/* accent glow UNDER the card when selected */}
-      <div className="relative" style={{ width: cardWidth }}>
+      {/* metallic card frame */}
+      <div
+        className="relative box-border flex items-center justify-center rounded-[9px] border transition-all duration-150"
+        style={{
+          width: cardWidth,
+          height: 62,
+          padding: CARD_PAD,
+          background: 'linear-gradient(115deg, #404247 0%, #303237 45%, #26282D 100%)',
+          borderColor: selected
+            ? glowAccent
+            : hover
+              ? 'rgba(255,255,255,0.35)'
+              : 'rgba(255,255,255,0.16)',
+          borderWidth: 1.5,
+          boxShadow: selected
+            ? `0 0 10px 0 ${glowAccent}80, 0 2px 6px rgba(0,0,0,0.4)`
+            : '0 2px 6px rgba(0,0,0,0.3)',
+        }}
+      >
+        {/* mini "app window" preview */}
         <div
-          className="pointer-events-none absolute -inset-px rounded-[10px] transition-opacity duration-150"
+          className="relative h-full w-full overflow-hidden rounded-[5px]"
           style={{
-            background: selected ? glowAccent : 'transparent',
-            boxShadow: selected ? `0 0 7px 1px ${glowAccent}80` : 'none',
-            opacity: selected ? 1 : 0,
-          }}
-        />
-        {/* metallic card frame */}
-        <div
-          className="relative rounded-[9px] border transition-all duration-150"
-          style={{
-            width: cardWidth,
-            padding: CARD_PAD,
-            background: 'linear-gradient(115deg, #404247 0%, #303237 45%, #26282D 100%)',
-            borderColor: selected
-              ? glowAccent
-              : hover
-                ? 'rgba(255,255,255,0.35)'
-                : 'rgba(255,255,255,0.16)',
-            borderWidth: selected ? 1.5 : 1,
+            background: pal.background,
+            boxShadow: '0 1px 4px rgba(0,0,0,0.5)',
           }}
         >
-          {/* mini "app window" preview */}
-          <div
-            className="relative overflow-hidden rounded-[5px]"
-            style={{
-              width: previewW,
-              height: previewH,
-              background: pal.background,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
-            }}
-          >
-            {mode === 'system' ? (
-              <SystemSplit w={previewW} />
-            ) : (
-              <WindowContent pal={pal} w={previewW} />
-            )}
-          </div>
+          {mode === 'system' ? (
+            <SystemSplit w={PREVIEW_W} />
+          ) : (
+            <WindowContent pal={pal} w={PREVIEW_W} />
+          )}
         </div>
       </div>
       {/* caption */}
       <span
-        className="mt-1.5 text-center transition-colors duration-150"
+        className="mt-1.5 text-center text-[11.5px] leading-tight transition-colors duration-150"
         style={{
-          fontSize: 11.5,
-          fontWeight: selected ? 600 : 400,
+          fontWeight: selected ? 600 : 500,
           color: selected ? '#F0F2F6' : '#969AA2',
         }}
       >

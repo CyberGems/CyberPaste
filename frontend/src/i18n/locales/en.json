@@ -298,6 +298,7 @@
   "settings": {
     "title": "Configuration",
     "general": "General",
+    "clipboardTab": "Clipboard",
     "achievements": "Achievements & Progress",
     "security": "Security",
     "fullTab": "Full Mode",
@@ -580,6 +581,8 @@
     "editClip": "Edit {{type}}",
     "appearanceSection": "Appearance",
     "otherSection": "Other",
+    "clipboardLimitsSection": "Limits & Storage",
+    "clipboardBehaviorSection": "Behavior & Pasting",
     "interfaceTitle": "Interface",
     "languageTitle": "Interface language",
     "languageDesc": "Choose your preferred language for CyberPaste.",
