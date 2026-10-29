@@ -3336,6 +3336,7 @@ pub async fn register_global_shortcut(
         if let Err(e) = app.global_shortcut().unregister_all() {
             log::warn!("Failed to unregister existing shortcuts: {:?}", e);
         }
+        let _ = crate::rebuild_tray_menu(&app);
         return Ok(());
     }
 
@@ -3388,6 +3389,7 @@ pub async fn register_global_shortcut(
     }
 
     log::info!("Registered global shortcut: {}", hotkey);
+    let _ = crate::rebuild_tray_menu(&app);
     Ok(())
 }
 

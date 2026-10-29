@@ -586,8 +586,11 @@ pub fn run_app() {
                 .icon(icon)
                 .show_menu_on_left_click(false);
 
+            let initial_hotkey = app.try_state::<Arc<SettingsManager>>().map(|m| m.get().hotkey);
+            let initial_tooltip = format_tray_tooltip(initial_hotkey.as_deref());
+
             let _tray = tray_builder
-                .tooltip("CyberPaste")
+                .tooltip(initial_tooltip)
                 .on_tray_icon_event(|tray, event| {
                     use tauri::tray::{MouseButton, MouseButtonState, TrayIconEvent};
 
@@ -1955,13 +1958,22 @@ pub fn generate_duplicate_sound_wav() -> Vec<u8> {
     wav
 }
 
+pub fn format_tray_tooltip(shortcut: Option<&str>) -> String {
+    let clean = shortcut.unwrap_or("").trim();
+    if clean.is_empty() {
+        "CyberPaste".to_string()
+    } else {
+        format!("CyberPaste · {clean}")
+    }
+}
+
 /// Refresh tray tooltip + push state to the HTML tray popup (no native Win32 menu).
 pub fn rebuild_tray_menu(app: &tauri::AppHandle) -> Result<(), tauri::Error> {
     let state = commands::collect_tray_menu_state(app);
     if let Some(tray) = app.tray_by_id("main") {
         // Ensure no native context menu is attached — we own the right-click popup.
         let _ = tray.set_menu(None::<tauri::menu::Menu<tauri::Wry>>);
-        let _ = tray.set_tooltip(Some(format!("CyberPaste v{}", state.version)));
+        let _ = tray.set_tooltip(Some(format_tray_tooltip(Some(&state.hotkey))));
     }
     let _ = app.emit("tray-menu-state", &state);
     Ok(())
