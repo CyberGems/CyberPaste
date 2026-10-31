@@ -22,6 +22,33 @@
 
 ---
 
+## 📑 Table of Contents
+
+- [What is CyberPaste?](#what-is-cyberpaste)
+- [📋 Why CyberPaste?](#-why-cyberpaste)
+- [✨ Key Features](#-key-features)
+- [🚀 Getting Started](#-getting-started)
+- [🛠️ Tech Stack & Architecture](#️-tech-stack--architecture)
+- [⌨️ Keyboard Shortcuts](#️-keyboard-shortcuts)
+- [🤝 Contributing](#-contributing)
+- [🙏 Acknowledgments](#-acknowledgments)
+- [❤️ Donate](#️-donate)
+- [📄 License](#-license)
+- [❓ FAQ](#-faq)
+- [🔗 See also](#-see-also)
+
+<details>
+<summary><strong>🔗 Related links (outside this README)</strong></summary>
+
+- 🌐 [CyberPaste on the web](https://cybergems.org/apps/cyberpaste/) — overview, download and SmartScreen guide
+- 📚 [Documentation & FAQ — Wiki](https://github.com/CyberGems/CyberPaste/wiki) — troubleshooting and deep-dives
+- 💾 [Releases](https://github.com/CyberGems/CyberPaste/releases) — installers, portable builds and changelog
+- 🟣 [CyberGems suite](https://github.com/CyberGems) — all open-source apps
+
+</details>
+
+---
+
 ## What is CyberPaste?
 
 CyberPaste is a sleek, privacy-focused **clipboard history manager** for Windows that makes everything you copy easy to find and reuse. It stores text, code, images, files, links, HTML, and RTF in a local SQLite database, with instant search, folders, favorites, pinning, editing, OCR, and direct paste actions. Optional AI tools can summarize or transform selected content, while automatic backups, configurable retention, achievements, and a PIN or password lock keep the experience practical and personal. Built with **Tauri 2** and **React**.
@@ -246,9 +273,7 @@ This project also builds on open-source components including Tauri, React, SQLit
 
 ## ❤️ Donate
 
-After countless hours building and refining **CyberPaste** for my own use, I recently decided to share it with the world along with my other open-source tools in [CyberGems](https://github.com/CyberGems#-all-apps--repositories).
-
-If you’d like to support future updates, I’d truly appreciate it. Your donation helps keep development going, roll out new features, speed up updates and bug resolution, and enhance documentation quality. You can also show your support by [starring the repo on GitHub](https://github.com/CyberGems/CyberPaste). Thank you! 🙏
+**CyberPaste** is 100% free and open source. If it helps you, please consider [donating](https://cybergems.org/donate) or [starring the repo on GitHub](https://github.com/CyberGems/CyberPaste) to support continued development. [Read the full story](https://cybergems.org/about/) behind the project. Thank you! 🙏
 
 <p align="center">
   <a href="https://www.paypal.com/donate/?hosted_button_id=M4PY3UPJA5Y6Q"><img src="https://img.shields.io/badge/Donate-PayPal-0070BA?style=for-the-badge&logo=paypal" alt="Donate via PayPal" /></a>
