@@ -25,7 +25,7 @@
 
 <div align="center">
 
-### Recupera texto, código, imágenes y archivos con un historial de portapapeles privado y local
+### Todo lo que copias, guardado en local y a un atajo de distancia: texto, imágenes, archivos y código
 
 </div>
 
@@ -60,7 +60,7 @@
 
 ## 👋 Introducción
 
-CyberPaste es un elegante **gestor de historial de portapapeles** centrado en la privacidad para Windows que hace que todo lo que copias sea fácil de encontrar y reutilizar. Almacena texto, código, imágenes, archivos, enlaces, HTML y RTF en una base de datos SQLite local, con búsqueda instantánea, carpetas, favoritos, anclaje, edición, OCR y acciones de pegado directo. Las herramientas de IA opcionales pueden resumir o transformar el contenido seleccionado, mientras que las copias de seguridad automáticas, la retención configurable, los logros y un bloqueo con PIN o contraseña mantienen la experiencia práctica y personal. Construido con **Tauri 2** y **React**.
+Copia algo, copia tres cosas más y la primera ya no está. CyberPaste guarda un historial buscable de todo lo que copias —texto, código, imágenes, enlaces, archivos, HTML y RTF— en una base de datos SQLite local con carpetas, favoritos, anclaje y edición. Encuentra un clip con la búsqueda instantánea o el atajo global, pégalo directamente en la app que estabas usando, extrae texto de una imagen con OCR y deja que un proveedor de IA opcional resuma o transforme un clip cuando conectes uno. Las copias automáticas, la retención configurable y un bloqueo con PIN o contraseña lo mantienen práctico. Construido con **Tauri 2** y **React**.
 
 *Gratuito y de código abierto (GPLv3): sin anuncios, sin analíticas de red, sin telemetría y sin recogida en la nube. Los logros y el progreso opcionales se quedan en tu equipo.*
 
@@ -78,6 +78,7 @@ La mayoría de los gestores de portapapeles envían tus datos a la nube o son de
 | Procesa clips con IA | Resume, traduce, explica código, corrige gramática; funciona con cualquier proveedor compatible con OpenAI |
 | Mantente organizado | Carpetas, favoritos, gestión por lotes, dos modos de vista |
 | Accede desde cualquier lugar | Atajo global, compatible con múltiples monitores, inyección de pegado automático |
+| No pierdas tu historial | Copias JSON diarias en la carpeta que elijas, con retención y copia a demanda |
 
 ---
 

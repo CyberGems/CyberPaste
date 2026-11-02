@@ -25,7 +25,7 @@
 
 <div align="center">
 
-### Recall text, code, images and files with a private local clipboard history
+### Everything you copy, kept locally and one hotkey away — text, images, files and code
 
 </div>
 
@@ -60,7 +60,7 @@
 
 ## 👋 Introduction
 
-CyberPaste is a sleek, privacy-focused **clipboard history manager** for Windows that makes everything you copy easy to find and reuse. It stores text, code, images, files, links, HTML, and RTF in a local SQLite database, with instant search, folders, favorites, pinning, editing, OCR, and direct paste actions. Optional AI tools can summarize or transform selected content, while automatic backups, configurable retention, achievements, and a PIN or password lock keep the experience practical and personal. Built with **Tauri 2** and **React**.
+Copy something, copy three more things, and the first one is already gone. CyberPaste keeps a searchable history of everything you copy — text, code, images, links, files, HTML and RTF — in a local SQLite database with folders, favorites, pinning and editing. Find a clip with instant search or the global hotkey, paste it straight into the app you were using, pull text out of an image with OCR, and let an optional AI provider summarize or transform a clip once you connect one. Automatic backups, configurable retention and a PIN or password lock keep it practical. Built with **Tauri 2** and **React**.
 
 *Free and open source (GPLv3): no ads, no network analytics, no telemetry, and no cloud collection. Optional achievements and progress stay on your device.*
 
@@ -78,6 +78,7 @@ Most clipboard managers either send your data to the cloud or are too basic to b
 | Process clips with AI | Summarize, translate, explain code, fix grammar — works with any OpenAI-compatible provider |
 | Stay organized | Folders, favorites, bulk management, dual view modes |
 | Access anywhere | Global hotkey, multi-monitor aware, auto-paste injection |
+| Don't lose your history | Daily JSON backups to a folder you choose, with retention and on-demand backup |
 
 ---
 
