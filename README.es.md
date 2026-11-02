@@ -4,27 +4,36 @@
 
 <p align="center">
   <a href="https://cybergems.org/apps/cyberpaste/">
-    <img src="https://cybergems.org/banners/es/cyberpaste.png" alt="CyberPaste: recupera texto, código, imágenes y archivos con un historial de portapapeles privado y local" />
+    <img src="https://cybergems.org/banners/es/cyberpaste.png" alt="Historial del portapapeles, todo local" />
   </a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/CyberGems/CyberPaste/releases/latest"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FCyberGems%2FCyberPaste%2Fmain%2Fpackage.json&query=%24.version&prefix=%20Descargar%20CyberPaste%20v&suffix=%20&style=for-the-badge&label=&labelColor=0891B2&color=0891B2" alt="Descargar la última versión" /><img src="https://img.shields.io/badge/Windows_10%2F11_(64--bit)-2563EB?style=for-the-badge" alt="Windows 10/11 (64 bits)" /></a>
-  &nbsp;<a href="https://github.com/CyberGems/CyberPaste/releases"><img src="https://img.shields.io/badge/Todas_las_versiones-30363D?style=for-the-badge&logo=github&logoColor=white" alt="Todas las versiones" /><img src="https://img.shields.io/badge/Notas_de_la_versi%C3%B3n-475569?style=for-the-badge" alt="Notas de la versión" /></a>
+  <a href="https://github.com/CyberGems/CyberPaste/releases/latest"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FCyberGems%2FCyberPaste%2Fmain%2Fpackage.json&query=%24.version&prefix=%20Descargar%20v&suffix=%20&style=for-the-badge&label=&labelColor=0891B2&color=0891B2" alt="Descargar la última versión" /><img src="https://img.shields.io/badge/Windows_10%2F11_(64--bit)-2563EB?style=for-the-badge" alt="Windows 10/11 (64 bits)" /></a>
+  &nbsp;<a href="https://github.com/CyberGems/CyberPaste/releases"><img src="https://img.shields.io/badge/Todas_las_versiones-30363D?style=for-the-badge&logo=github&logoColor=white" alt="Todas las versiones" /></a>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Licencia-GPL--3.0-1F2428.svg?style=flat-square&color=334155" alt="Licencia" />&nbsp;
   <img src="https://img.shields.io/badge/Plataforma-Windows_10%2F11-1F2428.svg?style=flat-square&color=334155" alt="Plataforma" />&nbsp;
   <img src="https://img.shields.io/badge/Tauri-2.x-1F2428.svg?style=flat-square&logo=tauri&logoColor=white&color=334155" alt="Tauri" />&nbsp;
-  <a href="https://github.com/CyberGems/CyberPaste/wiki"><img src="https://img.shields.io/badge/Wiki-Documentaci%C3%B3n-1F2428?style=flat-square&logo=gitbook&logoColor=white&color=334155" alt="Wiki" /></a>
+  <a href="https://github.com/CyberGems/CyberPaste/wiki"><img src="https://img.shields.io/badge/Wiki-Documentaci%C3%B3n-1F2428?style=flat-square&logo=gitbook&logoColor=white&color=334155" alt="Wiki" /></a>&nbsp;
+  <a href="https://github.com/CyberGems/CyberPaste/blob/main/CHANGELOG.md"><img src="https://img.shields.io/badge/Notas_de_la_versi%C3%B3n-475569?style=flat-square" alt="Notas de la versión" /></a>
 </p>
+
+---
+
+<div align="center">
+
+### Recupera texto, código, imágenes y archivos con un historial de portapapeles privado y local
+
+</div>
 
 ---
 
 ## 📑 Table of Contents
 
-- [¿Qué es CyberPaste?](#qué-es-cyberpaste)
+- [👋 Introducción](#-introducción)
 - [📋 ¿Por qué CyberPaste?](#-por-qué-cyberpaste)
 - [✨ Funciones principales](#-funciones-principales)
 - [🚀 Primeros pasos](#-primeros-pasos)
@@ -49,7 +58,7 @@
 
 ---
 
-## ¿Qué es CyberPaste?
+## 👋 Introducción
 
 CyberPaste es un elegante **gestor de historial de portapapeles** centrado en la privacidad para Windows que hace que todo lo que copias sea fácil de encontrar y reutilizar. Almacena texto, código, imágenes, archivos, enlaces, HTML y RTF en una base de datos SQLite local, con búsqueda instantánea, carpetas, favoritos, anclaje, edición, OCR y acciones de pegado directo. Las herramientas de IA opcionales pueden resumir o transformar el contenido seleccionado, mientras que las copias de seguridad automáticas, la retención configurable, los logros y un bloqueo con PIN o contraseña mantienen la experiencia práctica y personal. Construido con **Tauri 2** y **React**.
 

@@ -4,27 +4,36 @@
 
 <p align="center">
   <a href="https://cybergems.org/apps/cyberpaste/">
-    <img src="https://cybergems.org/banners/cyberpaste.png" alt="CyberPaste — recall text, code, images and files with a private local clipboard history" />
+    <img src="https://cybergems.org/banners/cyberpaste.png" alt="A local clipboard history for everything you copy" />
   </a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/CyberGems/CyberPaste/releases/latest"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FCyberGems%2FCyberPaste%2Fmain%2Fpackage.json&query=%24.version&prefix=%20Download%20CyberPaste%20v&suffix=%20&style=for-the-badge&label=&labelColor=0891B2&color=0891B2" alt="Download Latest Release" /><img src="https://img.shields.io/badge/Windows_10%2F11_(64--bit)-2563EB?style=for-the-badge" alt="Windows 10/11 (64-bit)" /></a>
-  &nbsp;<a href="https://github.com/CyberGems/CyberPaste/releases"><img src="https://img.shields.io/badge/All_releases-30363D?style=for-the-badge&logo=github&logoColor=white" alt="All Releases" /><img src="https://img.shields.io/badge/Changelog-475569?style=for-the-badge" alt="Changelog" /></a>
+  <a href="https://github.com/CyberGems/CyberPaste/releases/latest"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FCyberGems%2FCyberPaste%2Fmain%2Fpackage.json&query=%24.version&prefix=%20Download%20v&suffix=%20&style=for-the-badge&label=&labelColor=0891B2&color=0891B2" alt="Download Latest Release" /><img src="https://img.shields.io/badge/Windows_10%2F11_(64--bit)-2563EB?style=for-the-badge" alt="Windows 10/11 (64-bit)" /></a>
+  &nbsp;<a href="https://github.com/CyberGems/CyberPaste/releases"><img src="https://img.shields.io/badge/All_releases-30363D?style=for-the-badge&logo=github&logoColor=white" alt="All Releases" /></a>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/License-GPL--3.0-1F2428.svg?style=flat-square&color=334155" alt="License" />&nbsp;
   <img src="https://img.shields.io/badge/Platform-Windows_10%2F11-1F2428.svg?style=flat-square&color=334155" alt="Platform" />&nbsp;
   <img src="https://img.shields.io/badge/Tauri-2.x-1F2428.svg?style=flat-square&logo=tauri&logoColor=white&color=334155" alt="Tauri" />&nbsp;
-  <a href="https://github.com/CyberGems/CyberPaste/wiki"><img src="https://img.shields.io/badge/Wiki-Documentation-1F2428?style=flat-square&logo=gitbook&logoColor=white&color=334155" alt="Wiki" /></a>
+  <a href="https://github.com/CyberGems/CyberPaste/wiki"><img src="https://img.shields.io/badge/Wiki-Documentation-1F2428?style=flat-square&logo=gitbook&logoColor=white&color=334155" alt="Wiki" /></a>&nbsp;
+  <a href="https://github.com/CyberGems/CyberPaste/blob/main/CHANGELOG.md"><img src="https://img.shields.io/badge/Changelog-475569?style=flat-square" alt="Changelog" /></a>
 </p>
+
+---
+
+<div align="center">
+
+### Recall text, code, images and files with a private local clipboard history
+
+</div>
 
 ---
 
 ## 📑 Table of Contents
 
-- [What is CyberPaste?](#what-is-cyberpaste)
+- [👋 Introduction](#-introduction)
 - [📋 Why CyberPaste?](#-why-cyberpaste)
 - [✨ Key Features](#-key-features)
 - [🚀 Getting Started](#-getting-started)
@@ -49,7 +58,7 @@
 
 ---
 
-## What is CyberPaste?
+## 👋 Introduction
 
 CyberPaste is a sleek, privacy-focused **clipboard history manager** for Windows that makes everything you copy easy to find and reuse. It stores text, code, images, files, links, HTML, and RTF in a local SQLite database, with instant search, folders, favorites, pinning, editing, OCR, and direct paste actions. Optional AI tools can summarize or transform selected content, while automatic backups, configurable retention, achievements, and a PIN or password lock keep the experience practical and personal. Built with **Tauri 2** and **React**.
 
