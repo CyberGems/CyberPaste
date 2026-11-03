@@ -265,7 +265,7 @@ impl Default for AppSettings {
             auto_backup_enabled: true,
             auto_backup_folder: "".to_string(),
             auto_backup_retention: 3,
-            compact_view_position_mode: "auto".to_string(),
+            compact_view_position_mode: "cursor".to_string(),
             viewer_window_width: 800.0,
             viewer_window_height: 600.0,
             viewer_window_x: None,

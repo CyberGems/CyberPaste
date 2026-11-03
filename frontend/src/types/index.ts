@@ -85,7 +85,7 @@ export interface Settings {
   auto_backup_enabled?: boolean;
   auto_backup_folder?: string;
   auto_backup_retention?: number;
-  compact_view_position_mode?: 'cursor' | 'caret' | 'auto';
+  compact_view_position_mode?: 'cursor' | 'caret';
   viewer_window_width?: number;
   viewer_window_height?: number;
   viewer_window_x?: number | null;

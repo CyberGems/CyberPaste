@@ -341,7 +341,6 @@
     "compactFolderLayoutVertical": "Vertical",
     "compactViewPosition": "Posición de la ventana",
     "compactViewPositionDesc": "Dónde aparece la ventana al abrirla con el atajo global",
-    "positionAuto": "Automático (Inteligente)",
     "positionCursor": "Cursor del Ratón",
     "positionCaret": "Cursor de Texto (Caret)",
     "clipboardSound": "Sonido del Portapapeles",

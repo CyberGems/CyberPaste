@@ -80,6 +80,15 @@ impl SettingsManager {
             settings.mica_effect = derived_effect;
             needs_save = true;
         }
+        // Retire the legacy "auto" compact position mode: it ran the exact same
+        // caret-with-cursor-fallback path as "caret", so "cursor" is the honest
+        // default and anything unknown falls back to it.
+        if settings.compact_view_position_mode != "caret"
+            && settings.compact_view_position_mode != "cursor"
+        {
+            settings.compact_view_position_mode = "cursor".to_string();
+            needs_save = true;
+        }
 
         if secrets::migrate_plain_api_key(&mut settings) {
             needs_save = true;

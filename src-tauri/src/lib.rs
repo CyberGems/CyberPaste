@@ -1292,7 +1292,7 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
             let mut found = false;
 
             if view_mode == "compact" {
-                if compact_pos_mode == "caret" || compact_pos_mode == "auto" {
+                if compact_pos_mode == "caret" {
                     let mut info = GUITHREADINFO::default();
                     info.cbSize = std::mem::size_of::<GUITHREADINFO>() as u32;
                     let hwnd = unsafe { GetForegroundWindow() };
