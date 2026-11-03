@@ -46,10 +46,12 @@ import {
   ChevronDown,
   type LucideIcon,
 } from 'lucide-react';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { useTheme } from '../hooks/useTheme';
 import {
-  searchSettings,
+  matchSettings,
+  matchedLabelTexts,
+  normalizeForSearch,
   SETTINGS_TAB_LABEL_KEYS,
   type SettingsSearchEntry,
 } from './settingsSearchIndex';
@@ -453,10 +455,21 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
   const searchInputRef = useRef<HTMLInputElement>(null);
   const settingsContentRef = useRef<HTMLDivElement>(null);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const matchRowsRef = useRef<HTMLElement[]>([]);
+  const matchCursorRef = useRef(0);
   const [settingsQuery, setSettingsQuery] = useState('');
-  const [settingsResults, setSettingsResults] = useState<SettingsSearchEntry[]>([]);
-  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
-  const [searchHighlight, setSearchHighlight] = useState(0);
+  const [searchMatches, setSearchMatches] = useState<SettingsSearchEntry[]>([]);
+  const [searchVisibleCount, setSearchVisibleCount] = useState(0);
+
+  // While a query is active every tab renders at once and the layout effect
+  // below hides non-matching rows, leaving the real, editable controls in
+  // place (CyberSnap-style results view). Clicking a sidebar tab clears it.
+  const searchMode = settingsQuery.trim().length > 0;
+
+  const selectTab = useCallback((tab: Tab) => {
+    setSettingsQuery('');
+    setActiveTab(tab);
+  }, []);
 
   // Focus the search bar as soon as the settings window opens
   useEffect(() => {
@@ -482,64 +495,96 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     const query = settingsQuery.trim();
     if (!query) {
-      setSettingsResults([]);
-      setSearchDropdownOpen(false);
-      setSearchHighlight(0);
+      setSearchMatches([]);
+      matchRowsRef.current = [];
+      matchCursorRef.current = 0;
       return;
     }
     searchDebounceRef.current = setTimeout(() => {
-      setSettingsResults(searchSettings(query).map((r) => r.entry));
-      setSearchDropdownOpen(true);
-      setSearchHighlight(0);
+      setSearchMatches(matchSettings(query));
+      matchCursorRef.current = 0;
     }, 120);
     return () => {
       if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     };
   }, [settingsQuery]);
 
-  // Switch to the result's tab, then scroll the row into view and flash it.
-  // The row is located by its localized label text (rendered verbatim in the
-  // panel), so no per-row ids are needed.
-  const jumpToSetting = useCallback(
-    (entry: SettingsSearchEntry) => {
-      const label = t(entry.labelKey).trim();
-      setSearchDropdownOpen(false);
-      searchInputRef.current?.blur();
-      if (activeTab !== entry.tab) {
-        setActiveTab(entry.tab);
+  // In search mode every tab is mounted at once; hide rows, section headings
+  // and cards that do not match, keeping the real controls for direct editing.
+  // Rows are identified by their localized label text, so no per-row ids are
+  // needed (CyberSnap's visual-tree discovery, React edition).
+  useLayoutEffect(() => {
+    const root = settingsContentRef.current;
+    if (!root || !searchMode) return;
+    const matched = matchedLabelTexts(searchMatches, (key) => t(key));
+    const norm = (value: string | null) => normalizeForSearch(value ?? '');
+    const labelSpans = Array.from(
+      root.querySelectorAll<HTMLElement>('span.text-sm.font-medium')
+    ).filter((el) => el.children.length === 0 && norm(el.textContent));
+
+    const visibleRows: HTMLElement[] = [];
+    for (const label of labelSpans) {
+      const isMatch = matched.has(norm(label.textContent));
+      let row = label.closest<HTMLElement>('[class*="p-3"], [class*="p-4"], label') ?? label;
+      if (row.tagName === 'LABEL' && row.parentElement) {
+        // Stacked label+control rows: expand to the dedicated wrapper so the
+        // control hides with its label, but only when it wraps a single row.
+        const parent = row.parentElement;
+        if (parent !== root && parent.querySelectorAll(':scope > label').length === 1) {
+          row = parent;
+        }
       }
-      requestAnimationFrame(() =>
-        requestAnimationFrame(() => {
-          const root = settingsContentRef.current;
-          if (!root) return;
-          const candidates = root.querySelectorAll<HTMLElement>(
-            'span.text-sm.font-medium, span.block.text-sm, label span'
-          );
-          let target: HTMLElement | null = null;
-          for (const el of candidates) {
-            if (el.children.length === 0 && el.textContent?.trim() === label) {
-              target = el;
-              break;
-            }
-          }
-          if (!target) {
-            console.warn('[SettingsSearch] row not found for', entry.labelKey);
-            return;
-          }
-          const row = target.closest<HTMLElement>('[class*="p-3"], [class*="p-4"]') ?? target;
-          row.scrollIntoView({ block: 'center', behavior: 'smooth' });
-          row.classList.remove('settings-row-flash');
-          // Force a reflow so consecutive flashes restart the animation
-          void row.offsetWidth;
-          row.classList.add('settings-row-flash');
-          row.addEventListener('animationend', () => row.classList.remove('settings-row-flash'), {
-            once: true,
-          });
-        })
-      );
-    },
-    [activeTab, t]
-  );
+      row.classList.toggle('hidden', !isMatch);
+      if (isMatch) visibleRows.push(row);
+    }
+    matchRowsRef.current = visibleRows;
+    setSearchVisibleCount(visibleRows.length);
+
+    // Section headings: hidden when no row between them and the next heading
+    // is visible. Tab headers (rendered only in search mode) work the same.
+    const headings = Array.from(root.querySelectorAll<HTMLElement>('h3, h2[data-search-tab]'));
+    for (let i = 0; i < headings.length; i += 1) {
+      const heading = headings[i];
+      const nextTop = headings[i + 1] ?? null;
+      let hasVisible = false;
+      for (const row of visibleRows) {
+        if (
+          heading.compareDocumentPosition(row) & Node.DOCUMENT_POSITION_FOLLOWING &&
+          (!nextTop || nextTop.compareDocumentPosition(row) & Node.DOCUMENT_POSITION_PRECEDING)
+        ) {
+          hasVisible = true;
+          break;
+        }
+      }
+      heading.classList.toggle('hidden', !hasVisible);
+    }
+
+    // Cards (and other framed containers) hide when every label inside is gone
+    const cards = Array.from(
+      root.querySelectorAll<HTMLElement>('div[class*="bg-card"], div[class*="bg-secondary"]')
+    );
+    for (const card of cards) {
+      const labels = card.querySelectorAll<HTMLElement>('span.text-sm.font-medium');
+      const anyVisible = Array.from(labels).some((l) => l.offsetParent !== null);
+      card.classList.toggle('hidden', labels.length > 0 && !anyVisible);
+    }
+  }, [searchMode, searchMatches, settingsQuery, i18n.language, t]);
+
+  const scrollToMatch = (index: number) => {
+    const rows = matchRowsRef.current;
+    if (!rows.length) return;
+    const clamped = ((index % rows.length) + rows.length) % rows.length;
+    matchCursorRef.current = clamped;
+    const row = rows[clamped];
+    row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    row.classList.remove('settings-row-flash');
+    // Force a reflow so consecutive flashes restart the animation
+    void row.offsetWidth;
+    row.classList.add('settings-row-flash');
+    row.addEventListener('animationend', () => row.classList.remove('settings-row-flash'), {
+      once: true,
+    });
+  };
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape') {
@@ -548,20 +593,18 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
       } else {
         searchInputRef.current?.blur();
       }
-      setSearchDropdownOpen(false);
       return;
     }
-    if (!settingsResults.length) return;
+    if (!searchMode || !matchRowsRef.current.length) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setSearchHighlight((i) => (i + 1) % settingsResults.length);
+      scrollToMatch(matchCursorRef.current + 1);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSearchHighlight((i) => (i - 1 + settingsResults.length) % settingsResults.length);
+      scrollToMatch(matchCursorRef.current - 1);
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      const picked = settingsResults[Math.min(searchHighlight, settingsResults.length - 1)];
-      if (picked) jumpToSetting(picked);
+      scrollToMatch(matchCursorRef.current);
     }
   };
   // ── End settings search ────────────────────────────────────────────────
@@ -1219,9 +1262,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   type="text"
                   value={settingsQuery}
                   onChange={(e) => setSettingsQuery(e.target.value)}
-                  onFocus={() => {
-                    if (settingsQuery) setSearchDropdownOpen(true);
-                  }}
                   onKeyDown={handleSearchKeyDown}
                   placeholder={t('settings.searchPlaceholder')}
                   spellCheck={false}
@@ -1242,49 +1282,20 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     <X size={11} />
                   </button>
                 )}
-                {searchDropdownOpen && (
-                  <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-y-auto rounded-lg border border-border bg-popover py-1 shadow-lg">
-                    {settingsResults.length === 0 ? (
-                      <p className="px-3 py-2 text-[11px] italic text-muted-foreground">
-                        {t('settings.searchNoResults')}
-                      </p>
-                    ) : (
-                      settingsResults.map((entry, idx) => (
-                        <button
-                          key={`${entry.tab}-${entry.labelKey}`}
-                          type="button"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => jumpToSetting(entry)}
-                          onMouseEnter={() => setSearchHighlight(idx)}
-                          className={clsx(
-                            'block w-full px-2.5 py-1.5 text-left transition-colors',
-                            idx === searchHighlight
-                              ? 'bg-accent text-foreground'
-                              : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                          )}
-                        >
-                          <span className="block truncate text-[12px] font-medium">
-                            {t(entry.labelKey)}
-                          </span>
-                          <span className="block truncate text-[10px] text-muted-foreground/70">
-                            {(() => {
-                              const tabLabel = t(SETTINGS_TAB_LABEL_KEYS[entry.tab]);
-                              const sectionLabel = entry.sectionKey ? t(entry.sectionKey) : '';
-                              return sectionLabel && sectionLabel !== entry.sectionKey
-                                ? `${tabLabel} · ${sectionLabel}`
-                                : tabLabel;
-                            })()}
-                          </span>
-                        </button>
-                      ))
-                    )}
-                  </div>
-                )}
               </div>
+              {settingsQuery && (
+                <p className="mt-1 px-1 text-[10px] text-muted-foreground/70">
+                  {searchMode
+                    ? searchVisibleCount > 0
+                      ? t('settings.searchResultsCount', { count: searchVisibleCount })
+                      : t('settings.searchNoResults')
+                    : ''}
+                </p>
+              )}
             </div>
             <div className="flex flex-col gap-1">
               <button
-                onClick={() => setActiveTab('general')}
+                onClick={() => selectTab('general')}
                 className={clsx(
                   'flex items-center gap-2 whitespace-nowrap rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'general'
@@ -1296,7 +1307,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 {t('settings.general')}
               </button>
               <button
-                onClick={() => setActiveTab('clipboard')}
+                onClick={() => selectTab('clipboard')}
                 className={clsx(
                   'flex items-center gap-2 whitespace-nowrap rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'clipboard'
@@ -1308,7 +1319,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 {t('settings.clipboardTab', { defaultValue: 'Portapapeles' })}
               </button>
               <button
-                onClick={() => setActiveTab('notifications')}
+                onClick={() => selectTab('notifications')}
                 className={clsx(
                   'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'notifications'
@@ -1320,7 +1331,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 {t('settings.toasts')}
               </button>
               <button
-                onClick={() => setActiveTab('compact')}
+                onClick={() => selectTab('compact')}
                 className={clsx(
                   'flex items-center gap-2 whitespace-nowrap rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'compact'
@@ -1332,7 +1343,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 {t('settings.compactTab')}
               </button>
               <button
-                onClick={() => setActiveTab('full')}
+                onClick={() => selectTab('full')}
                 className={clsx(
                   'flex items-center gap-2 whitespace-nowrap rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'full'
@@ -1344,7 +1355,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 {t('settings.fullTab')}
               </button>
               <button
-                onClick={() => setActiveTab('security')}
+                onClick={() => selectTab('security')}
                 className={clsx(
                   'flex items-center gap-2 whitespace-nowrap rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'security'
@@ -1356,7 +1367,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 {t('settings.security')}
               </button>
               <button
-                onClick={() => setActiveTab('folders')}
+                onClick={() => selectTab('folders')}
                 className={clsx(
                   'flex items-center gap-2 whitespace-nowrap rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'folders'
@@ -1368,7 +1379,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 {t('settings.folders')}
               </button>
               <button
-                onClick={() => setActiveTab('ai')}
+                onClick={() => selectTab('ai')}
                 className={clsx(
                   'flex items-center gap-2 rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'ai'
@@ -1380,7 +1391,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 {t('settings.ai')}
               </button>
               <button
-                onClick={() => setActiveTab('maintenance')}
+                onClick={() => selectTab('maintenance')}
                 className={clsx(
                   'flex items-center gap-2 whitespace-nowrap rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'maintenance'
@@ -1393,7 +1404,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               </button>
               <div className="my-2 border-t border-border/70" role="separator" />
               <button
-                onClick={() => setActiveTab('achievements')}
+                onClick={() => selectTab('achievements')}
                 className={clsx(
                   'flex items-center gap-2 whitespace-nowrap rounded-[4px] px-[9px] py-2 text-[12px] font-medium transition-all duration-150',
                   activeTab === 'achievements'
@@ -1411,7 +1422,15 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
           <div ref={settingsContentRef} className="custom-scrollbar flex-1 overflow-y-auto p-6">
             <div className="w-full space-y-8">
               {/* --- GENERAL TAB --- */}
-              {activeTab === 'general' && (
+              {searchMode && (
+                <h2
+                  data-search-tab
+                  className="flex items-center gap-2 border-b border-border pb-2 text-sm font-semibold text-primary"
+                >
+                  {t(SETTINGS_TAB_LABEL_KEYS['general'])}
+                </h2>
+              )}
+              {(activeTab === 'general' || searchMode) && (
                 <>
                   {/* Appearance */}
                   <section className="space-y-4">
@@ -1927,7 +1946,15 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               )}
 
               {/* --- CLIPBOARD TAB --- */}
-              {activeTab === 'clipboard' && (
+              {searchMode && (
+                <h2
+                  data-search-tab
+                  className="flex items-center gap-2 border-b border-border pb-2 text-sm font-semibold text-primary"
+                >
+                  {t(SETTINGS_TAB_LABEL_KEYS['clipboard'])}
+                </h2>
+              )}
+              {(activeTab === 'clipboard' || searchMode) && (
                 <>
                   {/* Limits & Storage */}
                   <section className="space-y-4">
@@ -2239,7 +2266,15 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 </>
               )}
 
-              {activeTab === 'security' && (
+              {searchMode && (
+                <h2
+                  data-search-tab
+                  className="flex items-center gap-2 border-b border-border pb-2 text-sm font-semibold text-primary"
+                >
+                  {t(SETTINGS_TAB_LABEL_KEYS['security'])}
+                </h2>
+              )}
+              {(activeTab === 'security' || searchMode) && (
                 <>
                   <section className="space-y-4">
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
@@ -2546,7 +2581,15 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               )}
 
               {/* --- FOLDERS TAB --- */}
-              {activeTab === 'folders' && (
+              {searchMode && (
+                <h2
+                  data-search-tab
+                  className="flex items-center gap-2 border-b border-border pb-2 text-sm font-semibold text-primary"
+                >
+                  {t(SETTINGS_TAB_LABEL_KEYS['folders'])}
+                </h2>
+              )}
+              {(activeTab === 'folders' || searchMode) && (
                 <>
                   {/* Folders Management */}
                   <section className="space-y-4">
@@ -2676,7 +2719,15 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               )}
 
               {/* --- FULL MODE TAB --- */}
-              {activeTab === 'full' && (
+              {searchMode && (
+                <h2
+                  data-search-tab
+                  className="flex items-center gap-2 border-b border-border pb-2 text-sm font-semibold text-primary"
+                >
+                  {t(SETTINGS_TAB_LABEL_KEYS['full'])}
+                </h2>
+              )}
+              {(activeTab === 'full' || searchMode) && (
                 <>
                   <section className="space-y-4">
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
@@ -2794,7 +2845,15 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               )}
 
               {/* --- COMPACT MODE TAB --- */}
-              {activeTab === 'compact' && (
+              {searchMode && (
+                <h2
+                  data-search-tab
+                  className="flex items-center gap-2 border-b border-border pb-2 text-sm font-semibold text-primary"
+                >
+                  {t(SETTINGS_TAB_LABEL_KEYS['compact'])}
+                </h2>
+              )}
+              {(activeTab === 'compact' || searchMode) && (
                 <>
                   {/* Layout & Navigation */}
                   <section className="space-y-4">
@@ -2986,7 +3045,15 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               )}
 
               {/* --- AI PROCESSING TAB --- */}
-              {activeTab === 'ai' &&
+              {searchMode && (
+                <h2
+                  data-search-tab
+                  className="flex items-center gap-2 border-b border-border pb-2 text-sm font-semibold text-primary"
+                >
+                  {t(SETTINGS_TAB_LABEL_KEYS['ai'])}
+                </h2>
+              )}
+              {(activeTab === 'ai' || searchMode) &&
                 (() => {
                   const currentProvider = settings.ai_provider || 'openai';
                   const modelsForProvider = [
@@ -3239,7 +3306,15 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 })()}
 
               {/* --- NOTIFICATIONS TAB --- */}
-              {activeTab === 'notifications' && (
+              {searchMode && (
+                <h2
+                  data-search-tab
+                  className="flex items-center gap-2 border-b border-border pb-2 text-sm font-semibold text-primary"
+                >
+                  {t(SETTINGS_TAB_LABEL_KEYS['notifications'])}
+                </h2>
+              )}
+              {(activeTab === 'notifications' || searchMode) && (
                 <section className="space-y-4">
                   <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
                     <Bell size={14} /> {t('settings.toasts')}
@@ -3571,7 +3646,15 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               )}
 
               {/* --- MAINTENANCE TAB --- */}
-              {activeTab === 'maintenance' && (
+              {searchMode && (
+                <h2
+                  data-search-tab
+                  className="flex items-center gap-2 border-b border-border pb-2 text-sm font-semibold text-primary"
+                >
+                  {t(SETTINGS_TAB_LABEL_KEYS['maintenance'])}
+                </h2>
+              )}
+              {(activeTab === 'maintenance' || searchMode) && (
                 <div className="space-y-6 duration-500 animate-in fade-in slide-in-from-bottom-4">
                   {/* System & Storage */}
                   <section className="space-y-3">

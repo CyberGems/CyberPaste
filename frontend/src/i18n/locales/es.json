@@ -307,6 +307,8 @@
     "maintenance": "Respaldo y Datos",
     "searchPlaceholder": "Buscar ajustes...",
     "searchNoResults": "Sin resultados",
+    "searchResultsCount_one": "{{count}} resultado",
+    "searchResultsCount_other": "{{count}} resultados",
     "folders": "Carpetas",
     "appearance": "Apariencia",
     "advanced": "Avanzado",

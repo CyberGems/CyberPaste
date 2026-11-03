@@ -307,6 +307,8 @@
     "maintenance": "Backup & Data",
     "searchPlaceholder": "Search settings...",
     "searchNoResults": "No results",
+    "searchResultsCount_one": "{{count}} result",
+    "searchResultsCount_other": "{{count}} results",
     "folders": "Folders",
     "appearance": "Appearance",
     "advanced": "Advanced",

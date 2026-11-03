@@ -7,9 +7,9 @@ import i18n from '../i18n/config';
  * duplicating strings here.
  *
  * Maintenance note: when adding a settings row to SettingsPanel, add one
- * entry here (tab + labelKey + optional descKey/sectionKey). Rows rendered
- * with dynamic t(`settings.${key}`) maps (e.g. the Full Screen Mode
- * visibility toggles) are listed explicitly below.
+ * entry here (tab + labelKey + optional descKey/sectionKey/extraKeys).
+ * Rows rendered with dynamic t(`settings.${key}`) maps (e.g. the Full
+ * Screen Mode visibility toggles) are listed explicitly below.
  */
 
 type SettingsSearchTab =
@@ -29,21 +29,9 @@ export interface SettingsSearchEntry {
   labelKey: string;
   descKey?: string;
   sectionKey?: string;
+  /** Extra searchable text keys (e.g. a Select option label). */
+  extraKeys?: string[];
 }
-
-/** Sidebar tab label keys are irregular; map them once. */
-export const SETTINGS_TAB_LABEL_KEYS: Record<SettingsSearchTab, string> = {
-  general: 'settings.general',
-  clipboard: 'settings.clipboardTab',
-  notifications: 'settings.toasts',
-  compact: 'settings.compactTab',
-  full: 'settings.fullTab',
-  security: 'settings.security',
-  folders: 'settings.folders',
-  ai: 'settings.ai',
-  maintenance: 'settings.maintenance',
-  achievements: 'settings.achievements',
-};
 
 export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
   // General
@@ -279,6 +267,7 @@ export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
     labelKey: 'settings.compactViewPosition',
     descKey: 'settings.compactViewPositionDesc',
     sectionKey: 'settings.layoutNavigation',
+    extraKeys: ['settings.positionCursor', 'settings.positionCaret'],
   },
   {
     tab: 'compact',
@@ -419,22 +408,26 @@ export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
   },
 ];
 
+/** Sidebar tab label keys are irregular; map them once. */
+export const SETTINGS_TAB_LABEL_KEYS: Record<SettingsSearchTab, string> = {
+  general: 'settings.general',
+  clipboard: 'settings.clipboardTab',
+  notifications: 'settings.toasts',
+  compact: 'settings.compactTab',
+  full: 'settings.fullTab',
+  security: 'settings.security',
+  folders: 'settings.folders',
+  ai: 'settings.ai',
+  maintenance: 'settings.maintenance',
+  achievements: 'settings.achievements',
+};
+
 /** Lowercase and strip diacritics so "seccion" matches "Sección". */
-const deaccent = (value: string): string =>
+export const normalizeForSearch = (value: string): string =>
   value
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
-
-/** In-order subsequence test used by the fuzzy fallback. */
-const isSubsequence = (needle: string, haystack: string): boolean => {
-  let at = 0;
-  for (const char of haystack) {
-    if (char === needle[at]) at += 1;
-    if (at === needle.length) return true;
-  }
-  return needle.length === 0;
-};
 
 // Indexed in Spanish and English regardless of the UI language, so users can
 // type in either language (CyberSnap-style search only matches the active one).
@@ -446,69 +439,106 @@ interface IndexedEntry {
   labels: string[];
   descs: string[];
   sections: string[];
+  extras: string[];
 }
 
 const INDEX: IndexedEntry[] = SETTINGS_SEARCH_ENTRIES.map((entry) => ({
   entry,
-  labels: [deaccent(tEs(entry.labelKey)), deaccent(tEn(entry.labelKey))],
-  descs: entry.descKey ? [deaccent(tEs(entry.descKey)), deaccent(tEn(entry.descKey))] : [],
-  sections: entry.sectionKey
-    ? [deaccent(tEs(entry.sectionKey)), deaccent(tEn(entry.sectionKey))]
+  labels: [normalizeForSearch(tEs(entry.labelKey)), normalizeForSearch(tEn(entry.labelKey))],
+  descs: entry.descKey
+    ? [normalizeForSearch(tEs(entry.descKey)), normalizeForSearch(tEn(entry.descKey))]
     : [],
+  sections: entry.sectionKey
+    ? [normalizeForSearch(tEs(entry.sectionKey)), normalizeForSearch(tEn(entry.sectionKey))]
+    : [],
+  extras: (entry.extraKeys ?? []).flatMap((k) => [
+    normalizeForSearch(tEs(k)),
+    normalizeForSearch(tEn(k)),
+  ]),
 }));
 
-export interface SettingsSearchResult {
-  entry: SettingsSearchEntry;
-  score: number;
-}
-
 /**
- * Rank settings for a query. Tokens are matched against labels (weight 3,
- * prefix +4, whole-query equality +10), section titles (+2) and
- * descriptions (+1). With no direct hits and a query of 3+ characters it
- * falls back to an in-order subsequence match over label+description.
+ * Every entry matching the query. Tokens are matched against labels
+ * (weight 3, prefix +7, whole-token equality +10), section titles (+2),
+ * descriptions (+1) and extra option texts (+2). With no direct hits and a
+ * query of 3+ characters it falls back to a span-bounded subsequence match
+ * over the label only (dense acronyms like "fnm" -> "File name"), so loose
+ * garbage cannot surface from long description texts.
  */
-export const searchSettings = (rawQuery: string): SettingsSearchResult[] => {
-  const query = deaccent(rawQuery.trim());
+export const matchSettings = (rawQuery: string): SettingsSearchEntry[] => {
+  const query = normalizeForSearch(rawQuery.trim());
   if (!query) return [];
   const tokens = query.split(/\s+/).filter(Boolean);
 
-  const scored: SettingsSearchResult[] = [];
+  const scored: { entry: SettingsSearchEntry; score: number }[] = [];
   for (const indexed of INDEX) {
     const label = indexed.labels.join(' ');
     const desc = indexed.descs.join(' ');
     const section = indexed.sections.join(' ');
+    const extras = indexed.extras.join(' ');
     let score = 0;
     for (const token of tokens) {
       if (indexed.labels.some((l) => l === token)) score += 10;
       else if (indexed.labels.some((l) => l.startsWith(token))) score += 7;
       else if (label.includes(token)) score += 3;
       if (section.includes(token)) score += 2;
+      if (extras.includes(token)) score += 2;
       if (desc.includes(token)) score += 1;
     }
-    if (tokens.length > 1 && label === query) score += 10 * tokens.length;
-    else if (tokens.length === 1 && label === query) score += 10;
+    if (label === query) score += 10;
     if (score > 0) scored.push({ entry: indexed.entry, score });
   }
 
   if (scored.length === 0 && query.length >= 3) {
+    const maxSpan = query.length * 4;
     for (const indexed of INDEX) {
-      const label = indexed.labels.join(' ');
-      const desc = indexed.descs.join(' ');
-      if (
-        tokens.every((token) => isSubsequence(token, label) || (desc && isSubsequence(token, desc)))
-      ) {
-        scored.push({ entry: indexed.entry, score: 1 });
+      let best = Number.POSITIVE_INFINITY;
+      for (const label of indexed.labels) {
+        for (const token of tokens) {
+          let at = label.indexOf(token[0]);
+          while (at !== -1) {
+            // try to match the token as an in-order subsequence starting here
+            let cursor = at;
+            let matched = true;
+            for (const char of token) {
+              cursor = label.indexOf(char, cursor);
+              if (cursor === -1) {
+                matched = false;
+                break;
+              }
+              cursor += 1;
+            }
+            if (matched) {
+              const span = cursor - at;
+              if (span <= maxSpan) best = Math.min(best, span);
+              break;
+            }
+            at = label.indexOf(token[0], at + 1);
+          }
+        }
+      }
+      if (Number.isFinite(best)) {
+        scored.push({ entry: indexed.entry, score: 100 - best / maxSpan });
       }
     }
-    scored.sort(
-      (a, b) =>
-        a.entry.labelKey.length - b.entry.labelKey.length ||
-        a.entry.labelKey.localeCompare(b.entry.labelKey)
-    );
-    return scored.slice(0, 8);
   }
 
-  scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, 12);
+  return scored.sort((a, b) => b.score - a.score).map((s) => s.entry);
+};
+
+/**
+ * Label texts (deaccented) that identify a matched entry in the rendered
+ * panel: Spanish, English and the current UI language variants.
+ */
+export const matchedLabelTexts = (
+  entries: SettingsSearchEntry[],
+  currentLabel: (key: string) => string
+): Set<string> => {
+  const texts = new Set<string>();
+  for (const entry of entries) {
+    texts.add(normalizeForSearch(tEs(entry.labelKey)));
+    texts.add(normalizeForSearch(tEn(entry.labelKey)));
+    texts.add(normalizeForSearch(currentLabel(entry.labelKey)));
+  }
+  return texts;
 };
