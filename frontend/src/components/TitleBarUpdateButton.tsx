@@ -2,6 +2,7 @@ import { ArrowDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { clsx } from 'clsx';
 import Tooltip from './Tooltip';
+import { TITLEBAR_ICON_BUTTON } from './ui/titlebarButtons';
 
 export function TitleBarUpdateButton({
   visible,
@@ -27,11 +28,13 @@ export function TitleBarUpdateButton({
         onClick={onClick}
         aria-label={tooltip}
         className={clsx(
-          'group flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-transparent transition-all duration-300',
-          'bg-primary/10 text-primary',
+          'group',
+          TITLEBAR_ICON_BUTTON,
+          'h-8 w-8 shrink-0 rounded-lg duration-300',
+          'border-transparent bg-primary/10 text-primary',
           'hover:bg-primary/25 hover:text-primary',
           'active:scale-95 active:bg-primary/30',
-          'focus:outline-none focus-visible:ring-1 focus-visible:ring-primary',
+          'focus-visible:ring-1 focus-visible:ring-primary',
           'motion-safe:animate-[pulse_3.5s_ease-in-out_infinite]'
         )}
       >

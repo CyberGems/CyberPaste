@@ -100,6 +100,16 @@ import { TitleBarMenu } from './TitleBarMenu';
 import { TitleBarUpdateButton } from './TitleBarUpdateButton';
 import { UndoButton } from './UndoButton';
 import { AppFilterDropdown } from './AppFilterDropdown';
+import {
+  TITLEBAR_BTN_DANGER,
+  TITLEBAR_BTN_IDLE,
+  TITLEBAR_BTN_IDLE_SOFT,
+  TITLEBAR_BTN_MODE_TOGGLE,
+  TITLEBAR_BTN_ON_AMBER,
+  TITLEBAR_BTN_ON_PRIMARY,
+  TITLEBAR_BTN_ON_PRIMARY_STRONG,
+  TITLEBAR_ICON_BUTTON,
+} from './ui/titlebarButtons';
 import { TITLEBAR_HOTKEYS } from '../hooks/useKeyboard';
 import { de, enUS, es, fr, ja, zhCN } from 'date-fns/locale';
 import { List, useListRef, type RowComponentProps } from 'react-window';
@@ -1594,7 +1604,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
               <button
                 type="button"
                 onClick={onLockNow}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:bg-accent hover:text-foreground active:bg-accent/80"
+                className={cn(TITLEBAR_ICON_BUTTON, 'h-8 w-8 rounded-lg', TITLEBAR_BTN_IDLE)}
               >
                 <Lock size={14} />
               </button>
@@ -1610,7 +1620,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
             >
               <button
                 onClick={onToggleLayout}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:bg-accent hover:text-foreground active:bg-accent/80"
+                className={cn(TITLEBAR_ICON_BUTTON, 'h-8 w-8 rounded-lg', TITLEBAR_BTN_IDLE)}
               >
                 {isVertical ? <PanelTop size={14} /> : <PanelLeftOpen size={14} />}
               </button>
@@ -1633,10 +1643,9 @@ export const CompactView: React.FC<CompactViewProps> = ({
               onClick={toggleMonitoring}
               aria-label={isPaused ? t('common.resumeMonitoring') : t('common.pauseMonitoring')}
               className={cn(
-                'flex h-8 w-8 items-center justify-center rounded-lg border transition-all focus:outline-none',
-                isPaused
-                  ? 'border-transparent bg-amber-500/15 text-amber-500 hover:bg-amber-500/25 active:bg-amber-500/25'
-                  : 'border-transparent text-muted-foreground hover:bg-accent hover:text-foreground active:bg-accent/80'
+                TITLEBAR_ICON_BUTTON,
+                'h-8 w-8 rounded-lg',
+                isPaused ? TITLEBAR_BTN_ON_AMBER : TITLEBAR_BTN_IDLE
               )}
             >
               {isPaused ? <Play size={14} className="fill-amber-500/30" /> : <Pause size={14} />}
@@ -1652,7 +1661,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
           >
             <button
               onClick={onOpenSettings}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:bg-accent hover:text-foreground active:bg-accent/80"
+              className={cn(TITLEBAR_ICON_BUTTON, 'h-8 w-8 rounded-lg', TITLEBAR_BTN_IDLE)}
             >
               <Settings size={14} />
             </button>
@@ -1681,10 +1690,9 @@ export const CompactView: React.FC<CompactViewProps> = ({
               <button
                 onClick={onTogglePin}
                 className={cn(
-                  'flex h-8 w-8 items-center justify-center rounded-lg border transition-all focus:outline-none',
-                  isPinned
-                    ? 'border-transparent bg-primary/20 text-primary'
-                    : 'border-transparent text-muted-foreground hover:bg-accent hover:text-foreground active:bg-accent/80'
+                  TITLEBAR_ICON_BUTTON,
+                  'h-8 w-8 rounded-lg',
+                  isPinned ? TITLEBAR_BTN_ON_PRIMARY_STRONG : TITLEBAR_BTN_IDLE
                 )}
               >
                 <Pin
@@ -1712,7 +1720,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
           >
             <button
               onClick={onToggleMode}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent bg-transparent text-primary transition-all hover:bg-accent active:bg-accent/80"
+              className={cn(TITLEBAR_ICON_BUTTON, 'h-8 w-8 rounded-lg', TITLEBAR_BTN_MODE_TOGGLE)}
             >
               <LayoutGrid size={13} className="flex-shrink-0" />
             </button>
@@ -1728,7 +1736,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
             <button
               onClick={onToggleMaximize}
               aria-label={isMaximized ? t('common.restore') : t('common.maximize')}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:bg-accent hover:text-foreground active:bg-accent/80"
+              className={cn(TITLEBAR_ICON_BUTTON, 'h-8 w-8 rounded-lg', TITLEBAR_BTN_IDLE)}
             >
               {isMaximized ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
             </button>
@@ -1751,7 +1759,12 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   );
                 }
               }}
-              className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:bg-rose-500/15 hover:text-rose-400 active:bg-rose-500/25"
+              className={cn(
+                'ml-0.5',
+                TITLEBAR_ICON_BUTTON,
+                'h-8 w-8 rounded-lg',
+                TITLEBAR_BTN_DANGER
+              )}
             >
               <X size={14} />
             </button>
@@ -2046,10 +2059,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
                       )}
                       aria-pressed={compactPeekEnabled}
                       className={cn(
-                        'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all focus:outline-none',
-                        compactPeekEnabled
-                          ? 'border-transparent bg-primary/15 text-primary hover:bg-primary/25'
-                          : 'border-transparent text-muted-foreground/70 hover:bg-accent hover:text-foreground active:bg-accent/80'
+                        TITLEBAR_ICON_BUTTON,
+                        compactPeekEnabled ? TITLEBAR_BTN_ON_PRIMARY : TITLEBAR_BTN_IDLE_SOFT
                       )}
                     >
                       <Eye size={14} />
@@ -2071,10 +2082,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
                       })}
                       aria-pressed={isEmojiMode}
                       className={cn(
-                        'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all focus:outline-none',
-                        isEmojiMode
-                          ? 'border-transparent bg-primary/15 text-primary hover:bg-primary/25'
-                          : 'border-transparent text-muted-foreground/70 hover:bg-accent hover:text-foreground active:bg-accent/80'
+                        TITLEBAR_ICON_BUTTON,
+                        isEmojiMode ? TITLEBAR_BTN_ON_PRIMARY : TITLEBAR_BTN_IDLE_SOFT
                       )}
                     >
                       <Smile size={14} />
@@ -2305,10 +2314,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     )}
                     aria-pressed={compactPeekEnabled}
                     className={cn(
-                      'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all focus:outline-none',
-                      compactPeekEnabled
-                        ? 'border-transparent bg-primary/15 text-primary hover:bg-primary/25'
-                        : 'border-transparent text-muted-foreground/70 hover:bg-accent hover:text-foreground active:bg-accent/80'
+                      TITLEBAR_ICON_BUTTON,
+                      compactPeekEnabled ? TITLEBAR_BTN_ON_PRIMARY : TITLEBAR_BTN_IDLE_SOFT
                     )}
                   >
                     <Eye size={14} />
@@ -2330,10 +2337,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     })}
                     aria-pressed={isEmojiMode}
                     className={cn(
-                      'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all focus:outline-none',
-                      isEmojiMode
-                        ? 'border-transparent bg-primary/15 text-primary hover:bg-primary/25'
-                        : 'border-transparent text-muted-foreground/70 hover:bg-accent hover:text-foreground active:bg-accent/80'
+                      TITLEBAR_ICON_BUTTON,
+                      isEmojiMode ? TITLEBAR_BTN_ON_PRIMARY : TITLEBAR_BTN_IDLE_SOFT
                     )}
                   >
                     <Smile size={14} />

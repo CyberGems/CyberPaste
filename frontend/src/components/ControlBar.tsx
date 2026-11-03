@@ -66,6 +66,14 @@ import { useFolderFlash } from '../hooks/useFolderFlash';
 import { useHoldToScroll } from '../hooks/useHoldToScroll';
 import { TITLEBAR_HOTKEYS } from '../hooks/useKeyboard';
 import { useClipboardMonitoring } from '../hooks/useClipboardMonitoring';
+import {
+  TITLEBAR_BTN_DANGER,
+  TITLEBAR_BTN_IDLE,
+  TITLEBAR_BTN_MODE_TOGGLE,
+  TITLEBAR_BTN_ON_AMBER,
+  TITLEBAR_BTN_ON_PRIMARY_STRONG,
+  TITLEBAR_ICON_BUTTON,
+} from './ui/titlebarButtons';
 import { invoke } from '@tauri-apps/api/core';
 
 const IconMap: Record<string, any> = {
@@ -617,9 +625,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   }, [isWindowActive]);
 
   // Titlebar buttons share one hover language: background tint only, no
-  // border outline and no glow shadow (matches CompactView's titlebar).
-  const headerBtnClass =
-    'flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:bg-accent hover:text-foreground active:bg-accent/80';
+  // border outline and no glow shadow (see ui/titlebarButtons.ts).
+  const headerBtnClass = clsx(TITLEBAR_ICON_BUTTON, 'h-8 w-8 rounded-lg', TITLEBAR_BTN_IDLE);
 
   return (
     <div
@@ -735,10 +742,9 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               onClick={toggleMonitoring}
               aria-label={isPaused ? t('common.resumeMonitoring') : t('common.pauseMonitoring')}
               className={clsx(
-                'flex h-8 w-8 items-center justify-center rounded-lg border transition-all focus:outline-none',
-                isPaused
-                  ? 'border-transparent bg-amber-500/15 text-amber-500 hover:bg-amber-500/25 active:bg-amber-500/25'
-                  : headerBtnClass
+                TITLEBAR_ICON_BUTTON,
+                'h-8 w-8 rounded-lg',
+                isPaused ? TITLEBAR_BTN_ON_AMBER : TITLEBAR_BTN_IDLE
               )}
             >
               {isPaused ? <Play size={15} className="fill-amber-500/30" /> : <Pause size={15} />}
@@ -782,7 +788,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                 className={clsx(
                   headerBtnClass,
                   'focus:outline-none',
-                  isPinned && 'border-transparent bg-primary/20 text-primary'
+                  isPinned && TITLEBAR_BTN_ON_PRIMARY_STRONG
                 )}
               >
                 <Pin
@@ -812,7 +818,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           >
             <button
               onClick={onToggleMode}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent bg-transparent text-primary transition-all hover:bg-accent active:bg-accent/80"
+              className={clsx(TITLEBAR_ICON_BUTTON, 'h-8 w-8 rounded-lg', TITLEBAR_BTN_MODE_TOGGLE)}
             >
               {viewMode === 'full' ? (
                 <ListIcon size={13} className="flex-shrink-0" />
@@ -837,7 +843,12 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                   (window as any).__TAURI_INTERNALS__.invoke('hide_window');
                 }
               }}
-              className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:bg-rose-500/15 hover:text-rose-400 active:bg-rose-500/25"
+              className={clsx(
+                'ml-0.5',
+                TITLEBAR_ICON_BUTTON,
+                'h-8 w-8 rounded-lg',
+                TITLEBAR_BTN_DANGER
+              )}
             >
               <X size={15} />
             </button>
@@ -858,10 +869,11 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           <button
             onClick={onSearchClick}
             className={clsx(
-              'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all',
+              TITLEBAR_ICON_BUTTON,
+              'h-8 w-8 shrink-0 rounded-lg',
               showSearch
                 ? 'border-primary bg-primary text-primary-foreground shadow-lg'
-                : 'border-transparent text-muted-foreground hover:bg-accent hover:text-foreground active:bg-accent/80'
+                : TITLEBAR_BTN_IDLE
             )}
           >
             <Search size={16} />

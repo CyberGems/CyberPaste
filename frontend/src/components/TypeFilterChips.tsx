@@ -23,6 +23,11 @@ import Tooltip from './Tooltip';
 import { UndoButton } from './UndoButton';
 import { TITLEBAR_HOTKEYS } from '../hooks/useKeyboard';
 import { AppFilterDropdown } from './AppFilterDropdown';
+import {
+  TITLEBAR_BTN_IDLE_SOFT,
+  TITLEBAR_BTN_ON_PRIMARY,
+  TITLEBAR_ICON_BUTTON,
+} from './ui/titlebarButtons';
 import type { SourceAppItem } from '../types';
 
 export type FullTypeFilter = 'all' | 'text' | 'code' | 'image' | 'url' | 'file';
@@ -176,10 +181,9 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
               })}
               aria-pressed={fullPeekEnabled}
               className={clsx(
-                'flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition-all',
-                fullPeekEnabled
-                  ? 'border-primary/40 bg-primary/15 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.2)] hover:border-primary/60 hover:bg-primary/25'
-                  : 'border-transparent text-muted-foreground/70 hover:border-border hover:bg-accent hover:text-foreground'
+                TITLEBAR_ICON_BUTTON,
+                'h-7 w-7 shrink-0 rounded-md',
+                fullPeekEnabled ? TITLEBAR_BTN_ON_PRIMARY : TITLEBAR_BTN_IDLE_SOFT
               )}
             >
               <Eye size={13} />
@@ -202,10 +206,9 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
               })}
               aria-pressed={isEmojiMode}
               className={clsx(
-                'flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition-all',
-                isEmojiMode
-                  ? 'border-primary/40 bg-primary/15 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.2)] hover:border-primary/60 hover:bg-primary/25'
-                  : 'border-transparent text-muted-foreground/70 hover:border-border hover:bg-accent hover:text-foreground'
+                TITLEBAR_ICON_BUTTON,
+                'h-7 w-7 shrink-0 rounded-md',
+                isEmojiMode ? TITLEBAR_BTN_ON_PRIMARY : TITLEBAR_BTN_IDLE_SOFT
               )}
             >
               <Smile size={13} />

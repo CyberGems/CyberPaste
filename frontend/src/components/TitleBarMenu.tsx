@@ -23,6 +23,11 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { invoke } from '@tauri-apps/api/core';
 import { emit, listen } from '@tauri-apps/api/event';
 import { clsx } from 'clsx';
+import {
+  TITLEBAR_BTN_IDLE,
+  TITLEBAR_BTN_ON_PRIMARY_STRONG,
+  TITLEBAR_ICON_BUTTON,
+} from './ui/titlebarButtons';
 import Tooltip, { dismissAllTooltips } from './Tooltip';
 import { ConfirmDialog } from './ConfirmDialog';
 import { toast } from '../utils/toast';
@@ -264,10 +269,9 @@ export function TitleBarMenu({
             dismissAllTooltips();
           }}
           className={clsx(
-            'flex h-8 w-8 items-center justify-center rounded-lg border transition-all',
-            open
-              ? 'border-transparent bg-primary/20 text-primary'
-              : 'border-transparent text-muted-foreground hover:bg-accent hover:text-foreground active:bg-accent/80'
+            TITLEBAR_ICON_BUTTON,
+            'h-8 w-8 rounded-lg',
+            open ? TITLEBAR_BTN_ON_PRIMARY_STRONG : TITLEBAR_BTN_IDLE
           )}
         >
           <MoreHorizontal size={iconSize} className="pointer-events-none" />
