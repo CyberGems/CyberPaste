@@ -93,7 +93,7 @@ La mayoría de los gestores de portapapeles envían tus datos a la nube o son de
 - **Carpetas**: organiza los clips en carpetas personalizadas con arrastrar y soltar, flechas de navegación horizontal y confirmación de eliminación segura
 - **Favoritos y anclaje**: fija los clips de uso frecuente para que permanezcan arriba
 - **Gestión por lotes**: `Ctrl+Clic` / `Mayús+Clic` para selección múltiple, selección por arrastre (marquesina) y `Ctrl+A` para seleccionar todos los clips visibles
-- **Dos modos de vista**: Modo Completo (cuadrícula multicolumna que llena el área de trabajo respetando la barra de tareas, formato panorámico, selección múltiple) o Modo Compacto (lista de alta densidad con vista previa y navegación horizontal de carpetas)
+- **Dos modos de vista**: Modo Pantalla Completa (cuadrícula multicolumna que llena el área de trabajo respetando la barra de tareas, formato panorámico, selección múltiple) o Modo Compacto (lista de alta densidad con vista previa y navegación horizontal de carpetas)
 - **Modo Emojis y pegado instantáneo**: panel de emojis dedicado con búsqueda bilingüe (inglés/español), pestañas de categoría, historial de búsqueda independiente y multi-inyección al estar anclado
 - **Retención automática del historial**: política configurable de borrado automático en segundo plano para limpiar clips antiguos
 
@@ -232,8 +232,8 @@ npm run tauri build
 | Tecla | Acción |
 |---|---|
 | `↑` `↓` | Navegar por los clips (dirección de la lista) |
-| `←` `→` | Moverse entre tarjetas (Modo Completo) o cambiar de carpeta (Modo Compacto) |
-| `Ctrl+←` / `Ctrl+→` | Cambiar de carpeta (Modo Completo) |
+| `←` `→` | Moverse entre tarjetas (Modo Pantalla Completa) o cambiar de carpeta (Modo Compacto) |
+| `Ctrl+←` / `Ctrl+→` | Cambiar de carpeta (Modo Pantalla Completa) |
 | `Intro` | Pegar el clip seleccionado (con inyección de pegado automático) |
 | `Ctrl+C` | Copiar el clip seleccionado al portapapeles (sin pegar) |
 | `Ctrl+Intro` | Copiar el clip seleccionado como texto plano (sin pegar) |
@@ -254,7 +254,7 @@ npm run tauri build
 | `Mayús+F10` / tecla Menú contextual | Abrir el menú contextual del clip seleccionado |
 | `Supr` | Eliminar el elemento seleccionado |
 | `Escape` | Limpiar la búsqueda / cerrar la ventana o el modal |
-| `Ctrl+Rueda` | Ajustar el zoom de la cuadrícula en el Modo Completo (0,6x – 1,75x) o la densidad de filas en el Modo Compacto (Pequeño / Mediano / Grande) |
+| `Ctrl+Rueda` | Ajustar el zoom de la cuadrícula en el Modo Pantalla Completa (0,6x – 1,75x) o la densidad de filas en el Modo Compacto (Pequeño / Mediano / Grande) |
 
 ### Editor
 
