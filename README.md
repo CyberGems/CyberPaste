@@ -93,7 +93,7 @@ Most clipboard managers either send your data to the cloud or are too basic to b
 - **Folders** — Organize clips into custom folders with drag & drop, horizontal navigation chevrons, and safe deletion confirmation
 - **Favorites & Pinning** — Pin frequently used clips that stay at the top
 - **Bulk Management** — `Ctrl+Click` / `Shift+Click` for multi-select, marquee drag selection, and `Ctrl+A` to select all visible clips
-- **Dual View Modes** — Full Mode (multi-column grid, panoramic cards, marquee selection) or Compact Mode (high-density list with hover peek and horizontal folder navigation)
+- **Dual View Modes** — Full Mode (screen-filling multi-column grid that respects the taskbar, panoramic cards, marquee selection) or Compact Mode (high-density list with hover peek and horizontal folder navigation)
 - **Emoji Mode & Instant Paste** — Dedicated emoji picker with bilingual search (English/Spanish), category tabs, isolated search history, and multi-paste when pinned
 - **Automatic History Retention** — Configurable background auto-deletion to automatically clean up older clips
 
