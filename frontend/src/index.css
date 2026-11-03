@@ -144,6 +144,24 @@
   animation: view-morph-dim-out 150ms ease-in both;
 }
 
+@keyframes settings-row-flash {
+  0%,
+  100% {
+    background-color: transparent;
+  }
+  25%,
+  75% {
+    background-color: rgba(var(--primary-rgb), 0.16);
+  }
+  50% {
+    background-color: rgba(var(--primary-rgb), 0.05);
+  }
+}
+
+.settings-row-flash {
+  animation: settings-row-flash 900ms ease-in-out;
+}
+
 @keyframes modal-attention {
   0%,
   100% {

@@ -305,6 +305,8 @@
     "compactTab": "Compact Mode",
     "ai": "AI",
     "maintenance": "Backup & Data",
+    "searchPlaceholder": "Search settings...",
+    "searchNoResults": "No results",
     "folders": "Folders",
     "appearance": "Appearance",
     "advanced": "Advanced",

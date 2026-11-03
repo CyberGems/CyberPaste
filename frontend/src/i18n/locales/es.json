@@ -305,6 +305,8 @@
     "compactTab": "Modo Compacto",
     "ai": "IA",
     "maintenance": "Respaldo y Datos",
+    "searchPlaceholder": "Buscar ajustes...",
+    "searchNoResults": "Sin resultados",
     "folders": "Carpetas",
     "appearance": "Apariencia",
     "advanced": "Avanzado",

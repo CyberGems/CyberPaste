@@ -3,6 +3,7 @@ import { AppLockRecoveryKeyDialog } from './AppLockRecoveryKeyDialog';
 import { AchievementProgressPanel } from './AchievementProgressPanel';
 import { ModalIcon } from './ModalIcon';
 import {
+  Search,
   X,
   Trash2,
   Plus,
@@ -45,8 +46,13 @@ import {
   ChevronDown,
   type LucideIcon,
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTheme } from '../hooks/useTheme';
+import {
+  searchSettings,
+  SETTINGS_TAB_LABEL_KEYS,
+  type SettingsSearchEntry,
+} from './settingsSearchIndex';
 import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
 import { emit, listen } from '@tauri-apps/api/event';
@@ -442,6 +448,123 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
   const defaultAutoBackupFolder = dataDirectory
     ? `${dataDirectory.replace(/[\\/]+$/, '')}\\Backups`
     : t('settings.autoBackupDefaultFolder');
+
+  // ── Settings search ────────────────────────────────────────────────────
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const settingsContentRef = useRef<HTMLDivElement>(null);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [settingsQuery, setSettingsQuery] = useState('');
+  const [settingsResults, setSettingsResults] = useState<SettingsSearchEntry[]>([]);
+  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
+  const [searchHighlight, setSearchHighlight] = useState(0);
+
+  // Focus the search bar as soon as the settings window opens
+  useEffect(() => {
+    const timer = setTimeout(() => searchInputRef.current?.focus(), 60);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Ctrl+F focuses the settings search
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  // Debounced search over the settings index
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    const query = settingsQuery.trim();
+    if (!query) {
+      setSettingsResults([]);
+      setSearchDropdownOpen(false);
+      setSearchHighlight(0);
+      return;
+    }
+    searchDebounceRef.current = setTimeout(() => {
+      setSettingsResults(searchSettings(query).map((r) => r.entry));
+      setSearchDropdownOpen(true);
+      setSearchHighlight(0);
+    }, 120);
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, [settingsQuery]);
+
+  // Switch to the result's tab, then scroll the row into view and flash it.
+  // The row is located by its localized label text (rendered verbatim in the
+  // panel), so no per-row ids are needed.
+  const jumpToSetting = useCallback(
+    (entry: SettingsSearchEntry) => {
+      const label = t(entry.labelKey).trim();
+      setSearchDropdownOpen(false);
+      searchInputRef.current?.blur();
+      if (activeTab !== entry.tab) {
+        setActiveTab(entry.tab);
+      }
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          const root = settingsContentRef.current;
+          if (!root) return;
+          const candidates = root.querySelectorAll<HTMLElement>(
+            'span.text-sm.font-medium, span.block.text-sm, label span'
+          );
+          let target: HTMLElement | null = null;
+          for (const el of candidates) {
+            if (el.children.length === 0 && el.textContent?.trim() === label) {
+              target = el;
+              break;
+            }
+          }
+          if (!target) {
+            console.warn('[SettingsSearch] row not found for', entry.labelKey);
+            return;
+          }
+          const row = target.closest<HTMLElement>('[class*="p-3"], [class*="p-4"]') ?? target;
+          row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          row.classList.remove('settings-row-flash');
+          // Force a reflow so consecutive flashes restart the animation
+          void row.offsetWidth;
+          row.classList.add('settings-row-flash');
+          row.addEventListener('animationend', () => row.classList.remove('settings-row-flash'), {
+            once: true,
+          });
+        })
+      );
+    },
+    [activeTab, t]
+  );
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      if (settingsQuery) {
+        setSettingsQuery('');
+      } else {
+        searchInputRef.current?.blur();
+      }
+      setSearchDropdownOpen(false);
+      return;
+    }
+    if (!settingsResults.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSearchHighlight((i) => (i + 1) % settingsResults.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSearchHighlight((i) => (i - 1 + settingsResults.length) % settingsResults.length);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const picked = settingsResults[Math.min(searchHighlight, settingsResults.length - 1)];
+      if (picked) jumpToSetting(picked);
+    }
+  };
+  // ── End settings search ────────────────────────────────────────────────
 
   const handleTogglePause = () => {
     invoke('toggle_clipboard_monitoring').catch(console.error);
@@ -1084,6 +1207,81 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         <div className="flex flex-1 overflow-hidden">
           {/* Sidebar */}
           <div className="custom-scrollbar w-[182px] flex-shrink-0 overflow-y-auto border-r border-border bg-transparent px-2.5 py-3.5">
+            {/* Settings search — sticky so it stays visible while scrolling tabs */}
+            <div className="sticky top-0 z-20 bg-background pb-2 pt-0.5">
+              <div className="relative">
+                <Search
+                  size={13}
+                  className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/60"
+                />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={settingsQuery}
+                  onChange={(e) => setSettingsQuery(e.target.value)}
+                  onFocus={() => {
+                    if (settingsQuery) setSearchDropdownOpen(true);
+                  }}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder={t('settings.searchPlaceholder')}
+                  spellCheck={false}
+                  aria-label={t('settings.searchPlaceholder')}
+                  className="w-full rounded-lg border border-border bg-input py-1.5 pl-8 pr-7 text-[12px] text-foreground transition-all placeholder:text-muted-foreground/70 focus:border-primary/50 focus:bg-background focus:outline-none"
+                />
+                {settingsQuery && (
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      setSettingsQuery('');
+                      searchInputRef.current?.focus();
+                    }}
+                    aria-label={t('common.clearSearch', { defaultValue: 'Clear search' })}
+                    className="absolute right-1.5 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground"
+                  >
+                    <X size={11} />
+                  </button>
+                )}
+                {searchDropdownOpen && (
+                  <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-y-auto rounded-lg border border-border bg-popover py-1 shadow-lg">
+                    {settingsResults.length === 0 ? (
+                      <p className="px-3 py-2 text-[11px] italic text-muted-foreground">
+                        {t('settings.searchNoResults')}
+                      </p>
+                    ) : (
+                      settingsResults.map((entry, idx) => (
+                        <button
+                          key={`${entry.tab}-${entry.labelKey}`}
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => jumpToSetting(entry)}
+                          onMouseEnter={() => setSearchHighlight(idx)}
+                          className={clsx(
+                            'block w-full px-2.5 py-1.5 text-left transition-colors',
+                            idx === searchHighlight
+                              ? 'bg-accent text-foreground'
+                              : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                          )}
+                        >
+                          <span className="block truncate text-[12px] font-medium">
+                            {t(entry.labelKey)}
+                          </span>
+                          <span className="block truncate text-[10px] text-muted-foreground/70">
+                            {(() => {
+                              const tabLabel = t(SETTINGS_TAB_LABEL_KEYS[entry.tab]);
+                              const sectionLabel = entry.sectionKey ? t(entry.sectionKey) : '';
+                              return sectionLabel && sectionLabel !== entry.sectionKey
+                                ? `${tabLabel} · ${sectionLabel}`
+                                : tabLabel;
+                            })()}
+                          </span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
             <div className="flex flex-col gap-1">
               <button
                 onClick={() => setActiveTab('general')}
@@ -1210,7 +1408,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
           </div>
 
           {/* Content Area */}
-          <div className="custom-scrollbar flex-1 overflow-y-auto p-6">
+          <div ref={settingsContentRef} className="custom-scrollbar flex-1 overflow-y-auto p-6">
             <div className="w-full space-y-8">
               {/* --- GENERAL TAB --- */}
               {activeTab === 'general' && (
