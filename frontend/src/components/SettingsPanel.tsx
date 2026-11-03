@@ -1083,7 +1083,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
         <div className="flex flex-1 overflow-hidden">
           {/* Sidebar */}
-          <div className="custom-scrollbar w-[170px] flex-shrink-0 overflow-y-auto border-r border-border bg-transparent px-2.5 py-3.5">
+          <div className="custom-scrollbar w-[182px] flex-shrink-0 overflow-y-auto border-r border-border bg-transparent px-2.5 py-3.5">
             <div className="flex flex-col gap-1">
               <button
                 onClick={() => setActiveTab('general')}
