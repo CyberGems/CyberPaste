@@ -168,6 +168,9 @@ function App() {
   const [clips, setClips] = useState<AppClipboardItem[]>([]);
   const clipsRef = useRef(clips);
   clipsRef.current = clips;
+  // When true, the next non-append loadClips result selects its own first item
+  // instead of preserving the previous selection (used by the reset-on-hide view reset).
+  const forceSelectFirstRef = useRef(false);
   const [folders, setFolders] = useState<FolderItem[]>([]);
   const foldersRef = useRef(folders);
   foldersRef.current = folders;
@@ -526,6 +529,8 @@ function App() {
     const unlistenSelectClip = listen<string>('select-clip', (event) => {
       const clipId = event.payload;
       console.log('[App] Selecting clip from toast:', clipId);
+      // An explicit selection wins over a pending reset's select-first request
+      forceSelectFirstRef.current = false;
       setSelectedFolder(null);
       setSearchQuery('');
       setShowSearch(false);
@@ -998,7 +1003,10 @@ function App() {
           ) {
             setTotalClipCount(data.length);
           }
-          if (data.length > 0) {
+          if (forceSelectFirstRef.current) {
+            forceSelectFirstRef.current = false;
+            setSelectedClipId(data.length > 0 ? data[0].id : null);
+          } else if (data.length > 0) {
             if (normalizedQuery) {
               setSelectedClipId(data[0].id);
             } else {
@@ -2060,7 +2068,11 @@ function App() {
     setCompactTypeFilter('all');
     setFullTypeFilter('all');
     setAppFilter(null);
-    setSelectedClipId(clipsRef.current[0]?.id ?? null);
+    // Search, filters and folder change which clips load next, so freezing the
+    // current view's first item here would keep a mid-list clip focused after the
+    // reset. Ask the next load to select its own first item instead.
+    forceSelectFirstRef.current = true;
+    setSelectedClipId(null);
     setSelectedClipIds(new Set());
     setDetailPanelOpen(false);
     setIsEmojiMode(false);
