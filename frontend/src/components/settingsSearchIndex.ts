@@ -491,7 +491,10 @@ export const matchSettings = (rawQuery: string): SettingsSearchEntry[] => {
     if (score > 0) scored.push({ entry: indexed.entry, score });
   }
 
-  if (scored.length === 0 && query.length >= 3) {
+  // Fuzzy needs at least two distinct characters: single repeated letters
+  // ("rrrr") would otherwise subsequence-match unrelated rows.
+  const distinctChars = new Set(query).size;
+  if (scored.length === 0 && query.length >= 3 && distinctChars >= 2) {
     const maxSpan = query.length * 3;
     for (const indexed of INDEX) {
       let best = Number.POSITIVE_INFINITY;
