@@ -162,6 +162,13 @@
   animation: settings-row-flash 900ms ease-in-out;
 }
 
+.settings-search-mark {
+  border-radius: 3px;
+  padding: 0 1px;
+  background-color: hsl(var(--primary) / 0.18);
+  color: hsl(var(--primary));
+}
+
 @keyframes modal-attention {
   0%,
   100% {

@@ -308,6 +308,66 @@ const PROVIDER_MODELS: Record<string, { value: string; label: string }[]> = {
   custom: [],
 };
 
+/**
+ * Wrap query-token occurrences inside an element's text nodes with
+ * <mark> highlights. Matching is accent/case-insensitive with per-character
+ * normalization, so indices align between the original and compared text.
+ * Returns the touched elements so they can be restored later.
+ */
+const highlightTokens = (element: HTMLElement, tokens: string[]): HTMLElement[] => {
+  const touched: HTMLElement[] = [];
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+  const textNodes: Text[] = [];
+  while (walker.nextNode()) textNodes.push(walker.currentNode as Text);
+  for (const node of textNodes) {
+    const text = node.textContent ?? '';
+    if (!text.trim()) continue;
+    const chars = [...text];
+    const normStr = chars.map((c) => normalizeForSearch(c)).join('');
+    const ranges: [number, number][] = [];
+    for (const token of tokens) {
+      if (!token) continue;
+      let at = normStr.indexOf(token);
+      while (at !== -1) {
+        ranges.push([at, at + token.length]);
+        at = normStr.indexOf(token, at + token.length);
+      }
+    }
+    if (!ranges.length) continue;
+    ranges.sort((a, b) => a[0] - b[0]);
+    const merged: [number, number][] = [];
+    for (const range of ranges) {
+      const last = merged[merged.length - 1];
+      if (last && range[0] <= last[1]) last[1] = Math.max(last[1], range[1]);
+      else merged.push([range[0], range[1]]);
+    }
+    const frag = document.createDocumentFragment();
+    let pos = 0;
+    for (const [start, end] of merged) {
+      if (start > pos) frag.appendChild(document.createTextNode(chars.slice(pos, start).join('')));
+      const mark = document.createElement('mark');
+      mark.className = 'settings-search-mark';
+      mark.textContent = chars.slice(start, end).join('');
+      frag.appendChild(mark);
+      pos = end;
+    }
+    if (pos < chars.length) {
+      frag.appendChild(document.createTextNode(chars.slice(pos).join('')));
+    }
+    node.replaceWith(frag);
+    touched.push(element);
+  }
+  return touched;
+};
+
+/** Undo highlightTokens: unwrap every mark back into plain text nodes. */
+const restoreHighlights = (rootElement: HTMLElement) => {
+  rootElement.querySelectorAll('mark.settings-search-mark').forEach((mark) => {
+    mark.replaceWith(document.createTextNode(mark.textContent ?? ''));
+  });
+  rootElement.normalize();
+};
+
 export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     if (typeof window !== 'undefined') {
@@ -457,6 +517,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const matchRowsRef = useRef<HTMLElement[]>([]);
   const matchCursorRef = useRef(0);
+  const highlightedRef = useRef<HTMLElement[]>([]);
   const [settingsQuery, setSettingsQuery] = useState('');
   const [searchMatches, setSearchMatches] = useState<SettingsSearchEntry[]>([]);
   const [searchVisibleCount, setSearchVisibleCount] = useState(0);
@@ -509,65 +570,81 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     };
   }, [settingsQuery]);
 
-  // In search mode every tab is mounted at once; hide rows, section headings
-  // and cards that do not match, keeping the real controls for direct editing.
-  // Rows are identified by their localized label text, so no per-row ids are
-  // needed (CyberSnap's visual-tree discovery, React edition).
+  // In search mode every tab is mounted at once. Everything inside the
+  // content area is hidden first, then only the ancestor path of each
+  // matching row is revealed — so intro paragraphs, dynamic lists and
+  // sections without matches disappear as a whole (CyberSnap-style results
+  // view with the real, editable controls). Rows are identified by their
+  // localized label text, so no per-row ids are needed.
   useLayoutEffect(() => {
     const root = settingsContentRef.current;
-    if (!root || !searchMode) return;
+    if (!root || !searchMode) {
+      highlightedRef.current = [];
+      return;
+    }
     const matched = matchedLabelTexts(searchMatches, (key) => t(key));
     const norm = (value: string | null) => normalizeForSearch(value ?? '');
+    const tokens = normalizeForSearch(settingsQuery.trim()).split(/\s+/).filter(Boolean);
+
+    // Undo the previous pass's highlight wrappers before re-filtering
+    for (const el of highlightedRef.current) restoreHighlights(el);
+    highlightedRef.current = [];
+
+    // 1) Hide everything inside the content area
+    for (const el of root.querySelectorAll<HTMLElement>('*')) {
+      el.classList.add('hidden');
+    }
+
+    const reveal = (el: Element | null) => {
+      let node: HTMLElement | null = el as HTMLElement | null;
+      while (node && node !== root) {
+        node.classList.remove('hidden');
+        node = node.parentElement;
+      }
+    };
+
+    // 2) Reveal the path of every matching row (row + subtree + ancestors),
+    // plus the tab header that precedes its section.
+    const visibleRows: HTMLElement[] = [];
     const labelSpans = Array.from(
       root.querySelectorAll<HTMLElement>('span.text-sm.font-medium')
     ).filter((el) => el.children.length === 0 && norm(el.textContent));
 
-    const visibleRows: HTMLElement[] = [];
     for (const label of labelSpans) {
-      const isMatch = matched.has(norm(label.textContent));
+      if (!matched.has(norm(label.textContent))) continue;
       let row = label.closest<HTMLElement>('[class*="p-3"], [class*="p-4"], label') ?? label;
       if (row.tagName === 'LABEL' && row.parentElement) {
         // Stacked label+control rows: expand to the dedicated wrapper so the
-        // control hides with its label, but only when it wraps a single row.
+        // control shows with its label, but only when it wraps a single row.
         const parent = row.parentElement;
         if (parent !== root && parent.querySelectorAll(':scope > label').length === 1) {
           row = parent;
         }
       }
-      row.classList.toggle('hidden', !isMatch);
-      if (isMatch) visibleRows.push(row);
+      reveal(row);
+      row.querySelectorAll<HTMLElement>('*').forEach((d) => d.classList.remove('hidden'));
+      const section = row.closest<HTMLElement>('section');
+      if (section) {
+        let prev: Element | null = section.previousElementSibling;
+        while (prev) {
+          if (prev.matches('h2[data-search-tab]')) {
+            reveal(prev);
+            break;
+          }
+          prev = prev.previousElementSibling;
+        }
+      }
+      // Highlight the query tokens inside the row's label and description
+      const desc = row.querySelector<HTMLElement>('p.text-xs, span.text-xs');
+      for (const textEl of [label, desc]) {
+        if (textEl) {
+          highlightedRef.current.push(...highlightTokens(textEl, tokens));
+        }
+      }
+      visibleRows.push(row);
     }
     matchRowsRef.current = visibleRows;
     setSearchVisibleCount(visibleRows.length);
-
-    // Section headings: hidden when no row between them and the next heading
-    // is visible. Tab headers (rendered only in search mode) work the same.
-    const headings = Array.from(root.querySelectorAll<HTMLElement>('h3, h2[data-search-tab]'));
-    for (let i = 0; i < headings.length; i += 1) {
-      const heading = headings[i];
-      const nextTop = headings[i + 1] ?? null;
-      let hasVisible = false;
-      for (const row of visibleRows) {
-        if (
-          heading.compareDocumentPosition(row) & Node.DOCUMENT_POSITION_FOLLOWING &&
-          (!nextTop || nextTop.compareDocumentPosition(row) & Node.DOCUMENT_POSITION_PRECEDING)
-        ) {
-          hasVisible = true;
-          break;
-        }
-      }
-      heading.classList.toggle('hidden', !hasVisible);
-    }
-
-    // Cards (and other framed containers) hide when every label inside is gone
-    const cards = Array.from(
-      root.querySelectorAll<HTMLElement>('div[class*="bg-card"], div[class*="bg-secondary"]')
-    );
-    for (const card of cards) {
-      const labels = card.querySelectorAll<HTMLElement>('span.text-sm.font-medium');
-      const anyVisible = Array.from(labels).some((l) => l.offsetParent !== null);
-      card.classList.toggle('hidden', labels.length > 0 && !anyVisible);
-    }
   }, [searchMode, searchMatches, settingsQuery, i18n.language, t]);
 
   const scrollToMatch = (index: number) => {
