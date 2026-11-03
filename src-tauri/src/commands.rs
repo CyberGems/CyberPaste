@@ -3627,15 +3627,8 @@ pub async fn toggle_view_mode(
     let cur_h = settings.window_height;
 
     let new_mode = if current_mode == "full" {
-        // Save current size as full view size
-        settings.full_window_width = if cur_w > 100.0 { cur_w } else { 550.0 };
-        settings.full_window_height = if cur_h > 100.0 {
-            cur_h
-        } else {
-            crate::constants::FULL_HEIGHT
-        };
-
-        // Restore compact view size
+        // Full size is derived from the monitor work area, so there is nothing
+        // to save for the full side; just restore the compact view size.
         settings.window_width = if settings.compact_window_width > 100.0 {
             settings
                 .compact_window_width
@@ -3650,7 +3643,9 @@ pub async fn toggle_view_mode(
         };
         "compact".to_string()
     } else {
-        // Save current size as compact view size
+        // Save current size as compact view size. The full view size is
+        // derived from the monitor work area, so window_width/height keep
+        // holding the compact values while in full mode.
         settings.compact_window_width = if cur_w > 100.0 {
             cur_w.max(crate::constants::COMPACT_WIDTH)
         } else {
@@ -3660,18 +3655,6 @@ pub async fn toggle_view_mode(
             cur_h
         } else {
             crate::constants::COMPACT_HEIGHT
-        };
-
-        // Restore full view size
-        settings.window_width = if settings.full_window_width > 100.0 {
-            settings.full_window_width
-        } else {
-            550.0
-        };
-        settings.window_height = if settings.full_window_height > 100.0 {
-            settings.full_window_height
-        } else {
-            crate::constants::FULL_HEIGHT
         };
         "full".to_string()
     };
@@ -3702,26 +3685,16 @@ pub async fn reset_window_size(app: AppHandle, window: tauri::WebviewWindow) -> 
         .flatten()
         .ok_or("No monitor found")?;
     let scale_factor = monitor.scale_factor();
-    let monitor_pos = monitor.position();
-    let monitor_size = monitor.size();
     let work_area = monitor.work_area();
 
     let settings = manager.get();
     let is_full = settings.view_mode == "full";
-    let is_mica = crate::effect_for_theme(&settings.theme) == "mica";
-    let no_corners = !settings.round_corners;
-    let side_margin = if is_mica && no_corners {
-        0.0
-    } else {
-        crate::constants::WINDOW_MARGIN
-    };
-    let bottom_margin = 0.0;
 
     let (default_w, default_h) = if is_full {
-        let logical_wa_width = work_area.size.width as f64 / scale_factor;
+        // Full fills the work area, so the defaults are derived from it.
         (
-            logical_wa_width - side_margin * 2.0,
-            crate::constants::FULL_HEIGHT,
+            work_area.size.width as f64 / scale_factor,
+            work_area.size.height as f64 / scale_factor,
         )
     } else {
         (
@@ -3746,24 +3719,17 @@ pub async fn reset_window_size(app: AppHandle, window: tauri::WebviewWindow) -> 
 
     if is_full {
         let _ = window.unmaximize();
-        let new_height_px = (default_h * scale_factor) as u32;
-        let new_width_px = work_area.size.width.saturating_sub((side_margin * scale_factor) as u32 * 2);
-        let side_margin_px = (side_margin * scale_factor) as i32;
-        let bottom_margin_px = (bottom_margin * scale_factor) as i32;
-
+        let _ = window.set_resizable(false);
+        let (target_x, target_y, width_px, height_px) = crate::full_work_area_rect(&monitor);
         let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
-            width: new_width_px.max(1),
-            height: new_height_px.max(1),
+            width: width_px.max(1),
+            height: height_px.max(1),
         }));
-
-        let reference_bottom = monitor_pos.y + monitor_size.height as i32;
-        let target_x = work_area.position.x + side_margin_px;
-        let target_y = reference_bottom - new_height_px as i32 - bottom_margin_px;
-
         let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
             x: target_x,
             y: target_y,
         }));
+        crate::apply_corner_preference(&window, false);
     } else {
         let new_width_px = (default_w * scale_factor) as u32;
         let new_height_px = (default_h * scale_factor) as u32;

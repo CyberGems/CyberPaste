@@ -161,7 +161,9 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
     new_settings.theme = theme_str.clone();
     let mica_effect = crate::effect_for_theme(&theme_str).to_string();
     new_settings.mica_effect = mica_effect.clone();
-    let round_corners = new_settings.round_corners;
+    // Full mode fills the work area flush, so the main window always uses
+    // square corners in that mode regardless of the user preference.
+    let round_corners = new_settings.round_corners && new_settings.view_mode != "full";
 
     let theme_changed = current.theme != new_settings.theme
         || current.round_corners != new_settings.round_corners;

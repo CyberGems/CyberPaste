@@ -3,8 +3,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Search,
   Plus,
-  Maximize2,
-  Minimize2,
   LayoutGrid,
   List as ListIcon,
   X,
@@ -139,8 +137,6 @@ interface ControlBarProps {
   theme: 'light' | 'dark' | 'cyberpaste';
   onToggleMode: () => void;
   viewMode: 'full' | 'compact';
-  isMaximized: boolean;
-  onToggleMaximize: () => void;
   isPinned: boolean;
   onTogglePin?: () => void;
   lockEnabled?: boolean;
@@ -263,8 +259,6 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   theme,
   onToggleMode,
   viewMode,
-  isMaximized,
-  onToggleMaximize,
   isPinned,
   onTogglePin,
   lockEnabled = false,
@@ -825,22 +819,6 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               ) : (
                 <LayoutGrid size={13} className="relative z-10 flex-shrink-0" />
               )}
-            </button>
-          </Tooltip>
-
-          <Tooltip
-            label={t('common.tooltipWithHotkey', {
-              label: isMaximized ? t('common.restore') : t('common.maximize'),
-              hotkey: TITLEBAR_HOTKEYS.maximize,
-            })}
-            placement="bottom"
-          >
-            <button
-              onClick={onToggleMaximize}
-              aria-label={isMaximized ? t('common.restore') : t('common.maximize')}
-              className={headerBtnClass}
-            >
-              {isMaximized ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
             </button>
           </Tooltip>
 

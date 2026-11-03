@@ -1,5 +1,4 @@
 pub const WINDOW_HEIGHT: f64 = 500.0;
-pub const WINDOW_MARGIN: f64 = 8.0;
 /// Gap from the work area (taskbar) so compact mode does not sit flush on an edge.
 pub const COMPACT_EDGE_INSET: f64 = 20.0;
 

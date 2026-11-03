@@ -587,6 +587,12 @@ function App() {
           return;
         }
 
+        // Full mode fills the monitor work area, so its size is derived and
+        // must not overwrite the saved (compact) window size.
+        if (currentSettings.view_mode === 'full') {
+          return;
+        }
+
         // Guard: don't let full-width "leak" into compact mode saved width
         if (currentSettings.view_mode === 'compact' && logicalSize.width > 1000) {
           return;
@@ -3117,13 +3123,16 @@ function App() {
     try {
       await invoke('reset_window_size');
 
-      const isFull = settings.view_mode === 'full';
-      const updatedSettings = {
-        ...settings,
-        window_width: isFull ? 0 : LAYOUT.COMPACT_WIDTH,
-        window_height: isFull ? LAYOUT.FULL_HEIGHT : LAYOUT.COMPACT_HEIGHT,
-      };
-      setSettings(updatedSettings);
+      if (settings.view_mode !== 'full') {
+        // Full mode size is derived from the monitor work area by the backend
+        // command; only compact resets to fixed defaults.
+        const updatedSettings = {
+          ...settings,
+          window_width: LAYOUT.COMPACT_WIDTH,
+          window_height: LAYOUT.COMPACT_HEIGHT,
+        };
+        setSettings(updatedSettings);
+      }
     } catch (e) {
       console.error('Failed to reset size:', e);
     } finally {
@@ -3810,9 +3819,12 @@ function App() {
       void handleResetSize();
     },
     resetSizeHotkey: TITLEBAR_HOTKEYS.resetSize,
-    onToggleMaximize: () => {
-      void handleToggleMaximize();
-    },
+    onToggleMaximize:
+      settings?.view_mode === 'full'
+        ? undefined // Full fills the work area; OS maximize has no meaning there
+        : () => {
+            void handleToggleMaximize();
+          },
     maximizeHotkey: TITLEBAR_HOTKEYS.maximize,
     onToggleLayout: settings?.view_mode === 'compact' ? handleToggleCompactLayout : undefined,
     layoutHotkey: TITLEBAR_HOTKEYS.compactLayout,
@@ -3824,7 +3836,13 @@ function App() {
     <div
       data-el="app-root"
       className={`relative h-dvh w-full overflow-hidden ${!isWindowActive ? 'pause-all-animations' : ''}`}
-      style={{ border: '1px solid rgba(var(--primary-rgb), 0.25)' }}
+      style={
+        // Full mode sits flush against the screen edges, so the floating
+        // panel border would draw a line against them.
+        settings?.view_mode === 'full'
+          ? undefined
+          : { border: '1px solid rgba(var(--primary-rgb), 0.25)' }
+      }
       onContextMenu={(e) => e.preventDefault()}
     >
       {isLocked && lockStatus && <AppLockScreen status={lockStatus} onUnlocked={applyLockStatus} />}
@@ -4019,8 +4037,6 @@ function App() {
                 onToggleMode={toggleViewMode}
                 toggleModeHotkey={settings?.view_mode_hotkey}
                 viewMode={settings?.view_mode || 'compact'}
-                isMaximized={isMaximized}
-                onToggleMaximize={handleToggleMaximize}
                 isPinned={settings?.pinned ?? false}
                 onTogglePin={handleTogglePin}
                 lockEnabled={lockEnabled}

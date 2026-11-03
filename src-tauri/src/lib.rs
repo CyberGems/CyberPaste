@@ -398,7 +398,10 @@ pub fn run_app() {
                     tauri::async_runtime::spawn(async move {
                         let current_theme = settings.theme;
                         let mica_effect = crate::effect_for_theme(&current_theme).to_string();
-                        let round_corners = settings.round_corners;
+                        // Full mode fills the work area flush, so the main
+                        // window always uses square corners in that mode.
+                        let round_corners = settings.round_corners
+                            && !(label == "main" && settings.view_mode == "full");
 
                         if current_theme == "system" {
                             if let Some(webview_win) = app_handle.get_webview_window(&label) {
@@ -697,7 +700,10 @@ pub fn run_app() {
                         let settings = manager.get();
                         let mica_effect = crate::effect_for_theme(&settings.theme).to_string();
                         let theme = crate::normalize_theme(&settings.theme).to_string();
-                        let round_corners = settings.round_corners;
+                        // Full mode fills the work area flush, so it always
+                        // uses square corners in that mode.
+                        let round_corners =
+                            settings.round_corners && settings.view_mode != "full";
 
                         let current_theme = if theme == "light" {
                             tauri::Theme::Light
@@ -1015,6 +1021,20 @@ pub(crate) fn clamp_compact_to_work_area(
     (axis(preferred_x, min_x, max_x), axis(preferred_y, min_y, max_y))
 }
 
+/// Full mode fills the monitor's entire work area (CyberClock place_full_clock
+/// style): flush to the screen edges, taskbars on any edge are respected
+/// because the rect is derived from the work area. Returns physical
+/// (x, y, width, height).
+pub(crate) fn full_work_area_rect(monitor: &tauri::Monitor) -> (i32, i32, u32, u32) {
+    let work_area = monitor.work_area();
+    (
+        work_area.position.x,
+        work_area.position.y,
+        work_area.size.width,
+        work_area.size.height,
+    )
+}
+
 /// Smooth morph between compact ↔ full while the window stays visible.
 /// Uses Win32 SetWindowPos (size+pos in one call) with time-based ease-out (~200ms).
 /// Compact target stays centered on the current window (no cursor jump).
@@ -1046,23 +1066,14 @@ pub fn animate_view_mode_transition(window: &tauri::WebviewWindow) {
     }
     let _guard = AnimationGuard;
 
-    let (side_margin, bottom_margin, view_mode, saved_width, saved_height) = {
+    let (view_mode, saved_width, saved_height, round_corners) = {
         let manager = window.state::<Arc<crate::settings_manager::SettingsManager>>();
         let s = manager.get();
-        let is_mica = crate::effect_for_theme(&s.theme) == "mica";
-        let no_corners = !s.round_corners;
-        let side = if is_mica && no_corners {
-            0.0
-        } else {
-            constants::WINDOW_MARGIN
-        };
-        let bottom = 0.0;
         (
-            side,
-            bottom,
-            s.view_mode,
+            s.view_mode.clone(),
             s.window_width,
             s.window_height,
+            s.round_corners,
         )
     };
 
@@ -1072,8 +1083,6 @@ pub fn animate_view_mode_transition(window: &tauri::WebviewWindow) {
     };
 
     let scale_factor = monitor.scale_factor();
-    let monitor_pos = monitor.position();
-    let monitor_size = monitor.size();
     let work_area = monitor.work_area();
 
     let start_size = window.outer_size().ok();
@@ -1111,18 +1120,8 @@ pub fn animate_view_mode_transition(window: &tauri::WebviewWindow) {
         );
         (tw, th, tx, ty)
     } else {
-        let side_margin_px = (side_margin * scale_factor) as i32;
-        let bottom_margin_px = (bottom_margin * scale_factor) as i32;
-        let reference_bottom = monitor_pos.y + monitor_size.height as i32;
-        let logical_h = if saved_height > 100.0 {
-            saved_height
-        } else {
-            constants::FULL_HEIGHT
-        };
-        let tw = work_area.size.width - (side_margin_px as u32 * 2);
-        let th = (logical_h * scale_factor) as u32;
-        let tx = work_area.position.x + side_margin_px;
-        let ty = reference_bottom - th as i32 - bottom_margin_px;
+        // Full target fills the monitor's work area (flush, square corners).
+        let (tx, ty, tw, th) = full_work_area_rect(&monitor);
         (tw, th, tx, ty)
     };
 
@@ -1205,6 +1204,17 @@ pub fn animate_view_mode_transition(window: &tauri::WebviewWindow) {
 
     set_rect(target_x, target_y, target_w, target_h);
 
+    // Match the target mode's presentation: full is a flush, non-resizable
+    // work-area fill with square corners; compact is resizable and keeps the
+    // user's corner rounding preference.
+    if view_mode == "compact" {
+        let _ = window.set_resizable(true);
+        apply_corner_preference(window, round_corners);
+    } else {
+        let _ = window.set_resizable(false);
+        apply_corner_preference(window, false);
+    }
+
     let _ = window.set_always_on_top(true);
 
     let _ = window.set_focus();
@@ -1249,8 +1259,6 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
 
         let _guard = AnimationGuard;
         let (
-            side_margin,
-            bottom_margin,
             view_mode,
             saved_width,
             saved_height,
@@ -1261,18 +1269,8 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
         ) = {
             let manager = window.state::<Arc<crate::settings_manager::SettingsManager>>();
             let s = manager.get();
-            let is_mica = crate::effect_for_theme(&s.theme) == "mica";
-            let no_corners = !s.round_corners;
-            let side = if is_mica && no_corners {
-                0.0
-            } else {
-                constants::WINDOW_MARGIN
-            };
-            let bottom = 0.0;
             (
-                side,
-                bottom,
-                s.view_mode,
+                s.view_mode.clone(),
                 s.window_width,
                 s.window_height,
                 s.compact_view_position_mode.clone(),
@@ -1358,6 +1356,7 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
             );
 
             if view_mode == "compact" {
+                let _ = window.set_resizable(true);
                 let logical_w = if saved_width > 100.0 {
                     saved_width.max(constants::COMPACT_WIDTH)
                 } else {
@@ -1412,22 +1411,12 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
 
                 let _ = window.set_always_on_top(true);
             } else {
-                let side_margin_px = (side_margin * scale_factor) as i32;
-                let bottom_margin_px = (bottom_margin * scale_factor) as i32;
-
-                let reference_bottom = monitor_pos.y + monitor_size.height as i32;
-
-                // Work in physical pixels to avoid webview DPI scale issues.
-                // Full mode uses the same immediate presentation as Compact mode.
-                let logical_window_height = if saved_height > 100.0 {
-                    saved_height
-                } else {
-                    constants::FULL_HEIGHT
-                };
-                let window_width_px = work_area.size.width - (side_margin_px as u32 * 2);
-                let window_height_px = (logical_window_height * scale_factor) as u32;
-                let target_x = work_area.position.x + side_margin_px;
-                let target_y = reference_bottom - window_height_px as i32 - bottom_margin_px;
+                // Full mode fills the monitor's work area: flush to the screen
+                // edges, square corners so the flush look leaves no gaps, and
+                // not user-resizable (the size is derived, CyberClock style).
+                let _ = window.set_resizable(false);
+                let (target_x, target_y, window_width_px, window_height_px) =
+                    full_work_area_rect(&monitor);
 
                 let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
                     width: window_width_px,
@@ -1447,7 +1436,7 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                 } else {
                     window.theme().unwrap_or(tauri::Theme::Light)
                 };
-                crate::apply_window_effect(&window, &mica_effect, &current_theme, round_corners);
+                crate::apply_window_effect(&window, &mica_effect, &current_theme, false);
                 let _ = window.show();
                 let _ = window.unminimize();
                 let _ = window.set_focus();
@@ -1521,23 +1510,10 @@ pub fn animate_window_hide(
         let _ = rebuild_tray_menu(window.app_handle());
 
         let _guard = AnimationGuard;
-        let (side_margin, bottom_margin, view_mode, saved_height) = {
+        let view_mode = {
             let manager = window.state::<Arc<crate::settings_manager::SettingsManager>>();
             let s = manager.get();
-            let is_mica = crate::effect_for_theme(&s.theme) == "mica";
-            let no_corners = !s.round_corners;
-            let side = if is_mica && no_corners {
-                0.0
-            } else {
-                constants::WINDOW_MARGIN
-            };
-            let bottom = 0.0;
-            (
-                side,
-                bottom,
-                s.view_mode,
-                s.window_height,
-            )
+            s.view_mode.clone()
         };
         if view_mode == "compact" {
             // Save last position for potential reuse
@@ -1550,35 +1526,10 @@ pub fn animate_window_hide(
             }
             let _ = window.hide();
         } else {
-            if let Some(monitor) = window.current_monitor().ok().flatten() {
-                let scale_factor = monitor.scale_factor();
-                let monitor_pos = monitor.position();
-                let monitor_size = monitor.size();
-                let work_area = monitor.work_area();
-                let logical_window_height = if saved_height > 100.0 {
-                    saved_height
-                } else {
-                    constants::FULL_HEIGHT
-                };
-                let window_height_px = (logical_window_height * scale_factor) as u32;
-                let side_margin_px = (side_margin * scale_factor) as i32;
-                let bottom_margin_px = (bottom_margin * scale_factor) as i32;
-                let reference_bottom = monitor_pos.y + monitor_size.height as i32;
-                let target_y = reference_bottom - window_height_px as i32 - bottom_margin_px;
-
-                // Full mode hides immediately, matching Compact mode and avoiding
-                // the delayed slide animation that could expose intermediate frames.
-                let _ = window.set_position(tauri::Position::Physical(
-                    tauri::PhysicalPosition {
-                        x: work_area.position.x + side_margin_px,
-                        y: target_y,
-                    },
-                ));
-                let _ = window.hide();
-            } else {
-                log::warn!("current_monitor returned None in animate_window_hide, forcing hide");
-                let _ = window.hide();
-            }
+            // Full mode hides immediately; every show path recomputes the
+            // work-area rect, so no repositioning is needed here and resizing
+            // before the hide could flash an intermediate frame.
+            let _ = window.hide();
         }
         if let Some(callback) = on_done {
             callback();
@@ -1732,6 +1683,33 @@ pub fn effect_for_theme(theme: &str) -> &'static str {
     }
 }
 
+/// Re-assert just the DWM corner preference without touching the vibrancy
+/// effect. Full mode forces square corners so a flush work-area fill leaves
+/// no transparent gaps at the screen edges.
+pub(crate) fn apply_corner_preference(window: &tauri::WebviewWindow, round: bool) {
+    #[cfg(target_os = "windows")]
+    if let Ok(handle) = window.hwnd() {
+        use windows::Win32::Foundation::HWND;
+        use windows::Win32::Graphics::Dwm::{
+            DwmSetWindowAttribute, DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_DONOTROUND, DWMWCP_ROUND,
+        };
+        let hwnd = HWND(handle.0 as _);
+        let corner_pref = if round {
+            DWMWCP_ROUND.0
+        } else {
+            DWMWCP_DONOTROUND.0
+        };
+        unsafe {
+            let _ = DwmSetWindowAttribute(
+                hwnd,
+                DWMWA_WINDOW_CORNER_PREFERENCE,
+                &corner_pref as *const _ as *const _,
+                std::mem::size_of::<u32>() as u32,
+            );
+        }
+    }
+}
+
 pub fn apply_window_effect(
     window: &tauri::WebviewWindow,
     effect: &str,
@@ -1763,26 +1741,7 @@ pub fn apply_window_effect(
             let _ = clear_mica(window);
         }
     }
-    if let Ok(handle) = window.hwnd() {
-        use windows::Win32::Foundation::HWND;
-        use windows::Win32::Graphics::Dwm::{
-            DwmSetWindowAttribute, DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_DONOTROUND, DWMWCP_ROUND,
-        };
-        let hwnd = HWND(handle.0 as _);
-        let corner_pref = if round_corners {
-            DWMWCP_ROUND.0
-        } else {
-            DWMWCP_DONOTROUND.0
-        };
-        unsafe {
-            let _ = DwmSetWindowAttribute(
-                hwnd,
-                DWMWA_WINDOW_CORNER_PREFERENCE,
-                &corner_pref as *const _ as *const _,
-                std::mem::size_of::<u32>() as u32,
-            );
-        }
-    }
+    apply_corner_preference(window, round_corners);
 }
 
 pub fn suppress_window_border(window: &tauri::WebviewWindow) {
