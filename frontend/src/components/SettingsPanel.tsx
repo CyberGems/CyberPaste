@@ -29,6 +29,8 @@ import {
   HardDrive,
   Bell,
   Layers,
+  List,
+  LayoutGrid,
   Monitor,
   Clock,
   Send,
@@ -1128,7 +1130,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
               >
-                <Layers size={14} />
+                <List size={14} />
                 {t('settings.compactTab')}
               </button>
               <button
@@ -1140,7 +1142,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
               >
-                <Maximize2 size={14} />
+                <LayoutGrid size={14} />
                 {t('settings.fullTab')}
               </button>
               <button
@@ -3372,7 +3374,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
               {/* --- MAINTENANCE TAB --- */}
               {activeTab === 'maintenance' && (
-                <div className="animate-in fade-in slide-in-from-bottom-4 space-y-6 duration-500">
+                <div className="space-y-6 duration-500 animate-in fade-in slide-in-from-bottom-4">
                   {/* System & Storage */}
                   <section className="space-y-3">
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
