@@ -50,7 +50,6 @@ import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react
 import { useTheme } from '../hooks/useTheme';
 import {
   matchSettings,
-  matchedLabelTexts,
   normalizeForSearch,
   SETTINGS_TAB_LABEL_KEYS,
   type SettingsSearchEntry,
@@ -578,17 +577,25 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
   // localized label text, so no per-row ids are needed.
   useLayoutEffect(() => {
     const root = settingsContentRef.current;
-    if (!root || !searchMode) {
-      highlightedRef.current = [];
-      return;
-    }
-    const matched = matchedLabelTexts(searchMatches, (key) => t(key));
-    const norm = (value: string | null) => normalizeForSearch(value ?? '');
-    const tokens = normalizeForSearch(settingsQuery.trim()).split(/\s+/).filter(Boolean);
+    if (!root) return;
 
-    // Undo the previous pass's highlight wrappers before re-filtering
+    // Undo the previous pass's highlight wrappers
     for (const el of highlightedRef.current) restoreHighlights(el);
     highlightedRef.current = [];
+
+    if (!searchMode) {
+      // Exiting search: the tab that stays mounted may still carry hidden
+      // classes from the filtered view, so restore them all.
+      for (const el of root.querySelectorAll<HTMLElement>('*')) {
+        el.classList.remove('hidden');
+      }
+      matchRowsRef.current = [];
+      matchCursorRef.current = 0;
+      return;
+    }
+
+    const norm = (value: string | null) => normalizeForSearch(value ?? '');
+    const tokens = normalizeForSearch(settingsQuery.trim()).split(/\s+/).filter(Boolean);
 
     // 1) Hide everything inside the content area
     for (const el of root.querySelectorAll<HTMLElement>('*')) {
@@ -603,15 +610,32 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
       }
     };
 
-    // 2) Reveal the path of every matching row (row + subtree + ancestors),
-    // plus the tab header that precedes its section.
-    const visibleRows: HTMLElement[] = [];
+    // 2) Reveal the path of every matching entry. Each entry resolves to its
+    // row INSIDE its own tab region (delimited by the tab headers), so rows
+    // from other tabs with identical labels can never collide.
+    const headings = Array.from(root.querySelectorAll<HTMLElement>('h2[data-search-tab]'));
     const labelSpans = Array.from(
       root.querySelectorAll<HTMLElement>('span.text-sm.font-medium')
     ).filter((el) => el.children.length === 0 && norm(el.textContent));
 
-    for (const label of labelSpans) {
-      if (!matched.has(norm(label.textContent))) continue;
+    const visibleRows: HTMLElement[] = [];
+    for (const entry of searchMatches) {
+      const tabIdx = headings.findIndex((h) => h.dataset.searchTab === entry.tab);
+      if (tabIdx === -1) continue;
+      const tabHeader = headings[tabIdx];
+      const nextHeader = headings[tabIdx + 1] ?? null;
+      const inRegion = (el: HTMLElement) =>
+        Boolean(tabHeader.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) &&
+        (!nextHeader ||
+          Boolean(nextHeader.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_PRECEDING));
+
+      const normLabel = norm(t(entry.labelKey));
+      if (!normLabel) continue;
+      const label = labelSpans.find((el) => inRegion(el) && norm(el.textContent) === normLabel);
+      if (!label) {
+        console.warn('[SettingsSearch] row not found for', entry.labelKey);
+        continue;
+      }
       let row = label.closest<HTMLElement>('[class*="p-3"], [class*="p-4"], label') ?? label;
       if (row.tagName === 'LABEL' && row.parentElement) {
         // Stacked label+control rows: expand to the dedicated wrapper so the
@@ -623,17 +647,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
       }
       reveal(row);
       row.querySelectorAll<HTMLElement>('*').forEach((d) => d.classList.remove('hidden'));
-      const section = row.closest<HTMLElement>('section');
-      if (section) {
-        let prev: Element | null = section.previousElementSibling;
-        while (prev) {
-          if (prev.matches('h2[data-search-tab]')) {
-            reveal(prev);
-            break;
-          }
-          prev = prev.previousElementSibling;
-        }
-      }
+      reveal(tabHeader);
       // Highlight the query tokens inside the row's label and description
       const desc = row.querySelector<HTMLElement>('p.text-xs, span.text-xs');
       for (const textEl of [label, desc]) {
@@ -1501,7 +1515,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               {/* --- GENERAL TAB --- */}
               {searchMode && (
                 <h2
-                  data-search-tab
+                  data-search-tab="general"
                   className="flex items-center gap-2 border-b border-border pb-2 text-sm font-semibold text-primary"
                 >
                   {t(SETTINGS_TAB_LABEL_KEYS['general'])}
@@ -2025,7 +2039,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               {/* --- CLIPBOARD TAB --- */}
               {searchMode && (
                 <h2
-                  data-search-tab
+                  data-search-tab="clipboard"
                   className="flex items-center gap-2 border-b border-border pb-2 text-sm font-semibold text-primary"
                 >
                   {t(SETTINGS_TAB_LABEL_KEYS['clipboard'])}
@@ -2345,7 +2359,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
               {searchMode && (
                 <h2
-                  data-search-tab
+                  data-search-tab="security"
                   className="flex items-center gap-2 border-b border-border pb-2 text-sm font-semibold text-primary"
                 >
                   {t(SETTINGS_TAB_LABEL_KEYS['security'])}
@@ -2660,7 +2674,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               {/* --- FOLDERS TAB --- */}
               {searchMode && (
                 <h2
-                  data-search-tab
+                  data-search-tab="folders"
                   className="flex items-center gap-2 border-b border-border pb-2 text-sm font-semibold text-primary"
                 >
                   {t(SETTINGS_TAB_LABEL_KEYS['folders'])}
@@ -2798,7 +2812,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               {/* --- FULL MODE TAB --- */}
               {searchMode && (
                 <h2
-                  data-search-tab
+                  data-search-tab="full"
                   className="flex items-center gap-2 border-b border-border pb-2 text-sm font-semibold text-primary"
                 >
                   {t(SETTINGS_TAB_LABEL_KEYS['full'])}
@@ -2924,7 +2938,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               {/* --- COMPACT MODE TAB --- */}
               {searchMode && (
                 <h2
-                  data-search-tab
+                  data-search-tab="compact"
                   className="flex items-center gap-2 border-b border-border pb-2 text-sm font-semibold text-primary"
                 >
                   {t(SETTINGS_TAB_LABEL_KEYS['compact'])}
@@ -3124,7 +3138,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               {/* --- AI PROCESSING TAB --- */}
               {searchMode && (
                 <h2
-                  data-search-tab
+                  data-search-tab="ai"
                   className="flex items-center gap-2 border-b border-border pb-2 text-sm font-semibold text-primary"
                 >
                   {t(SETTINGS_TAB_LABEL_KEYS['ai'])}
@@ -3385,7 +3399,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               {/* --- NOTIFICATIONS TAB --- */}
               {searchMode && (
                 <h2
-                  data-search-tab
+                  data-search-tab="notifications"
                   className="flex items-center gap-2 border-b border-border pb-2 text-sm font-semibold text-primary"
                 >
                   {t(SETTINGS_TAB_LABEL_KEYS['notifications'])}
@@ -3725,7 +3739,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               {/* --- MAINTENANCE TAB --- */}
               {searchMode && (
                 <h2
-                  data-search-tab
+                  data-search-tab="maintenance"
                   className="flex items-center gap-2 border-b border-border pb-2 text-sm font-semibold text-primary"
                 >
                   {t(SETTINGS_TAB_LABEL_KEYS['maintenance'])}
