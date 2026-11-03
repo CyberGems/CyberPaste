@@ -194,10 +194,10 @@ export const EmojiPickerView: React.FC<EmojiPickerViewProps> = ({
                 type="button"
                 onClick={() => setActiveCategory(cat.id)}
                 className={clsx(
-                  'flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium transition-all',
+                  'flex shrink-0 items-center gap-1.5 rounded-lg border border-transparent px-2.5 py-1 text-[11px] font-medium transition-all',
                   isSelected
-                    ? 'border border-primary/40 bg-primary/15 text-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.2)]'
-                    : 'border border-transparent text-muted-foreground hover:border-border/60 hover:bg-accent hover:text-foreground'
+                    ? 'bg-primary/15 text-primary'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
               >
                 <Icon size={12} className={isSelected ? 'text-primary' : 'opacity-70'} />
@@ -243,13 +243,11 @@ export const EmojiPickerView: React.FC<EmojiPickerViewProps> = ({
                     setHoveredEmoji(item);
                   }}
                   className={clsx(
-                    'group relative flex select-none items-center justify-center rounded-xl transition-all duration-150 active:scale-90',
+                    'group relative flex select-none items-center justify-center rounded-xl border border-transparent transition-all duration-150 active:scale-90',
                     mode === 'full'
                       ? 'hover:scale-115 h-12 w-12 text-2xl'
                       : 'h-10 w-10 text-xl hover:scale-110',
-                    isSelected
-                      ? 'border border-primary/50 bg-primary/20 shadow-[0_0_12px_rgba(var(--primary-rgb),0.3)] ring-1 ring-primary/40'
-                      : 'border border-transparent hover:border-border/60 hover:bg-accent/60'
+                    isSelected ? 'bg-primary/20' : 'hover:bg-accent/60'
                   )}
                 >
                   <span>{item.char}</span>

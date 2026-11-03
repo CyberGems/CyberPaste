@@ -2060,6 +2060,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                       aria-pressed={compactPeekEnabled}
                       className={cn(
                         TITLEBAR_ICON_BUTTON,
+                        'h-8 w-8 shrink-0 rounded-lg',
                         compactPeekEnabled ? TITLEBAR_BTN_ON_PRIMARY : TITLEBAR_BTN_IDLE_SOFT
                       )}
                     >
@@ -2083,6 +2084,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                       aria-pressed={isEmojiMode}
                       className={cn(
                         TITLEBAR_ICON_BUTTON,
+                        'h-8 w-8 shrink-0 rounded-lg',
                         isEmojiMode ? TITLEBAR_BTN_ON_PRIMARY : TITLEBAR_BTN_IDLE_SOFT
                       )}
                     >
@@ -2315,6 +2317,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     aria-pressed={compactPeekEnabled}
                     className={cn(
                       TITLEBAR_ICON_BUTTON,
+                      'h-8 w-8 shrink-0 rounded-lg',
                       compactPeekEnabled ? TITLEBAR_BTN_ON_PRIMARY : TITLEBAR_BTN_IDLE_SOFT
                     )}
                   >
@@ -2338,6 +2341,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     aria-pressed={isEmojiMode}
                     className={cn(
                       TITLEBAR_ICON_BUTTON,
+                      'h-8 w-8 shrink-0 rounded-lg',
                       isEmojiMode ? TITLEBAR_BTN_ON_PRIMARY : TITLEBAR_BTN_IDLE_SOFT
                     )}
                   >
