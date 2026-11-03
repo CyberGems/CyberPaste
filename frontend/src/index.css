@@ -118,6 +118,32 @@
   animation: undo-glow-pulse 2s ease-in-out infinite;
 }
 
+@keyframes view-morph-dim-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes view-morph-dim-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.animate-view-morph-dim-in {
+  animation: view-morph-dim-in 150ms ease-out both;
+}
+
+.animate-view-morph-dim-out {
+  animation: view-morph-dim-out 150ms ease-in both;
+}
+
 @keyframes modal-attention {
   0%,
   100% {
