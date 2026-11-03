@@ -234,6 +234,10 @@ function App() {
   const searchHistoryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTogglingRef = useRef(false);
   const [viewModeFading, setViewModeFading] = useState(false);
+  // The spinner only mounts once the window morph has settled, so it never
+  // rides the resurfacing webview (it visibly jumps while the rect animates).
+  const [viewModeSpinnerVisible, setViewModeSpinnerVisible] = useState(false);
+  const [viewModeTarget, setViewModeTarget] = useState<'full' | 'compact'>('full');
 
   const [isWindowActive, setIsWindowActive] = useState(true);
   const [isEmojiMode, setIsEmojiMode] = useState(false);
@@ -3095,12 +3099,19 @@ function App() {
     if (isTogglingRef.current) return;
     isTogglingRef.current = true;
 
-    // Fade out current UI before the window morph
+    // Fade out current UI before the window morph. The dim backdrop stays up
+    // for the whole sequence, but the spinner only mounts after the window
+    // has settled: while the rect animates every ~8ms the webview surface
+    // re-rasterizes and a centered spinner would visibly jump around.
     setViewModeFading(true);
+    setViewModeSpinnerVisible(false);
+    setViewModeTarget(settings?.view_mode === 'full' ? 'compact' : 'full');
     await new Promise<void>((r) => setTimeout(r, 90));
 
     try {
       const newMode = await invoke<string>('toggle_view_mode');
+      // Window is static again: raise the spinner to mask the tree swap
+      setViewModeSpinnerVisible(true);
       // Synchronously switch view_mode in React state so the new component tree mounts cleanly while masked
       setSettings((prev) => (prev ? { ...prev, view_mode: newMode as 'full' | 'compact' } : prev));
       // Wait two frames for React to paint the new view in memory
@@ -3115,7 +3126,7 @@ function App() {
         isTogglingRef.current = false;
       }, 800);
     }
-  }, []);
+  }, [settings?.view_mode]);
 
   const handleResetSize = useCallback(async () => {
     if (!settings) return;
@@ -3848,28 +3859,33 @@ function App() {
       {isLocked && lockStatus && <AppLockScreen status={lockStatus} onUnlocked={applyLockStatus} />}
       {/* Content Container */}
       <div data-el="app-window" className="relative h-full w-full overflow-hidden bg-background/80">
-        {/* Morph Transition Loader Overlay */}
+        {/* Morph Transition Loader Overlay. The dim backdrop covers the whole
+            sequence; the spinner mounts only after the window morph settles. */}
         {viewModeFading && (
-          <div className="animate-in fade-in pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center gap-3.5 bg-background/50 backdrop-blur-md duration-150">
-            <div className="relative flex h-16 w-16 items-center justify-center">
-              {/* Pulsing cyan glow */}
-              <div className="absolute inset-0 animate-pulse rounded-full bg-primary/25 blur-lg" />
-              {/* Spinning cyberpunk ring */}
-              <div className="absolute inset-0 animate-spin rounded-full border-[2.5px] border-primary/20 border-t-primary shadow-[0_0_16px_rgba(var(--primary-rgb),0.35)]" />
-              {/* App logo */}
-              <img
-                src="/logo.png"
-                alt="CyberPaste"
-                className="relative h-8 w-8 object-contain drop-shadow-[0_0_10px_rgba(var(--primary-rgb),0.65)]"
-              />
-            </div>
-            <div className="flex items-center gap-1.5 font-mono text-[10.5px] font-semibold uppercase tracking-wider text-primary drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.3)]">
-              <span>
-                {settings?.view_mode === 'compact'
-                  ? t('common.switchToFull')
-                  : t('common.switchToCompact')}
-              </span>
-            </div>
+          <div className="pointer-events-none absolute inset-0 z-50 bg-background/50 backdrop-blur-md">
+            {viewModeSpinnerVisible && (
+              <div className="animate-in fade-in absolute inset-0 flex flex-col items-center justify-center gap-4 duration-150">
+                <div className="relative flex h-[74px] w-[74px] items-center justify-center">
+                  {/* Pulsing cyan glow */}
+                  <div className="absolute inset-0 animate-pulse rounded-full bg-primary/25 blur-lg" />
+                  {/* Spinning cyberpunk ring */}
+                  <div className="absolute inset-0 animate-spin rounded-full border-[3px] border-primary/20 border-t-primary shadow-[0_0_18px_rgba(var(--primary-rgb),0.35)]" />
+                  {/* App logo */}
+                  <img
+                    src="/logo.png"
+                    alt="CyberPaste"
+                    className="relative h-[37px] w-[37px] object-contain drop-shadow-[0_0_10px_rgba(var(--primary-rgb),0.65)]"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5 font-mono text-[12px] font-semibold uppercase tracking-wider text-primary drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.3)]">
+                  <span>
+                    {viewModeTarget === 'compact'
+                      ? t('common.switchToCompact')
+                      : t('common.switchToFull')}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
