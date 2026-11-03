@@ -462,7 +462,9 @@ const INDEX: IndexedEntry[] = SETTINGS_SEARCH_ENTRIES.map((entry) => ({
  * (weight 3, prefix +7, whole-token equality +10), section titles (+2),
  * descriptions (+1) and extra option texts (+2). With no direct hits and a
  * query of 3+ characters it falls back to a span-bounded subsequence match
- * over the label only (dense acronyms like "fnm" -> "File name"), so loose
+ * over the label only with a tight span budget (dense acronyms like "fnm" ->
+  // "File name" qualify, sparse junk like "rws" -> "folders with mouse wheel" does
+  // not), so loose
  * garbage cannot surface from long description texts.
  */
 export const matchSettings = (rawQuery: string): SettingsSearchEntry[] => {
@@ -490,7 +492,7 @@ export const matchSettings = (rawQuery: string): SettingsSearchEntry[] => {
   }
 
   if (scored.length === 0 && query.length >= 3) {
-    const maxSpan = query.length * 4;
+    const maxSpan = query.length * 3;
     for (const indexed of INDEX) {
       let best = Number.POSITIVE_INFINITY;
       for (const label of indexed.labels) {

@@ -1340,7 +1340,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
         <div className="flex flex-1 overflow-hidden">
           {/* Sidebar */}
-          <div className="custom-scrollbar w-[182px] flex-shrink-0 overflow-y-auto border-r border-border bg-transparent px-2.5 py-3.5">
+          <div className="custom-scrollbar w-[210px] flex-shrink-0 overflow-y-auto border-r border-border bg-transparent px-2.5 py-3.5">
             {/* Settings search — sticky so it stays visible while scrolling tabs */}
             <div className="sticky top-0 z-20 bg-background pb-2 pt-0.5">
               <div className="relative">
@@ -1394,7 +1394,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
               >
-                <SettingsIcon size={14} />
+                <SettingsIcon size={14} className="shrink-0" />
                 {t('settings.general')}
               </button>
               <button
@@ -1406,7 +1406,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
               >
-                <Clipboard size={14} />
+                <Clipboard size={14} className="shrink-0" />
                 {t('settings.clipboardTab', { defaultValue: 'Portapapeles' })}
               </button>
               <button
@@ -1418,7 +1418,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
               >
-                <Bell size={14} />
+                <Bell size={14} className="shrink-0" />
                 {t('settings.toasts')}
               </button>
               <button
@@ -1430,7 +1430,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
               >
-                <List size={14} />
+                <List size={14} className="shrink-0" />
                 {t('settings.compactTab')}
               </button>
               <button
@@ -1442,7 +1442,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
               >
-                <LayoutGrid size={14} />
+                <LayoutGrid size={14} className="shrink-0" />
                 {t('settings.fullTab')}
               </button>
               <button
@@ -1454,7 +1454,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
               >
-                <Shield size={14} />
+                <Shield size={14} className="shrink-0" />
                 {t('settings.security')}
               </button>
               <button
@@ -1466,7 +1466,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
               >
-                <FolderIcon size={14} />
+                <FolderIcon size={14} className="shrink-0" />
                 {t('settings.folders')}
               </button>
               <button
@@ -1478,7 +1478,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
               >
-                <BrainCircuit size={14} />
+                <BrainCircuit size={14} className="shrink-0" />
                 {t('settings.ai')}
               </button>
               <button
@@ -1490,7 +1490,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
               >
-                <RotateCcw size={14} />
+                <RotateCcw size={14} className="shrink-0" />
                 {t('settings.maintenance')}
               </button>
               <div className="my-2 border-t border-border/70" role="separator" />
@@ -1503,7 +1503,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
               >
-                <Trophy size={14} />
+                <Trophy size={14} className="shrink-0" />
                 {t('settings.achievements')}
               </button>
             </div>
@@ -1526,7 +1526,8 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   {/* Appearance */}
                   <section className="space-y-4">
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
-                      <SettingsIcon size={14} /> {t('settings.appearanceSection')}
+                      <SettingsIcon size={14} className="shrink-0" />{' '}
+                      {t('settings.appearanceSection')}
                     </h3>
                     <div className="divide-y divide-border rounded-xl border border-border bg-card">
                       {/* Row 1: Language */}
@@ -1718,7 +1719,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                 onClick={() => updateSetting('clipboard_sound_path', '')}
                                 className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 hover:text-primary disabled:pointer-events-none disabled:opacity-30"
                               >
-                                <RotateCcw size={14} />
+                                <RotateCcw size={14} className="shrink-0" />
                               </button>
                             </Tooltip>
                           </div>
@@ -1790,7 +1791,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                 onClick={() => updateSetting('startup_sound_path', '')}
                                 className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 hover:text-primary disabled:pointer-events-none disabled:opacity-30"
                               >
-                                <RotateCcw size={14} />
+                                <RotateCcw size={14} className="shrink-0" />
                               </button>
                             </Tooltip>
                           </div>
@@ -1883,7 +1884,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                 onClick={() => handleRestoreHotkey('hotkey')}
                                 className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 hover:text-primary disabled:pointer-events-none disabled:opacity-30"
                               >
-                                <RotateCcw size={14} />
+                                <RotateCcw size={14} className="shrink-0" />
                               </button>
                             </Tooltip>
                           </div>
@@ -1974,7 +1975,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                                 onClick={() => handleRestoreHotkey('view_mode_hotkey')}
                                 className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-accent text-foreground transition-all hover:bg-accent/80 hover:text-primary disabled:pointer-events-none disabled:opacity-30"
                               >
-                                <RotateCcw size={14} />
+                                <RotateCcw size={14} className="shrink-0" />
                               </button>
                             </Tooltip>
                           </div>
@@ -2214,14 +2215,14 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   {/* Behavior & Pasting */}
                   <section className="space-y-4">
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
-                      <Clipboard size={14} />{' '}
+                      <Clipboard size={14} className="shrink-0" />{' '}
                       {t('settings.clipboardBehaviorSection', {
                         defaultValue: 'Comportamiento y Pegado',
                       })}
                     </h3>
                     <div className="space-y-3 rounded-xl border border-border bg-card p-4">
                       {/* Pause monitoring */}
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                      <div className="flex items-center justify-between gap-4 rounded-[4px] border border-border bg-secondary p-3">
                         <div>
                           <span className="text-sm font-medium">
                             {t('settings.pauseMonitoring')}
@@ -2237,7 +2238,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         />
                       </div>
                       {/* Single click paste */}
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                      <div className="flex items-center justify-between gap-4 rounded-[4px] border border-border bg-secondary p-3">
                         <div className="min-w-0 pr-4">
                           <span className="text-sm font-medium">
                             {t('settings.singleClickPaste')}
@@ -2253,7 +2254,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         />
                       </div>
                       {/* Auto paste */}
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                      <div className="flex items-center justify-between gap-4 rounded-[4px] border border-border bg-secondary p-3">
                         <div>
                           <span className="text-sm font-medium">{t('settings.autoPaste')}</span>
                           <p className="mt-1 text-xs text-muted-foreground">
@@ -2272,7 +2273,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         />
                       </div>
                       {/* Auto inject paste */}
-                      <div className="ml-4 flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                      <div className="ml-4 flex items-center justify-between gap-4 rounded-[4px] border border-border bg-secondary p-3">
                         <div className="min-w-0 flex-1 pr-4">
                           <span className="text-sm font-medium">
                             {t('settings.autoInjectPaste')}
@@ -2289,7 +2290,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         />
                       </div>
                       {/* Type to search */}
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                      <div className="flex items-center justify-between gap-4 rounded-[4px] border border-border bg-secondary p-3">
                         <div>
                           <span className="text-sm font-medium">{t('settings.typeToSearch')}</span>
                           <p className="text-xs text-muted-foreground">
@@ -2303,7 +2304,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         />
                       </div>
                       {/* Reset view on paste */}
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                      <div className="flex items-center justify-between gap-4 rounded-[4px] border border-border bg-secondary p-3">
                         <div className="min-w-0 flex-1 pr-4">
                           <span className="text-sm font-medium">
                             {t('settings.resetViewOnPaste')}
@@ -2685,7 +2686,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   {/* Folders Management */}
                   <section className="space-y-4">
                     <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
-                      <FolderIcon size={14} /> {t('settings.manageFolders')}
+                      <FolderIcon size={14} className="shrink-0" /> {t('settings.manageFolders')}
                     </h3>
                     <div className="space-y-3">
                       <div className="flex gap-2">
@@ -2905,7 +2906,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       ).map(([key, translationKey]) => (
                         <div
                           key={key}
-                          className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3"
+                          className="flex items-center justify-between gap-4 rounded-[4px] border border-border bg-secondary p-3"
                         >
                           <div>
                             <span className="text-sm font-medium">
@@ -2970,7 +2971,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           ]}
                         />
                         {(settings.compact_folder_layout || 'horizontal') === 'vertical' && (
-                          <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                          <div className="flex items-center justify-between gap-4 rounded-[4px] border border-border bg-secondary p-3">
                             <div>
                               <span className="text-sm font-medium">
                                 {t('settings.compactSidebarCollapsed')}
@@ -3006,7 +3007,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         />
                       </div>
 
-                      <div className="flex items-center justify-between rounded-[4px] border border-b border-border border-border/60 bg-secondary p-3 pb-4">
+                      <div className="flex items-center justify-between gap-4 rounded-[4px] border border-b border-border border-border/60 bg-secondary p-3 pb-4">
                         <div>
                           <span className="text-sm font-medium">
                             {t('settings.compactPeekEnabled')}
@@ -3047,7 +3048,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     </h3>
                     <div className="space-y-4 rounded-xl border border-border bg-card p-4">
                       {/* Show Source Icon */}
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                      <div className="flex items-center justify-between gap-4 rounded-[4px] border border-border bg-secondary p-3">
                         <div>
                           <span className="text-sm font-medium">
                             {t('settings.compactShowSourceIcon')}
@@ -3064,7 +3065,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
 
                       {/* Show Capture Time */}
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                      <div className="flex items-center justify-between gap-4 rounded-[4px] border border-border bg-secondary p-3">
                         <div>
                           <span className="text-sm font-medium">
                             {t('settings.compactShowTime')}
@@ -3081,7 +3082,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
 
                       {/* Show Type Icon */}
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                      <div className="flex items-center justify-between gap-4 rounded-[4px] border border-border bg-secondary p-3">
                         <div>
                           <span className="text-sm font-medium">
                             {t('settings.compactShowTypeIcon')}
@@ -3098,7 +3099,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
 
                       {/* Show Clip Number */}
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                      <div className="flex items-center justify-between gap-4 rounded-[4px] border border-border bg-secondary p-3">
                         <div>
                           <span className="text-sm font-medium">
                             {t('settings.compactShowNumber')}
@@ -3115,7 +3116,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       </div>
 
                       {/* Show Scrollbar */}
-                      <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                      <div className="flex items-center justify-between gap-4 rounded-[4px] border border-border bg-secondary p-3">
                         <div>
                           <span className="text-sm font-medium">
                             {t('settings.compactShowScrollbar')}
@@ -3161,7 +3162,8 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       <section className="space-y-4">
                         <div>
                           <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
-                            <BrainCircuit size={14} /> {t('settings.aiConfiguration')}
+                            <BrainCircuit size={14} className="shrink-0" />{' '}
+                            {t('settings.aiConfiguration')}
                           </h3>
                           <p className="mt-1 text-xs text-muted-foreground">
                             {t('settings.aiConfigurationDesc')}
@@ -3408,10 +3410,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               {(activeTab === 'notifications' || searchMode) && (
                 <section className="space-y-4">
                   <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
-                    <Bell size={14} /> {t('settings.toasts')}
+                    <Bell size={14} className="shrink-0" /> {t('settings.toasts')}
                   </h3>
 
-                  <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                  <div className="flex items-center justify-between gap-4 rounded-[4px] border border-border bg-secondary p-3">
                     <div>
                       <span className="text-sm font-medium">{t('settings.enableToasts')}</span>
                       <p className="mt-1 text-xs text-muted-foreground">
@@ -3425,7 +3427,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     />
                   </div>
 
-                  <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                  <div className="flex items-center justify-between gap-4 rounded-[4px] border border-border bg-secondary p-3">
                     <div>
                       <span className="text-sm font-medium">{t('settings.duplicateToasts')}</span>
                       <p className="mt-1 text-xs text-muted-foreground">
@@ -3441,7 +3443,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     />
                   </div>
 
-                  <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                  <div className="flex items-center justify-between gap-4 rounded-[4px] border border-border bg-secondary p-3">
                     <div>
                       <span className="text-sm font-medium">
                         {t('settings.showActionMessages')}
@@ -3531,7 +3533,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between rounded-[4px] border border-border bg-secondary p-3">
+                  <div className="flex items-center justify-between gap-4 rounded-[4px] border border-border bg-secondary p-3">
                     <div>
                       <span className="text-sm font-medium">{t('settings.toastClickAction')}</span>
                       <p className="mt-1 text-xs text-muted-foreground">
