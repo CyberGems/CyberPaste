@@ -36,12 +36,12 @@ export function CloseWindowDialog({ isOpen, onCancel, onAction }: CloseWindowDia
   if (!isOpen) return null;
 
   return (
-    <div className="animate-in fade-in fixed inset-0 z-[110] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm duration-200">
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm duration-200 animate-in fade-in">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="close-window-dialog-title"
-        className="animate-in zoom-in-95 relative w-full max-w-[650px] select-none rounded-lg border border-border bg-background p-7 shadow-2xl duration-200"
+        className="relative w-full max-w-[650px] select-none rounded-lg border border-border bg-background p-7 shadow-2xl duration-200 animate-in zoom-in-95"
       >
         <div className="flex items-start justify-between gap-4">
           <h2 id="close-window-dialog-title" className="text-xl font-semibold text-foreground">

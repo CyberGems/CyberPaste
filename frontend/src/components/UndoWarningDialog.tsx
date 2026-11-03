@@ -61,14 +61,14 @@ export function UndoWarningDialog({
           triggerShake();
         }
       }}
-      className="animate-in fade-in fixed inset-0 z-[115] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm duration-200"
+      className="fixed inset-0 z-[115] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm duration-200 animate-in fade-in"
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="undo-warning-dialog-title"
         className={clsx(
-          'animate-in zoom-in-95 w-full max-w-[650px] rounded-lg border border-border bg-background p-7 shadow-2xl transition-all duration-200',
+          'w-full max-w-[650px] rounded-lg border border-border bg-background p-7 shadow-2xl transition-all duration-200 animate-in zoom-in-95',
           isShaking &&
             'animate-modal-attention border-primary shadow-[0_0_24px_rgba(var(--primary-rgb),0.35)] ring-2 ring-primary/60'
         )}

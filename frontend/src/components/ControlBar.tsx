@@ -1045,7 +1045,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
 
           {/* Search Bar Overlay */}
           {showSearch && (
-            <div className="animate-in fade-in zoom-in-95 absolute inset-0 z-10 flex items-center duration-300">
+            <div className="absolute inset-0 z-10 flex items-center duration-300 animate-in fade-in zoom-in-95">
               <div className="flex h-8 flex-1 items-center gap-3 rounded-lg border border-primary/30 bg-popover px-4 shadow-[0_0_25px_rgba(var(--primary-rgb),0.15)] backdrop-blur-md">
                 <Search className="animate-pulse text-primary" size={18} />
                 <div className="flex flex-1 items-center gap-2 overflow-hidden">

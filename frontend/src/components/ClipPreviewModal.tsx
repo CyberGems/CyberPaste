@@ -100,11 +100,11 @@ export const ClipPreviewModal: React.FC<ClipPreviewModalProps> = ({
 
   return (
     <div
-      className="animate-in fade-in xs:p-2 fixed inset-0 z-[150] flex items-center justify-center bg-black/45 p-1.5 backdrop-blur-sm duration-200 sm:p-6"
+      className="xs:p-2 fixed inset-0 z-[150] flex items-center justify-center bg-black/45 p-1.5 backdrop-blur-sm duration-200 animate-in fade-in sm:p-6"
       onClick={onClose}
     >
       <div
-        className="animate-in zoom-in-95 flex h-full max-h-[calc(100vh-12px)] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[0_0_50px_rgba(0,0,0,0.25)] sm:max-h-[85vh] sm:rounded-2xl"
+        className="flex h-full max-h-[calc(100vh-12px)] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[0_0_50px_rgba(0,0,0,0.25)] animate-in zoom-in-95 sm:max-h-[85vh] sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

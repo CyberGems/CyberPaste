@@ -122,7 +122,7 @@ export function AchievementProgressPanel({
     : [];
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 space-y-6 duration-500">
+    <div className="space-y-6 duration-500 animate-in fade-in slide-in-from-bottom-4">
       <section className="space-y-3">
         <div>
           <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">

@@ -143,9 +143,9 @@ export const FolderModal: React.FC<FolderModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="animate-in fade-in xs:p-2 fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-1.5 backdrop-blur-sm duration-200 sm:p-4">
+    <div className="xs:p-2 fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-1.5 backdrop-blur-sm duration-200 animate-in fade-in sm:p-4">
       <div
-        className="animate-in zoom-in-95 flex max-h-[calc(100vh-12px)] w-full max-w-md flex-col overflow-hidden rounded-xl border border-primary/20 bg-card shadow-[0_0_50px_rgba(var(--primary-rgb),0.15)] duration-300 sm:max-h-[90vh] sm:rounded-2xl"
+        className="flex max-h-[calc(100vh-12px)] w-full max-w-md flex-col overflow-hidden rounded-xl border border-primary/20 bg-card shadow-[0_0_50px_rgba(var(--primary-rgb),0.15)] duration-300 animate-in zoom-in-95 sm:max-h-[90vh] sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

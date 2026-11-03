@@ -76,7 +76,7 @@ export function Select({
       </button>
 
       {isOpen && (
-        <div className="animate-in fade-in-0 zoom-in-95 absolute left-0 top-full z-50 mt-1 w-full overflow-hidden rounded-[6px] border border-border bg-popover text-popover-foreground shadow-lg duration-100">
+        <div className="absolute left-0 top-full z-50 mt-1 w-full overflow-hidden rounded-[6px] border border-border bg-popover text-popover-foreground shadow-lg duration-100 animate-in fade-in-0 zoom-in-95">
           <div className="max-h-60 overflow-y-auto py-1">
             {options.map((option) => (
               <button

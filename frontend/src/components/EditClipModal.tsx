@@ -165,9 +165,9 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
   const typeLabel = t(`clipType.${clipType}`, { defaultValue: t('clipType.text') });
 
   return (
-    <div className="animate-in fade-in xs:p-2 fixed inset-0 z-[100] flex items-center justify-center bg-black/65 p-1.5 backdrop-blur-sm duration-200 sm:p-4">
+    <div className="xs:p-2 fixed inset-0 z-[100] flex items-center justify-center bg-black/65 p-1.5 backdrop-blur-sm duration-200 animate-in fade-in sm:p-4">
       <div
-        className="animate-in zoom-in-95 flex h-[calc(100vh-12px)] max-h-[calc(100vh-12px)] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-primary/30 bg-card shadow-[0_0_50px_rgba(var(--primary-rgb),0.18),0_20px_50px_rgba(0,0,0,0.6)] duration-300 sm:h-[80vh] sm:max-h-[580px] sm:rounded-2xl"
+        className="flex h-[calc(100vh-12px)] max-h-[calc(100vh-12px)] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-primary/30 bg-card shadow-[0_0_50px_rgba(var(--primary-rgb),0.18),0_20px_50px_rgba(0,0,0,0.6)] duration-300 animate-in zoom-in-95 sm:h-[80vh] sm:max-h-[580px] sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Editor Window Header */}

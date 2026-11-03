@@ -621,7 +621,7 @@ export const ClipCard = memo(
               {showQuickActions && onCopy ? (
                 <div
                   data-el="clip-card-hover-actions"
-                  className="animate-in fade-in flex w-full items-center justify-center gap-2 duration-150"
+                  className="flex w-full items-center justify-center gap-2 duration-150 animate-in fade-in"
                 >
                   {/* OCR button on the left if present, so Copy & Paste stay dead-center */}
                   {clip.clip_type === 'image' && hasOcr && onRunOcr && (
@@ -714,7 +714,7 @@ export const ClipCard = memo(
               ) : (
                 <span
                   className={clsx(
-                    'animate-in fade-in flex min-w-0 flex-1 items-center text-[11px] font-medium transition-colors duration-150',
+                    'flex min-w-0 flex-1 items-center text-[11px] font-medium transition-colors duration-150 animate-in fade-in',
                     clip.clip_type === 'image'
                       ? 'font-semibold text-muted-foreground/90'
                       : 'text-muted-foreground/50'

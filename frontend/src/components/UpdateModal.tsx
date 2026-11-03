@@ -176,8 +176,8 @@ export function UpdateModal({ isOpen, update, onClose, onSkipVersion }: UpdateMo
   };
 
   return (
-    <div className="animate-in fade-in fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/60 p-2 backdrop-blur-md duration-300 sm:p-4">
-      <div className="animate-in zoom-in-95 relative my-auto flex max-h-[min(580px,calc(100vh-1.5rem))] w-[min(94vw,560px)] max-w-xl flex-col overflow-hidden rounded-xl border border-primary/20 bg-background/95 shadow-2xl shadow-primary/10 duration-300">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/60 p-2 backdrop-blur-md duration-300 animate-in fade-in sm:p-4">
+      <div className="relative my-auto flex max-h-[min(580px,calc(100vh-1.5rem))] w-[min(94vw,560px)] max-w-xl flex-col overflow-hidden rounded-xl border border-primary/20 bg-background/95 shadow-2xl shadow-primary/10 duration-300 animate-in zoom-in-95">
         <div className="absolute -left-16 -top-16 h-32 w-32 rounded-full bg-primary/10 blur-2xl" />
         <div className="absolute -bottom-16 -right-16 h-32 w-32 rounded-full bg-cyan-500/10 blur-2xl" />
 

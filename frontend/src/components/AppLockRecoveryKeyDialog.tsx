@@ -32,7 +32,7 @@ export function AppLockRecoveryKeyDialog({
   };
 
   return (
-    <div className="animate-in fade-in fixed inset-0 z-[80] flex items-center justify-center bg-black/55 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 backdrop-blur-sm animate-in fade-in">
       <div className="w-full max-w-md rounded-lg border border-border bg-background p-6 shadow-lg">
         <div className="mb-3 flex items-center gap-2">
           <ModalIcon>
