@@ -266,8 +266,8 @@ export function TitleBarMenu({
           className={clsx(
             'flex h-8 w-8 items-center justify-center rounded-lg border transition-all',
             open
-              ? 'border-primary/40 bg-primary/20 text-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.4)]'
-              : 'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
+              ? 'border-transparent bg-primary/20 text-primary'
+              : 'border-transparent text-muted-foreground hover:bg-accent hover:text-foreground active:bg-accent/80'
           )}
         >
           <MoreHorizontal size={iconSize} className="pointer-events-none" />

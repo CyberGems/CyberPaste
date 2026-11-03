@@ -616,8 +616,10 @@ export const ControlBar: React.FC<ControlBarProps> = ({
     return () => clearInterval(timer);
   }, [isWindowActive]);
 
+  // Titlebar buttons share one hover language: background tint only, no
+  // border outline and no glow shadow (matches CompactView's titlebar).
   const headerBtnClass =
-    'flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80';
+    'flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:bg-accent hover:text-foreground active:bg-accent/80';
 
   return (
     <div
@@ -735,7 +737,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               className={clsx(
                 'flex h-8 w-8 items-center justify-center rounded-lg border transition-all focus:outline-none',
                 isPaused
-                  ? 'border-amber-500/50 bg-amber-500/15 text-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.25)] hover:border-amber-500/80 hover:bg-amber-500/25 active:scale-95'
+                  ? 'border-transparent bg-amber-500/15 text-amber-500 hover:bg-amber-500/25 active:bg-amber-500/25'
                   : headerBtnClass
               )}
             >
@@ -780,8 +782,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                 className={clsx(
                   headerBtnClass,
                   'focus:outline-none',
-                  isPinned &&
-                    'border-primary/30 bg-primary/20 text-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.4)]'
+                  isPinned && 'border-transparent bg-primary/20 text-primary'
                 )}
               >
                 <Pin
@@ -811,13 +812,12 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           >
             <button
               onClick={onToggleMode}
-              className="group relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border border-transparent bg-transparent text-primary transition-all duration-200 hover:border-primary/50 hover:bg-primary/15 hover:shadow-[0_0_12px_rgba(var(--primary-rgb),0.35)] active:scale-[0.98]"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent bg-transparent text-primary transition-all hover:bg-accent active:bg-accent/80"
             >
-              <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
               {viewMode === 'full' ? (
-                <ListIcon size={13} className="relative z-10 flex-shrink-0" />
+                <ListIcon size={13} className="flex-shrink-0" />
               ) : (
-                <LayoutGrid size={13} className="relative z-10 flex-shrink-0" />
+                <LayoutGrid size={13} className="flex-shrink-0" />
               )}
             </button>
           </Tooltip>
@@ -837,7 +837,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                   (window as any).__TAURI_INTERNALS__.invoke('hide_window');
                 }
               }}
-              className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-rose-500/20 hover:bg-rose-500/15 hover:text-rose-400 active:bg-rose-500/25"
+              className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:bg-rose-500/15 hover:text-rose-400 active:bg-rose-500/25"
             >
               <X size={15} />
             </button>
@@ -861,7 +861,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all',
               showSearch
                 ? 'border-primary bg-primary text-primary-foreground shadow-lg'
-                : 'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
+                : 'border-transparent text-muted-foreground hover:bg-accent hover:text-foreground active:bg-accent/80'
             )}
           >
             <Search size={16} />

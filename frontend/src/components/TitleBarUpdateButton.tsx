@@ -27,10 +27,9 @@ export function TitleBarUpdateButton({
         onClick={onClick}
         aria-label={tooltip}
         className={clsx(
-          'group flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all duration-300',
-          'border-primary/50 bg-primary/10 text-primary',
-          'shadow-[0_0_8px_rgba(var(--primary-rgb),0.25)]',
-          'hover:border-primary hover:bg-primary/25 hover:text-primary hover:shadow-[0_0_12px_rgba(var(--primary-rgb),0.45)]',
+          'group flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-transparent transition-all duration-300',
+          'bg-primary/10 text-primary',
+          'hover:bg-primary/25 hover:text-primary',
           'active:scale-95 active:bg-primary/30',
           'focus:outline-none focus-visible:ring-1 focus-visible:ring-primary',
           'motion-safe:animate-[pulse_3.5s_ease-in-out_infinite]'

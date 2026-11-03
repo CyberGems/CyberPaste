@@ -1594,7 +1594,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
               <button
                 type="button"
                 onClick={onLockNow}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:bg-accent hover:text-foreground active:bg-accent/80"
               >
                 <Lock size={14} />
               </button>
@@ -1610,7 +1610,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
             >
               <button
                 onClick={onToggleLayout}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:bg-accent hover:text-foreground active:bg-accent/80"
               >
                 {isVertical ? <PanelTop size={14} /> : <PanelLeftOpen size={14} />}
               </button>
@@ -1635,8 +1635,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
               className={cn(
                 'flex h-8 w-8 items-center justify-center rounded-lg border transition-all focus:outline-none',
                 isPaused
-                  ? 'border-amber-500/50 bg-amber-500/15 text-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.25)] hover:border-amber-500/80 hover:bg-amber-500/25 active:scale-95'
-                  : 'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
+                  ? 'border-transparent bg-amber-500/15 text-amber-500 hover:bg-amber-500/25 active:bg-amber-500/25'
+                  : 'border-transparent text-muted-foreground hover:bg-accent hover:text-foreground active:bg-accent/80'
               )}
             >
               {isPaused ? <Play size={14} className="fill-amber-500/30" /> : <Pause size={14} />}
@@ -1652,7 +1652,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
           >
             <button
               onClick={onOpenSettings}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:bg-accent hover:text-foreground active:bg-accent/80"
             >
               <Settings size={14} />
             </button>
@@ -1683,8 +1683,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 className={cn(
                   'flex h-8 w-8 items-center justify-center rounded-lg border transition-all focus:outline-none',
                   isPinned
-                    ? 'border-primary/30 bg-primary/20 text-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.4)]'
-                    : 'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
+                    ? 'border-transparent bg-primary/20 text-primary'
+                    : 'border-transparent text-muted-foreground hover:bg-accent hover:text-foreground active:bg-accent/80'
                 )}
               >
                 <Pin
@@ -1712,11 +1712,9 @@ export const CompactView: React.FC<CompactViewProps> = ({
           >
             <button
               onClick={onToggleMode}
-              className="group relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border border-transparent bg-transparent text-primary transition-all duration-200 hover:border-primary/50 hover:bg-primary/15 hover:shadow-[0_0_12px_rgba(var(--primary-rgb),0.35)] active:scale-[0.98]"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent bg-transparent text-primary transition-all hover:bg-accent active:bg-accent/80"
             >
-              {/* shimmer sweep */}
-              <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
-              <LayoutGrid size={13} className="relative z-10 flex-shrink-0" />
+              <LayoutGrid size={13} className="flex-shrink-0" />
             </button>
           </Tooltip>
 
@@ -1730,7 +1728,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
             <button
               onClick={onToggleMaximize}
               aria-label={isMaximized ? t('common.restore') : t('common.maximize')}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:bg-accent hover:text-foreground active:bg-accent/80"
             >
               {isMaximized ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
             </button>
@@ -1753,7 +1751,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   );
                 }
               }}
-              className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-rose-500/20 hover:bg-rose-500/15 hover:text-rose-400 active:bg-rose-500/25"
+              className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:bg-rose-500/15 hover:text-rose-400 active:bg-rose-500/25"
             >
               <X size={14} />
             </button>
@@ -2050,8 +2048,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
                       className={cn(
                         'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all focus:outline-none',
                         compactPeekEnabled
-                          ? 'border-primary/40 bg-primary/15 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.2)] hover:border-primary/60 hover:bg-primary/25'
-                          : 'border-transparent text-muted-foreground/70 hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
+                          ? 'border-transparent bg-primary/15 text-primary hover:bg-primary/25'
+                          : 'border-transparent text-muted-foreground/70 hover:bg-accent hover:text-foreground active:bg-accent/80'
                       )}
                     >
                       <Eye size={14} />
@@ -2075,8 +2073,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
                       className={cn(
                         'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all focus:outline-none',
                         isEmojiMode
-                          ? 'border-primary/40 bg-primary/15 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.2)] hover:border-primary/60 hover:bg-primary/25'
-                          : 'border-transparent text-muted-foreground/70 hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
+                          ? 'border-transparent bg-primary/15 text-primary hover:bg-primary/25'
+                          : 'border-transparent text-muted-foreground/70 hover:bg-accent hover:text-foreground active:bg-accent/80'
                       )}
                     >
                       <Smile size={14} />
@@ -2309,8 +2307,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     className={cn(
                       'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all focus:outline-none',
                       compactPeekEnabled
-                        ? 'border-primary/40 bg-primary/15 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.2)] hover:border-primary/60 hover:bg-primary/25'
-                        : 'border-transparent text-muted-foreground/70 hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
+                        ? 'border-transparent bg-primary/15 text-primary hover:bg-primary/25'
+                        : 'border-transparent text-muted-foreground/70 hover:bg-accent hover:text-foreground active:bg-accent/80'
                     )}
                   >
                     <Eye size={14} />
@@ -2334,8 +2332,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     className={cn(
                       'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all focus:outline-none',
                       isEmojiMode
-                        ? 'border-primary/40 bg-primary/15 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.2)] hover:border-primary/60 hover:bg-primary/25'
-                        : 'border-transparent text-muted-foreground/70 hover:border-border hover:bg-accent hover:text-foreground active:bg-accent/80'
+                        ? 'border-transparent bg-primary/15 text-primary hover:bg-primary/25'
+                        : 'border-transparent text-muted-foreground/70 hover:bg-accent hover:text-foreground active:bg-accent/80'
                     )}
                   >
                     <Smile size={14} />
