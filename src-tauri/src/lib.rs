@@ -518,7 +518,9 @@ pub fn run_app() {
             }
         })
         .setup(move |app| {
-            log::info!("CyberPaste starting...");
+            log::info!(
+                "CyberPaste starting... (rich clipboard side channel: enabled)"
+            );
 
             let db_for_settings = db_arc.clone();
             let settings_manager = get_runtime().unwrap().block_on(async {
