@@ -34,6 +34,7 @@ import {
   LayoutGrid,
   Monitor,
   Clock,
+  CornerDownLeft,
   Send,
   Languages,
   Palette,
@@ -701,6 +702,22 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
   };
   // ── End settings search ────────────────────────────────────────────────
 
+  // ── Saved indicator ─────────────────────────────────────────────────────
+  const [savedVisible, setSavedVisible] = useState(false);
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showSaved = useCallback(() => {
+    if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+    setSavedVisible(true);
+    savedTimerRef.current = setTimeout(() => setSavedVisible(false), 5000);
+  }, []);
+  useEffect(
+    () => () => {
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+    },
+    []
+  );
+  // ── End saved indicator ─────────────────────────────────────────────────
+
   const handleTogglePause = () => {
     invoke('toggle_clipboard_monitoring').catch(console.error);
   };
@@ -822,104 +839,16 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
       })();
 
       // Feedback for changes
-      const SETTING_LABELS: Record<string, string> = {
-        hotkey: 'settings.hotkey',
-        view_mode_hotkey: 'settings.viewModeHotkey',
-        startup_with_windows: 'settings.startupWithWindows',
-        hide_on_blur: 'settings.hideOnBlur',
-        ignore_ghost_clips: 'settings.ignoreGhostClips',
-        clipboard_sound_enabled: 'settings.clipboardSound',
-        auto_paste: 'settings.autoPaste',
-        single_click_paste: 'settings.singleClickPaste',
-        auto_inject_paste: 'settings.autoInjectPaste',
-        reset_view_on_paste: 'settings.resetViewOnPaste',
-        compact_sidebar_collapsed: 'settings.compactSidebarCollapsed',
-        type_to_search: 'settings.typeToSearch',
-        compact_peek_enabled: 'settings.compactPeekEnabled',
-        compact_show_source_icon: 'settings.compactShowSourceIcon',
-        compact_show_time: 'settings.compactShowTime',
-        compact_show_type_icon: 'settings.compactShowTypeIcon',
-        compact_show_number: 'settings.compactShowNumber',
-        compact_show_scrollbar: 'settings.compactShowScrollbar',
-        full_peek_enabled: 'settings.fullPeekEnabled',
-        full_show_hud: 'settings.fullShowHud',
-        full_grid_scale: 'settings.fullGridScale',
-        full_card_format: 'settings.fullCardFormat',
-        full_grid_columns: 'settings.fullGridColumns',
-        full_show_scrollbar: 'settings.fullShowScrollbar',
-        full_show_source_icon: 'settings.fullShowSourceIcon',
-        full_show_time: 'settings.fullShowTime',
-        full_show_type_icon: 'settings.fullShowTypeIcon',
-        full_show_number: 'settings.fullShowNumber',
-        full_type_filter: 'settings.fullTypeFilter',
-        toast_enabled: 'settings.toastEnabled',
-        duplicate_toast_enabled: 'settings.duplicateToasts',
-        show_action_messages: 'settings.showActionMessages',
-        auto_check_updates: 'settings.autoCheckUpdates',
-        show_app_recommendations: 'settings.showAppRecommendations',
-        round_corners: 'settings.roundCorners',
-        max_items: 'settings.historyLimit',
-        auto_delete_days: 'settings.autoDeleteHistory',
-        max_clipboard_text_bytes: 'settings.clipboardTextLimit',
-        max_clipboard_image_bytes: 'settings.clipboardImageLimit',
-        storage_quota_bytes: 'settings.storageQuota',
-        scroll_direction: 'settings.scrollDirection',
-        compact_folder_layout: 'settings.compactFolderLayout',
-        compact_view_position_mode: 'settings.compactViewPosition',
-        clip_numbering: 'settings.clipNumbering',
-        language: 'settings.language',
-        image_editor_path: 'settings.externalImageEditor',
-        clipboard_sound_path: 'settings.clipboardSound',
-        startup_sound_enabled: 'settings.startupSound',
-        startup_sound_path: 'settings.startupSound',
-        toast_monitor: 'settings.toastMonitor',
-        toast_position: 'settings.toastPosition',
-        toast_duration: 'settings.toastDuration',
-        toast_click_action: 'settings.toastClickAction',
-        quiet_hours_enabled: 'settings.quietHoursTitle',
-        quiet_hours_start: 'settings.quietHoursSchedule',
-        quiet_hours_end: 'settings.quietHoursSchedule',
-        auto_backup_enabled: 'settings.autoBackupEnabled',
-        auto_backup_folder: 'settings.autoBackupFolder',
-        auto_backup_retention: 'settings.autoBackupRetention',
-        wheel_folder_navigation: 'settings.wheelFolderNavigation',
-        ai_provider: 'settings.provider',
-        ai_api_key: 'settings.apiKey',
-        ai_model: 'settings.model',
-        ai_base_url: 'settings.baseUrl',
-        ai_prompt_summarize: 'settings.aiSummarize',
-        ai_prompt_translate: 'settings.aiTranslate',
-        ai_prompt_explain_code: 'settings.aiExplainCode',
-        ai_prompt_fix_grammar: 'settings.aiFixGrammar',
-        ai_title_summarize: 'settings.aiSummarize',
-        ai_title_translate: 'settings.aiTranslate',
-        ai_title_explain_code: 'settings.aiExplainCode',
-        ai_title_fix_grammar: 'settings.aiFixGrammar',
-        app_lock_on_hide: 'settings.appLockOnHide',
-        app_lock_on_windows_lock: 'settings.appLockOnWindowsLock',
-        app_lock_idle_seconds: 'settings.appLockIdle',
-        app_lock_pause_capture: 'settings.appLockPauseCapture',
-        app_lock_hide_toasts: 'settings.appLockHideToasts',
-        achievements_enabled: 'settings.enableAchievements',
-        achievement_notifications_enabled: 'settings.achievementNotifications',
-      };
 
       const keys = Object.keys(updates);
       if (keys.length === 1) {
         const key = keys[0] as keyof Settings;
-        const value = updates[key];
         if (key !== 'theme') {
-          const translationKey = SETTING_LABELS[key];
-          const label = translationKey ? t(translationKey) : key;
-          if (typeof value === 'boolean') {
-            toast.success(`${label}: ${value ? t('common.enabled') : t('common.disabled')}`);
-          } else {
-            toast.success(`${label} ${t('common.updated')}`);
-          }
+          showSaved();
         }
       } else if (keys.length > 1) {
         if (keys.includes('ai_provider' as any)) {
-          toast.success(`${t('settings.provider')} ${t('common.updated')}`);
+          showSaved();
         } else {
           toast.success(t('settings.layoutRestored'));
         }
@@ -1341,7 +1270,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
         <div className="flex flex-1 overflow-hidden">
           {/* Sidebar */}
-          <div className="custom-scrollbar w-[210px] flex-shrink-0 overflow-y-auto border-r border-border bg-transparent px-2.5 py-3.5">
+          <div className="custom-scrollbar flex w-[210px] flex-shrink-0 flex-col overflow-y-auto border-r border-border bg-transparent px-2.5 py-3.5">
             {/* Settings search — sticky so it stays visible while scrolling tabs */}
             <div className="sticky top-0 z-20 bg-background pb-2 pt-0.5">
               <div className="relative">
@@ -1506,6 +1435,33 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               >
                 <Trophy size={14} className="shrink-0" />
                 {t('settings.achievements')}
+              </button>
+            </div>
+
+            {/* Saved indicator + close — pinned to the bottom of the sidebar */}
+            <div className="mt-auto border-t border-border/60 pt-2.5">
+              <div
+                aria-live="polite"
+                className={clsx(
+                  'flex items-center gap-2 px-2 pb-2.5 transition-opacity duration-300',
+                  savedVisible ? 'opacity-100' : 'opacity-0'
+                )}
+              >
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-40 blur-[3px]" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                </span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  {t('settings.saved')}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex w-full items-center justify-center gap-1.5 rounded-[4px] border border-border bg-transparent py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                {t('common.close')}
+                <CornerDownLeft size={11} />
               </button>
             </div>
           </div>

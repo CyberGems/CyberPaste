@@ -306,6 +306,7 @@
     "ai": "AI",
     "maintenance": "Backup & Data",
     "searchPlaceholder": "Search settings...",
+    "saved": "Saved",
     "searchNoResults": "No results",
     "searchResultsCount_one": "{{count}} result",
     "searchResultsCount_other": "{{count}} results",

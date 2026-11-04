@@ -306,6 +306,7 @@
     "ai": "IA",
     "maintenance": "Respaldo y Datos",
     "searchPlaceholder": "Buscar ajustes...",
+    "saved": "Guardado",
     "searchNoResults": "Sin resultados",
     "searchResultsCount_one": "{{count}} resultado",
     "searchResultsCount_other": "{{count}} resultados",
