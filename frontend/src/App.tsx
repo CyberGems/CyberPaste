@@ -2110,9 +2110,7 @@ function App() {
       console.log('[App] Clipboard change detected, refreshing...');
       invoke('debug_clip_rich_status')
         .then((status) => console.log('[RichDebug]', JSON.stringify(status)))
-        .catch((e) =>
-          console.error('[RichDebug] command failed (backend stale?)', String(e))
-        );
+        .catch((e) => console.error('[RichDebug] command failed (backend stale?)', String(e)));
       loadFolders();
       refreshCurrentFolder();
       refreshTotalCount();
