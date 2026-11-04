@@ -488,8 +488,11 @@ async fn process_clipboard_change(
                 }
             }
 
+            // 2. Text / HTML format evaluation
+            // When a user copies on the web or in applications, browsers place BOTH text/plain and text/html on the clipboard.
+            // Almost always, the user intends to copy the visible text, NOT the internal HTML DOM wrapper.
             // Rich flavor candidates for the invisible side channel (text-family
-            // clips; structural html clips carry their own flavor in content).
+            // clips only; structural html clips already carry their own flavor).
             rich_rtf_candidate = if ctx.has(ContentFormat::Rtf) {
                 ctx.get_rich_text()
                     .ok()
@@ -507,16 +510,13 @@ async fn process_clipboard_change(
                 None
             };
             log::info!(
-                "CLIPBOARD: [RichDebug] candidates: rtf_some={} rtf_len={} html_some={} html_len={}",
+                "CLIPBOARD: Rich candidates read: rtf_some={} rtf_len={} html_some={} html_len={}",
                 rich_rtf_candidate.is_some(),
                 rich_rtf_candidate.as_ref().map(|t| t.len()).unwrap_or(0),
                 rich_html_candidate.is_some(),
                 rich_html_candidate.as_ref().map(|t| t.len()).unwrap_or(0)
             );
 
-            // 2. Text / HTML format evaluation
-            // When a user copies on the web or in applications, browsers place BOTH text/plain and text/html on the clipboard.
-            // Almost always, the user intends to copy the visible text, NOT the internal HTML DOM wrapper.
             // We only classify as HTML if:
             //   a) HTML contains structural rich elements (table, img, iframe, etc.) that cannot be represented as text, OR
             //   b) No plain text was provided and HTML is present.
@@ -680,6 +680,7 @@ async fn process_clipboard_change(
             }
         }
 
+
         // Fallback: plugin's read_text if ClipboardContext failed altogether
         if !found_content {
             if let Ok(text) = read_text().await {
@@ -808,6 +809,38 @@ async fn process_clipboard_change(
     use tauri::Manager;
     let manager = app.state::<Arc<SettingsManager>>();
     let settings = manager.get();
+
+    // Rich clipboard flavors (RTF/HTML) for text-family clips: stored as an
+    // invisible side channel and written back on paste so rich targets
+    // (Word, browsers) restore the original formatting.
+    let mut rich_rtf: Option<String> = None;
+    let mut rich_html: Option<String> = None;
+    if settings.preserve_rich_clipboard
+        && (clip_type == "text" || clip_type == "url" || clip_type == "code")
+    {
+        if let Some(rtf) = &rich_rtf_candidate {
+            let stripped = strip_rtf_tags(rtf);
+            let trivial = is_trivial_rtf_plain(rtf, &stripped);
+            let formatted = rtf_has_formatting(rtf);
+            log::info!(
+                "CLIPBOARD: RTF gate: trivial={} formatted={} len={}",
+                trivial,
+                formatted,
+                rtf.len()
+            );
+            if !trivial && formatted && (rtf.len() as i64) <= settings.max_clipboard_text_bytes {
+                rich_rtf = Some(rtf.clone());
+            }
+        }
+        if let Some(html) = &rich_html_candidate {
+            let plain = String::from_utf8_lossy(&clip_content);
+            if html.contains('<') && html.contains('>') && *html != plain {
+                if (html.len() as i64) <= settings.max_clipboard_text_bytes {
+                    rich_html = Some(html.clone());
+                }
+            }
+        }
+    }
 
     if settings.ignore_ghost_clips && !is_explicit_owner {
         log::info!("CLIPBOARD: Ignoring ghost clip (unknown owner)");
@@ -996,6 +1029,36 @@ async fn process_clipboard_change(
         }
         clip_uuid
     };
+
+    // Persist (or clear) the rich flavor side channel for text-family clips.
+    // The latest capture always wins: re-copying the same text without
+    // formatting clears the stored flavor.
+    if clip_type == "text" || clip_type == "url" || clip_type == "code" {
+        log::info!(
+            "CLIPBOARD: Persisting rich side channel: rtf={} html={}",
+            rich_rtf.is_some(),
+            rich_html.is_some()
+        );
+        if settings.preserve_rich_clipboard {
+            let _ = sqlx::query(
+                r#"
+                INSERT OR REPLACE INTO clip_rich (clip_uuid, rtf, html, created_at)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                "#,
+            )
+            .bind(&emitted_id)
+            .bind(rich_rtf.as_deref().map(|s| s.as_bytes()))
+            .bind(rich_html.as_deref().map(|s| s.as_bytes()))
+            .execute(&db.pool)
+            .await;
+        } else {
+            let _ =
+                sqlx::query("DELETE FROM clip_rich WHERE clip_uuid = ?")
+                    .bind(&emitted_id)
+                    .execute(&db.pool)
+                    .await;
+        }
+    }
 
     if let Err(e) = db.place_at_live_slot(&emitted_id).await {
         log::warn!("place_at_live_slot failed for {}: {}", emitted_id, e);
