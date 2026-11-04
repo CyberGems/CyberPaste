@@ -507,6 +507,13 @@ async fn process_clipboard_change(
             } else {
                 None
             };
+            log::info!(
+                "CLIPBOARD: Rich candidates read: rtf_some={} rtf_len={} html_some={} html_len={}",
+                rich_rtf_candidate.is_some(),
+                rich_rtf_candidate.as_ref().map(|t| t.len()).unwrap_or(0),
+                rich_html_candidate.is_some(),
+                rich_html_candidate.as_ref().map(|t| t.len()).unwrap_or(0)
+            );
 
             // We only classify as HTML if:
             //   a) HTML contains structural rich elements (table, img, iframe, etc.) that cannot be represented as text, OR
@@ -811,10 +818,16 @@ async fn process_clipboard_change(
     {
         if let Some(rtf) = &rich_rtf_candidate {
             let stripped = strip_rtf_tags(rtf);
-            if !is_trivial_rtf_plain(rtf, &stripped) && rtf_has_formatting(rtf) {
-                if (rtf.len() as i64) <= settings.max_clipboard_text_bytes {
-                    rich_rtf = Some(rtf.clone());
-                }
+            let trivial = is_trivial_rtf_plain(rtf, &stripped);
+            let formatted = rtf_has_formatting(rtf);
+            log::info!(
+                "CLIPBOARD: RTF gate: trivial={} formatted={} len={}",
+                trivial,
+                formatted,
+                rtf.len()
+            );
+            if !trivial && formatted && (rtf.len() as i64) <= settings.max_clipboard_text_bytes {
+                rich_rtf = Some(rtf.clone());
             }
         }
         if let Some(html) = &rich_html_candidate {
@@ -1019,6 +1032,11 @@ async fn process_clipboard_change(
     // The latest capture always wins: re-copying the same text without
     // formatting clears the stored flavor.
     if clip_type == "text" || clip_type == "url" || clip_type == "code" {
+        log::info!(
+            "CLIPBOARD: Persisting rich side channel: rtf={} html={}",
+            rich_rtf.is_some(),
+            rich_html.is_some()
+        );
         if settings.preserve_rich_clipboard {
             let _ = sqlx::query(
                 r#"
