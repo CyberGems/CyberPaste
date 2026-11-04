@@ -2287,6 +2287,22 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           aria-label={t('settings.resetViewOnPaste')}
                         />
                       </div>
+                      {/* Preserve rich clipboard flavors */}
+                      <div className="flex items-center justify-between gap-4 rounded-[4px] border border-border bg-secondary p-3">
+                        <div className="min-w-0 flex-1 pr-4">
+                          <span className="text-sm font-medium">
+                            {t('settings.preserveRichClipboard')}
+                          </span>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {t('settings.preserveRichClipboardDesc')}
+                          </p>
+                        </div>
+                        <Switch
+                          checked={settings.preserve_rich_clipboard}
+                          onChange={(val) => updateSetting('preserve_rich_clipboard', val)}
+                          aria-label={t('settings.preserveRichClipboard')}
+                        />
+                      </div>
                       {/* External image editor */}
                       <div className="space-y-3 pt-1">
                         <label className="block">

@@ -4,7 +4,7 @@ use crate::database::Database;
 #[cfg(target_os = "windows")]
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use clipboard_rs::common::RustImage;
-use clipboard_rs::{Clipboard, ClipboardContext, ContentFormat};
+use clipboard_rs::{Clipboard, ClipboardContent, ClipboardContext, ContentFormat};
 use once_cell::sync::Lazy;
 use sha2::{Digest, Sha256};
 #[cfg(target_os = "windows")]
@@ -383,6 +383,10 @@ async fn process_clipboard_change(
     let mut clip_hash = String::new();
     let mut metadata = String::new();
     let mut found_content = false;
+    // Rich clipboard flavors (RTF/HTML) captured alongside the plain text —
+    // stored as an invisible side channel and written back on paste.
+    let mut rich_rtf_candidate: Option<String> = None;
+    let mut rich_html_candidate: Option<String> = None;
     let max_image_bytes = app
         .try_state::<Arc<crate::settings_manager::SettingsManager>>()
         .map(|manager| manager.get().max_clipboard_image_bytes)
@@ -485,6 +489,25 @@ async fn process_clipboard_change(
                         // 2. Text / HTML format evaluation
             // When a user copies on the web or in applications, browsers place BOTH text/plain and text/html on the clipboard.
             // Almost always, the user intends to copy the visible text, NOT the internal HTML DOM wrapper.
+            // Rich flavor candidates for the invisible side channel (text-family
+            // clips only; structural html clips already carry their own flavor).
+            rich_rtf_candidate = if ctx.has(ContentFormat::Rtf) {
+                ctx.get_rich_text()
+                    .ok()
+                    .map(|t| t.trim().to_string())
+                    .filter(|t| !t.is_empty())
+            } else {
+                None
+            };
+            rich_html_candidate = if ctx.has(ContentFormat::Html) {
+                ctx.get_html()
+                    .ok()
+                    .map(|t| t.trim().to_string())
+                    .filter(|t| !t.is_empty())
+            } else {
+                None
+            };
+
             // We only classify as HTML if:
             //   a) HTML contains structural rich elements (table, img, iframe, etc.) that cannot be represented as text, OR
             //   b) No plain text was provided and HTML is present.
@@ -648,6 +671,7 @@ async fn process_clipboard_change(
             }
         }
 
+
         // Fallback: plugin's read_text if ClipboardContext failed altogether
         if !found_content {
             if let Ok(text) = read_text().await {
@@ -776,6 +800,32 @@ async fn process_clipboard_change(
     use tauri::Manager;
     let manager = app.state::<Arc<SettingsManager>>();
     let settings = manager.get();
+
+    // Rich clipboard flavors (RTF/HTML) for text-family clips: stored as an
+    // invisible side channel and written back on paste so rich targets
+    // (Word, browsers) restore the original formatting.
+    let mut rich_rtf: Option<String> = None;
+    let mut rich_html: Option<String> = None;
+    if settings.preserve_rich_clipboard
+        && (clip_type == "text" || clip_type == "url" || clip_type == "code")
+    {
+        if let Some(rtf) = &rich_rtf_candidate {
+            let stripped = strip_rtf_tags(rtf);
+            if !is_trivial_rtf_plain(rtf, &stripped) && rtf_has_formatting(rtf) {
+                if (rtf.len() as i64) <= settings.max_clipboard_text_bytes {
+                    rich_rtf = Some(rtf.clone());
+                }
+            }
+        }
+        if let Some(html) = &rich_html_candidate {
+            let plain = String::from_utf8_lossy(&clip_content);
+            if html.contains('<') && html.contains('>') && *html != plain {
+                if (html.len() as i64) <= settings.max_clipboard_text_bytes {
+                    rich_html = Some(html.clone());
+                }
+            }
+        }
+    }
 
     if settings.ignore_ghost_clips && !is_explicit_owner {
         log::info!("CLIPBOARD: Ignoring ghost clip (unknown owner)");
@@ -964,6 +1014,31 @@ async fn process_clipboard_change(
         }
         clip_uuid
     };
+
+    // Persist (or clear) the rich flavor side channel for text-family clips.
+    // The latest capture always wins: re-copying the same text without
+    // formatting clears the stored flavor.
+    if clip_type == "text" || clip_type == "url" || clip_type == "code" {
+        if settings.preserve_rich_clipboard {
+            let _ = sqlx::query(
+                r#"
+                INSERT OR REPLACE INTO clip_rich (clip_uuid, rtf, html, created_at)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                "#,
+            )
+            .bind(&emitted_id)
+            .bind(rich_rtf.as_deref().map(|s| s.as_bytes()))
+            .bind(rich_html.as_deref().map(|s| s.as_bytes()))
+            .execute(&db.pool)
+            .await;
+        } else {
+            let _ =
+                sqlx::query("DELETE FROM clip_rich WHERE clip_uuid = ?")
+                    .bind(&emitted_id)
+                    .execute(&db.pool)
+                    .await;
+        }
+    }
 
     if let Err(e) = db.place_at_live_slot(&emitted_id).await {
         log::warn!("place_at_live_slot failed for {}: {}", emitted_id, e);
@@ -1750,6 +1825,34 @@ pub fn is_trivial_rtf_plain(original_rtf: &str, stripped: &str) -> bool {
         return true;
     }
     false
+}
+
+/// Detects RTF payloads carrying real formatting (bold, size, colors,
+/// tables, pictures) as opposed to bare font-table envelopes.
+pub fn rtf_has_formatting(rtf: &str) -> bool {
+    let markers = ["\\b0", "\\b1", "\\i0", "\\i1", "\\ul", "\\fs", "\\cf", "\\highlight", "\\trowd", "\\pict", "\\embo", "\\scaps", "\\strike", "\\sub", "\\super"];
+    markers.iter().any(|m| rtf.contains(m))
+}
+
+/// Write plain text plus optional rich flavors (HTML and/or RTF) so rich
+/// targets restore the original formatting while plain targets fall back
+/// to the text.
+pub async fn write_rich(
+    plain: String,
+    html: Option<String>,
+    rtf: Option<String>,
+) -> Result<(), String> {
+    let mut contents = vec![ClipboardContent::Text(plain)];
+    if let Some(html) = html {
+        contents.push(ClipboardContent::Html(html));
+    }
+    if let Some(rtf) = rtf {
+        contents.push(ClipboardContent::Rtf(rtf));
+    }
+    ClipboardContext::new()
+        .map_err(|e| e.to_string())?
+        .set(contents)
+        .map_err(|e| e.to_string())
 }
 
 pub fn is_code_snippet(text: &str) -> bool {

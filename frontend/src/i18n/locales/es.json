@@ -377,6 +377,8 @@
     "singleClickPasteDesc": "Activo: un clic pega inmediatamente. Desactivado: el clic selecciona; pulsa Enter o haz doble clic para pegar.",
     "autoInjectPaste": "Pegado por Inyección Automática",
     "autoInjectPasteDesc": "Con Pegado Automático activo, usa Ctrl+V en lugar de Mayús+Insert",
+    "preserveRichClipboard": "Conservar formato enriquecido al copiar y pegar",
+    "preserveRichClipboardDesc": "Guarda los sabores RTF/HTML del texto copiado (negrita, tamaño, colores) para que al pegar en destinos enriquecidos como Word o Google Docs se recupere el aspecto original. Destinos planos como Notepad reciben texto plano.",
     "resetViewOnPaste": "Restablecer búsqueda y vista al abrir / pegar",
     "resetViewOnPasteDesc": "Limpia la búsqueda activa, los filtros por tipo y aplicación, cierra menús desplegables abiertos, regresa a la carpeta principal y se desplaza al inicio al abrir la ventana o pegar un clip",
     "typeToSearch": "Teclear para Buscar",

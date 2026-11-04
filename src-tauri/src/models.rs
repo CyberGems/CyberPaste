@@ -54,6 +54,8 @@ pub struct AppSettings {
     #[serde(default = "default_true")]
     pub hide_on_blur: bool,
     pub reset_view_on_paste: bool,
+    #[serde(default = "default_preserve_rich_clipboard")]
+    pub preserve_rich_clipboard: bool,
     pub image_editor_path: String,
 
     // AI
@@ -194,6 +196,10 @@ fn default_quiet_hours_start() -> String {
     "22:00".to_string()
 }
 
+fn default_preserve_rich_clipboard() -> bool {
+    true
+}
+
 fn default_quiet_hours_end() -> String {
     "07:00".to_string()
 }
@@ -229,6 +235,7 @@ impl Default for AppSettings {
             pinned: false,
             hide_on_blur: true,
             reset_view_on_paste: false,
+            preserve_rich_clipboard: true,
             image_editor_path: "".to_string(),
 
             ai_provider: "openai".to_string(),

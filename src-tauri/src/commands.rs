@@ -511,9 +511,44 @@ async fn cleanup_orphan_clip_image_files(pool: &SqlitePool) -> Result<(), String
     Ok(())
 }
 
+/// Remove rich clipboard flavors (RTF/HTML) whose clip row no longer exists.
+pub(crate) async fn cleanup_orphan_clip_rich(pool: &SqlitePool) -> Result<(), String> {
+    sqlx::query(r#"DELETE FROM clip_rich WHERE clip_uuid NOT IN (SELECT uuid FROM clips)"#)
+        .execute(pool)
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// Fetch the rich clipboard flavors (RTF/HTML) stored for a clip, if any.
+async fn fetch_clip_rich(
+    pool: &SqlitePool,
+    clip_uuid: &str,
+) -> (Option<String>, Option<String>) {
+    let row: Option<(Option<Vec<u8>>, Option<Vec<u8>>)> = sqlx::query_as(
+        "SELECT rtf, html FROM clip_rich WHERE clip_uuid = ?",
+    )
+    .bind(clip_uuid)
+    .fetch_optional(pool)
+    .await
+    .unwrap_or(None);
+    match row {
+        Some((rtf, html)) => (
+            html.map(|b| String::from_utf8_lossy(&b).to_string()),
+            rtf.map(|b| String::from_utf8_lossy(&b).to_string()),
+        ),
+        None => (None, None),
+    }
+}
+
 async fn hard_delete_clip(pool: &SqlitePool, clip_uuid: &str) -> Result<(), String> {
     delete_clip_image_file_by_uuid(pool, clip_uuid).await?;
     sqlx::query("DELETE FROM clip_images WHERE clip_uuid = ?")
+        .bind(clip_uuid)
+        .execute(pool)
+        .await
+        .map_err(|error| error.to_string())?;
+    sqlx::query("DELETE FROM clip_rich WHERE clip_uuid = ?")
         .bind(clip_uuid)
         .execute(pool)
         .await
@@ -587,6 +622,7 @@ pub async fn prune_history(pool: &SqlitePool, max_items: i64) -> Result<usize, S
         }
     }
     let _ = cleanup_orphan_clip_image_files(pool).await;
+    let _ = cleanup_orphan_clip_rich(pool).await;
     Ok(deleted)
 }
 
@@ -636,6 +672,7 @@ pub async fn prune_expired_history(pool: &SqlitePool, days: i64) -> Result<usize
             days
         );
         let _ = cleanup_orphan_clip_image_files(pool).await;
+        let _ = cleanup_orphan_clip_rich(pool).await;
     }
     Ok(deleted)
 }
@@ -673,6 +710,7 @@ async fn enforce_storage_quota_at(
         hard_delete_clip(pool, &uuid).await?;
         deleted_count += 1;
         let _ = cleanup_orphan_clip_image_files(pool).await;
+        let _ = cleanup_orphan_clip_rich(pool).await;
         usage = measure_storage_usage(pool, database_path).await?;
         if usage.total_bytes >= before.total_bytes {
             let _ = compact_database(pool).await;
@@ -701,6 +739,7 @@ async fn enforce_storage_quota_at(
             hard_delete_clip(pool, &uuid).await?;
             deleted_count += 1;
             let _ = cleanup_orphan_clip_image_files(pool).await;
+            let _ = cleanup_orphan_clip_rich(pool).await;
             usage = measure_storage_usage(pool, database_path).await?;
             if usage.total_bytes >= before.total_bytes {
                 let _ = compact_database(pool).await;
@@ -1283,9 +1322,29 @@ pub async fn paste_clip(
                 let content_str = String::from_utf8_lossy(&clip.content).to_string();
                 crate::clipboard::set_ignore_hash(content_hash.clone());
 
+                let preserve_rich = app
+                    .try_state::<Arc<SettingsManager>>()
+                    .map(|manager| manager.get().preserve_rich_clipboard)
+                    .unwrap_or(true);
+                let (rich_html, rich_rtf) = if preserve_rich {
+                    fetch_clip_rich(pool, &uuid).await
+                } else {
+                    (None, None)
+                };
+
                 let mut last_err = String::new();
                 for i in 0..5 {
-                    match write_text(content_str.clone()).await {
+                    let attempt = if rich_html.is_some() || rich_rtf.is_some() {
+                        crate::clipboard::write_rich(
+                            content_str.clone(),
+                            rich_html.clone(),
+                            rich_rtf.clone(),
+                        )
+                        .await
+                    } else {
+                        write_text(content_str.clone()).await
+                    };
+                    match attempt {
                         Ok(_) => {
                             last_err.clear();
                             break;
@@ -1622,9 +1681,29 @@ pub async fn copy_clip(
                 }
             } else {
                 let content_str = String::from_utf8_lossy(&clip.content).to_string();
+                let preserve_rich = app
+                    .try_state::<Arc<SettingsManager>>()
+                    .map(|manager| manager.get().preserve_rich_clipboard)
+                    .unwrap_or(true);
+                let (rich_html, rich_rtf) = if preserve_rich {
+                    fetch_clip_rich(pool, &uuid).await
+                } else {
+                    (None, None)
+                };
+
                 let mut last_err = String::new();
                 for i in 0..5 {
-                    match write_text(content_str.clone()).await {
+                    let attempt = if rich_html.is_some() || rich_rtf.is_some() {
+                        crate::clipboard::write_rich(
+                            content_str.clone(),
+                            rich_html.clone(),
+                            rich_rtf.clone(),
+                        )
+                        .await
+                    } else {
+                        write_text(content_str.clone()).await
+                    };
+                    match attempt {
                         Ok(_) => {
                             last_err.clear();
                             break;
@@ -1831,6 +1910,12 @@ pub async fn delete_clip(
         delete_clip_image_file_by_uuid(pool, &id).await?;
 
         sqlx::query(r#"DELETE FROM clip_images WHERE clip_uuid = ?"#)
+            .bind(&id)
+            .execute(pool)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        sqlx::query(r#"DELETE FROM clip_rich WHERE clip_uuid = ?"#)
             .bind(&id)
             .execute(pool)
             .await
@@ -3916,6 +4001,7 @@ pub async fn import_backup(
 
     tx.commit().await.map_err(|e| e.to_string())?;
     let _ = cleanup_orphan_clip_image_files(pool).await;
+    let _ = cleanup_orphan_clip_rich(pool).await;
 
     // 5. Restore Settings
     let mut restored_settings = data.settings;
@@ -4345,6 +4431,12 @@ pub async fn update_clip_content(
         .execute(pool)
         .await
         .map_err(|e| e.to_string())?;
+
+    // The edited text no longer corresponds to the stored rich flavors
+    let _ = sqlx::query("DELETE FROM clip_rich WHERE clip_uuid = ?")
+        .bind(&clip_id)
+        .execute(pool)
+        .await;
 
     Ok(())
 }

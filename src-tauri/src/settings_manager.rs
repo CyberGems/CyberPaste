@@ -187,6 +187,11 @@ impl SettingsManager {
                 settings.pinned = b;
             }
         }
+        if let Some(v) = get_val(pool, "preserve_rich_clipboard").await {
+            if let Ok(b) = v.parse() {
+                settings.preserve_rich_clipboard = b;
+            }
+        }
         if let Some(v) = get_val(pool, "reset_view_on_paste").await {
             if let Ok(b) = v.parse() {
                 settings.reset_view_on_paste = b;

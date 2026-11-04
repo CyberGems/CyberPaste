@@ -627,6 +627,22 @@ impl Database {
         .execute(&self.pool)
         .await?;
 
+        // Rich clipboard flavors (RTF/HTML) stored as an invisible side channel
+        // for text clips, so re-pasting into rich targets restores formatting.
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS clip_rich (
+                clip_uuid TEXT PRIMARY KEY,
+                rtf BLOB,
+                html BLOB,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (clip_uuid) REFERENCES clips(uuid) ON DELETE CASCADE
+            )
+            "#,
+        )
+        .execute(&self.pool)
+        .await?;
+
         crate::progress::migrate(&self.pool).await?;
 
         // Seed initial sample clips for brand new installations if database is empty

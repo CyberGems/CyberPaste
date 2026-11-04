@@ -58,6 +58,7 @@ export interface Settings {
   single_click_paste?: boolean;
   ignore_ghost_clips: boolean;
   reset_view_on_paste?: boolean;
+  preserve_rich_clipboard?: boolean;
   image_editor_path?: string;
   window_width?: number;
   window_height?: number;

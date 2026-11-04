@@ -380,6 +380,8 @@
     "singleClickPasteDesc": "When enabled, clicking a clip pastes immediately. When disabled, click selects; press Enter or double-click to paste.",
     "autoInjectPaste": "Auto-Inject Paste",
     "autoInjectPasteDesc": "When Auto Paste is enabled, use Ctrl+V instead of Shift+Insert",
+    "preserveRichClipboard": "Preserve rich formatting when copying and pasting",
+    "preserveRichClipboardDesc": "Keeps the RTF/HTML flavors of copied text (bold, font size, colors) so pasting back into rich targets like Word or Google Docs restores the original look. Plain targets like Notepad still receive plain text.",
     "resetViewOnPaste": "Reset search and view on show / paste",
     "resetViewOnPasteDesc": "Clears active search, type and app filters, closes open dropdown menus, resets selected folder to the main clipboard, and scrolls to top when opening the window or pasting a clip",
     "typeToSearch": "Type to Search",
