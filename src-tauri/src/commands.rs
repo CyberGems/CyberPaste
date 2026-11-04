@@ -1331,6 +1331,13 @@ pub async fn paste_clip(
                 } else {
                     (None, None)
                 };
+                log::info!(
+                    "CLIPBOARD: Rich flavors for write ({}): rtf={} html={} (setting={})",
+                    uuid,
+                    rich_rtf.is_some(),
+                    rich_html.is_some(),
+                    preserve_rich
+                );
 
                 let mut last_err = String::new();
                 for i in 0..5 {
@@ -1690,6 +1697,13 @@ pub async fn copy_clip(
                 } else {
                     (None, None)
                 };
+                log::info!(
+                    "CLIPBOARD: Rich flavors for write ({}): rtf={} html={} (setting={})",
+                    uuid,
+                    rich_rtf.is_some(),
+                    rich_html.is_some(),
+                    preserve_rich
+                );
 
                 let mut last_err = String::new();
                 for i in 0..5 {
