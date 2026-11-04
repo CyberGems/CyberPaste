@@ -1443,8 +1443,8 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               <div
                 aria-live="polite"
                 className={clsx(
-                  'flex items-center gap-2 px-2 pb-2.5 transition-opacity duration-300',
-                  savedVisible ? 'opacity-100' : 'opacity-0'
+                  'flex items-center justify-center gap-2 overflow-hidden transition-all duration-300',
+                  savedVisible ? 'max-h-8 pb-2.5 opacity-100' : 'max-h-0 opacity-0'
                 )}
               >
                 <span className="relative flex h-2 w-2 shrink-0">
@@ -1461,7 +1461,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 className="flex w-full items-center justify-center gap-1.5 rounded-[4px] border border-border bg-transparent py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 {t('common.close')}
-                <CornerDownLeft size={11} />
+                <span className="flex h-4 w-4 items-center justify-center rounded-[3px] border border-border bg-secondary/70">
+                  <CornerDownLeft size={9} />
+                </span>
               </button>
             </div>
           </div>
