@@ -450,8 +450,28 @@ async fn process_clipboard_change(
     if !found_content {
         let rich_read_started = std::time::Instant::now();
 
-        // Use a single ClipboardContext for all format checks (files, HTML, RTF, text)
-        if let Ok(ctx) = ClipboardContext::new() {
+        // Use a single ClipboardContext for all format checks (files, HTML, RTF, text).
+        // Rich sources like Word keep the clipboard OPEN for a short while after
+        // copying, so retry the context creation before falling back to the
+        // text-only path — otherwise the RTF/HTML flavors are lost entirely.
+        let mut ctx_opt: Option<ClipboardContext> = None;
+        for attempt in 0..5 {
+            match ClipboardContext::new() {
+                Ok(c) => {
+                    ctx_opt = Some(c);
+                    break;
+                }
+                Err(e) => {
+                    log::warn!(
+                        "CLIPBOARD: ClipboardContext unavailable (attempt {}): {}",
+                        attempt + 1,
+                        e
+                    );
+                    std::thread::sleep(std::time::Duration::from_millis(90));
+                }
+            }
+        }
+        if let Some(ctx) = ctx_opt {
             // 1. Try Files (CF_HDROP) — must be before text: Explorer sets both
             if ctx.has(ContentFormat::Files) {
                 if let Ok(files) = ctx.get_files() {
