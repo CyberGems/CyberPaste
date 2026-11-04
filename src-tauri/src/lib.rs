@@ -932,6 +932,7 @@ pub fn run_app() {
             commands::open_with,
             commands::reset_window_size,
             commands::center_window,
+            commands::debug_clip_rich_status,
             commands::play_clipboard_sound,
             commands::open_settings,
             commands::open_about,

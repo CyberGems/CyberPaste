@@ -520,6 +520,52 @@ pub(crate) async fn cleanup_orphan_clip_rich(pool: &SqlitePool) -> Result<(), St
     Ok(())
 }
 
+/// Temporary diagnostic: rich side channel totals + recent text clips.
+#[tauri::command]
+pub async fn debug_clip_rich_status(
+    db: tauri::State<'_, Arc<Database>>,
+) -> Result<serde_json::Value, String> {
+    let pool = &db.pool;
+    let totals: (i64, i64, i64) = sqlx::query_as(
+        "SELECT COUNT(*),         COALESCE(SUM(rtf IS NOT NULL), 0),         COALESCE(SUM(html IS NOT NULL), 0) FROM clip_rich",
+    )
+    .fetch_one(pool)
+    .await
+    .map_err(|e| e.to_string())?;
+    let rows: Vec<(String, Option<i64>, Option<i64>, String, String)> = sqlx::query_as(
+        r#"
+        SELECT c.uuid, length(r.rtf), length(r.html), c.clip_type,
+               substr(c.text_preview, 1, 40)
+        FROM clips c
+        LEFT JOIN clip_rich r ON r.clip_uuid = c.uuid
+        WHERE c.clip_type IN ('text', 'url', 'code')
+        ORDER BY c.created_at DESC
+        LIMIT 6
+        "#,
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(|e| e.to_string())?;
+    let recent: Vec<serde_json::Value> = rows
+        .into_iter()
+        .map(|(uuid, rtf, html, clip_type, preview)| {
+            serde_json::json!({
+                "uuid": uuid,
+                "rtf_len": rtf,
+                "html_len": html,
+                "type": clip_type,
+                "preview": preview,
+            })
+        })
+        .collect();
+    Ok(serde_json::json!({
+        "clip_rich_rows": totals.0,
+        "rows_with_rtf": totals.1,
+        "rows_with_html": totals.2,
+        "recent": recent,
+    }))
+}
+
 /// Fetch the rich clipboard flavors (RTF/HTML) stored for a clip, if any.
 async fn fetch_clip_rich(
     pool: &SqlitePool,
