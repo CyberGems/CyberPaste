@@ -576,8 +576,9 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     const norm = (value: string | null) => normalizeForSearch(value ?? '');
     const tokens = normalizeForSearch(settingsQuery.trim()).split(/\s+/).filter(Boolean);
 
-    // 1) Hide everything inside the content area
+    // 1) Hide everything inside the content area, except the empty state
     for (const el of root.querySelectorAll<HTMLElement>('*')) {
+      if (el.closest('[data-search-empty]')) continue;
       el.classList.add('hidden');
     }
 
@@ -616,6 +617,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
         continue;
       }
       let row = label.closest<HTMLElement>('[class*="p-3"], [class*="p-4"], label') ?? label;
+      if (entry.revealCard) {
+        // Section-level features (App Lock): reveal the whole card so its
+        // related controls and notes show together with the label.
+        row = label.closest<HTMLElement>('[class*="bg-card"]') ?? row;
+      }
       if (row.tagName === 'LABEL' && row.parentElement) {
         // Stacked label+control rows: expand to the dedicated wrapper so the
         // control shows with its label, but only when it wraps a single row.
@@ -1507,7 +1513,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
           {/* Content Area */}
           <div ref={settingsContentRef} className="custom-scrollbar flex-1 overflow-y-auto p-6">
             {searchMode && searchVisibleCount === 0 && (
-              <div className="flex flex-col items-center justify-center gap-2 py-20 text-center">
+              <div
+                data-search-empty
+                className="flex flex-col items-center justify-center gap-2 py-20 text-center"
+              >
                 <Search size={28} className="text-muted-foreground/40" />
                 <p className="text-sm text-muted-foreground">{t('settings.searchNoResults')}</p>
               </div>

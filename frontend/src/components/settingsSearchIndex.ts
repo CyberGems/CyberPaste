@@ -31,6 +31,8 @@ export interface SettingsSearchEntry {
   sectionKey?: string;
   /** Extra searchable text keys (e.g. a Select option label). */
   extraKeys?: string[];
+  /** Reveal the whole framed card instead of just the setting row. */
+  revealCard?: boolean;
 }
 
 export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
@@ -180,6 +182,7 @@ export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
     labelKey: 'settings.appLock',
     descKey: 'settings.appLockDesc',
     sectionKey: 'settings.appLock',
+    revealCard: true,
   },
   // Folders
   {
@@ -489,7 +492,8 @@ export const matchSettings = (rawQuery: string): SettingsSearchEntry[] => {
     if (strong >= 2 || weak >= 2) scored.push({ entry: indexed.entry, score });
   }
 
-  if (scored.length === 0 && query.length >= 3 && new Set(query).size >= 2) {
+  // Fuzzy is an acronym helper: only short queries (3-4 chars) qualify.
+  if (scored.length === 0 && query.length >= 3 && query.length <= 4 && new Set(query).size >= 2) {
     const maxSpan = query.length * 3;
     for (const indexed of getIndex()) {
       let best = Number.POSITIVE_INFINITY;
