@@ -424,103 +424,92 @@ export const SETTINGS_TAB_LABEL_KEYS: Record<SettingsSearchTab, string> = {
 
 /** Lowercase and strip diacritics so "seccion" matches "Sección". */
 export const normalizeForSearch = (value: string): string =>
-  value
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-
-// Indexed in Spanish and English regardless of the UI language, so users can
-// type in either language (CyberSnap-style search only matches the active one).
-const tEs = i18n.getFixedT('es');
-const tEn = i18n.getFixedT('en');
+  value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
 interface IndexedEntry {
   entry: SettingsSearchEntry;
-  labels: string[];
-  descs: string[];
-  sections: string[];
+  label: string;
+  desc: string;
+  section: string;
   extras: string[];
 }
 
-const INDEX: IndexedEntry[] = SETTINGS_SEARCH_ENTRIES.map((entry) => ({
-  entry,
-  labels: [normalizeForSearch(tEs(entry.labelKey)), normalizeForSearch(tEn(entry.labelKey))],
-  descs: entry.descKey
-    ? [normalizeForSearch(tEs(entry.descKey)), normalizeForSearch(tEn(entry.descKey))]
-    : [],
-  sections: entry.sectionKey
-    ? [normalizeForSearch(tEs(entry.sectionKey)), normalizeForSearch(tEn(entry.sectionKey))]
-    : [],
-  extras: (entry.extraKeys ?? []).flatMap((k) => [
-    normalizeForSearch(tEs(k)),
-    normalizeForSearch(tEn(k)),
-  ]),
-}));
+// The index is built over the CURRENT UI language only (CyberSnap style):
+// every revealed row must carry a visible match, otherwise results would
+// appear unexplained. Rebuilt when the user changes the language.
+let cachedLanguage = '';
+let cachedIndex: IndexedEntry[] = [];
+
+const getIndex = (): IndexedEntry[] => {
+  const language = i18n.language || 'en';
+  if (language === cachedLanguage) return cachedIndex;
+  cachedLanguage = language;
+  const translate = (key: string) => normalizeForSearch(i18n.t(key));
+  cachedIndex = SETTINGS_SEARCH_ENTRIES.map((entry) => ({
+    entry,
+    label: translate(entry.labelKey),
+    desc: entry.descKey ? translate(entry.descKey) : '',
+    section: entry.sectionKey ? translate(entry.sectionKey) : '',
+    extras: (entry.extraKeys ?? []).map(translate),
+  }));
+  return cachedIndex;
+};
 
 /**
- * Every entry matching the query. Tokens are matched against labels
- * (weight 3, prefix +7, whole-token equality +10), section titles (+2),
- * descriptions (+1) and extra option texts (+2). With no direct hits and a
- * query of 3+ characters it falls back to a span-bounded subsequence match
- * over the label only with a tight span budget (dense acronyms like "fnm" ->
-  // "File name" qualify, sparse junk like "rws" -> "folders with mouse wheel" does
-  // not), so loose
- * garbage cannot surface from long description texts.
+ * Every entry matching the query, in the current UI language. Tokens hit the
+ * label strongly (whole token +10, word-start +7, substring +3) and option
+ * extras (+2); descriptions and section titles only add weak word signals
+ * (+2 whole word, +1 word-start). An entry is included when it has a strong
+ * signal or two weak ones, so incidental substrings inside unrelated words
+ * (e.g. "app" inside "Appearance") cannot surface on their own. With no
+ * direct hits and a query of 3+ characters containing at least two distinct
+ * characters, a span-bounded subsequence match over the label runs (dense
+ * acronyms like "fnm" -> "File name" qualify, sparse junk does not).
  */
 export const matchSettings = (rawQuery: string): SettingsSearchEntry[] => {
   const query = normalizeForSearch(rawQuery.trim());
   if (!query) return [];
   const tokens = query.split(/\s+/).filter(Boolean);
+  if (!tokens.length) return [];
 
   const scored: { entry: SettingsSearchEntry; score: number }[] = [];
-  for (const indexed of INDEX) {
-    const label = indexed.labels.join(' ');
-    const desc = indexed.descs.join(' ');
-    const section = indexed.sections.join(' ');
-    const extras = indexed.extras.join(' ');
-    let score = 0;
+  for (const indexed of getIndex()) {
+    let strong = 0;
+    let weak = 0;
     for (const token of tokens) {
-      if (indexed.labels.some((l) => l === token)) score += 10;
-      else if (indexed.labels.some((l) => l.startsWith(token))) score += 7;
-      else if (label.includes(token)) score += 3;
-      if (section.includes(token)) score += 2;
-      if (extras.includes(token)) score += 2;
-      if (desc.includes(token)) score += 1;
+      if (indexed.label === token) strong += 10;
+      else if (indexed.label.startsWith(token)) strong += 7;
+      else if (indexed.label.includes(token)) strong += 3;
+      if (indexed.extras.some((x) => x.includes(token))) strong += 2;
+      const words = (indexed.desc + ' ' + indexed.section).split(/[^a-z0-9]+/);
+      weak += words.some((w) => w === token) ? 2 : words.some((w) => w.startsWith(token)) ? 1 : 0;
     }
-    if (label === query) score += 10;
-    if (score > 0) scored.push({ entry: indexed.entry, score });
+    if (indexed.label === query) strong += 10;
+    const score = strong + weak;
+    if (strong >= 2 || weak >= 2) scored.push({ entry: indexed.entry, score });
   }
 
-  // Fuzzy needs at least two distinct characters: single repeated letters
-  // ("rrrr") would otherwise subsequence-match unrelated rows.
-  const distinctChars = new Set(query).size;
-  if (scored.length === 0 && query.length >= 3 && distinctChars >= 2) {
+  if (scored.length === 0 && query.length >= 3 && new Set(query).size >= 2) {
     const maxSpan = query.length * 3;
-    for (const indexed of INDEX) {
+    for (const indexed of getIndex()) {
       let best = Number.POSITIVE_INFINITY;
-      for (const label of indexed.labels) {
-        for (const token of tokens) {
-          let at = label.indexOf(token[0]);
-          while (at !== -1) {
-            // try to match the token as an in-order subsequence starting here
-            let cursor = at;
-            let matched = true;
-            for (const char of token) {
-              cursor = label.indexOf(char, cursor);
-              if (cursor === -1) {
-                matched = false;
-                break;
-              }
-              cursor += 1;
-            }
-            if (matched) {
-              const span = cursor - at;
-              if (span <= maxSpan) best = Math.min(best, span);
-              break;
-            }
-            at = label.indexOf(token[0], at + 1);
+      let at = indexed.label.indexOf(query[0]);
+      while (at !== -1) {
+        let cursor = at;
+        let matched = true;
+        for (const char of query) {
+          cursor = indexed.label.indexOf(char, cursor);
+          if (cursor === -1) {
+            matched = false;
+            break;
           }
+          cursor += 1;
         }
+        if (matched) {
+          const span = cursor - at;
+          if (span <= maxSpan) best = Math.min(best, span);
+        }
+        at = indexed.label.indexOf(query[0], at + 1);
       }
       if (Number.isFinite(best)) {
         scored.push({ entry: indexed.entry, score: 100 - best / maxSpan });
@@ -529,21 +518,4 @@ export const matchSettings = (rawQuery: string): SettingsSearchEntry[] => {
   }
 
   return scored.sort((a, b) => b.score - a.score).map((s) => s.entry);
-};
-
-/**
- * Label texts (deaccented) that identify a matched entry in the rendered
- * panel: Spanish, English and the current UI language variants.
- */
-export const matchedLabelTexts = (
-  entries: SettingsSearchEntry[],
-  currentLabel: (key: string) => string
-): Set<string> => {
-  const texts = new Set<string>();
-  for (const entry of entries) {
-    texts.add(normalizeForSearch(tEs(entry.labelKey)));
-    texts.add(normalizeForSearch(tEn(entry.labelKey)));
-    texts.add(normalizeForSearch(currentLabel(entry.labelKey)));
-  }
-  return texts;
 };

@@ -46,14 +46,9 @@ import {
   ChevronDown,
   type LucideIcon,
 } from 'lucide-react';
-import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback } from 'react';
 import { useTheme } from '../hooks/useTheme';
-import {
-  matchSettings,
-  normalizeForSearch,
-  SETTINGS_TAB_LABEL_KEYS,
-  type SettingsSearchEntry,
-} from './settingsSearchIndex';
+import { matchSettings, normalizeForSearch, SETTINGS_TAB_LABEL_KEYS } from './settingsSearchIndex';
 import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
 import { emit, listen } from '@tauri-apps/api/event';
@@ -513,13 +508,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
   // ── Settings search ────────────────────────────────────────────────────
   const searchInputRef = useRef<HTMLInputElement>(null);
   const settingsContentRef = useRef<HTMLDivElement>(null);
-  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const matchRowsRef = useRef<HTMLElement[]>([]);
   const matchCursorRef = useRef(0);
   const highlightedRef = useRef<HTMLElement[]>([]);
   const [settingsQuery, setSettingsQuery] = useState('');
-  const [searchMatches, setSearchMatches] = useState<SettingsSearchEntry[]>([]);
-  const [searchMatchesQuery, setSearchMatchesQuery] = useState('');
   const [searchVisibleCount, setSearchVisibleCount] = useState(0);
 
   // While a query is active every tab renders at once and the layout effect
@@ -551,25 +543,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
-  // Debounced search over the settings index
-  useEffect(() => {
-    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-    const query = settingsQuery.trim();
-    if (!query) {
-      setSearchMatches([]);
-      matchRowsRef.current = [];
-      matchCursorRef.current = 0;
-      return;
-    }
-    searchDebounceRef.current = setTimeout(() => {
-      setSearchMatches(matchSettings(query));
-      setSearchMatchesQuery(query);
-      matchCursorRef.current = 0;
-    }, 120);
-    return () => {
-      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-    };
-  }, [settingsQuery]);
+  // Synchronous search over the settings index — the registry is tiny, so
+  // matching on every keystroke inside useLayoutEffect avoids any flicker
+  // between pending and settled results.
+  const searchMatches = useMemo(() => matchSettings(settingsQuery), [settingsQuery, i18n.language]);
 
   // In search mode every tab is mounted at once. Everything inside the
   // content area is hidden first, then only the ancestor path of each
@@ -598,15 +575,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
     const norm = (value: string | null) => normalizeForSearch(value ?? '');
     const tokens = normalizeForSearch(settingsQuery.trim()).split(/\s+/).filter(Boolean);
-
-    // Only filter with matches that belong to the current query; while the
-    // debounce is pending, keep the area blank instead of flashing all tabs.
-    if (searchMatchesQuery !== settingsQuery.trim()) {
-      for (const el of root.querySelectorAll<HTMLElement>('*')) {
-        el.classList.add('hidden');
-      }
-      return;
-    }
 
     // 1) Hide everything inside the content area
     for (const el of root.querySelectorAll<HTMLElement>('*')) {
@@ -686,7 +654,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     }
     matchRowsRef.current = visibleRows;
     setSearchVisibleCount(visibleRows.length);
-  }, [searchMode, searchMatches, searchMatchesQuery, settingsQuery, i18n.language, t]);
+  }, [searchMode, searchMatches, settingsQuery, i18n.language, t]);
 
   const scrollToMatch = (index: number) => {
     const rows = matchRowsRef.current;
@@ -1404,7 +1372,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
               {settingsQuery && (
                 <p className="mt-1 px-1 text-[10px] text-muted-foreground/70">
                   {searchMode
-                    ? searchMatchesQuery === settingsQuery.trim() && searchVisibleCount > 0
+                    ? searchVisibleCount > 0
                       ? t('settings.searchResultsCount', { count: searchVisibleCount })
                       : t('settings.searchNoResults')
                     : ''}
@@ -1538,14 +1506,12 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
           {/* Content Area */}
           <div ref={settingsContentRef} className="custom-scrollbar flex-1 overflow-y-auto p-6">
-            {searchMode &&
-              searchMatchesQuery === settingsQuery.trim() &&
-              searchVisibleCount === 0 && (
-                <div className="flex flex-col items-center justify-center gap-2 py-20 text-center">
-                  <Search size={28} className="text-muted-foreground/40" />
-                  <p className="text-sm text-muted-foreground">{t('settings.searchNoResults')}</p>
-                </div>
-              )}
+            {searchMode && searchVisibleCount === 0 && (
+              <div className="flex flex-col items-center justify-center gap-2 py-20 text-center">
+                <Search size={28} className="text-muted-foreground/40" />
+                <p className="text-sm text-muted-foreground">{t('settings.searchNoResults')}</p>
+              </div>
+            )}
             <div className="w-full space-y-8">
               {/* --- GENERAL TAB --- */}
               {searchMode && (
