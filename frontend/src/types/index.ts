@@ -12,6 +12,7 @@ export interface ClipboardItem {
   image_path: string | null;
   sort_order?: number;
   is_pinned?: boolean;
+  display_number?: number;
 }
 
 export interface FolderItem {

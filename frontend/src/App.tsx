@@ -2866,13 +2866,15 @@ function App() {
     (n: number) => {
       const filtered = clipsRef.current;
       if (filtered.length === 0) return;
-      // Positional: Ctrl+1 = index 0 (clip #1)
-      // Countdown: mostrar #N donde N = totalCount - index, entonces Ctrl+1 corresponde al último visualmente.
-      //    Para countdown Ctrl+1 debe pegar el clip con número #1, que es el último en la lista (index length-1).
-      const targetIndex = settings?.clip_numbering === 'countdown' ? filtered.length - n : n - 1;
-      if (targetIndex < 0 || targetIndex >= filtered.length) return;
-      const clip = filtered[targetIndex];
-      if (clip) handlePaste(clip.id);
+      // Positional: Ctrl+N pega el clip cuyo número mostrado es N (los slots
+      // de los fijados crean huecos, así que el número NO es el índice).
+      // Countdown: N cuenta desde el final de la lista.
+      const targetClip =
+        settings?.clip_numbering === 'countdown'
+          ? filtered[filtered.length - n]
+          : filtered.find((c) => (c.display_number ?? filtered.indexOf(c) + 1) === n);
+      if (!targetClip) return;
+      handlePaste(targetClip.id);
     },
     [settings?.clip_numbering]
   );

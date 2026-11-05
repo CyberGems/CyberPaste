@@ -339,7 +339,12 @@ pub async fn ai_process_clip(
     Ok(result)
 }
 
-fn clip_to_list_item(clip: &Clip, image_path: Option<&str>, preview_only: bool) -> ClipboardItem {
+fn clip_to_list_item(
+    clip: &Clip,
+    image_path: Option<&str>,
+    preview_only: bool,
+    display_number: i64,
+) -> ClipboardItem {
     let content_str = if clip.clip_type == "image" {
         image_path.unwrap_or_default().to_string()
     } else if preview_only {
@@ -364,6 +369,7 @@ fn clip_to_list_item(clip: &Clip, image_path: Option<&str>, preview_only: bool) 
         metadata: clip.metadata.clone(),
         image_path: image_path.map(|s| s.to_string()),
         is_pinned: clip.is_pinned,
+        display_number,
     }
 }
 
@@ -391,6 +397,7 @@ fn clip_to_detail_item(
         metadata: clip.metadata.clone(),
         image_path,
         is_pinned: clip.is_pinned,
+        display_number: 0,
     }
 }
 
@@ -996,6 +1003,62 @@ fn clips_order_by_clause() -> &'static str {
     "ORDER BY sort_order ASC, created_at DESC"
 }
 
+/// Display numbers for a visual list: pinned clips hold their reserved slot
+/// (pinned_slot); unpinned clips take the free numbers in visual order.
+fn assign_display_numbers(
+    ordered: &[(String, bool, Option<i64>)],
+) -> std::collections::HashMap<String, i64> {
+    use std::collections::{BTreeSet, HashMap};
+    let reserved: BTreeSet<i64> = ordered
+        .iter()
+        .filter(|(_, pinned, _)| *pinned)
+        .filter_map(|(_, _, slot)| *slot)
+        .filter(|s| *s >= 1)
+        .collect();
+    let mut taken = reserved.clone();
+    let mut out: HashMap<String, i64> = HashMap::with_capacity(ordered.len());
+    let mut free_cursor = 1i64;
+
+    // Pins claim their stored slot first (first come, first served)
+    for (uuid, pinned, slot) in ordered {
+        if *pinned {
+            if let Some(s) = slot.filter(|s| *s >= 1 && !out.values().any(|v| *v == *s)) {
+                out.insert(uuid.clone(), s);
+            }
+        }
+    }
+    // Everything without a number takes the lowest free number
+    for (uuid, _, _) in ordered {
+        if out.contains_key(uuid) {
+            continue;
+        }
+        while taken.contains(&free_cursor) {
+            free_cursor += 1;
+        }
+        out.insert(uuid.clone(), free_cursor);
+        taken.insert(free_cursor);
+        free_cursor += 1;
+    }
+    out
+}
+
+/// Ordered (uuid, is_pinned, pinned_slot) rows of a visual list.
+async fn fetch_ordered_pin_rows(
+    pool: &sqlx::SqlitePool,
+    folder_id: Option<i64>,
+) -> Vec<(String, bool, Option<i64>)> {
+    let mut sql = String::from(
+        "SELECT uuid, is_pinned, pinned_slot FROM clips WHERE is_deleted = 0 AND folder_id ",
+    );
+    sql.push_str(if folder_id.is_some() { "= ? " } else { "IS NULL " });
+    sql.push_str(clips_order_by_clause());
+    let mut q = sqlx::query_as::<_, (String, bool, Option<i64>)>(&sql);
+    if let Some(id) = folder_id {
+        q = q.bind(id);
+    }
+    q.fetch_all(pool).await.unwrap_or_default()
+}
+
 #[tauri::command]
 pub async fn get_clips(
     filter_id: Option<String>,
@@ -1143,6 +1206,12 @@ pub async fn get_clips(
         }
     }
 
+    // Display numbers: pins hold their reserved slot; unpinned compact around
+    let folder_num = filter_id.as_deref().and_then(|s| s.parse::<i64>().ok());
+    let pin_rows: Vec<(String, bool, Option<i64>)> =
+        fetch_ordered_pin_rows(pool, folder_num).await;
+    let display_numbers = assign_display_numbers(&pin_rows);
+
     let image_rows = image_uuids.len();
     let raw_bytes: usize = clips.iter().map(|clip| clip.content.len()).sum();
     let map_started = Instant::now();
@@ -1150,10 +1219,13 @@ pub async fn get_clips(
         .iter()
         .enumerate()
         .map(|(idx, clip)| {
+            let display_number =
+                display_numbers.get(&clip.uuid).copied().unwrap_or(idx as i64 + 1);
             let item = clip_to_list_item(
                 clip,
                 image_path_map.get(&clip.uuid).map(|s| s.as_str()),
                 preview_only,
+                display_number,
             );
             // Only log first 10 clips to reduce noise
             if idx < 10 {
@@ -2023,15 +2095,41 @@ pub async fn toggle_clip_pin(
     }
 
     // Return the new state
-    let is_pinned: bool = sqlx::query_scalar(
+    let (is_pinned, clip_folder_id): (bool, Option<i64>) = sqlx::query_as(
         r#"
-        SELECT is_pinned FROM clips WHERE uuid = ?
+        SELECT is_pinned, folder_id FROM clips WHERE uuid = ?
     "#,
     )
     .bind(&uuid)
     .fetch_one(pool)
     .await
     .map_err(|e| e.to_string())?;
+
+    // Reserve the clip's visible slot number on pin; release it on unpin.
+    // The number is the one the user saw (gaps included), computed over the
+    // list the clip lives in.
+    if is_pinned {
+        let visual = db.load_list_clips(clip_folder_id).await.map_err(|e| e.to_string())?;
+        let ordered: Vec<(String, bool, Option<i64>)> = visual
+            .into_iter()
+            .map(|c| (c.uuid, c.is_pinned, c.pinned_slot))
+            .collect();
+        let numbers = assign_display_numbers(&ordered);
+        if let Some(slot) = numbers.get(&uuid) {
+            sqlx::query("UPDATE clips SET pinned_slot = ? WHERE uuid = ?")
+                .bind(slot)
+                .bind(&uuid)
+                .execute(pool)
+                .await
+                .map_err(|e| e.to_string())?;
+        }
+    } else {
+        sqlx::query("UPDATE clips SET pinned_slot = NULL WHERE uuid = ?")
+            .bind(&uuid)
+            .execute(pool)
+            .await
+            .map_err(|e| e.to_string())?;
+    }
 
     if is_pinned {
         crate::progress::record_event_for_app(
@@ -3055,16 +3153,23 @@ pub async fn search_clips(
         }
     }
 
+    let folder_num = filter_id.as_deref().and_then(|s| s.parse::<i64>().ok());
+    let pin_rows: Vec<(String, bool, Option<i64>)> =
+        fetch_ordered_pin_rows(pool, folder_num).await;
+    let display_numbers = assign_display_numbers(&pin_rows);
+
     let image_rows = image_uuids.len();
     let raw_bytes: usize = clips.iter().map(|clip| clip.content.len()).sum();
     let map_started = Instant::now();
     let items: Vec<ClipboardItem> = clips
         .iter()
         .map(|clip| {
+            let display_number = display_numbers.get(&clip.uuid).copied().unwrap_or(0);
             clip_to_list_item(
                 clip,
                 image_path_map.get(&clip.uuid).map(|s| s.as_str()),
                 true,
+                display_number,
             )
         })
         .collect();
