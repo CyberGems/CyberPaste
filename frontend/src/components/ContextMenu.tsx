@@ -533,7 +533,7 @@ export function ContextMenu({
 
       {headerActions && headerActions.length > 0 && (
         <>
-          <div className="mb-1 flex min-w-[330px] items-stretch justify-between gap-0 divide-x divide-border/40 rounded-lg border border-border/40 bg-muted/25 p-1">
+          <div className="mb-1 flex min-w-[330px] items-stretch justify-between gap-0 divide-x divide-border/70 rounded-lg border border-border/40 bg-muted/25 p-1">
             {headerActions.map((action) => {
               const tooltipLabel =
                 action.tooltip ??
@@ -560,11 +560,11 @@ export function ContextMenu({
                             ? 'text-muted-foreground hover:bg-destructive/15 hover:text-destructive active:scale-95'
                             : action.active
                               ? 'bg-primary/20 text-primary hover:bg-primary/30 active:scale-95'
-                              : 'text-muted-foreground hover:bg-accent hover:text-primary'
+                              : 'text-foreground/90 hover:bg-accent hover:text-primary'
                     )}
                   >
                     {action.icon}
-                    <span className="w-full truncate text-center text-[13px] font-medium leading-snug text-foreground/90">
+                    <span className="w-full truncate text-center text-[13px] font-medium leading-snug">
                       {action.label}
                     </span>
                   </button>
