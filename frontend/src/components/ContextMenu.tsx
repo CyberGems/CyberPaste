@@ -533,7 +533,7 @@ export function ContextMenu({
 
       {headerActions && headerActions.length > 0 && (
         <>
-          <div className="mb-1 flex min-w-[290px] items-stretch justify-between gap-1 rounded-lg border border-border/40 bg-muted/25 p-1">
+          <div className="mb-1 flex min-w-[330px] items-stretch justify-between gap-1 rounded-lg border border-border/40 bg-muted/25 p-1">
             {headerActions.map((action) => {
               const tooltipLabel =
                 action.tooltip ??
@@ -561,7 +561,7 @@ export function ContextMenu({
                     )}
                   >
                     {action.icon}
-                    <span className="w-full truncate text-center text-[9px] font-medium leading-none">
+                    <span className="w-full text-center text-[13px] font-medium leading-normal text-foreground/90">
                       {action.label}
                     </span>
                   </button>

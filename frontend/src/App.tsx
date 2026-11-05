@@ -3273,6 +3273,12 @@ function App() {
       // Abort pending/active drag so the grabbing cursor doesn't flash on right-click
       if (dragStateRef.current.pendingDrag || dragStateRef.current.isDragging) {
         finishDrag(true);
+      }
+      if (type === 'card') {
+        // Right-click selects the clip (Explorer behavior) so header actions
+        // and the Alt+P pin hotkey apply to the right-clicked clip.
+        setSelectedClipId(itemId);
+        setSelectedClipIds(new Set());
       } else {
         document.body.classList.remove('is-dragging');
         dragStateRef.current.pendingDrag = null;
@@ -3314,6 +3320,7 @@ function App() {
             id: 'pin',
             label: clip?.is_pinned ? t('contextMenu.unpin') : t('contextMenu.pin'),
             tooltip: pinLatestDisabled ? t('contextMenu.pinLatestDisabled') : undefined,
+            shortcut: TITLEBAR_HOTKEYS.pin,
             icon: clip?.is_pinned ? <PinOff size={15} /> : <Pin size={15} />,
             disabled: pinLatestDisabled,
             active: Boolean(clip?.is_pinned),
@@ -3793,6 +3800,7 @@ function App() {
       }
     },
     onPin: () => handleToggleClipPin(selectedClipId),
+    onToggleWindowPin: () => void handleTogglePin(),
     onNavigatePrev: handleNavigatePrev,
     onNavigateNext: handleNavigateNext,
     onNavigateFirst: handleNavigateFirst,

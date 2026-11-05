@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react';
 import { lockListHover } from './useListHoverLock';
 
 export const TITLEBAR_HOTKEYS = {
-  pin: 'Ctrl+P',
+  pin: 'Alt+P',
+  windowPin: 'Ctrl+P',
   peek: 'Ctrl+E',
   resetSize: 'Ctrl+R',
   settings: 'Ctrl+,',
@@ -25,6 +26,7 @@ interface KeyboardOptions {
   searchHistoryHotkey?: string;
   onDelete?: () => void;
   onPin?: () => void;
+  onToggleWindowPin?: () => void;
   onNavigatePrev?: (e?: NavEventOptions) => void;
   onNavigateNext?: (e?: NavEventOptions) => void;
   onNavigateFirst?: (e?: NavEventOptions) => void;
@@ -340,15 +342,20 @@ export function useKeyboard(options: KeyboardOptions) {
         options.onStartTypingSearch(e.key);
       }
 
+      if (e.altKey && !e.ctrlKey && !e.metaKey && e.key.toLowerCase() === 'p' && options.onPin) {
+        e.preventDefault();
+        options.onPin();
+      }
+
       if (
         (e.metaKey || e.ctrlKey) &&
         e.key.toLowerCase() === 'p' &&
         !e.shiftKey &&
         !e.altKey &&
-        options.onPin
+        options.onToggleWindowPin
       ) {
         e.preventDefault();
-        options.onPin();
+        options.onToggleWindowPin();
       }
 
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && options.onUndo) {
