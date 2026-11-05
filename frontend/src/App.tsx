@@ -333,6 +333,12 @@ function App() {
         if (selectedClipIdsRef.current.size === 0) {
           selectionAnchorIdRef.current = null;
         }
+        // Reopening the window: select the newest clip (the list may have
+        // grown while the window was hidden, and the previously selected
+        // clip has moved down).
+        setSelectedClipId(clipsRef.current[0]?.id ?? null);
+        setSelectedClipIds(new Set());
+        selectionAnchorIdRef.current = null;
       }
     });
 
