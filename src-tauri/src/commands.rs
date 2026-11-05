@@ -538,7 +538,6 @@ pub async fn debug_clip_rich_status(
                substr(c.text_preview, 1, 40)
         FROM clips c
         LEFT JOIN clip_rich r ON r.clip_uuid = c.uuid
-        WHERE c.clip_type IN ('text', 'url', 'code')
         ORDER BY c.created_at DESC
         LIMIT 6
         "#,
@@ -1171,7 +1170,7 @@ pub async fn get_clips(
         .collect();
     let map_ms = map_started.elapsed().as_millis();
     let total_ms = started.elapsed().as_millis();
-    log::info!(
+    log::debug!(
         "[perf][get_clips] sql_ms={} map_ms={} total_ms={} rows={} images={} raw_bytes={} preview_only={} filter_id={:?} offset={} limit={}",
         sql_ms,
         map_ms,
@@ -1377,7 +1376,7 @@ pub async fn paste_clip(
                 } else {
                     (None, None)
                 };
-                log::info!(
+                log::debug!(
                     "CLIPBOARD: Rich flavors for write ({}): rtf={} html={} (setting={})",
                     uuid,
                     rich_rtf.is_some(),

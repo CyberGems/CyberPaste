@@ -509,7 +509,7 @@ async fn process_clipboard_change(
             } else {
                 None
             };
-            log::info!(
+            log::debug!(
                 "CLIPBOARD: Rich candidates read: rtf_some={} rtf_len={} html_some={} html_len={}",
                 rich_rtf_candidate.is_some(),
                 rich_rtf_candidate.as_ref().map(|t| t.len()).unwrap_or(0),
@@ -822,7 +822,7 @@ async fn process_clipboard_change(
             let stripped = strip_rtf_tags(rtf);
             let trivial = is_trivial_rtf_plain(rtf, &stripped);
             let formatted = rtf_has_formatting(rtf);
-            log::info!(
+            log::debug!(
                 "CLIPBOARD: RTF gate: trivial={} formatted={} len={}",
                 trivial,
                 formatted,
@@ -1034,7 +1034,7 @@ async fn process_clipboard_change(
     // The latest capture always wins: re-copying the same text without
     // formatting clears the stored flavor.
     if clip_type == "text" || clip_type == "url" || clip_type == "code" {
-        log::info!(
+        log::debug!(
             "CLIPBOARD: Persisting rich side channel: rtf={} html={}",
             rich_rtf.is_some(),
             rich_html.is_some()
