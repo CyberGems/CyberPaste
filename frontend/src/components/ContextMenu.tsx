@@ -506,7 +506,7 @@ export function ContextMenu({
     <div
       ref={menuRef}
       data-context-menu="true"
-      className="custom-scrollbar fixed z-[200] max-h-[calc(100vh-16px)] min-w-[200px] overflow-y-auto overflow-x-hidden rounded-xl border border-border bg-popover/95 p-1 shadow-2xl backdrop-blur-md"
+      className="custom-scrollbar [.has-header]:min-w-[300px] fixed z-[200] max-h-[calc(100vh-16px)] min-w-[200px] overflow-y-auto overflow-x-hidden rounded-xl border border-border bg-popover/95 p-1 shadow-2xl backdrop-blur-md"
       style={{
         left: x,
         top: y,
@@ -531,7 +531,7 @@ export function ContextMenu({
 
       {headerActions && headerActions.length > 0 && (
         <>
-          <div className="mb-1 flex items-center justify-between gap-1 rounded-lg border border-border/40 bg-muted/25 p-1">
+          <div className="mb-1 flex min-w-[290px] items-stretch justify-between gap-1 rounded-lg border border-border/40 bg-muted/25 p-1">
             {headerActions.map((action) => {
               const tooltipLabel = action.shortcut
                 ? `${action.label} (${action.shortcut})`
@@ -548,7 +548,7 @@ export function ContextMenu({
                     }}
                     aria-label={action.label}
                     className={clsx(
-                      'flex h-8 min-w-[32px] flex-1 items-center justify-center rounded-md transition-all duration-150',
+                      'flex min-h-[44px] min-w-[44px] flex-1 flex-col items-center justify-center gap-1 rounded-md px-1 py-1.5 transition-all duration-150',
                       action.disabled
                         ? 'pointer-events-none cursor-default text-muted-foreground opacity-25'
                         : action.danger
@@ -559,6 +559,9 @@ export function ContextMenu({
                     )}
                   >
                     {action.icon}
+                    <span className="w-full truncate text-center text-[9px] font-medium leading-none">
+                      {action.label}
+                    </span>
                   </button>
                 </Tooltip>
               );
