@@ -533,7 +533,7 @@ export function ContextMenu({
 
       {headerActions && headerActions.length > 0 && (
         <>
-          <div className="mb-1 flex min-w-[330px] items-stretch justify-between gap-1 rounded-lg border border-border/40 bg-muted/25 p-1">
+          <div className="mb-1 flex min-w-[330px] items-stretch justify-between gap-0 divide-x divide-border/40 rounded-lg border border-border/40 bg-muted/25 p-1">
             {headerActions.map((action) => {
               const tooltipLabel =
                 action.tooltip ??
@@ -542,8 +542,9 @@ export function ContextMenu({
                 <Tooltip key={action.id} label={tooltipLabel} placement="top" delay={180}>
                   <button
                     type="button"
-                    disabled={action.disabled}
+                    disabled={action.disabled && !action.tooltip}
                     onClick={() => {
+                      if (action.disabled) return;
                       action.onClick();
                       dismissAllTooltips();
                       onClose();
@@ -551,17 +552,19 @@ export function ContextMenu({
                     aria-label={action.label}
                     className={clsx(
                       'flex min-h-[44px] min-w-[44px] flex-1 flex-col items-center justify-center gap-1 rounded-md px-1 py-1.5 transition-all duration-150',
-                      action.disabled
+                      action.disabled && !action.tooltip
                         ? 'pointer-events-none cursor-default text-muted-foreground opacity-25'
-                        : action.danger
-                          ? 'text-muted-foreground hover:bg-destructive/15 hover:text-destructive active:scale-95'
-                          : action.active
-                            ? 'bg-primary/20 text-primary hover:bg-primary/30 active:scale-95'
-                            : 'text-muted-foreground hover:bg-accent hover:text-foreground active:scale-95'
+                        : action.disabled
+                          ? 'cursor-default text-muted-foreground opacity-60 hover:bg-accent hover:text-foreground'
+                          : action.danger
+                            ? 'text-muted-foreground hover:bg-destructive/15 hover:text-destructive active:scale-95'
+                            : action.active
+                              ? 'bg-primary/20 text-primary hover:bg-primary/30 active:scale-95'
+                              : 'text-muted-foreground hover:bg-accent hover:text-primary'
                     )}
                   >
                     {action.icon}
-                    <span className="w-full text-center text-[13px] font-medium leading-normal text-foreground/90">
+                    <span className="w-full truncate text-center text-[13px] font-medium leading-snug text-foreground/90">
                       {action.label}
                     </span>
                   </button>

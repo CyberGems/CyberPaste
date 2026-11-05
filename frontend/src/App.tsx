@@ -3382,7 +3382,16 @@ function App() {
           });
         }
 
-        // 2. Universal standalone viewer — available for all clip types
+        // 2. Quick view — images, above the full viewer
+        if (clip?.clip_type === 'image') {
+          opts.push({
+            label: t('contextMenu.view'),
+            icon: <Eye size={14} />,
+            onClick: () => handleOpenPreview(itemId),
+          });
+        }
+
+        // 3. Universal standalone viewer — available for all clip types
         if (clip) {
           opts.push({
             label: t('contextMenu.openFullViewer'),
@@ -3394,12 +3403,6 @@ function App() {
         }
 
         if (clip?.clip_type === 'image') {
-          opts.push({
-            label: t('contextMenu.view'),
-            icon: <Eye size={14} />,
-            onClick: () => handleOpenPreview(itemId),
-          });
-
           opts.push({
             label: t('contextMenu.extractText'),
             icon: <ScanText size={14} />,

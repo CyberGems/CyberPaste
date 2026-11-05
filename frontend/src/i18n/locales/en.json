@@ -260,9 +260,9 @@
     "defaultIcon": "Folder"
   },
   "contextMenu": {
-    "view": "View Image",
-    "openFullViewer": "Open in Viewer",
-    "openExternalViewer": "Open in external viewer",
+    "view": "Quick view",
+    "openFullViewer": "Open in Viewer...",
+    "openExternalViewer": "Open in external viewer...",
     "aiActions": "AI Actions",
     "edit": "Edit",
     "editType": "Edit {{type}}",
@@ -279,7 +279,7 @@
     "rename": "Rename",
     "moveToFolder": "Move to Folder...",
     "copyToFolder": "Copy to Folder...",
-    "filterByApp": "Filter by {{app}}",
+    "filterByApp": "Filter clips from {{app}}",
     "pin": "Pin Clip",
     "unpin": "Unpin Clip",
     "pinLatestDisabled": "Can't pin the latest clip",

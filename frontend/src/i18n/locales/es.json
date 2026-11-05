@@ -260,9 +260,9 @@
     "defaultIcon": "Carpeta"
   },
   "contextMenu": {
-    "view": "Ver imagen",
-    "openFullViewer": "Abrir en Visor",
-    "openExternalViewer": "Abrir en visor externo",
+    "view": "Vista rápida",
+    "openFullViewer": "Abrir en Visor...",
+    "openExternalViewer": "Abrir en visor externo...",
     "aiActions": "Acciones de IA",
     "edit": "Editar",
     "editType": "Editar {{type}}",
@@ -279,7 +279,7 @@
     "rename": "Renombrar",
     "moveToFolder": "Mover a carpeta...",
     "copyToFolder": "Copiar a carpeta...",
-    "filterByApp": "Filtrar por {{app}}",
+    "filterByApp": "Filtrar clips de {{app}}",
     "pin": "Fijar clip",
     "unpin": "Desfijar clip",
     "pinLatestDisabled": "No se puede fijar el clip más reciente",
