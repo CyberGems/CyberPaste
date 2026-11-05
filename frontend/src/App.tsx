@@ -3311,45 +3311,10 @@ function App() {
             onClick: () => handlePaste(itemId, true),
           },
           {
-            id: 'edit',
-            label: clip
-              ? t('contextMenu.editType', {
-                  type: t(`clipType.${clip.clip_type}`, { defaultValue: t('clipType.text') }),
-                })
-              : t('contextMenu.edit'),
-            icon: <Pencil size={15} />,
-            disabled: !isEditable,
-            onClick: () => {
-              if (!clip) return;
-              invoke<AppClipboardItem>('get_clip', { clipId: clip.id })
-                .then((fullClip) => {
-                  setEditClip({
-                    isOpen: true,
-                    clipId: (fullClip as any).id || (fullClip as any).uuid,
-                    content: (fullClip as any).content,
-                    clipType: (fullClip as any).clip_type,
-                  });
-                })
-                .catch((err) => {
-                  console.error('Failed to fetch clip content:', err);
-                  setEditClip({
-                    isOpen: true,
-                    clipId: clip.id,
-                    content: clip.content || clip.preview,
-                    clipType: clip.clip_type,
-                  });
-                });
-            },
-          },
-          {
             id: 'pin',
-            label: pinLatestDisabled
-              ? t('contextMenu.pinLatestDisabled')
-              : clip?.is_pinned
-                ? t('contextMenu.unpin')
-                : t('contextMenu.pin'),
+            label: clip?.is_pinned ? t('contextMenu.unpin') : t('contextMenu.pin'),
+            tooltip: pinLatestDisabled ? t('contextMenu.pinLatestDisabled') : undefined,
             icon: clip?.is_pinned ? <PinOff size={15} /> : <Pin size={15} />,
-            shortcut: 'F',
             disabled: pinLatestDisabled,
             active: Boolean(clip?.is_pinned),
             onClick: () => handleToggleClipPin(itemId),
@@ -3377,7 +3342,40 @@ function App() {
 
         const opts: ContextMenuOption[] = [];
 
-        // 1. Universal standalone viewer — available for all clip types
+        // 1. Edit — first action for editable clip types
+        if (isEditable) {
+          opts.push({
+            label: clip
+              ? t('contextMenu.editType', {
+                  type: t(`clipType.${clip.clip_type}`, { defaultValue: t('clipType.text') }),
+                })
+              : t('contextMenu.edit'),
+            icon: <Pencil size={14} />,
+            onClick: () => {
+              if (!clip) return;
+              invoke<AppClipboardItem>('get_clip', { clipId: clip.id })
+                .then((fullClip) => {
+                  setEditClip({
+                    isOpen: true,
+                    clipId: (fullClip as any).id || (fullClip as any).uuid,
+                    content: (fullClip as any).content,
+                    clipType: (fullClip as any).clip_type,
+                  });
+                })
+                .catch((err) => {
+                  console.error('Failed to fetch clip content:', err);
+                  setEditClip({
+                    isOpen: true,
+                    clipId: clip.id,
+                    content: clip.content || clip.preview,
+                    clipType: clip.clip_type,
+                  });
+                });
+            },
+          });
+        }
+
+        // 2. Universal standalone viewer — available for all clip types
         if (clip) {
           opts.push({
             label: t('contextMenu.openFullViewer'),

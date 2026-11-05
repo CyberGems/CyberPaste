@@ -13,6 +13,8 @@ export interface ContextMenuHeaderAction {
   disabled?: boolean;
   shortcut?: string;
   active?: boolean;
+  /** Overrides the tooltip when the disabled state needs to explain why. */
+  tooltip?: string;
 }
 
 export interface ContextMenuOption {
@@ -533,9 +535,9 @@ export function ContextMenu({
         <>
           <div className="mb-1 flex min-w-[290px] items-stretch justify-between gap-1 rounded-lg border border-border/40 bg-muted/25 p-1">
             {headerActions.map((action) => {
-              const tooltipLabel = action.shortcut
-                ? `${action.label} (${action.shortcut})`
-                : action.label;
+              const tooltipLabel =
+                action.tooltip ??
+                (action.shortcut ? `${action.label} (${action.shortcut})` : action.label);
               return (
                 <Tooltip key={action.id} label={tooltipLabel} placement="top" delay={180}>
                   <button
