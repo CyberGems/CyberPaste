@@ -8,7 +8,7 @@
 
 <!-- IMPORTANT FOR AGENTS & MAINTAINERS: Always rewrite this entire section with the ACTUAL release notes for this specific version before tagging. NEVER leave or copy previous version notes! Use 25-45 words, lead with user-facing changes, and do not repeat the app name or version. -->
 <!-- changelog-summary:start -->
-A dedicated Clipboard settings tab now groups limits and pasting behaviors, alongside pixel-aligned theme cards and expanded folder lists. An unboxed titlebar update button, console update preview, full-mode peek polish, and copyable checksums complete this release.
+Barra de búsqueda de ajustes, indicador de guardado con cierre de un clic, formato enriquecido conservado de extremo a extremo, slots numerados para los clips fijados y una ventana principal a pantalla completa encabezan esta versión.
 <!-- changelog-summary:end -->
 
 > **New to CyberPaste?** A fast, privacy-first Windows clipboard manager with history, folders, OCR, and configurable AI actions.
@@ -17,25 +17,36 @@ A dedicated Clipboard settings tab now groups limits and pasting behaviors, alon
 
 ### ✨ Key Features & Highlights
 
-- ⚙️ **Dedicated Clipboard Settings & Layout Reorganization**:
-  - **New "Clipboard" tab**: Capturing limits, retention quotas, and pasting behaviors now have their own dedicated settings tab, decluttering the General panel.
-  - **Structured sections**: Organized into "Limits & Storage" (clip limits, retention days, text/image sizes, storage quota) and "Behavior & Pasting" (monitoring, auto-paste, instant search, external image editor).
-  - **Intuitive tab hierarchy**: Reordered settings navigation placing Notifications near the top and grouping view mode settings cleanly.
-  - **Streamlined General tab**: Grouped window animation and blur behavior into an organized "Other" category.
+- 🔍 **Settings Search Bar**:
+  - **Find any setting instantly**: The sidebar search matches labels across all tabs and jumps straight to the setting — even inside long tabs.
+  - **Consistent scoring**: Strong label matches outrank description hints, with accent-insensitive matching.
 
-- 🎨 **Pixel-Perfect Theme Cards & Folder Air**:
-  - **Pixel-aligned theme previews**: Stabalized frame geometry and border sizing to eliminate subpixel rounding jitter and keep all theme cards perfectly aligned.
-  - **Expanded folder management**: Tuned folder container height to cleanly display up to 7 folders simultaneously, with a direct pencil edit icon for intuitive renaming.
-  - **Titlebar menu polish**: Removed redundant double divider in the "More" menu.
+- 💾 **Saved Indicator & Sidebar Close**:
+  - **Elegant "Saved" LED**: Every settings change lights a green LED badge with a "Saved" label for five seconds, then fades out.
+  - **One-click Close**: A permanent Close button lives at the bottom of the settings sidebar.
 
-- 🔔 **Titlebar Update Button Redesign & Live Preview**:
-  - **Seamless update button**: Removed the heavy pill wrapper in favor of a sleek, standardized 32x32 button with a gentle, non-distracting LED pulse.
-  - **Interactive preview helper**: Added console function `__CYBERPASTE_SHOW_UPDATE_PREVIEW__()` to inspect release dialogs directly during development.
-  - **About modal scroll**: Fixed release notes container height and scrollbar overflow in the update dialog.
+- 🧲 **Rich Formatting Preserved End-to-End**:
+  - **RTF/HTML flavors captured**: Styled copies from Word, browsers and editors keep their bold, font sizes and colors.
+  - **Faithful re-paste**: Pasting later writes text, HTML and RTF together — rich targets restore the original look, plain targets keep plain text.
+  - **Settings toggle**: "Preserve rich formatting when copying and pasting" in Settings > Clipboard turns it off.
 
-- 🔍 **Peek Preview & Interaction Polish**:
-  - **Full mode peek restoration**: Re-enabled and tuned hover peek preview with balanced mouse-leave sensitivity to prevent premature closing.
-  - **Type icon tooltips**: Added contextual type tooltips in Full mode for complete parity with Compact mode.
+- 📌 **Reserved Slots for Pinned Clips**:
+  - **Stable numbering**: Pinned clips reserve the numbered slot they held when pinned — deletions compact the unpinned clips around them and the pin never moves.
+  - **Ratchet behavior**: Pin numbers follow the list upward only, never downward.
+
+- 🖥️ **Full Screen Mode**:
+  - **Work-area fullscreen**: The main window fills the monitor work area, respecting taskbars on any edge, with square corners and a fixed size (CyberClock/CyberLauncher style).
+
+- 🖱️ **Context Menu Overhaul**:
+  - **Labeled quick-actions**: The header buttons now show icon + label (Copy, Paste, Pin, Delete) with visible separators and uniform hover.
+  - **Edit promoted**: "Edit" leads the options list; renamed actions ("Quick view", "Filter clips from…", "Open in Viewer…").
+  - **Real hotkeys**: Alt+P pins the selected clip; Ctrl+P pins the window; right-click selects the clip.
+
+- 🐛 **Notable Fixes**:
+  - **Rich capture classification**: Fixed a pre-existing nesting bug that bypassed the text/HTML/RTF format reader for captures without files.
+  - **Word clipboard lock**: Retried context creation so captures during Word's internal clipboard hold keep their rich flavors.
+  - **Stale selection**: Reopening the window now selects the newest clip.
+  - **Slot renumber**: Display numbers recompute instantly after deletes, restores and captures.
 
 <details>
 <summary><b>🇪🇸 Ver notas de la versión en Español</b></summary>
@@ -52,27 +63,37 @@ Una nueva pestaña Portapapeles organiza límites y pegado, junto a tarjetas de 
 
 ### ✨ Novedades destacadas
 
-- ⚙️ **Nueva Pestaña Portapapeles y Reorganización de Configuración**:
-  - **Pestaña dedicada "Portapapeles"**: Los límites de captura, cuotas de retención y opciones de pegado se trasladan a una pestaña propia, aligerando el panel General.
-  - **Secciones estructuradas**: Organizado en "Límites y Almacenamiento" (historial, días de retención, tamaños máximos, cuota de disco) y "Comportamiento y Pegado" (monitoreo, auto-pegado, búsqueda al tipear, editor de imagen externo).
-  - **Jerarquía intuitiva**: Pestaña Notificaciones reubicada al segundo lugar y modos de vista agrupados lógicamente.
-  - **Panel General optimizado**: Opciones de animación de título y ocultación agrupadas limpiamente bajo la categoría "Otros".
+- 🔍 **Barra de búsqueda de ajustes**:
+  - **Encuentra cualquier ajuste al instante**: La búsqueda del sidebar matchea etiquetas de todas las pestañas y salta directo al ajuste, incluso en pestañas largas.
 
-- 🎨 **Tarjetas de Tema Milimétricas y Mayor Espacio en Carpetas**:
-  - **Previsualización de temas precisa**: Geometría y bordes estandarizados a 90x62px para eliminar desalineaciones subpíxel y mantener todas las tarjetas en perfecto balance visual.
-  - **Gestor de carpetas ampliado**: Altura ajustada para mostrar hasta 7 carpetas simultáneas sin scroll innecesario, incorporando icono de lápiz para renombrar.
-  - **Menú "Más" pulido**: Eliminado el doble separador tras el botón de donación.
+- 💾 **Indicador de Guardado y Cierre en el Sidebar**:
+  - **LED elegante de "Guardado"**: Cada cambio enciende un LED verde con la etiqueta "Guardado" durante cinco segundos y se desvanece.
+  - **Cierre de un clic**: Un botón permanente de "Cerrar" vive en la parte inferior del sidebar de ajustes.
 
-- 🔔 **Rediseño del Botón de Actualización y Previsualización en Vivo**:
-  - **Botón integrado sin caja**: Eliminada la envoltura tipo píldora, adaptando un botón de 32x32px estandarizado con animación suave del indicador led.
-  - **Función de vista previa**: Comando de consola `__CYBERPASTE_SHOW_UPDATE_PREVIEW__()` para revisar el diálogo de notas en cualquier momento.
-  - **Desplazamiento en ventana Acerca de**: Corregida la altura máxima y el scroll del contenedor de notas de versión.
+- 🧲 **Formato enriquecido conservado de extremo a extremo**:
+  - **Sabores RTF/HTML capturados**: Las copias con estilo desde Word, navegadores y editores mantienen negrita, tamaños y colores.
+  - **Re-pegado fiel**: Pegar después escribe texto, HTML y RTF juntos — los destinos ricos restauran el aspecto original y los planos reciben texto plano.
+  - **Toggle en Ajustes**: "Conservar formato enriquecido al copiar y pegar" en Ajustes > Portapapeles lo desactiva.
 
-- 🔍 **Peek Preview y Detalles de Interacción**:
-  - **Peek en modo Completo optimizado**: Reactivado el hover peek con sensibilidad balanceada al mover el cursor para evitar cierres accidentales.
-  - **Tooltips en iconos de tipo**: Tooltips contextuales incorporados en modo Completo en total paridad con el modo Compacto.
+- 📌 **Slots reservados para los clips fijados**:
+  - **Numeración estable**: Los clips fijados reservan el slot numerado que tenían al fijarse — los borrados compactan los no fijados alrededor y el fijado jamás se mueve.
+  - **Comportamiento de trinquete**: Los números de los fijados solo siguen la lista hacia arriba, nunca hacia abajo.
 
-</details>
+- 🖥️ **Modo Pantalla Completa**:
+  - **Pantalla completa del área de trabajo**: La ventana principal llena el área de trabajo del monitor respetando las barras de tareas, con esquinas rectas y tamaño fijo (estilo CyberClock/CyberLauncher).
+
+- 🖱️ **Menú contextual renovado**:
+  - **Acciones rápidas etiquetadas**: Los botones del encabezado muestran icono + etiqueta (Copiar, Pegar, Fijar, Eliminar) con separadores visibles y hover uniforme.
+  - **Editar promovido**: "Editar" encabeza la lista de opciones; acciones renombradas ("Vista rápida", "Filtrar clips de…", "Abrir en Visor…").
+  - **Atajos reales**: Alt+P fija el clip seleccionado; Ctrl+P fija la ventana; el clic derecho selecciona el clip.
+
+- 🐛 **Correcciones destacadas**:
+  - **Clasificación de capturas enriquecidas**: Corregido un bug de anidamiento pre-existente que bypassaba el lector de formatos texto/HTML/RTF en capturas sin archivos.
+  - **Candado de Word**: Reintentos en la creación del contexto para que las capturas durante el bloqueo interno de Word conserven sus sabores ricos.
+  - **Selección obsoleta**: Reabrir la ventana selecciona ahora el clip más reciente.
+  - **Renumeración de slots**: Los números se recalculan al instante tras borrar, restaurar y capturar.
+
+
 
 ---
 
