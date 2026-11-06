@@ -350,6 +350,37 @@ impl Database {
 
     /// After a pinned main-list clip moves, refresh its reserved slot number
     /// to its new visual rank. Folder clips carry no reserved slot.
+    /// Ratchet the reserved slots of every pinned clip: a pin's number follows
+    /// its position DOWN only as far as it ever climbed (deletions above a pin
+    /// pull its number up; deletions below or new captures never push it down).
+    /// Unpinned clips renumber densely through the remaining numbers.
+    pub async fn ratchet_pinned_slots(&self) {
+        Self::ratchet_pinned_slots_pool(&self.pool).await;
+    }
+
+    /// Pool-level variant for free functions that hold a bare pool handle.
+    pub async fn ratchet_pinned_slots_pool(pool: &sqlx::SqlitePool) {
+        let _ = sqlx::query(
+            r#"
+            UPDATE clips
+            SET pinned_slot = MIN(
+                COALESCE(pinned_slot, 9223372036854775807),
+                (
+                    SELECT COUNT(*) + 1 FROM clips c2
+                    WHERE c2.is_deleted = 0
+                      AND c2.folder_id IS clips.folder_id
+                      AND (c2.sort_order < clips.sort_order
+                           OR (c2.sort_order = clips.sort_order
+                               AND c2.created_at > clips.created_at))
+                )
+            )
+            WHERE is_pinned = 1 AND is_deleted = 0
+            "#,
+        )
+        .execute(pool)
+        .await;
+    }
+
     async fn refresh_pinned_slot(
         &self,
         clip_uuid: &str,

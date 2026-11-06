@@ -675,6 +675,7 @@ pub async fn prune_history(pool: &SqlitePool, max_items: i64) -> Result<usize, S
     }
     let _ = cleanup_orphan_clip_image_files(pool).await;
     let _ = cleanup_orphan_clip_rich(pool).await;
+    crate::database::Database::ratchet_pinned_slots_pool(pool).await;
     Ok(deleted)
 }
 
@@ -726,6 +727,7 @@ pub async fn prune_expired_history(pool: &SqlitePool, days: i64) -> Result<usize
         let _ = cleanup_orphan_clip_image_files(pool).await;
         let _ = cleanup_orphan_clip_rich(pool).await;
     }
+    crate::database::Database::ratchet_pinned_slots_pool(pool).await;
     Ok(deleted)
 }
 
@@ -2064,6 +2066,8 @@ pub async fn delete_clip(
             .await
             .map_err(|e| e.to_string())?;
     }
+    db.ratchet_pinned_slots().await;
+
     Ok(())
 }
 
@@ -2180,6 +2184,7 @@ pub async fn restore_clip(
         .execute(pool)
         .await
         .map_err(|e| e.to_string())?;
+    db.ratchet_pinned_slots().await;
     Ok(())
 }
 
@@ -2204,6 +2209,7 @@ pub async fn restore_clips(
         count += result.rows_affected();
     }
     tx.commit().await.map_err(|e| e.to_string())?;
+    db.ratchet_pinned_slots().await;
     Ok(count)
 }
 
