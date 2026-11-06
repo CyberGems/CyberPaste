@@ -2129,6 +2129,23 @@ function App() {
     };
   }, [refreshCurrentFolder, loadFolders, refreshTotalCount]);
 
+  // Slot model (client side): pins hold their reserved numbers; unpinned
+  // clips compact through the free numbers after every local mutation, so
+  // deletions never leave number gaps until the next full reload.
+  const applySlotNumbers = useCallback((list: AppClipboardItem[]): AppClipboardItem[] => {
+    const reserved = new Set(
+      list.filter((c) => c.is_pinned && c.display_number).map((c) => c.display_number as number)
+    );
+    let cursor = 1;
+    return list.map((c) => {
+      if (c.is_pinned && c.display_number) return c;
+      while (reserved.has(cursor)) cursor += 1;
+      const n = cursor;
+      reserved.add(n);
+      return { ...c, display_number: n };
+    });
+  }, []);
+
   const executeDelete = useCallback(
     async (clipId: string) => {
       dismissAllTooltips();
@@ -2138,7 +2155,7 @@ function App() {
         const animPromise = new Promise((resolve) => setTimeout(resolve, 240));
         await Promise.all([deletePromise, animPromise]);
 
-        setClips((prevClips) => prevClips.filter((c) => c.id !== clipId));
+        setClips((prevClips) => applySlotNumbers(prevClips.filter((c) => c.id !== clipId)));
         setSelectedClipId((prevSelected) => (prevSelected === clipId ? null : prevSelected));
         setSelectedClipIds((prevSelected) => {
           if (!prevSelected.has(clipId)) return prevSelected;
@@ -2696,7 +2713,7 @@ function App() {
         await Promise.all([deletePromise, animPromise]);
 
         const idsSet = new Set(ids);
-        setClips((prev) => prev.filter((c) => !idsSet.has(c.id)));
+        setClips((prev) => applySlotNumbers(prev.filter((c) => !idsSet.has(c.id))));
         setSelectedClipIds(new Set());
 
         // Add to temporary Undo stack
