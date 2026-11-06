@@ -1217,7 +1217,7 @@ pub async fn get_clips(
     let image_rows = image_uuids.len();
     let raw_bytes: usize = clips.iter().map(|clip| clip.content.len()).sum();
     let map_started = Instant::now();
-    let items: Vec<ClipboardItem> = clips
+    let mut items: Vec<ClipboardItem> = clips
         .iter()
         .enumerate()
         .map(|(idx, clip)| {
@@ -1242,6 +1242,10 @@ pub async fn get_clips(
             item
         })
         .collect();
+    // The numbered slots ARE the display order: pins hold their reserved
+    // numbers and the unpinned clips compact through the free ones.
+    items.sort_by_key(|item| item.display_number);
+
     let map_ms = map_started.elapsed().as_millis();
     let total_ms = started.elapsed().as_millis();
     log::debug!(
@@ -3167,7 +3171,7 @@ pub async fn search_clips(
     let image_rows = image_uuids.len();
     let raw_bytes: usize = clips.iter().map(|clip| clip.content.len()).sum();
     let map_started = Instant::now();
-    let items: Vec<ClipboardItem> = clips
+    let mut items: Vec<ClipboardItem> = clips
         .iter()
         .map(|clip| {
             let display_number = display_numbers.get(&clip.uuid).copied().unwrap_or(0);
@@ -3179,6 +3183,7 @@ pub async fn search_clips(
             )
         })
         .collect();
+    items.sort_by_key(|item| item.display_number);
     let map_ms = map_started.elapsed().as_millis();
     let total_ms = started.elapsed().as_millis();
     log::info!(

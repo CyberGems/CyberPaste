@@ -533,7 +533,7 @@ export function ContextMenu({
 
       {headerActions && headerActions.length > 0 && (
         <>
-          <div className="mb-1 flex min-w-[330px] items-stretch justify-between gap-0 divide-x divide-border/70 rounded-lg border border-border/40 bg-muted/25 p-1">
+          <div className="mb-1 flex min-w-[330px] items-stretch justify-between gap-0 divide-x divide-border rounded-lg border border-border/40 bg-muted/25 p-1">
             {headerActions.map((action) => {
               const tooltipLabel =
                 action.tooltip ??
