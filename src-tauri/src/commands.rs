@@ -664,6 +664,7 @@ pub async fn prune_history(pool: &SqlitePool, max_items: i64) -> Result<usize, S
                 max_items,
                 deleted
             );
+            let _ = crate::database::Database::reconcile_list_order_pool(pool, None).await;
         }
     }
     let _ = cleanup_orphan_clip_image_files(pool).await;
@@ -716,6 +717,7 @@ pub async fn prune_expired_history(pool: &SqlitePool, days: i64) -> Result<usize
             deleted,
             days
         );
+        let _ = crate::database::Database::reconcile_list_order_pool(pool, None).await;
         let _ = cleanup_orphan_clip_image_files(pool).await;
         let _ = cleanup_orphan_clip_rich(pool).await;
     }
@@ -1966,6 +1968,13 @@ pub async fn delete_clip(
     crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
+    let folder_id: Option<i64> = sqlx::query_scalar("SELECT folder_id FROM clips WHERE uuid = ?")
+        .bind(&id)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| e.to_string())?
+        .unwrap_or(None);
+
     if hard_delete {
         delete_clip_image_file_by_uuid(pool, &id).await?;
 
@@ -1994,6 +2003,8 @@ pub async fn delete_clip(
             .map_err(|e| e.to_string())?;
     }
 
+    let _ = db.reconcile_list_order(folder_id).await;
+
     Ok(())
 }
 
@@ -2006,36 +2017,65 @@ pub async fn toggle_clip_pin(
     crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
 
-    // Toggle the value of is_pinned in database
-    let result = sqlx::query(
-        r#"
-        UPDATE clips 
-        SET is_pinned = 1 - is_pinned,
-            pinned_at = CASE WHEN is_pinned = 0 THEN CURRENT_TIMESTAMP ELSE NULL END
-        WHERE uuid = ?
-    "#,
+    let clip_meta: Option<(bool, Option<i64>, i64)> = sqlx::query_as(
+        r#"SELECT is_pinned, folder_id, sort_order FROM clips WHERE uuid = ?"#
     )
     .bind(&uuid)
-    .execute(pool)
+    .fetch_optional(pool)
     .await
     .map_err(|e| e.to_string())?;
 
-    if result.rows_affected() == 0 {
+    let Some((current_pinned, folder_id, sort_order)) = clip_meta else {
         return Err("Clip not found".to_string());
+    };
+
+    let new_pinned = !current_pinned;
+    let is_main = folder_id.is_none();
+
+    if new_pinned {
+        // Main list slot 1 is reserved for live capture; minimum pinned slot is 2.
+        // In folders, minimum pinned slot is 1.
+        let target_slot = if is_main {
+            (sort_order + 1).max(2)
+        } else {
+            (sort_order + 1).max(1)
+        };
+
+        sqlx::query(
+            r#"
+            UPDATE clips 
+            SET is_pinned = 1,
+                pinned_at = CURRENT_TIMESTAMP,
+                pinned_slot = ?
+            WHERE uuid = ?
+            "#,
+        )
+        .bind(target_slot)
+        .bind(&uuid)
+        .execute(pool)
+        .await
+        .map_err(|e| e.to_string())?;
+    } else {
+        sqlx::query(
+            r#"
+            UPDATE clips 
+            SET is_pinned = 0,
+                pinned_at = NULL,
+                pinned_slot = NULL
+            WHERE uuid = ?
+            "#,
+        )
+        .bind(&uuid)
+        .execute(pool)
+        .await
+        .map_err(|e| e.to_string())?;
     }
 
-    // Return the new state
-    let is_pinned: bool = sqlx::query_scalar(
-        r#"
-        SELECT is_pinned FROM clips WHERE uuid = ?
-    "#,
-    )
-    .bind(&uuid)
-    .fetch_one(pool)
-    .await
-    .map_err(|e| e.to_string())?;
+    db.reconcile_list_order(folder_id)
+        .await
+        .map_err(|e| e.to_string())?;
 
-    if is_pinned {
+    if new_pinned {
         crate::progress::record_event_for_app(
             &app,
             pool,
@@ -2044,7 +2084,7 @@ pub async fn toggle_clip_pin(
         .await;
     }
 
-    Ok(is_pinned)
+    Ok(new_pinned)
 }
 
 /// Batch-delete (soft) — single transaction, applies to each UUID. Returns the number of clips actually deleted.
@@ -2058,6 +2098,15 @@ pub async fn delete_clips(
     if ids.is_empty() {
         return Ok(0);
     }
+
+    let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+    let sql = format!("SELECT DISTINCT folder_id FROM clips WHERE uuid IN ({})", placeholders);
+    let mut q = sqlx::query_scalar::<_, Option<i64>>(&sql);
+    for id in &ids {
+        q = q.bind(id);
+    }
+    let affected_folders: Vec<Option<i64>> = q.fetch_all(pool).await.unwrap_or_default();
+
     let mut tx = pool.begin().await.map_err(|e| e.to_string())?;
     let mut count = 0u64;
     for id in &ids {
@@ -2069,6 +2118,11 @@ pub async fn delete_clips(
         count += result.rows_affected();
     }
     tx.commit().await.map_err(|e| e.to_string())?;
+
+    for fid in affected_folders {
+        let _ = db.reconcile_list_order(fid).await;
+    }
+
     Ok(count)
 }
 
@@ -2079,11 +2133,21 @@ pub async fn restore_clip(
 ) -> Result<(), String> {
     crate::app_lock::require_unlocked()?;
     let pool = &db.pool;
+    let folder_id: Option<i64> = sqlx::query_scalar("SELECT folder_id FROM clips WHERE uuid = ?")
+        .bind(&id)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| e.to_string())?
+        .unwrap_or(None);
+
     sqlx::query(r#"UPDATE clips SET is_deleted = 0 WHERE uuid = ?"#)
         .bind(&id)
         .execute(pool)
         .await
         .map_err(|e| e.to_string())?;
+
+    let _ = db.reconcile_list_order(folder_id).await;
+
     Ok(())
 }
 
@@ -2097,6 +2161,15 @@ pub async fn restore_clips(
     if ids.is_empty() {
         return Ok(0);
     }
+
+    let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+    let sql = format!("SELECT DISTINCT folder_id FROM clips WHERE uuid IN ({})", placeholders);
+    let mut q = sqlx::query_scalar::<_, Option<i64>>(&sql);
+    for id in &ids {
+        q = q.bind(id);
+    }
+    let affected_folders: Vec<Option<i64>> = q.fetch_all(pool).await.unwrap_or_default();
+
     let mut tx = pool.begin().await.map_err(|e| e.to_string())?;
     let mut count = 0u64;
     for id in &ids {
@@ -2108,6 +2181,11 @@ pub async fn restore_clips(
         count += result.rows_affected();
     }
     tx.commit().await.map_err(|e| e.to_string())?;
+
+    for fid in affected_folders {
+        let _ = db.reconcile_list_order(fid).await;
+    }
+
     Ok(count)
 }
 

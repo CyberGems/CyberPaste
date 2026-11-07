@@ -8,7 +8,7 @@
 
 <!-- IMPORTANT FOR AGENTS & MAINTAINERS: Always rewrite this entire section with the ACTUAL release notes for this specific version before tagging. NEVER leave or copy previous version notes! Use 25-45 words, lead with user-facing changes, and do not repeat the app name or version. -->
 <!-- changelog-summary:start -->
-Barra de búsqueda de ajustes, indicador de guardado con cierre de un clic, formato enriquecido conservado de extremo a extremo y una ventana principal a pantalla completa encabezan esta versión.
+Barra de búsqueda de ajustes, indicador de guardado con cierre de un clic, formato enriquecido, memoria de slots anclados y pantalla completa encabezan esta versión.
 <!-- changelog-summary:end -->
 
 > **New to CyberPaste?** A fast, privacy-first Windows clipboard manager with history, folders, OCR, and configurable AI actions.
@@ -29,6 +29,12 @@ Barra de búsqueda de ajustes, indicador de guardado con cierre de un clic, form
   - **RTF/HTML flavors captured**: Styled copies from Word, browsers and editors keep their bold, font sizes and colors.
   - **Faithful re-paste**: Pasting later writes text, HTML and RTF together — rich targets restore the original look, plain targets keep plain text.
   - **Settings toggle**: "Preserve rich formatting when copying and pasting" in Settings > Clipboard turns it off.
+
+- 📌 **Fixed Pin Slots & Accordion Memory**:
+  - **Locked visual slots**: Pinned clips maintain their slot number while normal clips flow around them on captures and deletes.
+  - **Accordion behavior**: If deletions reduce the list below a pinned slot, the pin moves to the end without gaps, expanding back to its slot when new clips arrive.
+  - **Live clipboard safety**: Slot #1 in the main list remains reserved for incoming clips.
+  - **Drag protection**: Dropping unpinned clips onto pinned cards displays a forbidden cursor; dragging a pinned clip repositions its anchor.
 
 - 🖥️ **Full Screen Mode**:
   - **Work-area fullscreen**: The main window fills the monitor work area, respecting taskbars on any edge, with square corners and a fixed size (CyberClock/CyberLauncher style).
@@ -69,6 +75,12 @@ Barra de búsqueda de ajustes, indicador de guardado con cierre de un clic, form
   - **Sabores RTF/HTML capturados**: Las copias con estilo desde Word, navegadores y editores mantienen negrita, tamaños y colores.
   - **Re-pegado fiel**: Pegar después escribe texto, HTML y RTF juntos — los destinos ricos restauran el aspecto original y los planos reciben texto plano.
   - **Toggle en Ajustes**: "Conservar formato enriquecido al copiar y pegar" en Ajustes > Portapapeles lo desactiva.
+
+- 📌 **Slots Fijos para Clips Anclados y Memoria Acordeón**:
+  - **Slots visuales bloqueados**: Los clips anclados conservan su número de slot mientras los clips normales fluyen a su alrededor en capturas y borrados.
+  - **Efecto acordeón**: Si los borrados acortan la lista por debajo del slot anclado, el clip se sitúa al final sin dejar huecos y vuelve a su slot al llegar nuevos clips.
+  - **Seguridad en slot #1**: El slot #1 de la lista principal permanece reservado para las capturas en vivo.
+  - **Protección al arrastrar**: Soltar clips no anclados sobre clips anclados muestra cursor de prohibido; arrastrar un anclado reubica su slot ancla.
 
 - 🖥️ **Modo Pantalla Completa**:
   - **Pantalla completa del área de trabajo**: La ventana principal llena el área de trabajo del monitor respetando las barras de tareas, con esquinas rectas y tamaño fijo (estilo CyberClock/CyberLauncher).

@@ -8,39 +8,112 @@ pub struct Database {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-struct ListClip {
-    uuid: String,
-    is_pinned: bool,
+pub struct ListClip {
+    pub uuid: String,
+    pub is_pinned: bool,
+    pub pinned_slot: Option<i64>,
+}
+
+/// Compute the visual layout sequence of clips preserving pinned slots.
+/// - In the main list (`is_main = true`), slot 1 (index 0) is reserved for the live clipboard
+///   so pinned clips cannot occupy index 0 (minimum slot is 2, index 1).
+/// - In folders (`is_main = false`), pinned clips can occupy any slot starting from 1 (index 0).
+/// - Pinned clips target their preferred `pinned_slot`. If the list shrinks so N < pinned_slot,
+///   they sit at the nearest available slot towards the end without leaving gaps.
+/// - Unpinned clips flow in their existing order through the remaining slots.
+pub fn layout_clips(clips: &[ListClip], is_main: bool) -> Vec<String> {
+    let n = clips.len();
+    if n == 0 {
+        return Vec::new();
+    }
+    if n == 1 {
+        return vec![clips[0].uuid.clone()];
+    }
+
+    let min_pinned_idx = if is_main { 1 } else { 0 };
+
+    let mut pinned: Vec<(usize, &ListClip, usize)> = Vec::new();
+    let mut unpinned: Vec<&ListClip> = Vec::new();
+
+    for (orig_idx, clip) in clips.iter().enumerate() {
+        if clip.is_pinned {
+            let desired = match clip.pinned_slot {
+                Some(s) if s >= 1 => ((s - 1) as usize).max(min_pinned_idx),
+                _ => orig_idx.max(min_pinned_idx),
+            };
+            pinned.push((orig_idx, clip, desired));
+        } else {
+            unpinned.push(clip);
+        }
+    }
+
+    // Sort pinned clips by desired slot, breaking ties by their original sequence
+    pinned.sort_by_key(|&(orig_idx, _, desired)| (desired, orig_idx));
+
+    let mut slots: Vec<Option<String>> = vec![None; n];
+
+    // Place pinned clips into slots
+    for (_, clip, desired) in pinned {
+        let start_pos = desired.min(n - 1);
+        let mut placed = false;
+
+        // Try exact position, then search downwards down to min_pinned_idx
+        for pos in (min_pinned_idx..=start_pos).rev() {
+            if slots[pos].is_none() {
+                slots[pos] = Some(clip.uuid.clone());
+                placed = true;
+                break;
+            }
+        }
+
+        // If not placed, search upwards
+        if !placed {
+            for pos in (start_pos + 1)..n {
+                if slots[pos].is_none() {
+                    slots[pos] = Some(clip.uuid.clone());
+                    placed = true;
+                    break;
+                }
+            }
+        }
+
+        // Fallback: slot 0 if nothing else is free (e.g. all clips pinned in main list)
+        if !placed && slots[0].is_none() {
+            slots[0] = Some(clip.uuid.clone());
+        }
+    }
+
+    // Fill remaining empty slots with unpinned clips in their relative order
+    let mut unpinned_iter = unpinned.into_iter();
+    for slot in slots.iter_mut() {
+        if slot.is_none() {
+            if let Some(u) = unpinned_iter.next() {
+                *slot = Some(u.uuid.clone());
+            }
+        }
+    }
+
+    slots.into_iter().flatten().collect()
 }
 
 /// Put `uuid` in visual slot 1. Pinned clips keep their indices; other unpinned
 /// clips cascade through the remaining holes.
 fn parking_insert_live(visual: &[ListClip], uuid: &str) -> Vec<String> {
-    let in_list = visual.iter().any(|c| c.uuid == uuid);
-    let mut unpinned_queue = vec![uuid.to_string()];
+    let mut ordered: Vec<ListClip> = Vec::with_capacity(visual.len() + 1);
+    let existing = visual.iter().find(|c| c.uuid == uuid).cloned();
+    let live_clip = existing.unwrap_or_else(|| ListClip {
+        uuid: uuid.to_string(),
+        is_pinned: false,
+        pinned_slot: None,
+    });
+    // Live unpinned clip sits first in the unpinned flow
+    ordered.push(live_clip);
     for c in visual {
-        if !c.is_pinned && c.uuid != uuid {
-            unpinned_queue.push(c.uuid.clone());
+        if c.uuid != uuid {
+            ordered.push(c.clone());
         }
     }
-
-    let mut result = Vec::new();
-    let mut ui = 0usize;
-    for c in visual {
-        if c.is_pinned && c.uuid != uuid {
-            result.push(c.uuid.clone());
-        } else {
-            result.push(unpinned_queue[ui].clone());
-            ui += 1;
-        }
-    }
-    if !in_list {
-        while ui < unpinned_queue.len() {
-            result.push(unpinned_queue[ui].clone());
-            ui += 1;
-        }
-    }
-    result
+    layout_clips(&ordered, true)
 }
 
 fn move_item(order: &[String], clip: &str, target: &str, before: bool) -> Vec<String> {
@@ -298,40 +371,54 @@ impl Database {
         }
     }
 
-    async fn load_list_clips(&self, folder_id: Option<i64>) -> Result<Vec<ListClip>, sqlx::Error> {
-        let rows: Vec<(String, bool)> = match folder_id {
+    pub async fn load_list_clips_pool(
+        pool: &SqlitePool,
+        folder_id: Option<i64>,
+    ) -> Result<Vec<ListClip>, sqlx::Error> {
+        let rows: Vec<(String, bool, Option<i64>)> = match folder_id {
             Some(fid) => {
                 sqlx::query_as(
                     r#"
-                    SELECT uuid, is_pinned FROM clips
+                    SELECT uuid, is_pinned, pinned_slot FROM clips
                     WHERE is_deleted = 0 AND folder_id = ?
                     ORDER BY sort_order ASC, created_at DESC
                     "#,
                 )
                 .bind(fid)
-                .fetch_all(&self.pool)
+                .fetch_all(pool)
                 .await?
             }
             None => {
                 sqlx::query_as(
                     r#"
-                    SELECT uuid, is_pinned FROM clips
+                    SELECT uuid, is_pinned, pinned_slot FROM clips
                     WHERE is_deleted = 0 AND folder_id IS NULL
                     ORDER BY sort_order ASC, created_at DESC
                     "#,
                 )
-                .fetch_all(&self.pool)
+                .fetch_all(pool)
                 .await?
             }
         };
         Ok(rows
             .into_iter()
-            .map(|(uuid, is_pinned)| ListClip { uuid, is_pinned })
+            .map(|(uuid, is_pinned, pinned_slot)| ListClip {
+                uuid,
+                is_pinned,
+                pinned_slot,
+            })
             .collect())
     }
 
-    async fn apply_list_order(&self, uuids: &[String]) -> Result<(), sqlx::Error> {
-        let mut tx = self.pool.begin().await?;
+    pub async fn load_list_clips(&self, folder_id: Option<i64>) -> Result<Vec<ListClip>, sqlx::Error> {
+        Self::load_list_clips_pool(&self.pool, folder_id).await
+    }
+
+    pub async fn apply_list_order_pool(
+        pool: &SqlitePool,
+        uuids: &[String],
+    ) -> Result<(), sqlx::Error> {
+        let mut tx = pool.begin().await?;
         for (i, uuid) in uuids.iter().enumerate() {
             sqlx::query("UPDATE clips SET sort_order = ? WHERE uuid = ?")
                 .bind(i as i64)
@@ -341,6 +428,24 @@ impl Database {
         }
         tx.commit().await?;
         Ok(())
+    }
+
+    pub async fn apply_list_order(&self, uuids: &[String]) -> Result<(), sqlx::Error> {
+        Self::apply_list_order_pool(&self.pool, uuids).await
+    }
+
+    pub async fn reconcile_list_order(&self, folder_id: Option<i64>) -> Result<(), sqlx::Error> {
+        Self::reconcile_list_order_pool(&self.pool, folder_id).await
+    }
+
+    pub async fn reconcile_list_order_pool(
+        pool: &SqlitePool,
+        folder_id: Option<i64>,
+    ) -> Result<(), sqlx::Error> {
+        let visual = Self::load_list_clips_pool(pool, folder_id).await?;
+        let is_main = folder_id.is_none();
+        let new_order = layout_clips(&visual, is_main);
+        Self::apply_list_order_pool(pool, &new_order).await
     }
 
     /// Put an unpinned main-list clip in slot 1. Pinned clips keep their visual slots;
@@ -377,15 +482,12 @@ impl Database {
             return self.place_at_live_slot(uuid).await;
         }
 
-        let visual = self.load_list_clips(None).await?;
-        let mut order: Vec<String> = visual
-            .into_iter()
-            .filter(|c| c.uuid != uuid)
-            .map(|c| c.uuid)
-            .collect();
-        let at = if order.is_empty() { 0 } else { 1 };
-        order.insert(at.min(order.len()), uuid.to_string());
-        self.apply_list_order(&order).await
+        // Pinned clip landing on main list: ensure pinned_slot >= 2 (slot 1 is reserved for live capture)
+        sqlx::query("UPDATE clips SET pinned_slot = MAX(COALESCE(pinned_slot, 2), 2) WHERE uuid = ?")
+            .bind(uuid)
+            .execute(&self.pool)
+            .await?;
+        self.reconcile_list_order(None).await
     }
 
     pub async fn reorder_clip_visual(
@@ -400,6 +502,7 @@ impl Database {
                 .fetch_one(&self.pool)
                 .await?;
 
+        let is_main = folder_id.is_none();
         let visual = self.load_list_clips(folder_id).await?;
         let clip_pinned = visual.iter().find(|c| c.uuid == clip_uuid).map(|c| c.is_pinned);
         let target_pinned = visual
@@ -411,15 +514,31 @@ impl Database {
         };
 
         let before = position == "before";
-        let new_order = if clip_pinned {
+
+        if clip_pinned {
+            // Dragging a PINNED clip: user is explicitly moving its pinned anchor!
             let ids: Vec<String> = visual.iter().map(|c| c.uuid.clone()).collect();
-            move_item(&ids, clip_uuid, target_uuid, before)
+            let new_order = move_item(&ids, clip_uuid, target_uuid, before);
+            let new_idx = new_order.iter().position(|u| u == clip_uuid).unwrap_or(0);
+            let new_slot = if is_main {
+                (new_idx as i64 + 1).max(2)
+            } else {
+                (new_idx as i64 + 1).max(1)
+            };
+            sqlx::query("UPDATE clips SET pinned_slot = ? WHERE uuid = ?")
+                .bind(new_slot)
+                .bind(clip_uuid)
+                .execute(&self.pool)
+                .await?;
+            self.reconcile_list_order(folder_id).await
         } else if target_pinned {
-            visual.into_iter().map(|c| c.uuid).collect()
+            // Dragging an UNPINNED clip onto a PINNED clip: forbidden / no-op
+            Ok(())
         } else {
-            reorder_unpinned_in_holes(&visual, clip_uuid, target_uuid, before)
-        };
-        self.apply_list_order(&new_order).await
+            // Dragging an UNPINNED clip around other unpinned clips
+            let new_order = reorder_unpinned_in_holes(&visual, clip_uuid, target_uuid, before);
+            self.apply_list_order(&new_order).await
+        }
     }
 
     pub async fn move_clip_to_edge(&self, clip_uuid: &str, edge: &str) -> Result<(), sqlx::Error> {
@@ -429,22 +548,37 @@ impl Database {
                 .fetch_one(&self.pool)
                 .await?;
 
-        let visual = self.load_list_clips(folder_id).await?;
         let is_main = folder_id.is_none();
+        let visual = self.load_list_clips(folder_id).await?;
         let clip_pinned = visual
             .iter()
             .find(|c| c.uuid == clip_uuid)
             .map(|c| c.is_pinned)
             .unwrap_or(false);
-        if is_main && edge == "top" && !clip_pinned {
-            return self.place_at_live_slot(clip_uuid).await;
+
+        if clip_pinned {
+            let new_slot = if edge == "top" {
+                if is_main { 2 } else { 1 }
+            } else {
+                visual.len() as i64
+            };
+            sqlx::query("UPDATE clips SET pinned_slot = ? WHERE uuid = ?")
+                .bind(new_slot)
+                .bind(clip_uuid)
+                .execute(&self.pool)
+                .await?;
+            self.reconcile_list_order(folder_id).await
+        } else {
+            if is_main && edge == "top" {
+                return self.place_at_live_slot(clip_uuid).await;
+            }
+            let Some((target_uuid, before)) = edge_target(&visual, clip_uuid, edge, is_main) else {
+                return Ok(());
+            };
+            let position = if before { "before" } else { "after" };
+            self.reorder_clip_visual(clip_uuid, &target_uuid, position)
+                .await
         }
-        let Some((target_uuid, before)) = edge_target(&visual, clip_uuid, edge, is_main) else {
-            return Ok(());
-        };
-        let position = if before { "before" } else { "after" };
-        self.reorder_clip_visual(clip_uuid, &target_uuid, position)
-            .await
     }
 
     pub async fn migrate(&self) -> Result<(), sqlx::Error> {
@@ -566,6 +700,12 @@ impl Database {
         add_column_if_missing(
             &self.pool,
             "ALTER TABLE clips ADD COLUMN pinned_at DATETIME",
+        )
+        .await?;
+
+        add_column_if_missing(
+            &self.pool,
+            "ALTER TABLE clips ADD COLUMN pinned_slot INTEGER",
         )
         .await?;
 
@@ -769,16 +909,25 @@ mod tests {
         ListClip {
             uuid: uuid.to_string(),
             is_pinned,
+            pinned_slot: None,
+        }
+    }
+
+    fn lcs(uuid: &str, is_pinned: bool, slot: Option<i64>) -> ListClip {
+        ListClip {
+            uuid: uuid.to_string(),
+            is_pinned,
+            pinned_slot: slot,
         }
     }
 
     #[test]
     fn new_clip_flows_around_pinned_slots() {
         let visual = vec![
-            lc("A", false),
-            lc("B", true),
-            lc("C", false),
-            lc("D", true),
+            lcs("A", false, None),
+            lcs("B", true, Some(2)),
+            lcs("C", false, None),
+            lcs("D", true, Some(4)),
         ];
         assert_eq!(
             parking_insert_live(&visual, "F"),
@@ -788,9 +937,102 @@ mod tests {
 
     #[test]
     fn bump_existing_unpinned_keeps_pins() {
-        let visual = vec![lc("A", false), lc("B", true), lc("C", false)];
+        let visual = vec![
+            lcs("A", false, None),
+            lcs("B", true, Some(2)),
+            lcs("C", false, None),
+        ];
         assert_eq!(parking_insert_live(&visual, "C"), vec!["C", "B", "A"]);
         assert_eq!(parking_insert_live(&visual, "A"), vec!["A", "B", "C"]);
+    }
+
+    #[test]
+    fn pinned_clip_stays_at_slot_10_when_clips_above_are_deleted() {
+        // 15 clips: U1..U9, P10 (pinned at slot 10), U11..U15
+        let mut visual = Vec::new();
+        for i in 1..=9 {
+            visual.push(lc(&format!("U{}", i), false));
+        }
+        visual.push(lcs("P10", true, Some(10)));
+        for i in 11..=15 {
+            visual.push(lc(&format!("U{}", i), false));
+        }
+
+        // Delete U3 -> remaining 14 clips
+        visual.retain(|c| c.uuid != "U3");
+        let order = layout_clips(&visual, true);
+        assert_eq!(order.len(), 14);
+        // P10 must still be at index 9 (slot 10)
+        assert_eq!(order[9], "P10");
+        // U9 shifted to index 7, and U11 moved up to index 8 (slot 9)
+        assert_eq!(order[7], "U9");
+        assert_eq!(order[8], "U11");
+        assert_eq!(order[10], "U12");
+    }
+
+    #[test]
+    fn accordion_shrinks_and_expands_back_to_slot_10() {
+        // 10 clips: U1..U9, P10 (slot 10)
+        let mut visual = Vec::new();
+        for i in 1..=9 {
+            visual.push(lc(&format!("U{}", i), false));
+        }
+        visual.push(lcs("P10", true, Some(10)));
+
+        // Delete 2 clips -> total 8 clips left
+        visual.retain(|c| c.uuid != "U2" && c.uuid != "U4");
+        let order_8 = layout_clips(&visual, true);
+        assert_eq!(order_8.len(), 8);
+        // P10 moves to last available slot (index 7, slot 8)
+        assert_eq!(order_8[7], "P10");
+
+        // Now 2 new captures arrive -> total 10 clips
+        let mut expanded = vec![
+            lc("NEW_2", false),
+            lc("NEW_1", false),
+        ];
+        expanded.extend(visual);
+        let order_10 = layout_clips(&expanded, true);
+        assert_eq!(order_10.len(), 10);
+        // P10 expands back to index 9 (slot 10)!
+        assert_eq!(order_10[9], "P10");
+    }
+
+    #[test]
+    fn multiple_pins_stay_locked() {
+        let mut visual = Vec::new();
+        visual.push(lc("U1", false));
+        visual.push(lc("U2", false));
+        visual.push(lcs("P3", true, Some(3)));
+        visual.push(lc("U4", false));
+        visual.push(lc("U5", false));
+        visual.push(lc("U6", false));
+        visual.push(lcs("P7", true, Some(7)));
+        visual.push(lc("U8", false));
+        visual.push(lc("U9", false));
+        visual.push(lc("U10", false));
+
+        // Delete U1 (before P3)
+        visual.retain(|c| c.uuid != "U1");
+        let order = layout_clips(&visual, true);
+        assert_eq!(order.len(), 9);
+        // Both P3 (index 2) and P7 (index 6) stay locked
+        assert_eq!(order[2], "P3");
+        assert_eq!(order[6], "P7");
+    }
+
+    #[test]
+    fn main_list_slot_1_is_never_pinned() {
+        let visual = vec![
+            lcs("P1", true, Some(1)),
+            lc("U2", false),
+            lc("U3", false),
+        ];
+        let order = layout_clips(&visual, true);
+        // On main list, slot 1 (index 0) is reserved for live capture, so P1 moves to index 1 (slot 2)
+        assert_eq!(order[0], "U2");
+        assert_eq!(order[1], "P1");
+        assert_eq!(order[2], "U3");
     }
 
     #[test]

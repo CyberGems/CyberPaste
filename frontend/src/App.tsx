@@ -113,18 +113,6 @@ const getImageMimeType = (metadata: string | null): string => {
   return 'image/png';
 };
 
-/** Main list slot 1 is the live capture; unpinned drops skip it and frozen pinned slots. */
-function firstUnpinnedDropTarget<T extends { is_pinned?: boolean }>(
-  clips: T[],
-  isMainList: boolean
-): T | undefined {
-  return clips.find((c, i) => {
-    if (c.is_pinned) return false;
-    if (isMainList && i === 0) return false;
-    return true;
-  });
-}
-
 function isLiveMainListClip(
   clipId: string | null | undefined,
   clips: { id: string }[],
@@ -1317,7 +1305,7 @@ function App() {
           }
         }
 
-        let finalTargetId = closestId;
+        let finalTargetId: string | null = closestId;
         let finalPosition: 'before' | 'after' | null = position;
 
         const draggedClip = clipsRef.current.find((c) => c.id === dragStateRef.current.clipId);
@@ -1329,22 +1317,20 @@ function App() {
           closestId === clipsRef.current[0].id &&
           position === 'before';
 
-        if (
+        const isDraggingUnpinnedOverPinned =
           !isFirstPosMain &&
           draggedClip &&
           !draggedClip.is_pinned &&
           targetClip &&
-          targetClip.is_pinned
-        ) {
-          const isMainList = selectedFolderRef.current === null;
-          const firstUnpinned = firstUnpinnedDropTarget(clipsRef.current, isMainList);
-          if (firstUnpinned) {
-            finalTargetId = firstUnpinned.id;
-            finalPosition = 'before';
-          } else {
-            const lastClip = clipsRef.current[clipsRef.current.length - 1];
-            finalTargetId = lastClip.id;
-            finalPosition = 'after';
+          targetClip.is_pinned;
+
+        if (isDraggingUnpinnedOverPinned) {
+          finalTargetId = null;
+          finalPosition = null;
+          document.body.style.cursor = 'not-allowed';
+        } else {
+          if (dragStateRef.current.isDragging) {
+            document.body.style.cursor = 'grabbing';
           }
         }
 
@@ -1755,6 +1741,7 @@ function App() {
         dragStateRef.current.pendingDrag = null;
         // Click without drag — remove is-dragging class added by startDrag
         document.body.classList.remove('is-dragging');
+        document.body.style.cursor = '';
       }
 
       if (dragStateRef.current.isDragging) {
@@ -1843,6 +1830,7 @@ function App() {
       sourceFolderId: null,
     };
     document.body.classList.remove('is-dragging');
+    document.body.style.cursor = '';
 
     if (isCancelled) {
       return;
@@ -1912,17 +1900,9 @@ function App() {
           let finalReorderClipId = reorderClipId;
           let finalReorderPos = reorderPos;
 
-          // Redirect if target is pinned and dragged is not pinned
+          // Do not allow dropping an unpinned clip onto a pinned slot (forbidden)
           if (draggedClip && !draggedClip.is_pinned && targetClip && targetClip.is_pinned) {
-            const firstUnpinned = firstUnpinnedDropTarget(currentClips, isMainList);
-            if (firstUnpinned) {
-              finalReorderClipId = firstUnpinned.id;
-              finalReorderPos = 'before';
-            } else {
-              const lastClip = currentClips[currentClips.length - 1];
-              finalReorderClipId = lastClip.id;
-              finalReorderPos = 'after';
-            }
+            return;
           }
 
           try {
@@ -3284,6 +3264,7 @@ function App() {
         setSelectedClipIds(new Set());
       } else {
         document.body.classList.remove('is-dragging');
+        document.body.style.cursor = '';
         dragStateRef.current.pendingDrag = null;
       }
 

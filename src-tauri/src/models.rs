@@ -354,6 +354,7 @@ pub struct Clip {
     pub sort_order: i64,
     pub is_pinned: bool,
     pub pinned_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub pinned_slot: Option<i64>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub last_accessed: chrono::DateTime<chrono::Utc>,
 }
@@ -376,6 +377,7 @@ impl Default for Clip {
             sort_order: 0,
             is_pinned: false,
             pinned_at: None,
+            pinned_slot: None,
             created_at: chrono::DateTime::default(),
             last_accessed: chrono::DateTime::default(),
         }
