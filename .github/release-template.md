@@ -8,7 +8,7 @@
 
 <!-- IMPORTANT FOR AGENTS & MAINTAINERS: Always rewrite this entire section with the ACTUAL release notes for this specific version before tagging. NEVER leave or copy previous version notes! Use 25-45 words, lead with user-facing changes, and do not repeat the app name or version. -->
 <!-- changelog-summary:start -->
-Barra de búsqueda de ajustes, indicador de guardado con cierre de un clic, formato enriquecido conservado de extremo a extremo, slots numerados para los clips fijados y una ventana principal a pantalla completa encabezan esta versión.
+Barra de búsqueda de ajustes, indicador de guardado con cierre de un clic, formato enriquecido conservado de extremo a extremo y una ventana principal a pantalla completa encabezan esta versión.
 <!-- changelog-summary:end -->
 
 > **New to CyberPaste?** A fast, privacy-first Windows clipboard manager with history, folders, OCR, and configurable AI actions.
@@ -30,10 +30,6 @@ Barra de búsqueda de ajustes, indicador de guardado con cierre de un clic, form
   - **Faithful re-paste**: Pasting later writes text, HTML and RTF together — rich targets restore the original look, plain targets keep plain text.
   - **Settings toggle**: "Preserve rich formatting when copying and pasting" in Settings > Clipboard turns it off.
 
-- 📌 **Reserved Slots for Pinned Clips**:
-  - **Stable numbering**: Pinned clips reserve the numbered slot they held when pinned — deletions compact the unpinned clips around them and the pin never moves.
-  - **Ratchet behavior**: Pin numbers follow the list upward only, never downward.
-
 - 🖥️ **Full Screen Mode**:
   - **Work-area fullscreen**: The main window fills the monitor work area, respecting taskbars on any edge, with square corners and a fixed size (CyberClock/CyberLauncher style).
 
@@ -46,7 +42,6 @@ Barra de búsqueda de ajustes, indicador de guardado con cierre de un clic, form
   - **Rich capture classification**: Fixed a pre-existing nesting bug that bypassed the text/HTML/RTF format reader for captures without files.
   - **Word clipboard lock**: Retried context creation so captures during Word's internal clipboard hold keep their rich flavors.
   - **Stale selection**: Reopening the window now selects the newest clip.
-  - **Slot renumber**: Display numbers recompute instantly after deletes, restores and captures.
 
 <details>
 <summary><b>🇪🇸 Ver notas de la versión en Español</b></summary>
@@ -55,7 +50,7 @@ Barra de búsqueda de ajustes, indicador de guardado con cierre de un clic, form
 
 ### 🚀 Novedades de esta versión
 
-Una nueva pestaña Portapapeles organiza límites y pegado, junto a tarjetas de tema milimétricas y lista de carpetas ampliada. Botón de actualización sin caja en la barra de título, vista previa de notas, peek perfeccionado y checksums copiables completan este lanzamiento.
+Barra de búsqueda de ajustes, indicador de guardado con cierre de un clic, formato enriquecido conservado de extremo a extremo y una ventana principal a pantalla completa encabezan esta versión.
 
 > **¿Nuevo en CyberPaste?** Un gestor de portapapeles rápido y privado para Windows, con historial, carpetas, OCR y acciones de IA configurables.
 
@@ -75,10 +70,6 @@ Una nueva pestaña Portapapeles organiza límites y pegado, junto a tarjetas de 
   - **Re-pegado fiel**: Pegar después escribe texto, HTML y RTF juntos — los destinos ricos restauran el aspecto original y los planos reciben texto plano.
   - **Toggle en Ajustes**: "Conservar formato enriquecido al copiar y pegar" en Ajustes > Portapapeles lo desactiva.
 
-- 📌 **Slots reservados para los clips fijados**:
-  - **Numeración estable**: Los clips fijados reservan el slot numerado que tenían al fijarse — los borrados compactan los no fijados alrededor y el fijado jamás se mueve.
-  - **Comportamiento de trinquete**: Los números de los fijados solo siguen la lista hacia arriba, nunca hacia abajo.
-
 - 🖥️ **Modo Pantalla Completa**:
   - **Pantalla completa del área de trabajo**: La ventana principal llena el área de trabajo del monitor respetando las barras de tareas, con esquinas rectas y tamaño fijo (estilo CyberClock/CyberLauncher).
 
@@ -91,7 +82,6 @@ Una nueva pestaña Portapapeles organiza límites y pegado, junto a tarjetas de 
   - **Clasificación de capturas enriquecidas**: Corregido un bug de anidamiento pre-existente que bypassaba el lector de formatos texto/HTML/RTF en capturas sin archivos.
   - **Candado de Word**: Reintentos en la creación del contexto para que las capturas durante el bloqueo interno de Word conserven sus sabores ricos.
   - **Selección obsoleta**: Reabrir la ventana selecciona ahora el clip más reciente.
-  - **Renumeración de slots**: Los números se recalculan al instante tras borrar, restaurar y capturar.
 
 
 

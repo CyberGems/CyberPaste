@@ -1063,8 +1063,6 @@ async fn process_clipboard_change(
     if let Err(e) = db.place_at_live_slot(&emitted_id).await {
         log::warn!("place_at_live_slot failed for {}: {}", emitted_id, e);
     }
-    // Pins ratchet: their numbers follow the list upward, never downward
-    db.ratchet_pinned_slots().await;
 
     if !was_existing {
         crate::progress::record_event_for_app(

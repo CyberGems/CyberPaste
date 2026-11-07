@@ -2913,10 +2913,7 @@ const ClipRow = memo(function ClipRow({
                       : 'opacity-30'
                 )}
               >
-                #
-                {clipNumbering === 'positional'
-                  ? (clip.display_number ?? index + 1)
-                  : totalCount - index}
+                #{clipNumbering === 'positional' ? index + 1 : totalCount - index}
               </span>
             </div>
           )}

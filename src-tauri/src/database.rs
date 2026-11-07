@@ -8,10 +8,9 @@ pub struct Database {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ListClip {
-    pub uuid: String,
-    pub is_pinned: bool,
-    pub pinned_slot: Option<i64>,
+struct ListClip {
+    uuid: String,
+    is_pinned: bool,
 }
 
 /// Put `uuid` in visual slot 1. Pinned clips keep their indices; other unpinned
@@ -299,12 +298,12 @@ impl Database {
         }
     }
 
-    pub async fn load_list_clips(&self, folder_id: Option<i64>) -> Result<Vec<ListClip>, sqlx::Error> {
-        let rows: Vec<(String, bool, Option<i64>)> = match folder_id {
+    async fn load_list_clips(&self, folder_id: Option<i64>) -> Result<Vec<ListClip>, sqlx::Error> {
+        let rows: Vec<(String, bool)> = match folder_id {
             Some(fid) => {
                 sqlx::query_as(
                     r#"
-                    SELECT uuid, is_pinned, pinned_slot FROM clips
+                    SELECT uuid, is_pinned FROM clips
                     WHERE is_deleted = 0 AND folder_id = ?
                     ORDER BY sort_order ASC, created_at DESC
                     "#,
@@ -316,7 +315,7 @@ impl Database {
             None => {
                 sqlx::query_as(
                     r#"
-                    SELECT uuid, is_pinned, pinned_slot FROM clips
+                    SELECT uuid, is_pinned FROM clips
                     WHERE is_deleted = 0 AND folder_id IS NULL
                     ORDER BY sort_order ASC, created_at DESC
                     "#,
@@ -327,11 +326,7 @@ impl Database {
         };
         Ok(rows
             .into_iter()
-            .map(|(uuid, is_pinned, pinned_slot)| ListClip {
-                uuid,
-                is_pinned,
-                pinned_slot,
-            })
+            .map(|(uuid, is_pinned)| ListClip { uuid, is_pinned })
             .collect())
     }
 
@@ -346,65 +341,6 @@ impl Database {
         }
         tx.commit().await?;
         Ok(())
-    }
-
-    /// After a pinned main-list clip moves, refresh its reserved slot number
-    /// to its new visual rank. Folder clips carry no reserved slot.
-    /// Ratchet the reserved slots of every pinned clip: a pin's number follows
-    /// its position DOWN only as far as it ever climbed (deletions above a pin
-    /// pull its number up; deletions below or new captures never push it down).
-    /// Unpinned clips renumber densely through the remaining numbers.
-    pub async fn ratchet_pinned_slots(&self) {
-        Self::ratchet_pinned_slots_pool(&self.pool).await;
-    }
-
-    /// Pool-level variant for free functions that hold a bare pool handle.
-    pub async fn ratchet_pinned_slots_pool(pool: &sqlx::SqlitePool) {
-        let _ = sqlx::query(
-            r#"
-            UPDATE clips
-            SET pinned_slot = MIN(
-                COALESCE(pinned_slot, 9223372036854775807),
-                (
-                    SELECT COUNT(*) + 1 FROM clips c2
-                    WHERE c2.is_deleted = 0
-                      AND c2.folder_id IS clips.folder_id
-                      AND (c2.sort_order < clips.sort_order
-                           OR (c2.sort_order = clips.sort_order
-                               AND c2.created_at > clips.created_at))
-                )
-            )
-            WHERE is_pinned = 1 AND is_deleted = 0
-            "#,
-        )
-        .execute(pool)
-        .await;
-    }
-
-    async fn refresh_pinned_slot(
-        &self,
-        clip_uuid: &str,
-        folder_id: Option<i64>,
-    ) -> Result<(), sqlx::Error> {
-        if folder_id.is_some() {
-            return Ok(());
-        }
-        sqlx::query(
-            r#"
-            UPDATE clips SET pinned_slot = (
-                SELECT COUNT(*) + 1 FROM clips c2
-                WHERE c2.is_deleted = 0 AND c2.folder_id IS NULL
-                  AND (c2.sort_order < clips.sort_order
-                       OR (c2.sort_order = clips.sort_order
-                           AND c2.created_at > clips.created_at))
-            )
-            WHERE uuid = ? AND is_pinned = 1 AND folder_id IS NULL
-            "#,
-        )
-        .bind(clip_uuid)
-        .execute(&self.pool)
-        .await
-        .map(|_| ())
     }
 
     /// Put an unpinned main-list clip in slot 1. Pinned clips keep their visual slots;
@@ -449,11 +385,7 @@ impl Database {
             .collect();
         let at = if order.is_empty() { 0 } else { 1 };
         order.insert(at.min(order.len()), uuid.to_string());
-        self.apply_list_order(&order).await?;
-        // A pinned clip placed in the main list reserves slot 2 (its visual rank)
-        self.refresh_pinned_slot(uuid, None).await?;
-
-        Ok(())
+        self.apply_list_order(&order).await
     }
 
     pub async fn reorder_clip_visual(
@@ -487,11 +419,7 @@ impl Database {
         } else {
             reorder_unpinned_in_holes(&visual, clip_uuid, target_uuid, before)
         };
-        self.apply_list_order(&new_order).await?;
-        // A dragged pinned clip re-reserves its slot at the new position
-        self.refresh_pinned_slot(clip_uuid, folder_id).await?;
-
-        Ok(())
+        self.apply_list_order(&new_order).await
     }
 
     pub async fn move_clip_to_edge(&self, clip_uuid: &str, edge: &str) -> Result<(), sqlx::Error> {
@@ -516,11 +444,7 @@ impl Database {
         };
         let position = if before { "before" } else { "after" };
         self.reorder_clip_visual(clip_uuid, &target_uuid, position)
-            .await?;
-        // A pinned clip moved to an edge re-reserves its slot
-        self.refresh_pinned_slot(clip_uuid, folder_id).await?;
-
-        Ok(())
+            .await
     }
 
     pub async fn migrate(&self) -> Result<(), sqlx::Error> {
@@ -642,12 +566,6 @@ impl Database {
         add_column_if_missing(
             &self.pool,
             "ALTER TABLE clips ADD COLUMN pinned_at DATETIME",
-        )
-        .await?;
-
-        add_column_if_missing(
-            &self.pool,
-            "ALTER TABLE clips ADD COLUMN pinned_slot INTEGER",
         )
         .await?;
 

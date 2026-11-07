@@ -2129,23 +2129,6 @@ function App() {
     };
   }, [refreshCurrentFolder, loadFolders, refreshTotalCount]);
 
-  // Slot model (client side): pins hold their reserved numbers; unpinned
-  // clips compact through the free numbers after every local mutation, so
-  // deletions never leave number gaps until the next full reload.
-  const applySlotNumbers = useCallback((list: AppClipboardItem[]): AppClipboardItem[] => {
-    const reserved = new Set(
-      list.filter((c) => c.is_pinned && c.display_number).map((c) => c.display_number as number)
-    );
-    let cursor = 1;
-    return list.map((c) => {
-      if (c.is_pinned && c.display_number) return c;
-      while (reserved.has(cursor)) cursor += 1;
-      const n = cursor;
-      reserved.add(n);
-      return { ...c, display_number: n };
-    });
-  }, []);
-
   const executeDelete = useCallback(
     async (clipId: string) => {
       dismissAllTooltips();
@@ -2155,7 +2138,7 @@ function App() {
         const animPromise = new Promise((resolve) => setTimeout(resolve, 240));
         await Promise.all([deletePromise, animPromise]);
 
-        setClips((prevClips) => applySlotNumbers(prevClips.filter((c) => c.id !== clipId)));
+        setClips((prevClips) => prevClips.filter((c) => c.id !== clipId));
         setSelectedClipId((prevSelected) => (prevSelected === clipId ? null : prevSelected));
         setSelectedClipIds((prevSelected) => {
           if (!prevSelected.has(clipId)) return prevSelected;
@@ -2713,7 +2696,7 @@ function App() {
         await Promise.all([deletePromise, animPromise]);
 
         const idsSet = new Set(ids);
-        setClips((prev) => applySlotNumbers(prev.filter((c) => !idsSet.has(c.id))));
+        setClips((prev) => prev.filter((c) => !idsSet.has(c.id)));
         setSelectedClipIds(new Set());
 
         // Add to temporary Undo stack
@@ -2886,15 +2869,13 @@ function App() {
     (n: number) => {
       const filtered = clipsRef.current;
       if (filtered.length === 0) return;
-      // Positional: Ctrl+N pega el clip cuyo número mostrado es N (los slots
-      // de los fijados crean huecos, así que el número NO es el índice).
-      // Countdown: N cuenta desde el final de la lista.
-      const targetClip =
-        settings?.clip_numbering === 'countdown'
-          ? filtered[filtered.length - n]
-          : filtered.find((c) => (c.display_number ?? filtered.indexOf(c) + 1) === n);
-      if (!targetClip) return;
-      handlePaste(targetClip.id);
+      // Positional: Ctrl+1 = index 0 (clip #1)
+      // Countdown: mostrar #N donde N = totalCount - index, entonces Ctrl+1 corresponde al último visualmente.
+      //    Para countdown Ctrl+1 debe pegar el clip con número #1, que es el último en la lista (index length-1).
+      const targetIndex = settings?.clip_numbering === 'countdown' ? filtered.length - n : n - 1;
+      if (targetIndex < 0 || targetIndex >= filtered.length) return;
+      const clip = filtered[targetIndex];
+      if (clip) handlePaste(clip.id);
     },
     [settings?.clip_numbering]
   );
