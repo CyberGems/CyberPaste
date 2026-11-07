@@ -535,10 +535,7 @@ export function ContextMenu({
         <>
           <div className="mb-1 flex min-w-[330px] items-stretch justify-between gap-0 divide-x divide-border rounded-lg border border-border/40 bg-muted/25 p-1">
             {headerActions.map((action) => {
-              const tooltipLabel =
-                action.disabled && action.tooltip
-                  ? action.tooltip
-                  : (action.shortcut ?? (action.disabled ? undefined : action.tooltip));
+              const tooltipLabel = action.disabled ? action.tooltip : undefined;
               return (
                 <Tooltip
                   key={action.id}
