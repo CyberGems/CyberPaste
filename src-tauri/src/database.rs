@@ -400,12 +400,22 @@ impl Database {
                 .await?
             }
         };
+        let is_main = folder_id.is_none();
+        let min_slot = if is_main { 2 } else { 1 };
         Ok(rows
             .into_iter()
-            .map(|(uuid, is_pinned, pinned_slot)| ListClip {
-                uuid,
-                is_pinned,
-                pinned_slot,
+            .enumerate()
+            .map(|(idx, (uuid, is_pinned, pinned_slot))| {
+                let slot = if is_pinned {
+                    pinned_slot.or_else(|| Some((idx as i64 + 1).max(min_slot)))
+                } else {
+                    None
+                };
+                ListClip {
+                    uuid,
+                    is_pinned,
+                    pinned_slot: slot,
+                }
             })
             .collect())
     }
@@ -733,6 +743,23 @@ impl Database {
         .execute(&self.pool)
         .await?;
 
+        // Backfill pinned_slot for existing pinned clips that don't have one
+        let _ = sqlx::query(
+            r#"
+            UPDATE clips 
+            SET pinned_slot = CASE 
+                WHEN folder_id IS NULL THEN MAX(sort_order + 1, 2)
+                ELSE MAX(sort_order + 1, 1)
+            END
+            WHERE is_pinned = 1 AND (pinned_slot IS NULL OR pinned_slot <= 0)
+            "#,
+        )
+        .execute(&self.pool)
+        .await;
+
+        // Startup reconciliation to ensure contiguous sort_order
+        let _ = Self::reconcile_list_order_pool(&self.pool, None).await;
+
         // Normalize any legacy RTF clips to text
         let _ = sqlx::query(
             r#"
@@ -1019,6 +1046,43 @@ mod tests {
         // Both P3 (index 2) and P7 (index 6) stay locked
         assert_eq!(order[2], "P3");
         assert_eq!(order[6], "P7");
+    }
+
+    #[test]
+    fn two_consecutive_pins_stay_locked_on_capture_and_delete() {
+        // Main list with U1, P2 (pinned slot 2), P3 (pinned slot 3), U4, U5
+        let mut visual = vec![
+            lc("U1", false),
+            lcs("P2", true, Some(2)),
+            lcs("P3", true, Some(3)),
+            lc("U4", false),
+            lc("U5", false),
+        ];
+
+        // 1. Delete clip U1 (above the two pins)
+        visual.retain(|c| c.uuid != "U1");
+        let order_after_delete = layout_clips(&visual, true);
+        assert_eq!(order_after_delete.len(), 4);
+        // P2 must be at slot 2 (index 1), P3 must be at slot 3 (index 2)
+        assert_eq!(order_after_delete[0], "U4"); // U4 flows into slot 1
+        assert_eq!(order_after_delete[1], "P2"); // P2 locked at slot 2
+        assert_eq!(order_after_delete[2], "P3"); // P3 locked at slot 3
+        assert_eq!(order_after_delete[3], "U5"); // U5 at slot 4
+
+        // 2. New capture arrives
+        let visual_current = vec![
+            lc("U4", false),
+            lcs("P2", true, Some(2)),
+            lcs("P3", true, Some(3)),
+            lc("U5", false),
+        ];
+        let order_after_capture = parking_insert_live(&visual_current, "NEW");
+        assert_eq!(order_after_capture.len(), 5);
+        assert_eq!(order_after_capture[0], "NEW"); // Live at slot 1
+        assert_eq!(order_after_capture[1], "P2");  // P2 locked at slot 2
+        assert_eq!(order_after_capture[2], "P3");  // P3 locked at slot 3
+        assert_eq!(order_after_capture[3], "U4");  // U4 flows into slot 4
+        assert_eq!(order_after_capture[4], "U5");  // U5 flows into slot 5
     }
 
     #[test]

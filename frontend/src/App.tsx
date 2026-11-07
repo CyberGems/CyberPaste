@@ -2130,16 +2130,17 @@ function App() {
         // Add to temporary Undo stack (max 50 recent actions)
         setDeletedStack((prev) => [...prev.slice(-49), { ids: [clipId] }]);
 
-        // Refresh counts
+        // Refresh counts and sync clips with backend layout
         loadFolders();
         refreshTotalCount();
+        refreshCurrentFolder();
       } catch (error) {
         cancelDeleteFlash(clipId);
         console.error('Failed to delete clip:', error);
         toast.error(t('notifications.clipDeleteFailed'));
       }
     },
-    [loadFolders, refreshTotalCount, t]
+    [loadFolders, refreshCurrentFolder, refreshTotalCount, t]
   );
 
   const handleDelete = useCallback(
@@ -2178,12 +2179,13 @@ function App() {
         );
         triggerPinFlash(clipId);
         toast.success(newPinnedState ? t('toasts.clipPinned') : t('toasts.clipUnpinned'));
+        refreshCurrentFolder();
       } catch (error) {
         console.error('Failed to toggle clip pin:', error);
         toast.error(t('toasts.togglePinFailed'));
       }
     },
-    [t]
+    [refreshCurrentFolder, t]
   );
 
   const handleMoveClipToEdge = useCallback(
@@ -2684,13 +2686,14 @@ function App() {
 
         loadFolders();
         refreshTotalCount();
+        refreshCurrentFolder();
       } catch (e) {
         cancelDeleteFlash(ids);
         console.error('Bulk delete failed:', e);
         toast.error(t('notifications.deleteFailed'));
       }
     },
-    [loadFolders, refreshTotalCount, t]
+    [loadFolders, refreshCurrentFolder, refreshTotalCount, t]
   );
 
   const handleBulkDelete = useCallback(async () => {

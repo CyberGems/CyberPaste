@@ -2033,12 +2033,20 @@ pub async fn toggle_clip_pin(
     let is_main = folder_id.is_none();
 
     if new_pinned {
+        // Find clip's true visual slot in the current list
+        let visual = db.load_list_clips(folder_id).await.map_err(|e| e.to_string())?;
+        let visual_slot = visual
+            .iter()
+            .position(|c| c.uuid == uuid)
+            .map(|idx| idx as i64 + 1)
+            .unwrap_or(sort_order + 1);
+
         // Main list slot 1 is reserved for live capture; minimum pinned slot is 2.
         // In folders, minimum pinned slot is 1.
         let target_slot = if is_main {
-            (sort_order + 1).max(2)
+            visual_slot.max(2)
         } else {
-            (sort_order + 1).max(1)
+            visual_slot.max(1)
         };
 
         sqlx::query(
