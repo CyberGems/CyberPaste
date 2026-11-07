@@ -2997,13 +2997,22 @@ const ClipRow = memo(function ClipRow({
                 </span>
               </Tooltip>
             )}
-            {clip.is_pinned && (
-              <Tooltip label={t('common.pinnedClip')} placement="top" disabled={isPeekVisible}>
-                <span className="flex items-center text-primary opacity-90">
-                  <Pin size={10} className="-rotate-45 fill-primary/20" />
-                </span>
-              </Tooltip>
-            )}
+            {clip.is_pinned &&
+              (() => {
+                const currentSlot = index + 1;
+                const targetSlot = clip.pinned_slot ?? currentSlot;
+                const label =
+                  targetSlot > currentSlot
+                    ? t('common.pinnedClipSlotShifted', { slot: targetSlot, current: currentSlot })
+                    : t('common.pinnedClipSlot', { slot: targetSlot });
+                return (
+                  <Tooltip label={label} placement="top" disabled={isPeekVisible}>
+                    <span className="flex items-center text-primary opacity-90">
+                      <Pin size={10} className="-rotate-45 fill-primary/20" />
+                    </span>
+                  </Tooltip>
+                );
+              })()}
             {compactShowTypeIcon &&
               (() => {
                 const TypeIcon =

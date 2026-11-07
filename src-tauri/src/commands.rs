@@ -364,6 +364,7 @@ fn clip_to_list_item(clip: &Clip, image_path: Option<&str>, preview_only: bool) 
         metadata: clip.metadata.clone(),
         image_path: image_path.map(|s| s.to_string()),
         is_pinned: clip.is_pinned,
+        pinned_slot: clip.pinned_slot,
     }
 }
 
@@ -391,6 +392,7 @@ fn clip_to_detail_item(
         metadata: clip.metadata.clone(),
         image_path,
         is_pinned: clip.is_pinned,
+        pinned_slot: clip.pinned_slot,
     }
 }
 

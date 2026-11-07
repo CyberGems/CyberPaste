@@ -520,13 +520,25 @@ export const ClipCard = memo(
                   </Tooltip>
                 </div>
               )}
-              {clip.is_pinned && (
-                <Tooltip label={t('common.pinnedClip')} placement="top">
-                  <span className="flex items-center text-cyan-400 opacity-80">
-                    <Pin size={10} className="-rotate-45 fill-cyan-400/20" />
-                  </span>
-                </Tooltip>
-              )}
+              {clip.is_pinned &&
+                (() => {
+                  const currentSlot = clipIndex ?? 1;
+                  const targetSlot = clip.pinned_slot ?? currentSlot;
+                  const label =
+                    targetSlot > currentSlot
+                      ? t('common.pinnedClipSlotShifted', {
+                          slot: targetSlot,
+                          current: currentSlot,
+                        })
+                      : t('common.pinnedClipSlot', { slot: targetSlot });
+                  return (
+                    <Tooltip label={label} placement="top">
+                      <span className="flex items-center text-cyan-400 opacity-80">
+                        <Pin size={10} className="-rotate-45 fill-cyan-400/20" />
+                      </span>
+                    </Tooltip>
+                  );
+                })()}
               {showNumber && clipIndex !== undefined && (
                 <span className="select-none font-mono text-[9px] opacity-45 transition-opacity group-hover:opacity-70">
                   #{clipIndex}

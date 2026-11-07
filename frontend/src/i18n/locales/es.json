@@ -52,6 +52,8 @@
     "moreActionsHint": "Más acciones (Espacio)",
     "openAbout": "Acerca de CyberPaste",
     "pinnedClip": "Clip Fijado",
+    "pinnedClipSlot": "Clip fijado en ranura #{{slot}}",
+    "pinnedClipSlotShifted": "Clip fijado en ranura #{{slot}} (temporalmente en #{{current}})",
     "copyToClipboard": "Copiar al portapapeles",
     "file": "Archivo",
     "settings": "Ajustes",

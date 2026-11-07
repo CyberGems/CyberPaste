@@ -52,6 +52,8 @@
     "moreActionsHint": "More actions (Space)",
     "openAbout": "About CyberPaste",
     "pinnedClip": "Pinned Clip",
+    "pinnedClipSlot": "Clip pinned to slot #{{slot}}",
+    "pinnedClipSlotShifted": "Clip pinned to slot #{{slot}} (temporarily at #{{current}})",
     "copyToClipboard": "Copy to clipboard",
     "file": "File",
     "settings": "Settings",

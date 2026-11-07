@@ -448,6 +448,7 @@ pub struct ClipboardItem {
     pub metadata: Option<String>,
     pub image_path: Option<String>,
     pub is_pinned: bool,
+    pub pinned_slot: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
