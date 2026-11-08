@@ -392,6 +392,8 @@
     --input: 216 10% 11%; /* #17191D */
     --ring: 214 11% 75%;
     --primary-rgb: 184, 190, 198;
+    /* Selection accent: a whisper-dimmer, cooler silver than the primary. */
+    --selection-accent-rgb: 168, 176, 186;
 
     --sidebar-background: 216 13% 7%; /* #101215 - dark clean sidebar separation */
     --sidebar-foreground: 210 9% 92%;
@@ -423,6 +425,8 @@
     /* Window border (compact mode). A desaturated steel-teal instead of the
        neon primary, so the floating panel edge reads quiet, not glarey. */
     --window-border-color: rgba(58, 148, 158, 0.38);
+    /* Clip selection accent (borders, glow, tint). Same steel-teal family. */
+    --selection-accent-rgb: 58, 148, 158;
 
     --sidebar-background: 228 27% 9%; /* #10131D */
     --sidebar-foreground: 216 100% 95%;
@@ -506,6 +510,10 @@
     box-shadow: 0 4px 16px -5px rgba(0, 0, 0, 0.3);
   }
 
+  /* Selection accent per theme: a desaturated steel-teal for the cyberpaste
+     theme, a whisper-dimmer silver for the monochrome dark theme. Themes
+     without the token (light) fall back to their primary untouched. */
+
   .dark .clip-card:hover {
     @apply border-primary/40 bg-secondary;
     box-shadow:
@@ -514,8 +522,9 @@
   }
 
   .dark .clip-card.selected {
-    @apply border-primary/70 bg-primary/10;
-    box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.12);
+    border-color: rgba(var(--selection-accent-rgb, var(--primary-rgb)), 0.7);
+    background-color: rgba(var(--selection-accent-rgb, var(--primary-rgb)), 0.1);
+    box-shadow: 0 0 20px rgba(var(--selection-accent-rgb, var(--primary-rgb)), 0.12);
   }
 
   .light .clip-card:hover {
@@ -525,8 +534,9 @@
   }
 
   .clip-card.selected {
-    @apply border-primary/60 bg-primary/5;
-    box-shadow: 0 0 25px rgba(var(--primary-rgb), 0.15);
+    border-color: rgba(var(--selection-accent-rgb, var(--primary-rgb)), 0.6);
+    background-color: rgba(var(--selection-accent-rgb, var(--primary-rgb)), 0.05);
+    box-shadow: 0 0 25px rgba(var(--selection-accent-rgb, var(--primary-rgb)), 0.15);
   }
 
   .sidebar-item {

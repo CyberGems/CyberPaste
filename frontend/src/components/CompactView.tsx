@@ -2877,12 +2877,12 @@ const ClipRow = memo(function ClipRow({
             'clip-deleting-row pointer-events-none border-destructive/70 bg-destructive/15 shadow-[0_0_16px_rgba(239,68,68,0.25)]',
           isSelected
             ? pointerHover
-              ? 'border-primary text-foreground'
-              : 'border-primary/70 text-foreground'
+              ? 'border-[rgba(var(--selection-accent-rgb,var(--primary-rgb)),1)] text-foreground'
+              : 'border-[rgba(var(--selection-accent-rgb,var(--primary-rgb)),0.7)] text-foreground'
             : isActiveTarget
               ? pointerHover
-                ? 'border-primary/80 text-foreground'
-                : 'border-primary/50 text-foreground'
+                ? 'border-[rgba(var(--selection-accent-rgb,var(--primary-rgb)),0.8)] text-foreground'
+                : 'border-[rgba(var(--selection-accent-rgb,var(--primary-rgb)),0.5)] text-foreground'
               : isHovered
                 ? 'border-border/80 text-foreground'
                 : 'border-border/50 text-foreground/90',
@@ -2896,7 +2896,9 @@ const ClipRow = memo(function ClipRow({
           <div
             className={clsx(
               'pointer-events-none absolute inset-0 z-0 transition-colors duration-150',
-              pointerHover ? 'bg-primary/10' : 'bg-primary/5'
+              pointerHover
+                ? 'bg-[rgba(var(--selection-accent-rgb,var(--primary-rgb)),0.1)]'
+                : 'bg-[rgba(var(--selection-accent-rgb,var(--primary-rgb)),0.05)]'
             )}
           />
         )}
@@ -2904,7 +2906,7 @@ const ClipRow = memo(function ClipRow({
 
         {/* Selected target left accent bar (subtle yet distinctive identifier for active target item) */}
         {(isActiveTarget || isSelected) && (
-          <div className="pointer-events-none absolute bottom-1.5 left-0 top-1.5 z-10 w-[3px] rounded-r-full bg-primary" />
+          <div className="pointer-events-none absolute bottom-1.5 left-0 top-1.5 z-10 w-[3px] rounded-r-full bg-[rgb(var(--selection-accent-rgb,var(--primary-rgb)))]" />
         )}
 
         {pinFlash && (
