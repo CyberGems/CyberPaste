@@ -2391,7 +2391,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
             {!isEmojiMode && (
               <div className="flex items-center gap-1">
                 {hasOverflow && (
-                  <div className="flex-shrink-0 pb-1">
+                  <div className="flex-shrink-0">
                     <Tooltip
                       label={canScrollLeft ? t('folders.scrollBack') : ''}
                       placement="bottom"
@@ -2418,7 +2418,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   data-folder-container="horizontal"
                   onWheel={handleWheel}
                   onScroll={updateScrollState}
-                  className="no-scrollbar flex min-w-0 flex-1 gap-1 overflow-x-auto pb-1"
+                  className="no-scrollbar flex min-w-0 flex-1 gap-1 overflow-x-auto"
                 >
                   <Tooltip label={t('common.folderNavHintCompact')} placement="bottom">
                     <button
@@ -2489,7 +2489,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   })}
                 </div>
                 {hasOverflow && (
-                  <div className="flex-shrink-0 pb-1">
+                  <div className="flex-shrink-0">
                     <Tooltip
                       label={canScrollRight ? t('folders.scrollForward') : ''}
                       placement="bottom"
@@ -2512,7 +2512,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   </div>
                 )}
                 {onAddFolder && (
-                  <div className="flex-shrink-0 pb-1">
+                  <div className="flex-shrink-0">
                     <Tooltip label={t('folders.addFolderBtn')} placement="bottom">
                       <button
                         type="button"
@@ -2906,7 +2906,7 @@ const ClipRow = memo(function ClipRow({
 
         {/* Selected target left accent bar (subtle yet distinctive identifier for active target item) */}
         {(isActiveTarget || isSelected) && (
-          <div className="pointer-events-none absolute bottom-1.5 left-0 top-1.5 z-10 w-[3px] rounded-r-full bg-[rgb(var(--selection-accent-rgb,var(--primary-rgb)))]" />
+          <div className="pointer-events-none absolute bottom-1.5 left-0 top-1.5 z-10 w-[3px] rounded-r-full bg-gradient-to-b from-[rgb(var(--selection-accent-rgb,var(--primary-rgb)))] to-transparent" />
         )}
 
         {pinFlash && (
