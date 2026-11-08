@@ -12,6 +12,7 @@ export interface ContextMenuHeaderAction {
   danger?: boolean;
   disabled?: boolean;
   shortcut?: string;
+  keyHint?: string;
   active?: boolean;
   /** Overrides the tooltip when the disabled state needs to explain why. */
   tooltip?: string;
@@ -25,6 +26,8 @@ export interface ContextMenuOption {
   divider?: boolean;
   subMenu?: ContextMenuOption[];
   icon?: React.ReactNode;
+  shortcut?: string;
+  keyHint?: string;
 }
 
 interface ContextMenuProps {
@@ -310,6 +313,18 @@ function ContextMenuItem({
           </span>
         )}
         <span className="flex-1 text-left">{option.label}</span>
+        {option.shortcut && (
+          <kbd
+            className={clsx(
+              'ml-3 shrink-0 rounded border px-1.5 py-0.5 font-mono text-[10px] font-medium transition-colors',
+              focused
+                ? 'border-border/60 bg-muted/60 text-foreground'
+                : 'border-border/30 bg-muted/30 text-muted-foreground/60 group-hover:border-border/60 group-hover:text-foreground/90'
+            )}
+          >
+            {option.shortcut}
+          </kbd>
+        )}
         {hasSubMenu && <ChevronRight size={14} className="ml-2 opacity-60" />}
       </button>
 
@@ -520,8 +535,215 @@ export function ContextMenu({
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
+      const opts = optionsRef.current;
+      const headers = headerActionsRef.current ?? [];
+      const hasHeaders = headers.some(isHeaderSelectable);
+      const hasOpts = opts.some(isSelectable);
+      const close = onCloseRef.current;
+      const subIdx = openSubIndexRef.current;
+      const inSub = subIdx !== null && !!opts[subIdx]?.subMenu?.length;
+      const subList = inSub ? opts[subIdx]!.subMenu! : [];
+      const section = focusSectionRef.current;
+      const currentOpt = activeIndexRef.current;
+      const currentHeader = headerIndexRef.current;
+
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        if (inSub) {
+          setOpenSubIndex(null);
+          return;
+        }
+        close();
+        return;
+      }
+
+      // Direct hotkey triggers while not inside a submenu:
+      if (!inSub) {
+        // Direct Delete / Supr
+        if (e.key === 'Delete' || e.key === 'Supr') {
+          const delAction = headers.find((h) => h.id === 'delete');
+          if (delAction && !delAction.disabled) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            delAction.onClick();
+            dismissAllTooltips();
+            close();
+            return;
+          }
+        }
+
+        // F2 for edit
+        if (e.key === 'F2') {
+          const editOpt = opts.find((o) => o.shortcut === 'F2' || o.keyHint === 'F2');
+          if (editOpt && !editOpt.disabled && editOpt.onClick) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            editOpt.onClick();
+            dismissAllTooltips();
+            close();
+            return;
+          }
+        }
+
+        // Ctrl+S for Save As
+        if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+          const saveOpt = opts.find((o) => o.shortcut === 'Ctrl+S');
+          if (saveOpt && !saveOpt.disabled && saveOpt.onClick) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            saveOpt.onClick();
+            dismissAllTooltips();
+            close();
+            return;
+          }
+        }
+
+        // Ctrl+Enter for plain text
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          const plainOpt = opts.find((o) => o.shortcut === 'Ctrl+Enter');
+          if (plainOpt && !plainOpt.disabled && plainOpt.onClick) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            plainOpt.onClick();
+            dismissAllTooltips();
+            close();
+            return;
+          }
+        }
+
+        // Shift+Enter for quick preview
+        if (e.shiftKey && e.key === 'Enter') {
+          const previewOpt = opts.find((o) => o.shortcut === 'Shift+Enter');
+          if (previewOpt && !previewOpt.disabled && previewOpt.onClick) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            previewOpt.onClick();
+            dismissAllTooltips();
+            close();
+            return;
+          }
+        }
+
+        // Ctrl+O for standalone viewer
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'o' || e.key === 'O')) {
+          const viewerOpt = opts.find((o) => o.shortcut === 'Ctrl+O');
+          if (viewerOpt && !viewerOpt.disabled && viewerOpt.onClick) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            activateOption(viewerOpt, close);
+            dismissAllTooltips();
+            return;
+          }
+        }
+
+        // Alt+O for external viewer
+        if (e.altKey && (e.key === 'o' || e.key === 'O')) {
+          const extOpt = opts.find((o) => o.shortcut === 'Alt+O');
+          if (extOpt && !extOpt.disabled && extOpt.onClick) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            activateOption(extOpt, close);
+            dismissAllTooltips();
+            return;
+          }
+        }
+
+        // Ctrl+Home for Move to Top
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Home') {
+          const topOpt = opts.find((o) => o.shortcut === 'Ctrl+Home');
+          if (topOpt && !topOpt.disabled && topOpt.onClick) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            activateOption(topOpt, close);
+            dismissAllTooltips();
+            return;
+          }
+        }
+
+        // Ctrl+End for Move to Bottom
+        if ((e.ctrlKey || e.metaKey) && e.key === 'End') {
+          const btmOpt = opts.find((o) => o.shortcut === 'Ctrl+End');
+          if (btmOpt && !btmOpt.disabled && btmOpt.onClick) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            activateOption(btmOpt, close);
+            dismissAllTooltips();
+            return;
+          }
+        }
+
+        // Single letter triggers (without modifiers)
+        if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key.length === 1) {
+          const pressedKey = e.key.toLowerCase();
+
+          // Header action keyHints (e.g. C, P, F, E, D, V)
+          const matchedHeader = headers.find((h) => h.keyHint?.toLowerCase() === pressedKey);
+          if (matchedHeader && !matchedHeader.disabled) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            matchedHeader.onClick();
+            dismissAllTooltips();
+            close();
+            return;
+          }
+
+          // Header action aliases: V for paste, D for delete
+          if (pressedKey === 'v') {
+            const pasteAction = headers.find((h) => h.id === 'paste');
+            if (pasteAction && !pasteAction.disabled) {
+              e.preventDefault();
+              e.stopPropagation();
+              e.stopImmediatePropagation();
+              pasteAction.onClick();
+              dismissAllTooltips();
+              close();
+              return;
+            }
+          }
+          if (pressedKey === 'd') {
+            const delAction = headers.find((h) => h.id === 'delete');
+            if (delAction && !delAction.disabled) {
+              e.preventDefault();
+              e.stopPropagation();
+              e.stopImmediatePropagation();
+              delAction.onClick();
+              dismissAllTooltips();
+              close();
+              return;
+            }
+          }
+
+          // Options with single-key shortcuts or keyHints (like T for OCR, M for move, I for details)
+          const matchedOpt = opts.find(
+            (o) =>
+              o.keyHint?.toLowerCase() === pressedKey ||
+              (o.shortcut && o.shortcut.length === 1 && o.shortcut.toLowerCase() === pressedKey)
+          );
+          if (matchedOpt && !matchedOpt.disabled && matchedOpt.onClick) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            matchedOpt.onClick();
+            dismissAllTooltips();
+            close();
+            return;
+          }
+        }
+      }
+
       const navKeys = [
-        'Escape',
         'ArrowDown',
         'ArrowUp',
         'ArrowLeft',
@@ -537,27 +759,6 @@ export function ContextMenu({
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
-
-      const opts = optionsRef.current;
-      const headers = headerActionsRef.current ?? [];
-      const hasHeaders = headers.some(isHeaderSelectable);
-      const hasOpts = opts.some(isSelectable);
-      const close = onCloseRef.current;
-      const subIdx = openSubIndexRef.current;
-      const inSub = subIdx !== null && !!opts[subIdx]?.subMenu?.length;
-      const subList = inSub ? opts[subIdx]!.subMenu! : [];
-      const section = focusSectionRef.current;
-      const currentOpt = activeIndexRef.current;
-      const currentHeader = headerIndexRef.current;
-
-      if (e.key === 'Escape') {
-        if (inSub) {
-          setOpenSubIndex(null);
-          return;
-        }
-        close();
-        return;
-      }
 
       // ---------------- Submenu Navigation ----------------
       if (inSub) {
@@ -890,7 +1091,7 @@ export function ContextMenu({
                     }}
                     aria-label={action.label}
                     className={clsx(
-                      'flex min-h-[44px] min-w-[44px] flex-1 flex-col items-center justify-center gap-1 rounded-md px-1 py-1.5 transition-all duration-150',
+                      'group relative flex min-h-[44px] min-w-[44px] flex-1 flex-col items-center justify-center gap-1 rounded-md px-1 py-1.5 transition-all duration-150',
                       action.disabled && !action.tooltip
                         ? 'pointer-events-none cursor-default text-muted-foreground opacity-25'
                         : action.disabled
@@ -911,6 +1112,18 @@ export function ContextMenu({
                                 )
                     )}
                   >
+                    {action.keyHint && (
+                      <kbd
+                        className={clsx(
+                          'pointer-events-none absolute right-1 top-1 flex h-3.5 min-w-[14px] items-center justify-center rounded border px-1 font-mono text-[9px] font-semibold shadow-sm transition-colors',
+                          isFocused
+                            ? 'border-border/80 bg-black/60 text-foreground'
+                            : 'border-border/40 bg-black/40 text-muted-foreground/75 group-hover:border-border/70 group-hover:text-foreground'
+                        )}
+                      >
+                        {action.keyHint}
+                      </kbd>
+                    )}
                     {action.icon}
                     <span className="w-full truncate text-center text-[13px] font-medium leading-snug">
                       {action.label}

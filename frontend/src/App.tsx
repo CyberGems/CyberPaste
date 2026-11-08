@@ -410,7 +410,7 @@ function App() {
 
   const effectiveTheme = useTheme(theme);
   useLanguage(settings?.language);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const fullActionTooltip =
     settings?.single_click_paste === false
       ? t('full.actionSelect')
@@ -3288,11 +3288,14 @@ function App() {
           !clip?.is_pinned;
         const isEditable = Boolean(clip && clip.clip_type !== 'image' && clip.clip_type !== 'file');
 
+        const isSpanish = (i18n.language || 'en').startsWith('es');
+
         headerActions = [
           {
             id: 'copy',
             label: t('contextMenu.copy'),
             icon: <Copy size={15} />,
+            keyHint: 'C',
             shortcut: 'Ctrl+C',
             onClick: () => handleCopy(itemId),
           },
@@ -3300,6 +3303,7 @@ function App() {
             id: 'paste',
             label: t('contextMenu.paste'),
             icon: <ClipboardPaste size={15} />,
+            keyHint: isSpanish ? 'P' : 'V',
             shortcut: 'Enter',
             onClick: () => handlePaste(itemId, true),
           },
@@ -3307,6 +3311,7 @@ function App() {
             id: 'pin',
             label: clip?.is_pinned ? t('contextMenu.unpin') : t('contextMenu.pin'),
             tooltip: pinLatestDisabled ? t('contextMenu.pinLatestDisabled') : undefined,
+            keyHint: isSpanish ? 'F' : 'P',
             shortcut: TITLEBAR_HOTKEYS.pin,
             icon: clip?.is_pinned ? <PinOff size={15} /> : <Pin size={15} />,
             disabled: pinLatestDisabled,
@@ -3322,7 +3327,8 @@ function App() {
                 })
               : t('contextMenu.delete'),
             icon: <Trash2 size={15} />,
-            shortcut: 'Supr',
+            keyHint: isSpanish ? 'E' : 'D',
+            shortcut: isSpanish ? 'Supr' : 'Del',
             danger: true,
             onClick: () => {
               if (isBulk) {
@@ -3345,6 +3351,8 @@ function App() {
                 })
               : t('contextMenu.edit'),
             icon: <Pencil size={14} />,
+            shortcut: 'F2',
+            keyHint: 'F2',
             onClick: () => {
               if (!clip) return;
               invoke<AppClipboardItem>('get_clip', { clipId: clip.id })
@@ -3374,6 +3382,7 @@ function App() {
           opts.push({
             label: t('contextMenu.view'),
             icon: <Eye size={14} />,
+            shortcut: 'Shift+Enter',
             onClick: () => handleOpenPreview(itemId),
           });
         }
@@ -3383,6 +3392,8 @@ function App() {
           opts.push({
             label: t('contextMenu.openFullViewer'),
             icon: <AppWindow size={14} />,
+            shortcut: 'Ctrl+O',
+            keyHint: 'O',
             onClick: () => {
               invoke('open_image_viewer', { clipId: clip.id }).catch(console.error);
             },
@@ -3393,6 +3404,8 @@ function App() {
           opts.push({
             label: t('contextMenu.extractText'),
             icon: <ScanText size={14} />,
+            shortcut: 'T',
+            keyHint: 'T',
             onClick: async () => {
               const loadingToast = toast.loading(t('viewer.extractingText'));
               try {
@@ -3417,6 +3430,7 @@ function App() {
           opts.push({
             label: t('contextMenu.openExternalViewer'),
             icon: <ExternalLink size={14} />,
+            shortcut: 'Alt+O',
             onClick: () => {
               if (!clip) return;
               invoke('open_with', {
@@ -3442,6 +3456,7 @@ function App() {
           opts.push({
             label: t('contextMenu.copyPlainText'),
             icon: <ClipboardCopy size={14} />,
+            shortcut: 'Ctrl+Enter',
             onClick: async () => {
               try {
                 await invoke('copy_clip_text', { clipId: itemId });
@@ -3457,6 +3472,7 @@ function App() {
         opts.push({
           label: t('export.saveAs'),
           icon: <Download size={14} />,
+          shortcut: 'Ctrl+S',
           onClick: () => {
             void handleExportClip(itemId);
           },
@@ -3468,6 +3484,8 @@ function App() {
         opts.push({
           label: t('contextMenu.copyToFolder') || t('contextMenu.moveToFolder'),
           icon: <FolderInput size={14} />,
+          shortcut: 'M',
+          keyHint: 'M',
           onClick: () => setMoveToFolderClipId(itemId),
         });
 
@@ -3504,12 +3522,14 @@ function App() {
         opts.push({
           label: t('contextMenu.moveToTop'),
           icon: <ChevronsUp size={14} />,
+          shortcut: 'Ctrl+Home',
           disabled: moveTopDisabled,
           onClick: () => handleMoveClipToEdge(itemId, 'top'),
         });
         opts.push({
           label: t('contextMenu.moveToBottom'),
           icon: <ChevronsDown size={14} />,
+          shortcut: 'Ctrl+End',
           disabled: moveBottomDisabled,
           onClick: () => handleMoveClipToEdge(itemId, 'bottom'),
         });
@@ -3518,6 +3538,8 @@ function App() {
           opts.push({
             label: detailPanelOpen ? t('detailPanel.collapse') : t('detailPanel.expand'),
             icon: detailPanelOpen ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />,
+            shortcut: 'I',
+            keyHint: 'I',
             onClick: () => setDetailPanelOpen((prev) => !prev),
           });
         }
