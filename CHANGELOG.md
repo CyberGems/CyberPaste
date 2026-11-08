@@ -2,6 +2,51 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.29.0] — 2026-11-08
+
+### 🔍 Settings Search
+- **In-place results view**: A search bar in the settings sidebar filters settings across all tabs into a results view, jumping straight to the matching row.
+- **Reveal-path filtering**: Matches are scoped to their tab region with strong/weak signal scoring, accent-insensitive matching, and highlighting of the matched text.
+- **UI-language awareness**: Settings search matches the interface language with strong and weak signals and syncs with filtering.
+
+### 🧲 Rich Formatting Preserved End-to-End
+- **RTF/HTML flavors captured**: Styled copies from Word, browsers, and editors keep bold, font sizes, and colors across captures.
+- **Faithful re-paste**: Pasting writes text, HTML, and RTF together so rich targets restore the original look while plain targets keep plain text.
+- **Classification fix**: Closed a file-branch nesting bug so text/HTML/RTF classification actually runs for captures without files.
+- **Clipboard lock retry**: Retries clipboard context creation so captures during Word's internal clipboard hold no longer lose rich flavors.
+- **Settings toggle**: "Preserve rich formatting when copying and pasting" in Settings > Clipboard turns it off.
+
+### 💾 Inline Saved Indicator
+- **Elegant "Saved" block**: Replaces per-control toasts with an inline saved indicator with a polished layout.
+- **Stable settings states**: Reveal the App Lock card reliably and stabilize the empty search state.
+
+### 📌 Fixed Pin Slots & Accordion Memory
+- **Locked visual slots**: Pinned clips keep their slot number while normal clips flow around them on captures and deletes.
+- **Accordion behavior**: If deletions shorten the list below a pinned slot, the pin sits at the end without gaps and expands back into its slot as new clips arrive.
+- **Drag protection**: Dropping unpinned clips onto pinned cards shows a forbidden cursor; dragging a pinned clip repositions its anchor.
+- **Instant renumbering**: Display slots recompute immediately after deletes.
+
+### 🖥️ Full Screen Mode
+- **Work-area fullscreen**: The main window fills the monitor work area instead of a docked strip, respecting taskbars on any edge with square corners and a fixed size.
+- **Renamed & simplified**: "Full Mode" is now "Full Screen Mode" in both languages (Spanish unified as "Modo Pantalla Completa"), and the redundant Automatic (Smart) compact position option was removed.
+- **Morph polish**: The view-mode loader stays still during the window morph and the dim backdrop fades in and out.
+
+### 🖱️ Context Menu Overhaul
+- **Labeled quick actions**: Header buttons show icon + label (Copy, Paste, Pin, Delete) with uniform hover, visible separators, and refined shortcut badges.
+- **Keyboard-first**: Bidirectional keyboard navigation across header actions, mnemonic single-key hints, `Alt+P` to pin the selected clip, and `Ctrl+P` to pin the window.
+- **Edit promoted**: "Edit" leads the options list; actions renamed ("Quick view", "Filter clips from…", "Open in Viewer…").
+
+### 🎨 Visual Polish
+- **Softer highlights**: Hover tints softened and border glows removed across clips, the filter dropdown, the undo button, and full/compact highlight layers.
+- **Unified toolbar spacing**: Consistent toolbar button spacing, cleaner full-mode action buttons, and dialog text is no longer selectable.
+- **Hover collision fix**: Eliminated stationary hover collision when opening menus and refined global scrollbars.
+
+### 🐛 Notable Fixes
+- **Nearest clip selection**: Deleting a clip keeps the selection on the nearest neighbor instead of jumping to the first clip.
+- **Bulk bar docking**: The bulk action bar docks above the status bar with corrected centering, scrollbar, and selection hints.
+- **Stale selection**: Reopening the window selects the newest clip.
+- **Installer paths**: Updates keep the remembered install path, and uninstall clears it from both registry hives.
+
 ## [1.28.0] — 2026-10-25
 
 ### ⚙️ Dedicated Clipboard Settings & Settings Layout Polish

@@ -8,7 +8,7 @@
 
 <!-- IMPORTANT FOR AGENTS & MAINTAINERS: Always rewrite this entire section with the ACTUAL release notes for this specific version before tagging. NEVER leave or copy previous version notes! Use 25-45 words, lead with user-facing changes, and do not repeat the app name or version. -->
 <!-- changelog-summary:start -->
-Barra de búsqueda de ajustes, indicador de guardado con cierre de un clic, formato enriquecido, memoria de slots anclados y pantalla completa encabezan esta versión.
+Settings search, rich formatting preserved end to end, fixed pin slots with accordion memory, Full Screen Mode, and a rebuilt context menu with real hotkeys headline this release, alongside an inline Saved indicator and installer path fixes.
 <!-- changelog-summary:end -->
 
 > **New to CyberPaste?** A fast, privacy-first Windows clipboard manager with history, folders, OCR, and configurable AI actions.
@@ -48,6 +48,8 @@ Barra de búsqueda de ajustes, indicador de guardado con cierre de un clic, form
   - **Rich capture classification**: Fixed a pre-existing nesting bug that bypassed the text/HTML/RTF format reader for captures without files.
   - **Word clipboard lock**: Retried context creation so captures during Word's internal clipboard hold keep their rich flavors.
   - **Stale selection**: Reopening the window now selects the newest clip.
+  - **Nearest clip selection**: Deleting a clip keeps the selection on the nearest neighbor instead of jumping to the first clip.
+  - **Bulk bar docking**: The bulk selection bar docks above the status bar with corrected centering, scrollbar, and selection hints.
 
 <details>
 <summary><b>🇪🇸 Ver notas de la versión en Español</b></summary>
@@ -94,6 +96,8 @@ Barra de búsqueda de ajustes, indicador de guardado con cierre de un clic, form
   - **Clasificación de capturas enriquecidas**: Corregido un bug de anidamiento pre-existente que bypassaba el lector de formatos texto/HTML/RTF en capturas sin archivos.
   - **Candado de Word**: Reintentos en la creación del contexto para que las capturas durante el bloqueo interno de Word conserven sus sabores ricos.
   - **Selección obsoleta**: Reabrir la ventana selecciona ahora el clip más reciente.
+  - **Selección del clip más cercano**: Eliminar un clip mantiene la selección en el vecino más cercano en lugar de saltar al primer clip.
+  - **Barra masiva anclada**: La barra de selección múltiple se ancla sobre la barra de estado con centrado, scrollbar y pistas de selección corregidos.
 
 
 
