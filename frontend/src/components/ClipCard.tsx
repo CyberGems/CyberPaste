@@ -402,7 +402,9 @@ export const ClipCard = memo(
               isDeleting &&
                 'clip-deleting-card pointer-events-none border-destructive/70 bg-destructive/10 shadow-[0_0_20px_rgba(239,68,68,0.25)]',
               isSelected || isBulkSelected
-                ? 'z-10 border-primary bg-primary/5 shadow-[0_0_14px_rgba(var(--primary-rgb),0.25)] ring-1 ring-primary/40'
+                ? showHover
+                  ? 'z-10 border-primary shadow-[0_0_16px_rgba(var(--primary-rgb),0.3)] ring-1 ring-primary/45'
+                  : 'z-10 border-primary/70 shadow-[0_0_10px_rgba(var(--primary-rgb),0.18)] ring-1 ring-primary/30'
                 : showHover
                   ? 'border-primary/50'
                   : 'border-border',
@@ -410,6 +412,16 @@ export const ClipCard = memo(
               !hoverLocked && 'group'
             )}
           >
+            {/* Selection / active tint layer */}
+            {(isSelected || isBulkSelected) && (
+              <div
+                className={clsx(
+                  'pointer-events-none absolute inset-0 z-[12] transition-colors duration-150',
+                  showHover ? 'bg-primary/14 dark:bg-primary/18' : 'dark:bg-primary/7 bg-primary/5'
+                )}
+              />
+            )}
+
             {pinFlash && (
               <div className="clip-pin-flash pointer-events-none absolute inset-0 z-30 rounded-2xl bg-primary/30 shadow-[inset_0_0_0_2px_rgba(var(--primary-rgb),0.7),0_0_22px_rgba(var(--primary-rgb),0.4)]" />
             )}

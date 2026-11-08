@@ -2855,7 +2855,9 @@ const ClipRow = memo(function ClipRow({
           isDeleting &&
             'clip-deleting-row pointer-events-none border-destructive/70 bg-destructive/15 shadow-[0_0_16px_rgba(239,68,68,0.25)]',
           isSelected
-            ? 'border-primary text-foreground shadow-[0_0_12px_rgba(var(--primary-rgb),0.25)] ring-1 ring-primary/40'
+            ? pointerHover
+              ? 'border-primary text-foreground shadow-[0_0_12px_rgba(var(--primary-rgb),0.25)] ring-1 ring-primary/40'
+              : 'border-primary/70 text-foreground shadow-[0_0_8px_rgba(var(--primary-rgb),0.18)] ring-1 ring-primary/30'
             : isActiveTarget
               ? pointerHover
                 ? 'border-primary/75 text-foreground shadow-[0_0_12px_rgba(var(--primary-rgb),0.2)] ring-1 ring-primary/35'
@@ -2869,16 +2871,15 @@ const ClipRow = memo(function ClipRow({
         )}
       >
         {/* Solid base layer state tints (layered on top of opaque bg-card) */}
-        {isSelected && <div className="pointer-events-none absolute inset-0 z-0 bg-primary/20" />}
-        {isActiveTarget && !isSelected && (
+        {(isSelected || isActiveTarget) && (
           <div
             className={clsx(
-              'pointer-events-none absolute inset-0 z-0 transition-colors',
-              pointerHover ? 'bg-primary/16 dark:bg-primary/20' : 'dark:bg-primary/14 bg-primary/10'
+              'pointer-events-none absolute inset-0 z-0 transition-colors duration-150',
+              pointerHover ? 'bg-primary/16 dark:bg-primary/20' : 'dark:bg-primary/7 bg-primary/5'
             )}
           />
         )}
-        {isHovered && !isSelected && (
+        {isHovered && (
           <div className="pointer-events-none absolute inset-0 z-0 bg-accent/60 dark:bg-accent/40" />
         )}
 
