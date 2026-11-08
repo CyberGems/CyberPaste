@@ -2875,13 +2875,11 @@ const ClipRow = memo(function ClipRow({
           <div
             className={clsx(
               'pointer-events-none absolute inset-0 z-0 transition-colors duration-150',
-              pointerHover ? 'bg-primary/16 dark:bg-primary/20' : 'dark:bg-primary/7 bg-primary/5'
+              pointerHover ? 'bg-primary/20' : 'bg-primary/5'
             )}
           />
         )}
-        {isHovered && (
-          <div className="pointer-events-none absolute inset-0 z-0 bg-accent/60 dark:bg-accent/40" />
-        )}
+        {isHovered && <div className="pointer-events-none absolute inset-0 z-0 bg-accent/60" />}
 
         {/* Selected target left accent bar (subtle yet distinctive identifier for active target item) */}
         {(isActiveTarget || isSelected) && (

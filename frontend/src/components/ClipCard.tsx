@@ -416,8 +416,8 @@ export const ClipCard = memo(
             {(isSelected || isBulkSelected) && (
               <div
                 className={clsx(
-                  'pointer-events-none absolute inset-0 z-[12] transition-colors duration-150',
-                  showHover ? 'bg-primary/14 dark:bg-primary/18' : 'dark:bg-primary/7 bg-primary/5'
+                  'pointer-events-none absolute inset-0 z-0 transition-colors duration-150',
+                  showHover ? 'bg-primary/20' : 'bg-primary/5'
                 )}
               />
             )}
@@ -612,7 +612,11 @@ export const ClipCard = memo(
               data-el="clip-card-content"
               className={clsx(
                 'relative z-10 flex-1 overflow-hidden p-2',
-                clip.clip_type === 'image' ? 'bg-card/45' : 'bg-card/90'
+                isSelected || isBulkSelected
+                  ? 'bg-transparent'
+                  : clip.clip_type === 'image'
+                    ? 'bg-card/45'
+                    : 'bg-card/90'
               )}
             >
               {renderedContent}
