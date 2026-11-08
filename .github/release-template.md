@@ -114,17 +114,21 @@ Barra de búsqueda de ajustes, indicador de guardado con cierre de un clic, form
 
 ---
 
-### 🔐 Checksums
+### 🔐 VirusTotal and SHA256
 
-- **`CyberPaste_{{VERSION_NUM}}_x64-setup.exe`** — SHA256:
-  ```text
-  {{INSTALLER_HASH}}
-  ```
+> 🛡️ The report opens on VirusTotal in a new tab and does not download anything.
 
-- **`CyberPaste_{{VERSION_NUM}}_x64-portable.zip`** — SHA256:
-  ```text
-  {{PORTABLE_HASH}}
-  ```
+**Installer**: [View VirusTotal report](https://www.virustotal.com/gui/file/{{INSTALLER_HASH}})
+
+```text
+{{INSTALLER_HASH}}
+```
+
+**Portable edition**: [View VirusTotal report](https://www.virustotal.com/gui/file/{{PORTABLE_HASH}})
+
+```text
+{{PORTABLE_HASH}}
+```
 {{MSI_BLOCK}}
 ---
 

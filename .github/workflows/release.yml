@@ -174,6 +174,7 @@ jobs:
         env:
           VITE_CYBERPASTE_PORTABLE: "true"
           GH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+          VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
         run: |
           $tag = "${{ github.ref_name }}"
           $versionNum = $tag.TrimStart("v")
@@ -207,6 +208,38 @@ jobs:
           if ($msiHash) {
             $msiBlock = "`r`n- **CyberPaste_${versionNum}_x64_en-US.msi** — SHA256:`r`n  ``````text`r`n  $msiHash`r`n  ```````r`n"
           }
+
+          # Submit both artifacts to VirusTotal so the report links in the
+          # release notes resolve immediately after publishing.
+          if ($env:VIRUSTOTAL_API_KEY) {
+            function Upload-VirusTotal($filePath, $apiKey) {
+              $item = Get-Item $filePath
+              $sizeMb = [Math]::Round($item.Length / 1MB, 2)
+              Write-Host "Uploading $filePath ($sizeMb MB) to VirusTotal..."
+              $headers = @{ "x-apikey" = $apiKey }
+              $url = "https://www.virustotal.com/api/v3/files"
+
+              if ($item.Length -gt 30MB) {
+                Write-Host "File exceeds 30MB ($sizeMb MB), requesting dedicated large-file upload endpoint from VirusTotal..."
+                $urlResp = Invoke-RestMethod -Uri "https://www.virustotal.com/api/v3/files/upload_url" -Method Get -Headers $headers -TimeoutSec 60
+                $url = $urlResp.data
+                Write-Host "Using dedicated endpoint: $url"
+              }
+
+              $resp = & curl.exe -s -S --fail -X POST -H "x-apikey: $apiKey" -F "file=@$filePath" "$url"
+              Write-Host "Upload successful. Response: $resp"
+            }
+
+            try {
+              Upload-VirusTotal $installer.FullName $env:VIRUSTOTAL_API_KEY
+              Upload-VirusTotal $portableZip $env:VIRUSTOTAL_API_KEY
+            } catch {
+              Write-Warning "VirusTotal upload warning: $_"
+            }
+          } else {
+            Write-Host "VIRUSTOTAL_API_KEY secret not found; skipping the upload. The report link only resolves once the file has been submitted to VirusTotal."
+          }
+
           $template = [System.IO.File]::ReadAllText(".github/release-template.md", [System.Text.Encoding]::UTF8)
           $notes = $template.
             Replace("{{VERSION_NUM}}", $versionNum).
