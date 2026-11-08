@@ -86,6 +86,12 @@ jobs:
           # Fetch the exact NSIS zip tauri-bundler expects through the
           # release-assets API route: the /releases/download route has
           # been returning HTTP 504 for this asset.
+          #
+          # MAINTENANCE: the SHA1 below and the plugin DLL version are pinned
+          # to the tauri-bundler constants of @tauri-apps/cli 2.11.1
+          # (NSIS_SHA1 / NSIS_TAURI_UTILS_URL in crates/tauri-bundler). Update
+          # both when the CLI is upgraded, or remove this step entirely once
+          # GitHub's /releases/download route serves this asset reliably.
           $release = Invoke-RestMethod -Uri "https://api.github.com/repos/tauri-apps/binary-releases/releases/tags/nsis-3.11" -Headers @{ Authorization = "Bearer $env:GH_TOKEN" }
           $zip = Join-Path $env:RUNNER_TEMP "nsis-3.11.zip"
           Invoke-WebRequest -Uri $release.assets[0].url -Headers @{ Authorization = "Bearer $env:GH_TOKEN"; Accept = "application/octet-stream" } -OutFile $zip
