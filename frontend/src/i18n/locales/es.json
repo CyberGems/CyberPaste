@@ -79,9 +79,7 @@
     "deselect": "Deseleccionar",
     "undoDelete": "Deshacer eliminación",
     "pauseMonitoring": "Pausar monitoreo",
-    "resumeMonitoring": "Reanudar monitoreo",
-    "pauseMonitoringTooltip": "Pausar monitoreo del portapapeles",
-    "resumeMonitoringTooltip": "Reanudar monitoreo (Monitoreo pausado)"
+    "resumeMonitoring": "Reanudar monitoreo"
   },
   "closeDialog": {
     "title": "Cerrar ventana",
@@ -141,8 +139,6 @@
     "website": "Sitio web",
     "donate": "Donar",
     "checkUpdates": "Buscar actualizaciones...",
-    "lock": "Bloquear ahora",
-    "unlock": "Desbloquear...",
     "suite": "Más de CyberGems",
     "suiteTitle": "CyberGems",
     "suiteMore": "Más detalles online...",
@@ -169,8 +165,7 @@
       "about": "Acerca de CyberPaste...",
       "achievements": "Logros...",
       "previewUpdate": "Previsualizar actualización...",
-      "stopPreviewUpdate": "Detener previsualización",
-      "lock": "Bloquear ahora"
+      "stopPreviewUpdate": "Detener previsualización"
     }
   },
   "compact": {

@@ -79,9 +79,7 @@
     "deselect": "Deselect",
     "undoDelete": "Undo deletion",
     "pauseMonitoring": "Pause Monitoring",
-    "resumeMonitoring": "Resume Monitoring",
-    "pauseMonitoringTooltip": "Pause clipboard monitoring",
-    "resumeMonitoringTooltip": "Resume monitoring (Monitoring paused)"
+    "resumeMonitoring": "Resume Monitoring"
   },
   "closeDialog": {
     "title": "Close Window",
@@ -141,8 +139,6 @@
     "website": "Website",
     "donate": "Donate",
     "checkUpdates": "Check for Update...",
-    "lock": "Lock now",
-    "unlock": "Unlock...",
     "suite": "More from CyberGems",
     "suiteTitle": "CyberGems",
     "suiteMore": "More details online...",
@@ -169,8 +165,7 @@
       "about": "About CyberPaste...",
       "achievements": "Achievements...",
       "previewUpdate": "Preview update...",
-      "stopPreviewUpdate": "Stop previewing update",
-      "lock": "Lock now"
+      "stopPreviewUpdate": "Stop previewing update"
     }
   },
   "compact": {
