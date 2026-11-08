@@ -771,8 +771,11 @@ export const CompactView: React.FC<CompactViewProps> = ({
       t('compact.arrowsFolders'),
       t('compact.peekHint'),
       t('compact.densityHint'),
+      t('compact.pauseHint'),
+      // The lock button only exists when App Lock is enabled, so its hint too.
+      ...(lockEnabled ? [t('compact.lockHint')] : []),
     ],
-    [t]
+    [t, lockEnabled]
   );
   const emojiHints = useMemo(
     () => [
