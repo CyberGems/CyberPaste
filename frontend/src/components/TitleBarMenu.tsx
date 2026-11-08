@@ -12,8 +12,6 @@ import {
   Settings,
   RotateCcw,
   FolderPlus,
-  Pause,
-  Play,
   Undo2,
   Trophy,
 } from 'lucide-react';
@@ -30,7 +28,6 @@ import {
 import Tooltip, { dismissAllTooltips } from './Tooltip';
 import { ConfirmDialog } from './ConfirmDialog';
 import { toast } from '../utils/toast';
-import { useClipboardMonitoring } from '../hooks/useClipboardMonitoring';
 
 const DONATE_URL = 'https://github.com/CyberGems/CyberPaste#%EF%B8%8F-donate';
 const WIKI_URL = 'https://github.com/CyberGems/CyberPaste/wiki';
@@ -60,7 +57,6 @@ export function TitleBarMenu({
   canUndo?: boolean;
 }) {
   const { t } = useTranslation();
-  const { isPaused, toggleMonitoring } = useClipboardMonitoring();
   const [open, setOpen] = useState(false);
   const [menuPointerActive, setMenuPointerActive] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
@@ -339,30 +335,6 @@ export function TitleBarMenu({
               >
                 <FolderPlus size={14} className={iconClass} />
                 <span>{t('folders.newFolder')}</span>
-              </button>
-            )}
-
-            {variant === 'main' && (
-              <button
-                type="button"
-                role="menuitem"
-                className={itemClass}
-                onClick={() =>
-                  closeAnd(() => {
-                    void toggleMonitoring();
-                  })
-                }
-              >
-                {isPaused ? (
-                  <Play size={14} className="shrink-0 fill-amber-500/20 text-amber-500" />
-                ) : (
-                  <Pause size={14} className={iconClass} />
-                )}
-                <span className={isPaused ? 'font-medium text-amber-500' : ''}>
-                  {isPaused
-                    ? t('common.resumeMonitoring', { defaultValue: 'Reanudar monitoreo' })
-                    : t('common.pauseMonitoring', { defaultValue: 'Pausar monitoreo' })}
-                </span>
               </button>
             )}
 

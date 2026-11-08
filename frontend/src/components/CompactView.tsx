@@ -1602,7 +1602,13 @@ export const CompactView: React.FC<CompactViewProps> = ({
             iconSize={14}
           />
           {lockEnabled && onLockNow && (
-            <Tooltip label={t('common.lockNow')} placement="bottom">
+            <Tooltip
+              label={t('common.tooltipWithHotkey', {
+                label: t('common.lockNow'),
+                hotkey: TITLEBAR_HOTKEYS.lock,
+              })}
+              placement="bottom"
+            >
               <button
                 type="button"
                 onClick={onLockNow}
