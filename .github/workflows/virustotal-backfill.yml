@@ -1,0 +1,45 @@
+name: "VirusTotal Backfill"
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag whose artifacts will be submitted to VirusTotal"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download release artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download -R "${{ github.repository }}" "${{ inputs.tag }}" --clobber
+          ls -la
+
+      - name: Submit artifacts to VirusTotal
+        env:
+          VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
+        run: |
+          submitted=0
+          for f in *.exe *.zip; do
+            [ -e "$f" ] || continue
+            size_mb=$(du -m "$f" | cut -f1)
+            echo "Submitting $f (${size_mb} MB) to VirusTotal..."
+            url="https://www.virustotal.com/api/v3/files"
+            if [ "$size_mb" -gt 30 ]; then
+              echo "File exceeds 30 MB, requesting dedicated large-file upload endpoint..."
+              url=$(curl -sS --fail -H "x-apikey: $VIRUSTOTAL_API_KEY" \
+                "https://www.virustotal.com/api/v3/files/upload_url" | jq -r '.data')
+              echo "Using dedicated endpoint"
+            fi
+            response=$(curl -sS --fail -X POST -H "x-apikey: $VIRUSTOTAL_API_KEY" -F "file=@$f" "$url")
+            echo "Response: $response"
+            submitted=$((submitted + 1))
+          done
+          echo "Submitted $submitted artifact(s) to VirusTotal."
