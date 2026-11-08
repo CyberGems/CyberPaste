@@ -4320,6 +4320,7 @@ function App() {
         <MoveToFolderModal
           isOpen={!!moveToFolderClipId}
           folders={folders}
+          currentFolderId={selectedFolder}
           onClose={() => setMoveToFolderClipId(null)}
           onSelect={(folderId) => {
             if (moveToFolderClipId) handleMoveToFolder(moveToFolderClipId, folderId);

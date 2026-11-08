@@ -96,6 +96,7 @@ const IconMap: Record<string, LucideIcon> = {
 interface MoveToFolderModalProps {
   isOpen: boolean;
   folders: FolderItem[];
+  currentFolderId?: string | null;
   onClose: () => void;
   onSelect: (folderId: string | null) => void;
 }
@@ -113,6 +114,7 @@ type FolderChoice = {
 export const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
   isOpen,
   folders,
+  currentFolderId,
   onClose,
   onSelect,
 }) => {
@@ -123,14 +125,22 @@ export const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
   const activeRef = useRef<HTMLButtonElement>(null);
 
   const choices = useMemo<FolderChoice[]>(() => {
-    const userFolders = folders.filter((f) => !f.is_system);
+    // Mirror the bulk action bar: hide the folder being viewed (copying into
+    // it would be a no-op) and only offer the main clipboard when browsing a
+    // folder, since the main list is the live capture target.
+    const showMainClipboard = currentFolderId !== null && currentFolderId !== undefined;
+    const userFolders = folders.filter((f) => !f.is_system && f.id !== currentFolderId);
     return [
-      {
-        key: 'main',
-        id: null,
-        name: t('folders.mainClipboard'),
-        isMain: true,
-      },
+      ...(showMainClipboard
+        ? [
+            {
+              key: 'main',
+              id: null,
+              name: t('folders.mainClipboard'),
+              isMain: true,
+            },
+          ]
+        : []),
       ...userFolders.map((folder) => ({
         key: folder.id,
         id: folder.id,
@@ -140,7 +150,7 @@ export const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
         count: folder.item_count || 0,
       })),
     ];
-  }, [folders, t]);
+  }, [folders, currentFolderId, t]);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
