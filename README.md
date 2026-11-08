@@ -34,6 +34,7 @@
 ## 📑 Table of Contents
 
 - [👋 Introduction](#-introduction)
+- [📸 Screenshots](#-screenshots)
 - [📋 Why CyberPaste?](#-why-cyberpaste)
 - [✨ Key Features](#-key-features)
 - [🚀 Getting Started](#-getting-started)
@@ -63,6 +64,14 @@
 Copy something, copy three more things, and the first one is already gone. CyberPaste keeps a searchable history of everything you copy — text, code, images, links, files, HTML and RTF — in a local SQLite database with folders, favorites, pinning and editing. Find a clip with instant search or the global hotkey, paste it straight into the app you were using, pull text out of an image with OCR, and let an optional AI provider summarize or transform a clip once you connect one. Automatic backups, configurable retention and a PIN or password lock keep it practical. Built with **Tauri 2** and **React**.
 
 *Free and open source (GPLv3): no ads, no network analytics, no telemetry, and no cloud collection. Optional achievements and progress stay on your device.*
+
+---
+
+<!-- Screenshots: pending the bilingual EN/ES gallery in the capture plan at https://github.com/CyberGems/CyberGems.github.io/blob/main/docs/screenshots.md — replace the blockquote, keep this heading and the TOC entry. -->
+
+## 📸 Screenshots
+
+> Coming soon...
 
 ---
 

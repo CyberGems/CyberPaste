@@ -34,6 +34,7 @@
 ## 📑 Table of Contents
 
 - [👋 Introducción](#-introducción)
+- [📸 Capturas](#-capturas)
 - [📋 ¿Por qué CyberPaste?](#-por-qué-cyberpaste)
 - [✨ Funciones principales](#-funciones-principales)
 - [🚀 Primeros pasos](#-primeros-pasos)
@@ -63,6 +64,14 @@
 Copia algo, copia tres cosas más y la primera ya no está. CyberPaste guarda un historial buscable de todo lo que copias —texto, código, imágenes, enlaces, archivos, HTML y RTF— en una base de datos SQLite local con carpetas, favoritos, anclaje y edición. Encuentra un clip con la búsqueda instantánea o el atajo global, pégalo directamente en la app que estabas usando, extrae texto de una imagen con OCR y deja que un proveedor de IA opcional resuma o transforme un clip cuando conectes uno. Las copias automáticas, la retención configurable y un bloqueo con PIN o contraseña lo mantienen práctico. Construido con **Tauri 2** y **React**.
 
 *Gratuito y de código abierto (GPLv3): sin anuncios, sin analíticas de red, sin telemetría y sin recogida en la nube. Los logros y el progreso opcionales se quedan en tu equipo.*
+
+---
+
+<!-- Capturas: pendiente de la galería bilingüe ES/EN del plan en https://github.com/CyberGems/CyberGems.github.io/blob/main/docs/screenshots.md — sustituir la cita, conservar este título y su entrada en el índice. -->
+
+## 📸 Capturas
+
+> Próximamente...
 
 ---
 
