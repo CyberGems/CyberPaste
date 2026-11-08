@@ -91,6 +91,15 @@ def load_icon(icon_path):
 
 
 def compose_sidebar(icon_path):
+    """Welcome/finish banner (164x314).
+
+    Note: NSIS dialog units derive their horizontal extent from the dialog
+    font's average character width and their vertical extent from its height,
+    so at scaled DPI the wizard image control stretches the two axes by
+    different factors (measured ~1.32x horizontal vs ~1.53x vertical at 150%).
+    Some soft distortion of the banner art on scaled-DPI displays is therefore
+    inherent to NSIS and cannot be compensated from the bitmap itself.
+    """
     plate = draw_plate(SIDEBAR_SIZE).convert("RGBA")
     icon = load_icon(icon_path)
 
