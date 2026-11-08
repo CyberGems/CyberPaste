@@ -311,7 +311,7 @@ export function TrayMenuWindow() {
                 <img
                   src="/logo.png"
                   alt=""
-                  className="h-3.5 w-3.5 shrink-0 object-contain grayscale transition-[filter] duration-150 group-hover:grayscale-0"
+                  className="h-3.5 w-3.5 shrink-0 object-contain saturate-[.4] transition-[filter] duration-150 group-hover:saturate-100"
                 />
                 <span>
                   Cyber<span className="text-primary">Paste</span>{' '}
