@@ -613,6 +613,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
     { keys: 'Enter', action: t('contextMenu.paste') },
     { keys: 'Del', action: t('common.delete') },
     { keys: 'Alt+P', action: t('contextMenu.pin') },
+    { keys: TITLEBAR_HOTKEYS.pauseMonitoring, action: t('common.pauseMonitoring') },
+    { keys: TITLEBAR_HOTKEYS.lock, action: t('common.lockNow') },
     { keys: t('common.ctrlWheelHint', 'Ctrl+Rueda'), action: t('common.zoomShort', 'Zoom') },
     { keys: 'I', action: t('detailPanel.title') },
     { keys: 'Esc', action: t('common.close') },
