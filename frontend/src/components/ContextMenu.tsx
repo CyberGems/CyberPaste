@@ -111,7 +111,7 @@ function ContextMenuItem({
   forceSubOpen = false,
   subFocusedIndex = -1,
   onHover,
-  mouseMovedRef,
+  mouseActive = false,
 }: {
   option: ContextMenuOption;
   onClose: () => void;
@@ -120,7 +120,7 @@ function ContextMenuItem({
   forceSubOpen?: boolean;
   subFocusedIndex?: number;
   onHover?: () => void;
-  mouseMovedRef?: React.MutableRefObject<boolean>;
+  mouseActive?: boolean;
 }) {
   const SUBMENU_HOVER_DELAY = 140;
   const [hoverOpen, setHoverOpen] = useState(false);
@@ -209,7 +209,7 @@ function ContextMenuItem({
 
   const handleMouseEnter = () => {
     clearTimers();
-    if (mouseMovedRef && !mouseMovedRef.current) return;
+    if (!mouseActive) return;
     onHover?.();
     if (!hasSubMenu) return;
     openTimeoutRef.current = setTimeout(() => {
@@ -218,7 +218,7 @@ function ContextMenuItem({
   };
 
   const handleMouseMove = () => {
-    if (mouseMovedRef && !mouseMovedRef.current) return;
+    if (!mouseActive) return;
     if (!focused) {
       onHover?.();
     }
@@ -321,7 +321,10 @@ function ContextMenuItem({
             data-context-submenu="true"
             onMouseEnter={handleSubMouseEnter}
             onMouseLeave={handleSubMouseLeave}
-            className="custom-scrollbar fixed z-[250] max-h-[calc(100vh-16px)] min-w-[190px] overflow-y-auto overflow-x-hidden rounded-xl border border-border bg-popover/95 p-1 shadow-2xl backdrop-blur-md"
+            className={clsx(
+              'custom-scrollbar fixed z-[250] max-h-[calc(100vh-16px)] min-w-[190px] overflow-y-auto overflow-x-hidden rounded-xl border border-border bg-popover/95 p-1 shadow-2xl backdrop-blur-md',
+              !mouseActive && '[&_*]:pointer-events-none'
+            )}
             style={{
               left: `${subCoords.left}px`,
               top: `${subCoords.top}px`,
@@ -338,7 +341,7 @@ function ContextMenuItem({
                   onClose={onClose}
                   subMenuPlacement={subMenuPlacement}
                   focused={forceSubOpen && subFocusedIndex === index}
-                  mouseMovedRef={mouseMovedRef}
+                  mouseActive={mouseActive}
                 />
               ))}
             </div>
@@ -385,11 +388,13 @@ export function ContextMenu({
   const subActiveIndexRef = useRef(subActiveIndex);
   const optionsRef = useRef(options);
   const onCloseRef = useRef(onClose);
-  const mouseMovedRef = useRef(false);
+  const [mouseActive, setMouseActive] = useState(false);
+  const mouseActiveRef = useRef(false);
   const initialPointerPosRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
-    mouseMovedRef.current = false;
+    setMouseActive(false);
+    mouseActiveRef.current = false;
     initialPointerPosRef.current = null;
 
     const onWindowMouseMove = (e: MouseEvent) => {
@@ -400,7 +405,8 @@ export function ContextMenu({
       const dx = Math.abs(e.clientX - initialPointerPosRef.current.x);
       const dy = Math.abs(e.clientY - initialPointerPosRef.current.y);
       if (dx > 3 || dy > 3) {
-        mouseMovedRef.current = true;
+        mouseActiveRef.current = true;
+        setMouseActive(true);
       }
     };
 
@@ -459,18 +465,39 @@ export function ContextMenu({
   }, [x, y, options.length, headerActions]);
 
   useEffect(() => {
-    const isInsideMenu = (target: EventTarget | null) => {
+    const isInsideMenu = (e: PointerEvent) => {
       const el = menuRef.current;
-      if (!target || !(target instanceof Element)) return false;
-      return !!(
-        (el && el.contains(target)) ||
-        target.closest('[data-context-menu]') ||
-        target.closest('[data-context-submenu]')
-      );
+      if (!el) return false;
+      const rect = el.getBoundingClientRect();
+      const pad = 2;
+      const insideMain =
+        e.clientX >= rect.left - pad &&
+        e.clientX <= rect.right + pad &&
+        e.clientY >= rect.top - pad &&
+        e.clientY <= rect.bottom + pad;
+      if (insideMain) return true;
+
+      const subEl = document.querySelector<HTMLElement>('[data-context-submenu="true"]');
+      if (subEl) {
+        const subRect = subEl.getBoundingClientRect();
+        return (
+          e.clientX >= subRect.left - pad &&
+          e.clientX <= subRect.right + pad &&
+          e.clientY >= subRect.top - pad &&
+          e.clientY <= subRect.bottom + pad
+        );
+      }
+      return false;
     };
 
     const onPointerDown = (e: PointerEvent) => {
-      if (isInsideMenu(e.target)) return;
+      if (isInsideMenu(e)) {
+        if (!mouseActiveRef.current) {
+          mouseActiveRef.current = true;
+          setMouseActive(true);
+        }
+        return;
+      }
       if (e.button === 0) {
         e.preventDefault();
         e.stopPropagation();
@@ -779,7 +806,16 @@ export function ContextMenu({
     <div
       ref={menuRef}
       data-context-menu="true"
-      className="custom-scrollbar [.has-header]:min-w-[300px] fixed z-[200] max-h-[calc(100vh-16px)] min-w-[200px] overflow-y-auto overflow-x-hidden rounded-xl border border-border bg-popover/95 p-1 shadow-2xl backdrop-blur-md"
+      onPointerDownCapture={() => {
+        if (!mouseActiveRef.current) {
+          mouseActiveRef.current = true;
+          setMouseActive(true);
+        }
+      }}
+      className={clsx(
+        'custom-scrollbar [.has-header]:min-w-[300px] fixed z-[200] max-h-[calc(100vh-16px)] min-w-[200px] overflow-y-auto overflow-x-hidden rounded-xl border border-border bg-popover/95 p-1 shadow-2xl backdrop-blur-md',
+        !mouseActive && '[&_*]:pointer-events-none'
+      )}
       style={{
         left: x,
         top: y,
@@ -832,7 +868,7 @@ export function ContextMenu({
                       onClose();
                     }}
                     onMouseEnter={() => {
-                      if (!mouseMovedRef.current) return;
+                      if (!mouseActive) return;
                       dismissAllTooltips();
                       setFocusSection('header');
                       setHeaderIndex(hIndex);
@@ -840,7 +876,7 @@ export function ContextMenu({
                       setOpenSubIndex(null);
                     }}
                     onMouseMove={() => {
-                      if (!mouseMovedRef.current) return;
+                      if (!mouseActive) return;
                       if (
                         focusSectionRef.current !== 'header' ||
                         headerIndexRef.current !== hIndex
@@ -907,7 +943,7 @@ export function ContextMenu({
               focused={focusSection === 'options' && activeIndex === index}
               forceSubOpen={openSubIndex === index}
               subFocusedIndex={openSubIndex === index ? subActiveIndex : -1}
-              mouseMovedRef={mouseMovedRef}
+              mouseActive={mouseActive}
               onHover={() => {
                 dismissAllTooltips();
                 setFocusSection('options');

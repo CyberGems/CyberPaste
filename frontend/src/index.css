@@ -608,43 +608,59 @@
     -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
   }
 
-  .custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+  /* Custom elegant scrollbar for menus, modals, dialogs, and panels across the whole app */
+  .custom-scrollbar,
+  .scrollbar-thin {
+    /* Omit scrollbar-width to enable WebKit styling in Chromium/WebView2 */
   }
-  .custom-scrollbar::-webkit-scrollbar {
+  .custom-scrollbar::-webkit-scrollbar,
+  .scrollbar-thin::-webkit-scrollbar {
     display: block;
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
   }
-  .custom-scrollbar::-webkit-scrollbar-track {
+  .custom-scrollbar::-webkit-scrollbar-button,
+  .scrollbar-thin::-webkit-scrollbar-button {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track,
+  .scrollbar-thin::-webkit-scrollbar-track {
     background: transparent;
+    margin: 4px 0;
   }
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.22);
+  .custom-scrollbar::-webkit-scrollbar-thumb,
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.16);
     border-radius: 9999px;
   }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.35);
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover,
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.32);
   }
-  .light .custom-scrollbar {
-    scrollbar-color: rgba(0, 0, 0, 0.22) transparent;
+  .custom-scrollbar::-webkit-scrollbar-thumb:active,
+  .scrollbar-thin::-webkit-scrollbar-thumb:active {
+    background: rgba(var(--primary-rgb, 0, 240, 255), 0.55);
   }
-  .light .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.22);
+  .light .custom-scrollbar::-webkit-scrollbar-thumb,
+  .light .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.18);
   }
-  .light .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.35);
+  .light .custom-scrollbar::-webkit-scrollbar-thumb:hover,
+  .light .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.32);
+  }
+  .light .custom-scrollbar::-webkit-scrollbar-thumb:active,
+  .light .scrollbar-thin::-webkit-scrollbar-thumb:active {
+    background: rgba(var(--primary-rgb, 0, 120, 215), 0.6);
   }
 
-  /* Slim, CyberClock-matching scrollbar for tray submenus */
-  .tray-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(var(--primary-rgb), 0.35) transparent;
-  }
+  /* Slim scrollbar for tray submenus */
   .tray-scrollbar::-webkit-scrollbar {
     display: block;
     width: 4px;
+    height: 4px;
   }
   .tray-scrollbar::-webkit-scrollbar-button {
     display: none !important;
@@ -656,27 +672,29 @@
     margin: 6px 0;
   }
   .tray-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(var(--primary-rgb), 0.35);
-    border-radius: 4px;
+    background: rgba(var(--primary-rgb), 0.3);
+    border-radius: 9999px;
   }
   .tray-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(var(--primary-rgb), 0.7);
+    background: rgba(var(--primary-rgb), 0.6);
   }
-  .light .tray-scrollbar {
-    scrollbar-color: rgba(var(--primary-rgb), 0.45) transparent;
+  .tray-scrollbar::-webkit-scrollbar-thumb:active {
+    background: rgba(var(--primary-rgb), 0.85);
   }
   .light .tray-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(var(--primary-rgb), 0.45);
+    background: rgba(var(--primary-rgb), 0.4);
   }
   .light .tray-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(var(--primary-rgb), 0.8);
+    background: rgba(var(--primary-rgb), 0.7);
+  }
+  .light .tray-scrollbar::-webkit-scrollbar-thumb:active {
+    background: rgba(var(--primary-rgb), 0.9);
   }
 
-  /* Thin, unobtrusive scrollbar for the Full-mode clip grid. */
+  /* Thin, unobtrusive scrollbar for the Full-mode and Compact-mode clip grid */
   .full-mode-scrollbar,
   .compact-mode-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+    overflow-x: hidden;
   }
   .full-mode-scrollbar::-webkit-scrollbar,
   .compact-mode-scrollbar::-webkit-scrollbar {
@@ -684,9 +702,16 @@
     width: 5px;
     height: 5px;
   }
+  .full-mode-scrollbar::-webkit-scrollbar-button,
+  .compact-mode-scrollbar::-webkit-scrollbar-button {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
   .full-mode-scrollbar::-webkit-scrollbar-track,
   .compact-mode-scrollbar::-webkit-scrollbar-track {
     background: transparent;
+    margin: 4px 0;
   }
   .full-mode-scrollbar::-webkit-scrollbar-thumb,
   .compact-mode-scrollbar::-webkit-scrollbar-thumb {
@@ -695,19 +720,16 @@
   }
   .full-mode-scrollbar::-webkit-scrollbar-thumb:hover,
   .compact-mode-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.32);
   }
-  /* Full mode is vertical-only; never expose a second scrollbar at the bottom. */
-  .full-mode-scrollbar {
-    overflow-x: hidden;
+  .full-mode-scrollbar::-webkit-scrollbar-thumb:active,
+  .compact-mode-scrollbar::-webkit-scrollbar-thumb:active {
+    background: rgba(var(--primary-rgb, 0, 240, 255), 0.55);
   }
-  .full-mode-scrollbar::-webkit-scrollbar:horizontal {
-    display: none;
-    height: 0;
-  }
-  .light .full-mode-scrollbar,
-  .light .compact-mode-scrollbar {
-    scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+  .full-mode-scrollbar::-webkit-scrollbar:horizontal,
+  .compact-mode-scrollbar::-webkit-scrollbar:horizontal {
+    display: none !important;
+    height: 0 !important;
   }
   .light .full-mode-scrollbar::-webkit-scrollbar-thumb,
   .light .compact-mode-scrollbar::-webkit-scrollbar-thumb {
@@ -715,7 +737,11 @@
   }
   .light .full-mode-scrollbar::-webkit-scrollbar-thumb:hover,
   .light .compact-mode-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.32);
+  }
+  .light .full-mode-scrollbar::-webkit-scrollbar-thumb:active,
+  .light .compact-mode-scrollbar::-webkit-scrollbar-thumb:active {
+    background: rgba(var(--primary-rgb, 0, 120, 215), 0.6);
   }
 
   .pause-all-animations *,
