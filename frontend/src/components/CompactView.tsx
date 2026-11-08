@@ -352,7 +352,7 @@ export const matchesTypeFilter = (clipType: string, filter: CompactTypeFilter): 
   return clipType === filter;
 };
 
-const IconMap: Record<string, any> = {
+export const IconMap: Record<string, any> = {
   Zap,
   Flame,
   Star,
@@ -702,7 +702,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   selectedClipIds,
   onToggleClipSelect,
   onClearSelection,
-  onBulkCopy,
+  onBulkCopy: _onBulkCopy,
   onBulkDelete,
   onBulkMove,
   onPinClip: _onPinClip,
@@ -2618,14 +2618,11 @@ export const CompactView: React.FC<CompactViewProps> = ({
         </>
       )}
 
-      {/* NUEVO: Bulk action bar flotante */}
+      {/* Bulk action bar flotante */}
       <CompactBulkBar
         count={selectedCount}
         folders={folders}
-        onCopy={() => {
-          onBulkCopy?.();
-          onClearSelection?.();
-        }}
+        currentFolderId={selectedFolder}
         onMoveToFolder={(folderId) => {
           onBulkMove?.(folderId);
           onClearSelection?.();

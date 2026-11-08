@@ -4203,6 +4203,7 @@ function App() {
                     <BulkActionBar
                       count={selectedClipIds.size}
                       folders={folders}
+                      currentFolderId={selectedFolder}
                       onDelete={handleBulkDelete}
                       onMoveToFolder={handleBulkMove}
                       onClear={handleClearBulkSelection}
