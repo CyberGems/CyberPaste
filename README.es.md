@@ -255,7 +255,8 @@ npm run tauri build
 |---|---|
 | `Espacio` | Abrir el menú de acciones del clip seleccionado (flechas + Intro para elegir) |
 | `I` | Alternar el panel de detalle del clip |
-| `Ctrl+P` | Fijar / desfijar el elemento seleccionado |
+| `Alt+P` | Fijar / desfijar el clip seleccionado |
+| `Ctrl+P` | Fijar / desfijar la ventana (mantenerla abierta) |
 | `Ctrl+Z` | Deshacer el borrado |
 | `Ctrl+F` | Enfocar el campo de búsqueda |
 | `Ctrl+A` | Seleccionar todos los clips visibles (modo por lotes) |

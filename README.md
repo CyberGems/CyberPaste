@@ -258,7 +258,8 @@ npm run tauri build
 |---|---|
 | `Space` | Open the selected clip's action menu (arrows + Enter to choose) |
 | `I` | Toggle the clip detail panel |
-| `Ctrl+P` | Pin / unpin selected item |
+| `Alt+P` | Pin / unpin selected clip |
+| `Ctrl+P` | Pin / unpin the window (keep it open) |
 | `Ctrl+Z` | Undo delete |
 | `Ctrl+F` | Focus search input |
 | `Ctrl+A` | Select all visible clips (bulk mode) |
