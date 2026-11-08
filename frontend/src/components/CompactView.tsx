@@ -2856,14 +2856,14 @@ const ClipRow = memo(function ClipRow({
             'clip-deleting-row pointer-events-none border-destructive/70 bg-destructive/15 shadow-[0_0_16px_rgba(239,68,68,0.25)]',
           isSelected
             ? pointerHover
-              ? 'border-primary text-foreground shadow-[0_0_12px_rgba(var(--primary-rgb),0.25)] ring-1 ring-primary/40'
-              : 'border-primary/70 text-foreground shadow-[0_0_8px_rgba(var(--primary-rgb),0.18)] ring-1 ring-primary/30'
+              ? 'border-primary text-foreground'
+              : 'border-primary/70 text-foreground'
             : isActiveTarget
               ? pointerHover
-                ? 'border-primary/75 text-foreground shadow-[0_0_12px_rgba(var(--primary-rgb),0.2)] ring-1 ring-primary/35'
-                : 'border-primary/55 text-foreground shadow-[0_0_10px_rgba(var(--primary-rgb),0.14)] ring-1 ring-primary/25'
+                ? 'border-primary/80 text-foreground'
+                : 'border-primary/50 text-foreground'
               : isHovered
-                ? 'border-border/80 text-foreground shadow-sm'
+                ? 'border-border/80 text-foreground'
                 : 'border-border/50 text-foreground/90',
           shouldBlurForPeek && 'blur-[3px]',
           reorderEnabled && !isDragging && 'cursor-grab',
@@ -2875,7 +2875,7 @@ const ClipRow = memo(function ClipRow({
           <div
             className={clsx(
               'pointer-events-none absolute inset-0 z-0 transition-colors duration-150',
-              pointerHover ? 'bg-primary/20' : 'bg-primary/5'
+              pointerHover ? 'bg-primary/10' : 'bg-primary/5'
             )}
           />
         )}
@@ -2883,7 +2883,7 @@ const ClipRow = memo(function ClipRow({
 
         {/* Selected target left accent bar (subtle yet distinctive identifier for active target item) */}
         {(isActiveTarget || isSelected) && (
-          <div className="pointer-events-none absolute bottom-1.5 left-0 top-1.5 z-10 w-[3px] rounded-r-full bg-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.6)]" />
+          <div className="pointer-events-none absolute bottom-1.5 left-0 top-1.5 z-10 w-[3px] rounded-r-full bg-primary" />
         )}
 
         {pinFlash && (

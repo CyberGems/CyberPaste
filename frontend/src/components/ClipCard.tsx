@@ -403,8 +403,8 @@ export const ClipCard = memo(
                 'clip-deleting-card pointer-events-none border-destructive/70 bg-destructive/10 shadow-[0_0_20px_rgba(239,68,68,0.25)]',
               isSelected || isBulkSelected
                 ? showHover
-                  ? 'z-10 border-primary shadow-[0_0_16px_rgba(var(--primary-rgb),0.3)] ring-1 ring-primary/45'
-                  : 'z-10 border-primary/70 shadow-[0_0_10px_rgba(var(--primary-rgb),0.18)] ring-1 ring-primary/30'
+                  ? 'z-10 border-primary'
+                  : 'z-10 border-primary/70'
                 : showHover
                   ? 'border-primary/50'
                   : 'border-border',
@@ -417,7 +417,7 @@ export const ClipCard = memo(
               <div
                 className={clsx(
                   'pointer-events-none absolute inset-0 z-0 transition-colors duration-150',
-                  showHover ? 'bg-primary/20' : 'bg-primary/5'
+                  showHover ? 'bg-primary/10' : 'bg-primary/5'
                 )}
               />
             )}
