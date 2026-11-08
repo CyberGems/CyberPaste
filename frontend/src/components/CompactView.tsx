@@ -283,11 +283,13 @@ const TypeFilterDropdown: React.FC<{
           type="button"
           onClick={() => (isOpen ? setIsOpen(false) : openMenu())}
           className={cn(
-            'flex h-[30px] flex-shrink-0 items-center gap-1 rounded-lg border px-2 text-[11px] font-medium transition-all',
+            TITLEBAR_ICON_BUTTON,
+            'h-8 flex-shrink-0 gap-1 rounded-lg px-2 text-[11px] font-medium transition-all',
             isActive
-              ? 'border-primary/40 bg-primary/15 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.18)]'
-              : 'border-border bg-secondary/40 text-muted-foreground hover:border-border hover:bg-secondary/70 hover:text-foreground',
-            isOpen && 'border-primary/60 bg-primary/15 text-primary'
+              ? TITLEBAR_BTN_ON_PRIMARY
+              : isOpen
+                ? 'border-transparent bg-accent text-foreground'
+                : TITLEBAR_BTN_IDLE_SOFT
           )}
         >
           <SelectedIcon size={12} />

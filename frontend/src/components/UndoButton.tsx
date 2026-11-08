@@ -15,11 +15,17 @@ export function UndoButton({ canUndo, onUndo, className, size = 'compact' }: Und
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(canUndo);
   const [isExiting, setIsExiting] = useState(false);
+  const [isPoppingIn, setIsPoppingIn] = useState(false);
 
   useEffect(() => {
     if (canUndo) {
       setMounted(true);
       setIsExiting(false);
+      setIsPoppingIn(true);
+      const timer = setTimeout(() => {
+        setIsPoppingIn(false);
+      }, 260);
+      return () => clearTimeout(timer);
     } else if (mounted) {
       setIsExiting(true);
       const timer = setTimeout(() => {
@@ -32,11 +38,17 @@ export function UndoButton({ canUndo, onUndo, className, size = 'compact' }: Und
 
   if (!mounted || !onUndo) return null;
 
+  const animationClass = isExiting
+    ? 'animate-undo-pop-out'
+    : isPoppingIn
+      ? 'animate-undo-pop-in'
+      : 'animate-undo-pulse';
+
   const buttonClass = clsx(
     size === 'compact'
-      ? 'flex h-8 shrink-0 items-center gap-1 rounded-lg border border-amber-500/50 bg-amber-500/15 px-2.5 text-xs font-semibold text-amber-500 transition-colors hover:border-amber-500/80 hover:bg-amber-500/25 active:scale-95'
-      : 'flex h-7 shrink-0 items-center gap-1 rounded-md border border-amber-500/50 bg-amber-500/15 px-2 text-[11px] font-semibold text-amber-500 transition-colors hover:border-amber-500/80 hover:bg-amber-500/25 active:scale-95',
-    isExiting ? 'animate-undo-pop-out' : 'animate-undo-pop-in animate-undo-glow',
+      ? 'flex h-8 shrink-0 items-center gap-1 rounded-lg border border-transparent bg-amber-500/15 px-2.5 text-xs font-semibold text-amber-500 transition-colors hover:bg-amber-500/25 active:scale-95'
+      : 'flex h-7 shrink-0 items-center gap-1 rounded-md border border-transparent bg-amber-500/15 px-2 text-[11px] font-semibold text-amber-500 transition-colors hover:bg-amber-500/25 active:scale-95',
+    animationClass,
     className
   );
 

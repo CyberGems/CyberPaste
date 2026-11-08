@@ -137,10 +137,9 @@ export const AppFilterDropdown: React.FC<AppFilterDropdownProps> = ({
           className={clsx(
             'flex flex-shrink-0 items-center font-medium transition-all',
             variant === 'compact'
-              ? 'h-[30px] rounded-lg border text-[11px]'
-              : 'h-7 rounded-full text-[11px] leading-normal',
-            'border-primary/40 bg-primary/15 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.18)]',
-            isOpen && 'border-primary/60 ring-1 ring-primary/40'
+              ? 'h-8 rounded-lg border border-transparent bg-primary/15 text-primary'
+              : 'h-7 rounded-full border border-primary/40 bg-primary/15 text-primary',
+            isOpen && 'bg-primary/20'
           )}
         >
           <Tooltip label={tooltipLabel} placement="bottom">
@@ -197,14 +196,20 @@ export const AppFilterDropdown: React.FC<AppFilterDropdownProps> = ({
             type="button"
             onClick={() => (isOpen ? setIsOpen(false) : openMenu())}
             className={clsx(
-              'flex flex-shrink-0 items-center gap-1.5 font-medium transition-all focus:outline-none focus-visible:ring-0',
+              'flex flex-shrink-0 items-center font-medium transition-all focus:outline-none focus-visible:ring-0',
               variant === 'compact'
-                ? 'h-[30px] rounded-lg border px-2 text-[11px]'
-                : 'h-7 rounded-full px-2.5 text-[11px] leading-normal',
-              variant === 'compact'
-                ? 'border-border bg-secondary/40 text-muted-foreground hover:border-border hover:bg-secondary/70 hover:text-foreground'
-                : 'text-muted-foreground/75 hover:text-foreground',
-              isOpen && 'border-primary/60 bg-primary/15 text-primary'
+                ? clsx(
+                    'h-8 gap-1 rounded-lg border px-2 text-[11px]',
+                    isOpen
+                      ? 'border-transparent bg-accent text-foreground'
+                      : 'border-transparent text-muted-foreground/70 hover:bg-accent hover:text-foreground active:bg-accent/80'
+                  )
+                : clsx(
+                    'h-7 gap-1.5 rounded-full px-2.5 text-[11px] leading-normal',
+                    isOpen
+                      ? 'border-primary/60 bg-primary/15 text-primary'
+                      : 'text-muted-foreground/75 hover:text-foreground'
+                  )
             )}
           >
             <Filter size={12} className="shrink-0" />
