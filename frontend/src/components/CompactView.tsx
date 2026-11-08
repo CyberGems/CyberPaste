@@ -1522,7 +1522,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
     isFlashing = false
   ) =>
     cn(
-      'flex items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2 py-1.5 text-[11px] font-medium transition-all focus:outline-none focus-visible:ring-0',
+      'flex h-8 items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2 text-[11px] font-medium transition-all focus:outline-none focus-visible:ring-0',
       isFlashing && 'folder-soft-flash',
       isSelected && dragTargetFolderId === undefined
         ? 'border-transparent bg-primary/15 font-semibold text-foreground'
