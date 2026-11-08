@@ -3927,10 +3927,12 @@ function App() {
       className={`relative h-dvh w-full overflow-hidden ${!isWindowActive ? 'pause-all-animations' : ''}`}
       style={
         // Full mode sits flush against the screen edges, so the floating
-        // panel border would draw a line against them.
+        // panel border would draw a line against them. Themes can tune the
+        // border via --window-border-color; the fallback keeps the previous
+        // primary-tinted edge for themes that don't define it.
         settings?.view_mode === 'full'
           ? undefined
-          : { border: '1px solid rgba(var(--primary-rgb), 0.25)' }
+          : { border: '1px solid var(--window-border-color, rgba(var(--primary-rgb), 0.25))' }
       }
       onContextMenu={(e) => e.preventDefault()}
     >

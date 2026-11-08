@@ -420,6 +420,9 @@
     --input: 225 20% 16%;
     --ring: 180 100% 50%;
     --primary-rgb: 0, 255, 255;
+    /* Window border (compact mode). A desaturated steel-teal instead of the
+       neon primary, so the floating panel edge reads quiet, not glarey. */
+    --window-border-color: rgba(58, 148, 158, 0.38);
 
     --sidebar-background: 228 27% 9%; /* #10131D */
     --sidebar-foreground: 216 100% 95%;
