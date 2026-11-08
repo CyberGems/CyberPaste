@@ -49,11 +49,11 @@ export const CompactBulkBar: React.FC<CompactBulkBarProps> = ({
         <motion.div
           key="compact-bulk-bar"
           data-el="compact-bulk-bar"
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 20, opacity: 0 }}
+          initial={{ x: '-50%', y: 12, opacity: 0 }}
+          animate={{ x: '-50%', y: 0, opacity: 1 }}
+          exit={{ x: '-50%', y: 12, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 500, damping: 32 }}
-          className="absolute bottom-10 left-1/2 z-50 -translate-x-1/2"
+          className="pointer-events-auto absolute bottom-[30px] left-1/2 z-50"
         >
           <div className="flex items-center gap-1.5 rounded-lg border border-primary/25 bg-popover py-1 pl-2 pr-1 shadow-2xl backdrop-blur-md">
             {/* Count badge with informative tooltip */}
@@ -94,7 +94,7 @@ export const CompactBulkBar: React.FC<CompactBulkBarProps> = ({
               {showFolderMenu && (
                 <div
                   ref={folderMenuRef}
-                  className="absolute bottom-full left-1/2 z-50 mb-1.5 max-h-48 w-52 -translate-x-1/2 overflow-y-auto rounded-lg border border-border bg-popover/95 p-1 shadow-2xl backdrop-blur-md"
+                  className="custom-scrollbar absolute bottom-full left-1/2 z-50 mb-1.5 max-h-48 w-52 -translate-x-1/2 overflow-y-auto rounded-lg border border-border bg-popover/95 p-1 shadow-2xl backdrop-blur-md"
                 >
                   {showMainClipboard && (
                     <button

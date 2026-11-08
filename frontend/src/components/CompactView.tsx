@@ -2612,7 +2612,11 @@ export const CompactView: React.FC<CompactViewProps> = ({
               }
             />
             <span className="flex-shrink-0 select-none">
-              {isEmojiMode ? t('emoji.escToExit') : t('compact.escToHide')}
+              {isEmojiMode
+                ? t('emoji.escToExit')
+                : hasSelection
+                  ? t('compact.escToClear')
+                  : t('compact.escToHide')}
             </span>
           </div>
         </>

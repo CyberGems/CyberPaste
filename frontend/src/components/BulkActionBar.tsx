@@ -49,11 +49,11 @@ export const BulkActionBar: React.FC<BulkActionBarProps> = ({
         <motion.div
           key="bulk-bar"
           data-el="bulk-action-bar"
-          initial={{ y: 40, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 40, opacity: 0 }}
+          initial={{ x: '-50%', y: 25, opacity: 0 }}
+          animate={{ x: '-50%', y: 0, opacity: 1 }}
+          exit={{ x: '-50%', y: 25, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-          className="absolute bottom-4 left-1/2 z-40 -translate-x-1/2"
+          className="absolute bottom-4 left-1/2 z-40"
         >
           <div className="flex items-center gap-2 rounded-xl border border-primary/25 bg-popover/90 py-2 pl-3 pr-2 shadow-[0_8px_24px_rgba(0,0,0,0.6),0_0_16px_rgba(6,182,212,0.25)] backdrop-blur-md">
             {/* Count badge */}
@@ -103,7 +103,7 @@ export const BulkActionBar: React.FC<BulkActionBarProps> = ({
               {showFolderMenu && (
                 <div
                   ref={folderMenuRef}
-                  className="absolute bottom-full left-1/2 z-50 mb-1 max-h-48 w-56 -translate-x-1/2 overflow-y-auto rounded-lg border border-border bg-popover/95 p-1 shadow-2xl backdrop-blur-md"
+                  className="custom-scrollbar absolute bottom-full left-1/2 z-50 mb-1 max-h-48 w-56 -translate-x-1/2 overflow-y-auto rounded-lg border border-border bg-popover/95 p-1 shadow-2xl backdrop-blur-md"
                 >
                   {showMainClipboard && (
                     <button

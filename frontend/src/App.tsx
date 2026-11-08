@@ -2157,7 +2157,7 @@ function App() {
 
         setClips((prevClips) => prevClips.filter((c) => c.id !== clipId));
         setSelectedClipId(nextSelectedClipId);
-        setSelectedClipIds(nextSelectedClipId ? new Set([nextSelectedClipId]) : new Set());
+        setSelectedClipIds(new Set());
         selectionAnchorIdRef.current = nextSelectedClipId;
 
         // Add to temporary Undo stack (max 50 recent actions)
@@ -2716,7 +2716,7 @@ function App() {
         const idsSet = new Set(ids);
         setClips((prev) => prev.filter((c) => !idsSet.has(c.id)));
         setSelectedClipId(nextSelectedClipId);
-        setSelectedClipIds(nextSelectedClipId ? new Set([nextSelectedClipId]) : new Set());
+        setSelectedClipIds(new Set());
         selectionAnchorIdRef.current = nextSelectedClipId;
 
         // Add to temporary Undo stack
