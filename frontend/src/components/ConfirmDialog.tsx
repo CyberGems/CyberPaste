@@ -36,7 +36,7 @@ export function ConfirmDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm duration-200 animate-in fade-in">
-      <div className="w-full max-w-md scale-100 rounded-lg border border-border bg-background p-6 shadow-lg duration-200 animate-in zoom-in-95">
+      <div className="w-full max-w-md scale-100 select-none rounded-lg border border-border bg-background p-6 shadow-lg duration-200 animate-in zoom-in-95">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div

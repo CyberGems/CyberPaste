@@ -2043,74 +2043,79 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     onClear={onClearSearchHistory}
                   />
                 </div>
-                {onTogglePeek && (
-                  <Tooltip
-                    label={t(compactPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek', {
-                      hotkey: peekHotkey,
-                    })}
-                    placement="top"
-                  >
-                    <button
-                      type="button"
-                      onClick={onTogglePeek}
-                      aria-label={t(
+                <div className="flex shrink-0 items-center gap-1">
+                  {onTogglePeek && (
+                    <Tooltip
+                      label={t(
                         compactPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek',
                         {
                           hotkey: peekHotkey,
                         }
                       )}
-                      aria-pressed={compactPeekEnabled}
-                      className={cn(
-                        TITLEBAR_ICON_BUTTON,
-                        'h-8 w-8 shrink-0 rounded-lg',
-                        compactPeekEnabled ? TITLEBAR_BTN_ON_PRIMARY : TITLEBAR_BTN_IDLE_SOFT
-                      )}
+                      placement="top"
                     >
-                      <Eye size={14} />
-                    </button>
-                  </Tooltip>
-                )}
-                {onToggleEmojiMode && (
-                  <Tooltip
-                    label={t('emoji.toggle', {
-                      hotkey: emojiHotkey,
-                    })}
-                    placement="top"
-                  >
-                    <button
-                      type="button"
-                      onClick={onToggleEmojiMode}
-                      aria-label={t('emoji.toggle', {
+                      <button
+                        type="button"
+                        onClick={onTogglePeek}
+                        aria-label={t(
+                          compactPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek',
+                          {
+                            hotkey: peekHotkey,
+                          }
+                        )}
+                        aria-pressed={compactPeekEnabled}
+                        className={cn(
+                          TITLEBAR_ICON_BUTTON,
+                          'h-8 w-8 shrink-0 rounded-lg',
+                          compactPeekEnabled ? TITLEBAR_BTN_ON_PRIMARY : TITLEBAR_BTN_IDLE_SOFT
+                        )}
+                      >
+                        <Eye size={14} />
+                      </button>
+                    </Tooltip>
+                  )}
+                  {onToggleEmojiMode && (
+                    <Tooltip
+                      label={t('emoji.toggle', {
                         hotkey: emojiHotkey,
                       })}
-                      aria-pressed={isEmojiMode}
-                      className={cn(
-                        TITLEBAR_ICON_BUTTON,
-                        'h-8 w-8 shrink-0 rounded-lg',
-                        isEmojiMode ? TITLEBAR_BTN_ON_PRIMARY : TITLEBAR_BTN_IDLE_SOFT
-                      )}
+                      placement="top"
                     >
-                      <Smile size={14} />
-                    </button>
-                  </Tooltip>
-                )}
-                <UndoButton canUndo={canUndo} onUndo={onUndo} size="compact" />
-                {onTypeFilterChange && (
-                  <TypeFilterDropdown
-                    value={typeFilter}
-                    onChange={onTypeFilterChange}
-                    t={t}
-                    counts={filterCounts}
-                  />
-                )}
-                {onAppFilterChange && sourceApps && sourceApps.length > 0 && (
-                  <AppFilterDropdown
-                    value={appFilter}
-                    onChange={onAppFilterChange}
-                    apps={sourceApps}
-                    variant="compact"
-                  />
-                )}
+                      <button
+                        type="button"
+                        onClick={onToggleEmojiMode}
+                        aria-label={t('emoji.toggle', {
+                          hotkey: emojiHotkey,
+                        })}
+                        aria-pressed={isEmojiMode}
+                        className={cn(
+                          TITLEBAR_ICON_BUTTON,
+                          'h-8 w-8 shrink-0 rounded-lg',
+                          isEmojiMode ? TITLEBAR_BTN_ON_PRIMARY : TITLEBAR_BTN_IDLE_SOFT
+                        )}
+                      >
+                        <Smile size={14} />
+                      </button>
+                    </Tooltip>
+                  )}
+                  <UndoButton canUndo={canUndo} onUndo={onUndo} size="compact" />
+                  {onTypeFilterChange && (
+                    <TypeFilterDropdown
+                      value={typeFilter}
+                      onChange={onTypeFilterChange}
+                      t={t}
+                      counts={filterCounts}
+                    />
+                  )}
+                  {onAppFilterChange && sourceApps && sourceApps.length > 0 && (
+                    <AppFilterDropdown
+                      value={appFilter}
+                      onChange={onAppFilterChange}
+                      apps={sourceApps}
+                      variant="compact"
+                    />
+                  )}
+                </div>
               </div>
             </div>
 
@@ -2300,74 +2305,76 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   onClear={onClearSearchHistory}
                 />
               </div>
-              {onTogglePeek && (
-                <Tooltip
-                  label={t(compactPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek', {
-                    hotkey: peekHotkey,
-                  })}
-                  placement="top"
-                >
-                  <button
-                    type="button"
-                    onClick={onTogglePeek}
-                    aria-label={t(
-                      compactPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek',
-                      {
-                        hotkey: peekHotkey,
-                      }
-                    )}
-                    aria-pressed={compactPeekEnabled}
-                    className={cn(
-                      TITLEBAR_ICON_BUTTON,
-                      'h-8 w-8 shrink-0 rounded-lg',
-                      compactPeekEnabled ? TITLEBAR_BTN_ON_PRIMARY : TITLEBAR_BTN_IDLE_SOFT
-                    )}
+              <div className="flex shrink-0 items-center gap-1">
+                {onTogglePeek && (
+                  <Tooltip
+                    label={t(compactPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek', {
+                      hotkey: peekHotkey,
+                    })}
+                    placement="top"
                   >
-                    <Eye size={14} />
-                  </button>
-                </Tooltip>
-              )}
-              {onToggleEmojiMode && (
-                <Tooltip
-                  label={t('emoji.toggle', {
-                    hotkey: emojiHotkey,
-                  })}
-                  placement="top"
-                >
-                  <button
-                    type="button"
-                    onClick={onToggleEmojiMode}
-                    aria-label={t('emoji.toggle', {
+                    <button
+                      type="button"
+                      onClick={onTogglePeek}
+                      aria-label={t(
+                        compactPeekEnabled ? 'settings.disablePeek' : 'settings.enablePeek',
+                        {
+                          hotkey: peekHotkey,
+                        }
+                      )}
+                      aria-pressed={compactPeekEnabled}
+                      className={cn(
+                        TITLEBAR_ICON_BUTTON,
+                        'h-8 w-8 shrink-0 rounded-lg',
+                        compactPeekEnabled ? TITLEBAR_BTN_ON_PRIMARY : TITLEBAR_BTN_IDLE_SOFT
+                      )}
+                    >
+                      <Eye size={14} />
+                    </button>
+                  </Tooltip>
+                )}
+                {onToggleEmojiMode && (
+                  <Tooltip
+                    label={t('emoji.toggle', {
                       hotkey: emojiHotkey,
                     })}
-                    aria-pressed={isEmojiMode}
-                    className={cn(
-                      TITLEBAR_ICON_BUTTON,
-                      'h-8 w-8 shrink-0 rounded-lg',
-                      isEmojiMode ? TITLEBAR_BTN_ON_PRIMARY : TITLEBAR_BTN_IDLE_SOFT
-                    )}
+                    placement="top"
                   >
-                    <Smile size={14} />
-                  </button>
-                </Tooltip>
-              )}
-              <UndoButton canUndo={canUndo} onUndo={onUndo} size="compact" />
-              {onTypeFilterChange && (
-                <TypeFilterDropdown
-                  value={typeFilter}
-                  onChange={onTypeFilterChange}
-                  t={t}
-                  counts={filterCounts}
-                />
-              )}
-              {onAppFilterChange && sourceApps && sourceApps.length > 0 && (
-                <AppFilterDropdown
-                  value={appFilter}
-                  onChange={onAppFilterChange}
-                  apps={sourceApps}
-                  variant="compact"
-                />
-              )}
+                    <button
+                      type="button"
+                      onClick={onToggleEmojiMode}
+                      aria-label={t('emoji.toggle', {
+                        hotkey: emojiHotkey,
+                      })}
+                      aria-pressed={isEmojiMode}
+                      className={cn(
+                        TITLEBAR_ICON_BUTTON,
+                        'h-8 w-8 shrink-0 rounded-lg',
+                        isEmojiMode ? TITLEBAR_BTN_ON_PRIMARY : TITLEBAR_BTN_IDLE_SOFT
+                      )}
+                    >
+                      <Smile size={14} />
+                    </button>
+                  </Tooltip>
+                )}
+                <UndoButton canUndo={canUndo} onUndo={onUndo} size="compact" />
+                {onTypeFilterChange && (
+                  <TypeFilterDropdown
+                    value={typeFilter}
+                    onChange={onTypeFilterChange}
+                    t={t}
+                    counts={filterCounts}
+                  />
+                )}
+                {onAppFilterChange && sourceApps && sourceApps.length > 0 && (
+                  <AppFilterDropdown
+                    value={appFilter}
+                    onChange={onAppFilterChange}
+                    apps={sourceApps}
+                    variant="compact"
+                  />
+                )}
+              </div>
             </div>
 
             {!isEmojiMode && (

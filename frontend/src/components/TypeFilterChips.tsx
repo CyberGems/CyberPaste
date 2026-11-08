@@ -163,7 +163,7 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
         </Tooltip>
       </div>
 
-      <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+      <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5">
         <UndoButton canUndo={canUndo} onUndo={onUndo} size="full" />
 
         {onTogglePeek && (
@@ -271,10 +271,9 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
               onClick={onToggleCardFormat}
               aria-label={`${t('settings.fullCardFormat')}: ${cardFormat === 'panoramic' ? t('settings.fullCardFormatPanoramic') : t('settings.fullCardFormatSquare')}`}
               className={clsx(
-                'flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition-colors',
-                cardFormat === 'panoramic'
-                  ? 'border-primary/40 bg-primary/15 text-primary'
-                  : 'border-border bg-secondary/40 text-muted-foreground hover:bg-secondary/70 hover:text-primary'
+                TITLEBAR_ICON_BUTTON,
+                'h-7 w-7 shrink-0 rounded-md',
+                cardFormat === 'panoramic' ? TITLEBAR_BTN_ON_PRIMARY : TITLEBAR_BTN_IDLE_SOFT
               )}
             >
               {cardFormat === 'panoramic' ? (
@@ -296,10 +295,9 @@ export const TypeFilterChipRow: React.FC<TypeFilterChipRowProps> = ({
               onClick={onToggleDetailPanel}
               aria-label={detailPanelOpen ? t('detailPanel.collapse') : t('detailPanel.expand')}
               className={clsx(
-                'flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition-colors',
-                detailPanelOpen
-                  ? 'border-primary/40 bg-primary/15 text-primary'
-                  : 'border-border bg-secondary/40 text-muted-foreground hover:bg-secondary/70 hover:text-primary'
+                TITLEBAR_ICON_BUTTON,
+                'h-7 w-7 shrink-0 rounded-md',
+                detailPanelOpen ? TITLEBAR_BTN_ON_PRIMARY : TITLEBAR_BTN_IDLE_SOFT
               )}
             >
               {detailPanelOpen ? <PanelRightClose size={13} /> : <PanelRightOpen size={13} />}
