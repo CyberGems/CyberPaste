@@ -34,7 +34,7 @@
 ## 📑 Table of Contents
 
 - [👋 Introducción](#-introducción)
-- [📸 Capturas](#-capturas)
+- [🖼️ Capturas](#️-capturas)
 - [📋 ¿Por qué CyberPaste?](#-por-qué-cyberpaste)
 - [✨ Funciones principales](#-funciones-principales)
 - [🚀 Primeros pasos](#-primeros-pasos)
@@ -69,7 +69,7 @@ Copia algo, copia tres cosas más y la primera ya no está. CyberPaste guarda un
 
 <!-- Capturas: pendiente de la galería bilingüe ES/EN del plan en https://github.com/CyberGems/CyberGems.github.io/blob/main/docs/screenshots.md — sustituir la cita, conservar este título y su entrada en el índice. -->
 
-## 📸 Capturas
+## 🖼️ Capturas
 
 > Próximamente...
 

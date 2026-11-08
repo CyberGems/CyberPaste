@@ -34,7 +34,7 @@
 ## 📑 Table of Contents
 
 - [👋 Introduction](#-introduction)
-- [📸 Screenshots](#-screenshots)
+- [🖼️ Screenshots](#️-screenshots)
 - [📋 Why CyberPaste?](#-why-cyberpaste)
 - [✨ Key Features](#-key-features)
 - [🚀 Getting Started](#-getting-started)
@@ -69,7 +69,7 @@ Copy something, copy three more things, and the first one is already gone. Cyber
 
 <!-- Screenshots: pending the bilingual EN/ES gallery in the capture plan at https://github.com/CyberGems/CyberGems.github.io/blob/main/docs/screenshots.md — replace the blockquote, keep this heading and the TOC entry. -->
 
-## 📸 Screenshots
+## 🖼️ Screenshots
 
 > Coming soon...
 
