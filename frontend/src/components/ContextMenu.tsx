@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { clsx } from 'clsx';
 import { ChevronRight } from 'lucide-react';
@@ -111,6 +111,7 @@ function ContextMenuItem({
   forceSubOpen = false,
   subFocusedIndex = -1,
   onHover,
+  mouseMovedRef,
 }: {
   option: ContextMenuOption;
   onClose: () => void;
@@ -119,6 +120,7 @@ function ContextMenuItem({
   forceSubOpen?: boolean;
   subFocusedIndex?: number;
   onHover?: () => void;
+  mouseMovedRef?: React.MutableRefObject<boolean>;
 }) {
   const SUBMENU_HOVER_DELAY = 140;
   const [hoverOpen, setHoverOpen] = useState(false);
@@ -207,11 +209,24 @@ function ContextMenuItem({
 
   const handleMouseEnter = () => {
     clearTimers();
+    if (mouseMovedRef && !mouseMovedRef.current) return;
     onHover?.();
     if (!hasSubMenu) return;
     openTimeoutRef.current = setTimeout(() => {
       setHoverOpen(true);
     }, SUBMENU_HOVER_DELAY);
+  };
+
+  const handleMouseMove = () => {
+    if (mouseMovedRef && !mouseMovedRef.current) return;
+    if (!focused) {
+      onHover?.();
+    }
+    if (hasSubMenu && !isOpen && !openTimeoutRef.current) {
+      openTimeoutRef.current = setTimeout(() => {
+        setHoverOpen(true);
+      }, SUBMENU_HOVER_DELAY);
+    }
   };
 
   const handleMouseLeave = () => {
@@ -238,6 +253,7 @@ function ContextMenuItem({
       ref={containerRef}
       className="relative"
       onMouseEnter={handleMouseEnter}
+      onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
       <button
@@ -322,6 +338,7 @@ function ContextMenuItem({
                   onClose={onClose}
                   subMenuPlacement={subMenuPlacement}
                   focused={forceSubOpen && subFocusedIndex === index}
+                  mouseMovedRef={mouseMovedRef}
                 />
               ))}
             </div>
@@ -368,6 +385,30 @@ export function ContextMenu({
   const subActiveIndexRef = useRef(subActiveIndex);
   const optionsRef = useRef(options);
   const onCloseRef = useRef(onClose);
+  const mouseMovedRef = useRef(false);
+  const initialPointerPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    mouseMovedRef.current = false;
+    initialPointerPosRef.current = null;
+
+    const onWindowMouseMove = (e: MouseEvent) => {
+      if (!initialPointerPosRef.current) {
+        initialPointerPosRef.current = { x: e.clientX, y: e.clientY };
+        return;
+      }
+      const dx = Math.abs(e.clientX - initialPointerPosRef.current.x);
+      const dy = Math.abs(e.clientY - initialPointerPosRef.current.y);
+      if (dx > 3 || dy > 3) {
+        mouseMovedRef.current = true;
+      }
+    };
+
+    window.addEventListener('mousemove', onWindowMouseMove, { capture: true, passive: true });
+    return () => {
+      window.removeEventListener('mousemove', onWindowMouseMove, true);
+    };
+  }, [x, y]);
 
   focusSectionRef.current = focusSection;
   headerIndexRef.current = headerIndex;
@@ -762,65 +803,85 @@ export function ContextMenu({
       {header && <div className="mx-1.5 my-1 h-px bg-border/60" />}
 
       {headerActions && headerActions.length > 0 && (
-        <div className="mb-1 flex min-w-[330px] items-stretch justify-between gap-0 divide-x divide-border rounded-lg border border-border/40 bg-muted/25 p-1">
+        <div className="mb-1 flex min-w-[330px] items-stretch justify-between rounded-lg border border-border/40 bg-muted/25 p-1">
           {headerActions.map((action, hIndex) => {
             const tooltipLabel = action.disabled ? action.tooltip : undefined;
             const isFocused = focusSection === 'header' && headerIndex === hIndex;
             return (
-              <Tooltip
-                key={action.id}
-                label={tooltipLabel ?? ''}
-                disabled={!tooltipLabel}
-                placement="top"
-                delay={180}
-              >
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  disabled={action.disabled && !action.tooltip}
-                  onClick={() => {
-                    if (action.disabled) return;
-                    action.onClick();
-                    dismissAllTooltips();
-                    onClose();
-                  }}
-                  onMouseEnter={() => {
-                    dismissAllTooltips();
-                    setFocusSection('header');
-                    setHeaderIndex(hIndex);
-                    setActiveIndex(-1);
-                    setOpenSubIndex(null);
-                  }}
-                  aria-label={action.label}
-                  className={clsx(
-                    'flex min-h-[44px] min-w-[44px] flex-1 flex-col items-center justify-center gap-1 rounded-md px-1 py-1.5 transition-all duration-150',
-                    action.disabled && !action.tooltip
-                      ? 'pointer-events-none cursor-default text-muted-foreground opacity-25'
-                      : action.disabled
-                        ? 'cursor-default text-muted-foreground opacity-60 hover:bg-accent hover:text-foreground'
-                        : action.danger
-                          ? clsx(
-                              'text-muted-foreground hover:bg-destructive/15 hover:text-destructive active:scale-95',
-                              isFocused &&
-                                'bg-destructive/15 text-destructive ring-1 ring-destructive/50'
-                            )
-                          : action.active
-                            ? clsx(
-                                'bg-primary/20 text-primary hover:bg-primary/30 active:scale-95',
-                                isFocused && 'bg-primary/30 ring-1 ring-primary/60'
-                              )
-                            : clsx(
-                                'text-foreground/90 hover:bg-accent hover:text-primary active:scale-95',
-                                isFocused && 'bg-accent text-primary ring-1 ring-primary/50'
-                              )
-                  )}
+              <Fragment key={action.id}>
+                {hIndex > 0 && (
+                  <div
+                    className="my-1.5 w-px shrink-0 self-stretch bg-border/60"
+                    aria-hidden="true"
+                  />
+                )}
+                <Tooltip
+                  label={tooltipLabel ?? ''}
+                  disabled={!tooltipLabel}
+                  placement="top"
+                  delay={180}
                 >
-                  {action.icon}
-                  <span className="w-full truncate text-center text-[13px] font-medium leading-snug">
-                    {action.label}
-                  </span>
-                </button>
-              </Tooltip>
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    disabled={action.disabled && !action.tooltip}
+                    onClick={() => {
+                      if (action.disabled) return;
+                      action.onClick();
+                      dismissAllTooltips();
+                      onClose();
+                    }}
+                    onMouseEnter={() => {
+                      if (!mouseMovedRef.current) return;
+                      dismissAllTooltips();
+                      setFocusSection('header');
+                      setHeaderIndex(hIndex);
+                      setActiveIndex(-1);
+                      setOpenSubIndex(null);
+                    }}
+                    onMouseMove={() => {
+                      if (!mouseMovedRef.current) return;
+                      if (
+                        focusSectionRef.current !== 'header' ||
+                        headerIndexRef.current !== hIndex
+                      ) {
+                        dismissAllTooltips();
+                        setFocusSection('header');
+                        setHeaderIndex(hIndex);
+                        setActiveIndex(-1);
+                        setOpenSubIndex(null);
+                      }
+                    }}
+                    aria-label={action.label}
+                    className={clsx(
+                      'flex min-h-[44px] min-w-[44px] flex-1 flex-col items-center justify-center gap-1 rounded-md px-1 py-1.5 transition-all duration-150',
+                      action.disabled && !action.tooltip
+                        ? 'pointer-events-none cursor-default text-muted-foreground opacity-25'
+                        : action.disabled
+                          ? 'cursor-default text-muted-foreground opacity-60 hover:bg-accent hover:text-foreground'
+                          : action.danger
+                            ? clsx(
+                                'text-foreground/90 hover:bg-destructive/15 hover:text-destructive active:scale-95',
+                                isFocused && 'bg-destructive/15 text-destructive'
+                              )
+                            : action.active
+                              ? clsx(
+                                  'bg-primary/20 text-primary hover:bg-primary/30 active:scale-95',
+                                  isFocused && 'bg-primary/30'
+                                )
+                              : clsx(
+                                  'text-foreground/90 hover:bg-accent hover:text-primary active:scale-95',
+                                  isFocused && 'bg-accent text-primary'
+                                )
+                    )}
+                  >
+                    {action.icon}
+                    <span className="w-full truncate text-center text-[13px] font-medium leading-snug">
+                      {action.label}
+                    </span>
+                  </button>
+                </Tooltip>
+              </Fragment>
             );
           })}
         </div>
@@ -846,6 +907,7 @@ export function ContextMenu({
               focused={focusSection === 'options' && activeIndex === index}
               forceSubOpen={openSubIndex === index}
               subFocusedIndex={openSubIndex === index ? subActiveIndex : -1}
+              mouseMovedRef={mouseMovedRef}
               onHover={() => {
                 dismissAllTooltips();
                 setFocusSection('options');
