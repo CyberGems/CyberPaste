@@ -61,12 +61,13 @@
     "createUpdaterArtifacts": true,
     "windows": {
       "nsis": {
-        "installMode": "both",
-        "installerHooks": "installer.nsh",
-        "displayLanguageSelector": false,
-        "sidebarImage": "icons/installerSidebar.bmp",
-        "installerIcon": "icons/icon.ico",
-        "uninstallerIcon": "icons/icon.ico",
+  "installMode": "both",
+  "installerHooks": "installer.nsh",
+  "displayLanguageSelector": false,
+  "sidebarImage": "icons/installerSidebar.bmp",
+  "headerImage": "icons/installerHeader.bmp",
+  "installerIcon": "icons/icon.ico",
+  "uninstallerIcon": "icons/icon.ico",
         "languages": [
           "English",
           "Spanish",

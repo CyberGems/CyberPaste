@@ -12,7 +12,7 @@
     "tauri": "tauri",
     "format": "prettier --write \"frontend/src/**/*.{ts,tsx,css}\"",
     "format:check": "prettier --check \"frontend/src/**/*.{ts,tsx,css}\"",
-    "installer-graphics": "python scripts/generate-installer-art.py src-tauri/icons/icon.png src-tauri/icons installerSidebar && python scripts/generate-installer-art.py src-tauri/icons/icon.png frontend/public installerSidebar"
+    "installer-graphics": "python scripts/generate-installer-art.py src-tauri/icons/icon.png src-tauri/icons installerSidebar && python scripts/generate-installer-art.py src-tauri/icons/icon.png frontend/public installerSidebar && python scripts/generate-installer-art.py src-tauri/icons/icon.png src-tauri/icons installerHeader --header"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.10.1",
