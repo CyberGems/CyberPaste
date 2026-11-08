@@ -3378,6 +3378,7 @@ function CompactClipList({
   // Start with a sensible fallback so the list paints before the first ResizeObserver tick
   // (Tauri windows often measure as 0px on the initial hidden/layout frame).
   const [height, setHeight] = useState(() => Math.max(120, LAYOUT.COMPACT_HEIGHT - 140));
+  const lastScrolledResetTokenRef = useRef<number | null>(null);
 
   const timeColWidth = useMemo(
     () => (compactShowTime ? getCompactTimeColumnWidth(clips, i18n.language) : 0),
@@ -3415,12 +3416,14 @@ function CompactClipList({
     };
   }, [clips.length]);
 
-  // Resetting the view must be immediate. Keep it separate from the
-  // selection-following effect, which intentionally animates keyboard moves.
+  // Resetting the view must be immediate on explicit resets (e.g. view switch or visibility reset).
+  // Keep it separate from the selection-following effect, which preserves position during edits/deletions.
   useEffect(() => {
     // react-window rejects index 0 while the list is still empty. This happens
     // during the initial render before the first clipboard query completes.
     if (clips.length === 0) return;
+    if (lastScrolledResetTokenRef.current === resetToken) return;
+    lastScrolledResetTokenRef.current = resetToken;
 
     listRef.current?.scrollToRow({
       index: 0,

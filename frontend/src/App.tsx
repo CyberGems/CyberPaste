@@ -156,6 +156,7 @@ function App() {
   const [clips, setClips] = useState<AppClipboardItem[]>([]);
   const clipsRef = useRef(clips);
   clipsRef.current = clips;
+  const effectiveNavClipsRef = useRef<AppClipboardItem[]>([]);
   // When true, the next non-append loadClips result selects its own first item
   // instead of preserving the previous selection (used by the reset-on-hide view reset).
   const forceSelectFirstRef = useRef(false);
@@ -1009,17 +1010,20 @@ function App() {
             forceSelectFirstRef.current = false;
             setSelectedClipId(data.length > 0 ? data[0].id : null);
           } else if (data.length > 0) {
-            if (normalizedQuery) {
-              setSelectedClipId(data[0].id);
-            } else {
-              // Keep current selection if it's still present, otherwise select the first clip
-              setSelectedClipId((prev) => {
-                if (prev && data.some((item) => item.id === prev)) {
-                  return prev;
+            // Keep current selection if it's still present, otherwise select nearest or first clip
+            setSelectedClipId((prev) => {
+              if (prev && data.some((item) => item.id === prev)) {
+                return prev;
+              }
+              if (prev && clipsRef.current.length > 0) {
+                const prevIdx = clipsRef.current.findIndex((c) => c.id === prev);
+                if (prevIdx >= 0) {
+                  const targetIdx = Math.min(prevIdx, data.length - 1);
+                  return data[Math.max(0, targetIdx)].id;
                 }
-                return data[0].id;
-              });
-            }
+              }
+              return data[0].id;
+            });
           } else {
             setSelectedClipId(null);
           }
@@ -1099,6 +1103,7 @@ function App() {
 
   const handleSearch = useCallback(
     (query: string) => {
+      forceSelectFirstRef.current = true;
       setSearchQuery(query);
       scheduleSearchHistory(query);
     },
@@ -1108,6 +1113,7 @@ function App() {
   const handleStartTypingSearch = useCallback(
     (char: string) => {
       if (settings?.type_to_search === false) return;
+      forceSelectFirstRef.current = true;
       if (settings?.view_mode === 'compact') {
         setSearchQuery(char);
         setSearchFocusToken((prev) => prev + 1);
@@ -2109,23 +2115,50 @@ function App() {
     };
   }, [refreshCurrentFolder, loadFolders, refreshTotalCount]);
 
+  const getNearestClipIdAfterDelete = useCallback(
+    (deletedIds: string[]): string | null => {
+      const navClips =
+        effectiveNavClipsRef.current.length > 0 ? effectiveNavClipsRef.current : clipsRef.current;
+      if (navClips.length === 0) return null;
+
+      const idsSet = new Set(deletedIds);
+      const remaining = navClips.filter((c) => !idsSet.has(c.id));
+      if (remaining.length === 0) return null;
+
+      let refIndex = -1;
+      if (deletedIds.length === 1) {
+        refIndex = navClips.findIndex((c) => c.id === deletedIds[0]);
+      } else if (selectedClipId && idsSet.has(selectedClipId)) {
+        refIndex = navClips.findIndex((c) => c.id === selectedClipId);
+      } else {
+        const deletedIndices = navClips
+          .map((c, i) => (idsSet.has(c.id) ? i : -1))
+          .filter((i) => i >= 0);
+        refIndex = deletedIndices.length > 0 ? Math.min(...deletedIndices) : 0;
+      }
+
+      if (refIndex < 0) refIndex = 0;
+      const candidateIndex = Math.min(refIndex, remaining.length - 1);
+      return remaining[candidateIndex]?.id ?? null;
+    },
+    [selectedClipId]
+  );
+
   const executeDelete = useCallback(
     async (clipId: string) => {
       dismissAllTooltips();
       triggerDeleteFlash(clipId, 240);
       try {
+        const nextSelectedClipId = getNearestClipIdAfterDelete([clipId]);
+
         const deletePromise = invoke('delete_clip', { id: clipId, hardDelete: false });
         const animPromise = new Promise((resolve) => setTimeout(resolve, 240));
         await Promise.all([deletePromise, animPromise]);
 
         setClips((prevClips) => prevClips.filter((c) => c.id !== clipId));
-        setSelectedClipId((prevSelected) => (prevSelected === clipId ? null : prevSelected));
-        setSelectedClipIds((prevSelected) => {
-          if (!prevSelected.has(clipId)) return prevSelected;
-          const next = new Set(prevSelected);
-          next.delete(clipId);
-          return next;
-        });
+        setSelectedClipId(nextSelectedClipId);
+        setSelectedClipIds(nextSelectedClipId ? new Set([nextSelectedClipId]) : new Set());
+        selectionAnchorIdRef.current = nextSelectedClipId;
 
         // Add to temporary Undo stack (max 50 recent actions)
         setDeletedStack((prev) => [...prev.slice(-49), { ids: [clipId] }]);
@@ -2140,7 +2173,7 @@ function App() {
         toast.error(t('notifications.clipDeleteFailed'));
       }
     },
-    [loadFolders, refreshCurrentFolder, refreshTotalCount, t]
+    [getNearestClipIdAfterDelete, loadFolders, refreshCurrentFolder, refreshTotalCount, t]
   );
 
   const handleDelete = useCallback(
@@ -2394,6 +2427,7 @@ function App() {
     }
     return res;
   }, [clips, settings?.view_mode, compactTypeFilter, appFilter]);
+  effectiveNavClipsRef.current = effectiveNavClips;
 
   const updateNavSelection = useCallback(
     (targetIndex: number, isShift?: boolean) => {
@@ -2673,13 +2707,17 @@ function App() {
       dismissAllTooltips();
       triggerDeleteFlash(ids, 240);
       try {
+        const nextSelectedClipId = getNearestClipIdAfterDelete(ids);
+
         const deletePromise = invoke('delete_clips', { ids });
         const animPromise = new Promise((resolve) => setTimeout(resolve, 240));
         await Promise.all([deletePromise, animPromise]);
 
         const idsSet = new Set(ids);
         setClips((prev) => prev.filter((c) => !idsSet.has(c.id)));
-        setSelectedClipIds(new Set());
+        setSelectedClipId(nextSelectedClipId);
+        setSelectedClipIds(nextSelectedClipId ? new Set([nextSelectedClipId]) : new Set());
+        selectionAnchorIdRef.current = nextSelectedClipId;
 
         // Add to temporary Undo stack
         setDeletedStack((prev) => [...prev.slice(-49), { ids }]);
@@ -2693,7 +2731,7 @@ function App() {
         toast.error(t('notifications.deleteFailed'));
       }
     },
-    [loadFolders, refreshCurrentFolder, refreshTotalCount, t]
+    [getNearestClipIdAfterDelete, loadFolders, refreshCurrentFolder, refreshTotalCount, t]
   );
 
   const handleBulkDelete = useCallback(async () => {
