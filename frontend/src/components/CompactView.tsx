@@ -1631,11 +1631,13 @@ export const CompactView: React.FC<CompactViewProps> = ({
           <Tooltip
             label={
               isPaused
-                ? t('common.resumeMonitoringTooltip', {
-                    defaultValue: 'Reanudar monitoreo (Monitoreo pausado)',
+                ? t('common.tooltipWithHotkey', {
+                    label: t('common.resumeMonitoring'),
+                    hotkey: TITLEBAR_HOTKEYS.pauseMonitoring,
                   })
-                : t('common.pauseMonitoringTooltip', {
-                    defaultValue: 'Pausar monitoreo del portapapeles',
+                : t('common.tooltipWithHotkey', {
+                    label: t('common.pauseMonitoring'),
+                    hotkey: TITLEBAR_HOTKEYS.pauseMonitoring,
                   })
             }
             placement="bottom"

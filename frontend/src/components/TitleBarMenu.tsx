@@ -10,7 +10,6 @@ import {
   Book,
   Trash2,
   Settings,
-  Lock,
   RotateCcw,
   FolderPlus,
   Pause,
@@ -65,22 +64,9 @@ export function TitleBarMenu({
   const [open, setOpen] = useState(false);
   const [menuPointerActive, setMenuPointerActive] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
-  const [lockEnabled, setLockEnabled] = useState(false);
   const [pos, setPos] = useState({ top: 0, right: 0, maxHeight: 800 });
   const wrapRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    invoke<{ enabled: boolean; locked: boolean }>('get_app_lock_status')
-      .then((s) => setLockEnabled(s.enabled && !s.locked))
-      .catch(() => undefined);
-    const unlisten = listen<{ enabled: boolean; locked: boolean }>('app-lock-changed', (event) => {
-      setLockEnabled(event.payload.enabled && !event.payload.locked);
-    });
-    return () => {
-      unlisten.then((fn) => fn());
-    };
-  }, []);
 
   useLayoutEffect(() => {
     if (!open || !wrapRef.current) return;
@@ -398,22 +384,6 @@ export function TitleBarMenu({
                 <Undo2 size={14} className={iconClass} />
                 <span className="flex-1">{t('contextMenu.undo')}</span>
                 <span className="text-[11px] text-muted-foreground/70">Ctrl+Z</span>
-              </button>
-            )}
-
-            {variant === 'main' && lockEnabled && (
-              <button
-                type="button"
-                role="menuitem"
-                className={itemClass}
-                onClick={() =>
-                  closeAnd(() => {
-                    invoke('lock_app').catch(console.error);
-                  })
-                }
-              >
-                <Lock size={14} className={iconClass} />
-                <span>{t('titleBar.moreMenu.lock')}</span>
               </button>
             )}
 

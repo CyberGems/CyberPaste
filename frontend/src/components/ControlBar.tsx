@@ -714,7 +714,13 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             iconSize={15}
           />
           {lockEnabled && onLockNow && (
-            <Tooltip label={t('common.lockNow')} placement="bottom">
+            <Tooltip
+              label={t('common.tooltipWithHotkey', {
+                label: t('common.lockNow'),
+                hotkey: TITLEBAR_HOTKEYS.lock,
+              })}
+              placement="bottom"
+            >
               <button
                 type="button"
                 onClick={onLockNow}
@@ -726,15 +732,10 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           )}
 
           <Tooltip
-            label={
-              isPaused
-                ? t('common.resumeMonitoringTooltip', {
-                    defaultValue: 'Reanudar monitoreo (Monitoreo pausado)',
-                  })
-                : t('common.pauseMonitoringTooltip', {
-                    defaultValue: 'Pausar monitoreo del portapapeles',
-                  })
-            }
+            label={t('common.tooltipWithHotkey', {
+              label: isPaused ? t('common.resumeMonitoring') : t('common.pauseMonitoring'),
+              hotkey: TITLEBAR_HOTKEYS.pauseMonitoring,
+            })}
             placement="bottom"
           >
             <button

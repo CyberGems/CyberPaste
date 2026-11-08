@@ -13,6 +13,8 @@ export const TITLEBAR_HOTKEYS = {
   compactLayout: 'Ctrl+L',
   searchHistory: 'Ctrl+H',
   emoji: 'Alt+E',
+  lock: 'Alt+L',
+  pauseMonitoring: 'Ctrl+K',
 } as const;
 
 export interface NavEventOptions {
@@ -80,6 +82,12 @@ interface KeyboardOptions {
   onToggleEmojiMode?: () => void;
   emojiHotkey?: string;
   isEmojiMode?: boolean;
+  /** Alt+L — locks the app immediately (App Lock) */
+  onLockNow?: () => void;
+  lockHotkey?: string;
+  /** Ctrl+K — toggles clipboard monitoring pause */
+  onTogglePauseMonitoring?: () => void;
+  pauseMonitoringHotkey?: string;
 }
 
 export function useKeyboard(options: KeyboardOptions) {
@@ -283,6 +291,24 @@ export function useKeyboard(options: KeyboardOptions) {
         e.preventDefault();
         e.stopPropagation();
         options.onToggleLayout();
+        return;
+      }
+
+      if (options.onLockNow && options.lockHotkey && matchesHotkey(options.lockHotkey)) {
+        e.preventDefault();
+        e.stopPropagation();
+        options.onLockNow();
+        return;
+      }
+
+      if (
+        options.onTogglePauseMonitoring &&
+        options.pauseMonitoringHotkey &&
+        matchesHotkey(options.pauseMonitoringHotkey)
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        options.onTogglePauseMonitoring();
         return;
       }
 

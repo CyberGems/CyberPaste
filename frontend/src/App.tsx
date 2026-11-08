@@ -46,6 +46,7 @@ import { dismissAllTooltips } from './components/Tooltip';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { AppLockScreen } from './components/AppLockScreen';
 import { NavEventOptions, TITLEBAR_HOTKEYS, useKeyboard } from './hooks/useKeyboard';
+import { useClipboardMonitoring } from './hooks/useClipboardMonitoring';
 import { TITLE_BAR_MENU_TOGGLE_EVENT } from './components/TitleBarMenu';
 import { lockListHover } from './hooks/useListHoverLock';
 import { useTheme } from './hooks/useTheme';
@@ -817,6 +818,10 @@ function App() {
   const handleLockNow = useCallback(() => {
     invoke('lock_app').catch(console.error);
   }, []);
+
+  // The titlebar buttons keep their own instance for visual state; this one
+  // only feeds the Ctrl+K hotkey. Pause state itself syncs via backend events.
+  const { toggleMonitoring: togglePauseMonitoring } = useClipboardMonitoring();
 
   const openSettings = useCallback(async (tab?: any) => {
     // Hide main window (with animation)
@@ -3906,6 +3911,12 @@ function App() {
     maximizeHotkey: TITLEBAR_HOTKEYS.maximize,
     onToggleLayout: settings?.view_mode === 'compact' ? handleToggleCompactLayout : undefined,
     layoutHotkey: TITLEBAR_HOTKEYS.compactLayout,
+    onLockNow: handleLockNow,
+    lockHotkey: TITLEBAR_HOTKEYS.lock,
+    onTogglePauseMonitoring: () => {
+      void togglePauseMonitoring();
+    },
+    pauseMonitoringHotkey: TITLEBAR_HOTKEYS.pauseMonitoring,
     onStartTypingSearch: handleStartTypingSearch,
     onUndo: handleUndoDelete,
   });
