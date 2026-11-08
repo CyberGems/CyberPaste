@@ -1115,10 +1115,10 @@ export function ContextMenu({
                     {action.keyHint && (
                       <kbd
                         className={clsx(
-                          'pointer-events-none absolute right-1 top-1 flex h-3.5 min-w-[14px] items-center justify-center rounded border px-1 font-mono text-[9px] font-semibold shadow-sm transition-colors',
+                          'pointer-events-none absolute right-1 top-1 flex h-3.5 min-w-[14px] items-center justify-center rounded border px-1 font-mono text-[9px] font-medium transition-colors',
                           isFocused
-                            ? 'border-border/80 bg-black/60 text-foreground'
-                            : 'border-border/40 bg-black/40 text-muted-foreground/75 group-hover:border-border/70 group-hover:text-foreground'
+                            ? 'border-border/60 bg-muted/60 text-foreground'
+                            : 'border-border/30 bg-muted/30 text-muted-foreground/60 group-hover:border-border/60 group-hover:text-foreground/90'
                         )}
                       >
                         {action.keyHint}
