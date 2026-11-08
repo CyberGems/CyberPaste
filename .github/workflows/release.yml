@@ -71,6 +71,36 @@ jobs:
           Add-Content -Path $env:GITHUB_OUTPUT -Value $notes
           Add-Content -Path $env:GITHUB_OUTPUT -Value $eof
 
+      - name: Pre-seed NSIS toolset (bypass flaky binary-releases asset)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $tools = Join-Path $env:LOCALAPPDATA "tauri"
+          $nsis = Join-Path $tools "NSIS"
+          if (Test-Path $nsis) { Write-Host "NSIS toolset already present"; exit 0 }
+          New-Item -ItemType Directory -Force -Path $tools | Out-Null
+
+          # Fetch the exact NSIS zip tauri-bundler expects through the
+          # release-assets API route: the /releases/download route has
+          # been returning HTTP 504 for this asset.
+          $release = Invoke-RestMethod -Uri "https://api.github.com/repos/tauri-apps/binary-releases/releases/tags/nsis-3.11" -Headers @{ Authorization = "Bearer $env:GH_TOKEN" }
+          $zip = Join-Path $env:RUNNER_TEMP "nsis-3.11.zip"
+          Invoke-WebRequest -Uri $release.assets[0].url -Headers @{ Authorization = "Bearer $env:GH_TOKEN"; Accept = "application/octet-stream" } -OutFile $zip
+          $sha1 = (Get-FileHash -Algorithm SHA1 $zip).Hash
+          if ($sha1 -ne "EF7FF767E5CBD9EDD22ADD3A32C9B8F4500BB10D") { throw "NSIS zip SHA1 mismatch: $sha1" }
+
+          Expand-Archive -Path $zip -DestinationPath $tools
+          Move-Item (Join-Path $tools "nsis-3.11") $nsis
+
+          # Required plugin DLL pinned by tauri-bundler (@tauri-apps/cli 2.11.1).
+          $pluginDir = Join-Path $nsis "Plugins\x86-unicode\additional"
+          New-Item -ItemType Directory -Force -Path $pluginDir | Out-Null
+          Invoke-WebRequest -Uri "https://github.com/tauri-apps/nsis-tauri-utils/releases/download/nsis_tauri_utils-v0.5.3/nsis_tauri_utils.dll" -OutFile (Join-Path $pluginDir "nsis_tauri_utils.dll")
+          Write-Host "NSIS toolset seeded at $nsis"
+
       - uses: tauri-apps/tauri-action@v0
         id: tauri_build
         env:
