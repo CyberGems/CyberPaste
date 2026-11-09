@@ -257,6 +257,8 @@ npm run tauri build
 | `I` | Alternar el panel de detalle del clip |
 | `Alt+P` | Fijar / desfijar el clip seleccionado |
 | `Ctrl+P` | Fijar / desfijar la ventana (mantenerla abierta) |
+| `Alt+L` | Bloquear la app ahora (con App Lock activado) |
+| `Ctrl+K` | Pausar / reanudar el monitoreo del portapapeles |
 | `Ctrl+Z` | Deshacer el borrado |
 | `Ctrl+F` | Enfocar el campo de búsqueda |
 | `Ctrl+A` | Seleccionar todos los clips visibles (modo por lotes) |

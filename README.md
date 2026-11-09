@@ -260,6 +260,8 @@ npm run tauri build
 | `I` | Toggle the clip detail panel |
 | `Alt+P` | Pin / unpin selected clip |
 | `Ctrl+P` | Pin / unpin the window (keep it open) |
+| `Alt+L` | Lock the app now (when App Lock is enabled) |
+| `Ctrl+K` | Pause / resume clipboard monitoring |
 | `Ctrl+Z` | Undo delete |
 | `Ctrl+F` | Focus search input |
 | `Ctrl+A` | Select all visible clips (bulk mode) |
