@@ -2,6 +2,30 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.30.0] — 2026-11-08
+
+### ⌨️ New Single-Key Hotkeys & Cleaner Menus
+- **`Alt+L` locks the app now** and **`Ctrl+K` pauses/resumes clipboard monitoring**, working in both Full Screen and Compact modes.
+- The HUD hint cycle and the Compact footer hints advertise both shortcuts, and titlebar tooltips show hotkey badges ("Bloquear ahora (Alt+L)").
+- The More menu no longer duplicates actions that have a visible titlebar button: "Lock now" and "Pause monitoring" were removed from it.
+- Fixed the HUD advertising the old `Ctrl+P` clip pin; it now cycles `Alt+P`.
+
+### 🖱️ Context-Aware Folder Targets
+- The "Copy to folder" dialog now hides the folder you are browsing and only offers the main clipboard when inside a folder, matching the bulk action bar's behavior.
+
+### 🎨 Quieter Selection & Window Edge (default theme)
+- Clip selection uses a desaturated steel-teal accent across borders, tint, and glow in the default theme, with a refined silver in the monochrome dark theme; the light theme is untouched.
+- The compact window border trades the neon primary for the same steel-teal, and the selected row's left accent bar fades out with a vertical gradient.
+- The compact header rhythm is even: folder pills now share the search bar's exact height and the folders-to-clips spacing matches the search-to-folders gap.
+
+### 📦 Installer Polish & VirusTotal Reports
+- The installer header now shows a branded 150x57 banner instead of the distorted icon that default NSIS drew at scaled DPI.
+- Release notes link both artifacts to their VirusTotal reports, and the release workflow submits them automatically.
+- The tray menu logo idles at 40% saturation instead of full grayscale.
+
+### ⚡ Performance
+- The vendor bundle is split into stable chunks (React, motion, i18n, vendor), so app updates no longer invalidate the third-party cache.
+
 ## [1.29.0] — 2026-11-08
 
 ### 🔍 Settings Search
