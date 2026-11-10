@@ -260,11 +260,19 @@ enum ClipboardImageReadError {
     Other(String),
 }
 
-fn clipboard_has_files() -> bool {
-    ClipboardContext::new()
-        .ok()
-        .map(|ctx| ctx.has(ContentFormat::Files))
-        .unwrap_or(false)
+fn should_read_clipboard_image(
+    source: &SourceAppInfo,
+    is_cut: bool,
+    has: impl Fn(ContentFormat) -> bool,
+) -> bool {
+    let (_, _, exe_name, _, is_explicit_owner) = source;
+    !has(ContentFormat::Files)
+        || (!is_cut
+            && *is_explicit_owner
+            && exe_name
+                .as_deref()
+                .is_some_and(|name| name.eq_ignore_ascii_case("CyberSnap.exe"))
+            && has(ContentFormat::Other("PNG".into())))
 }
 
 pub fn normalize_file_path(p: &str) -> String {
@@ -392,12 +400,14 @@ async fn process_clipboard_change(
         .map(|manager| manager.get().max_clipboard_image_bytes)
         .unwrap_or_else(crate::content_limits::default_max_clipboard_image_bytes);
 
-    // Files (CF_HDROP) before image: Explorer/Office often attach a CF_DIB
-    // thumbnail or file-type icon that would otherwise collapse distinct copies
-    // into one "duplicate image".
+    // Explorer and Office can attach a thumbnail to a file copy. CyberSnap's
+    // explicit PNG, on the other hand, is the actual capture alongside the file.
+    let read_image = ClipboardContext::new()
+        .map(|ctx| should_read_clipboard_image(&source_app_info, is_cut, |format| ctx.has(format)))
+        .unwrap_or(true);
     log::debug!("CLIPBOARD: Attempting to read image from clipboard");
     let image_read_started = std::time::Instant::now();
-    if !clipboard_has_files() {
+    if read_image {
         match read_clipboard_image_fast(max_image_bytes) {
             Ok(read_image_result) => {
                 image_read_ms = image_read_started.elapsed().as_millis();
@@ -2208,6 +2218,26 @@ pub fn strip_rtf_tags(rtf: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn prefers_image_for_cybersnap_captures_with_a_file() {
+        let read_image = |exe: Option<&str>, explicit, is_cut, files, png| {
+            let source = (None, None, exe.map(str::to_owned), None, explicit);
+            should_read_clipboard_image(&source, is_cut, |format| match format {
+                ContentFormat::Files => files,
+                ContentFormat::Other(name) => png && name == "PNG",
+                _ => false,
+            })
+        };
+
+        assert!(read_image(Some("CYBERSNAP.EXE"), true, false, true, true));
+        assert!(!read_image(Some("CyberSnap.exe"), true, false, true, false));
+        assert!(!read_image(Some("CyberSnap.exe"), true, true, true, true));
+        assert!(!read_image(Some("CyberSnap.exe"), false, false, true, true));
+        assert!(!read_image(Some("explorer.exe"), true, false, true, true));
+        assert!(!read_image(Some("WINWORD.EXE"), true, false, true, true));
+        assert!(read_image(None, false, false, false, false));
+    }
 
     #[test]
     fn strip_rtf_skips_font_table() {
