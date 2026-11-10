@@ -695,11 +695,19 @@ impl Database {
 
         add_column_if_missing(&self.pool, "ALTER TABLE folders ADD COLUMN color TEXT").await?;
 
-        add_column_if_missing(
-            &self.pool,
+        // Position zero is valid. Initialize the order only when upgrading a legacy schema.
+        let mut order_migration = self.pool.begin().await?;
+        if add_column_if_missing(
+            &mut *order_migration,
             "ALTER TABLE clips ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0",
         )
-        .await?;
+        .await?
+        {
+            sqlx::query("UPDATE clips SET sort_order = id")
+                .execute(&mut *order_migration)
+                .await?;
+        }
+        order_migration.commit().await?;
 
         add_column_if_missing(
             &self.pool,
@@ -729,15 +737,6 @@ impl Database {
         sqlx::query(
             r#"
             UPDATE folders SET sort_order = id WHERE sort_order = 0
-            "#,
-        )
-        .execute(&self.pool)
-        .await?;
-
-        // Backfill: assign sort_order based on current row id for existing clips
-        sqlx::query(
-            r#"
-            UPDATE clips SET sort_order = id WHERE sort_order = 0
             "#,
         )
         .execute(&self.pool)
@@ -914,13 +913,16 @@ impl Database {
     }
 }
 
-async fn add_column_if_missing(pool: &SqlitePool, sql: &str) -> Result<(), sqlx::Error> {
-    match sqlx::query(sql).execute(pool).await {
-        Ok(_) => Ok(()),
+async fn add_column_if_missing<'e>(
+    executor: impl sqlx::Executor<'e, Database = sqlx::Sqlite>,
+    sql: &str,
+) -> Result<bool, sqlx::Error> {
+    match sqlx::query(sql).execute(executor).await {
+        Ok(_) => Ok(true),
         Err(e) => {
             let msg = e.to_string().to_lowercase();
             if msg.contains("duplicate column name") {
-                Ok(())
+                Ok(false)
             } else {
                 Err(e)
             }
@@ -946,6 +948,63 @@ mod tests {
             is_pinned,
             pinned_slot: slot,
         }
+    }
+
+    #[tokio::test]
+    async fn startup_preserves_the_clip_copied_to_the_live_slot() {
+        let path = std::env::temp_dir().join(format!("cyberpaste-order-{}.db", uuid::Uuid::new_v4()));
+        let db = Database::new(path.to_str().unwrap()).await;
+        db.migrate().await.unwrap();
+
+        // Simulate a database created before clip order was persisted.
+        sqlx::query("ALTER TABLE clips DROP COLUMN sort_order")
+            .execute(&db.pool)
+            .await
+            .unwrap();
+        sqlx::query(
+            "INSERT INTO clips (uuid, clip_type, content, content_hash, created_at)
+             VALUES ('white', 'image', x'', 'white', '2025-01-01'),
+                    ('black', 'image', x'', 'black', '2025-01-02')",
+        )
+        .execute(&db.pool)
+        .await
+        .unwrap();
+
+        db.migrate().await.unwrap();
+        let legacy_order = db.load_list_clips(None).await.unwrap();
+        let legacy_images = &legacy_order[legacy_order.len() - 2..];
+        assert_eq!(legacy_images[0].uuid, "white");
+        assert_eq!(legacy_images[1].uuid, "black");
+
+        db.place_at_live_slot("black").await.unwrap();
+        db.place_at_live_slot("white").await.unwrap();
+        let before_restart = db.load_list_clips(None).await.unwrap();
+        assert_eq!(before_restart[0].uuid, "white");
+        assert_eq!(before_restart[1].uuid, "black");
+        db.pool.close().await;
+
+        let reopened = Database::new(path.to_str().unwrap()).await;
+        reopened.migrate().await.unwrap();
+        let after_restart = reopened.load_list_clips(None).await.unwrap();
+        reopened.pool.close().await;
+        drop(reopened);
+        drop(db);
+
+        // Allow Windows to release the temporary database before deleting it.
+        let mut retries = 20;
+        loop {
+            match std::fs::remove_file(&path) {
+                Err(error) if cfg!(windows) && error.raw_os_error() == Some(32) && retries > 0 => {
+                    retries -= 1;
+                    tokio::time::sleep(std::time::Duration::from_millis(25)).await;
+                }
+                result => {
+                    result.unwrap();
+                    break;
+                }
+            }
+        }
+        assert_eq!(after_restart, before_restart);
     }
 
     #[test]
