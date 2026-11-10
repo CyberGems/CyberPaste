@@ -268,10 +268,11 @@ fn should_read_clipboard_image(
     let (_, _, exe_name, _, is_explicit_owner) = source;
     !has(ContentFormat::Files)
         || (!is_cut
-            && *is_explicit_owner
-            && exe_name
-                .as_deref()
-                .is_some_and(|name| name.eq_ignore_ascii_case("CyberSnap.exe"))
+            && (has(ContentFormat::Other(HISTORY_IMAGE_FORMAT.into()))
+                || (*is_explicit_owner
+                    && exe_name
+                        .as_deref()
+                        .is_some_and(|name| name.eq_ignore_ascii_case("CyberSnap.exe"))))
             && has(ContentFormat::Other("PNG".into())))
 }
 
@@ -2215,6 +2216,124 @@ pub fn strip_rtf_tags(rtf: &str) -> String {
     cleaned.trim().to_string()
 }
 
+/// Identifies an image copied by CyberPaste that also carries a shell file.
+const HISTORY_IMAGE_FORMAT: &str = "CyberPaste.HistoryImage";
+
+pub async fn write_history_image(bytes: Vec<u8>) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let image = clipboard_rs::common::RustImageData::from_bytes(&bytes)
+            .map_err(|e| e.to_string())?;
+        #[cfg(target_os = "windows")]
+        {
+            write_windows_history_image(image)
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            ClipboardContext::new()
+                .map_err(|e| e.to_string())?
+                .set_image(image)
+                .map_err(|e| e.to_string())
+        }
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[cfg(target_os = "windows")]
+fn write_windows_history_image(image: clipboard_rs::common::RustImageData) -> Result<(), String> {
+    use clipboard_win::{formats, options, raw, register_format, Clipboard};
+
+    let png = image.to_png().map_err(|e| e.to_string())?;
+    let bmp = image.to_bitmap().map_err(|e| e.to_string())?;
+    let dib = history_image_dib_v5(bmp.get_bytes())
+        .ok_or_else(|| "Invalid clipboard bitmap header".to_string())?;
+    let png_format = register_format("PNG").ok_or_else(|| "Could not register PNG".to_string())?;
+    let copy_format = register_format("Preferred DropEffect")
+        .ok_or_else(|| "Could not register the clipboard drop effect".to_string())?;
+    let history_format = register_format(HISTORY_IMAGE_FORMAT)
+        .ok_or_else(|| "Could not register the history image format".to_string())?;
+
+    let dir = std::env::temp_dir().join("CyberPaste").join("clipboard-images");
+    let path = save_history_image_png(&dir, png.get_bytes()).map_err(|e| e.to_string())?;
+    let result = (|| {
+        let _open = Clipboard::new_attempts(10)?;
+        raw::empty()?;
+        raw::set_without_clear(png_format.get(), png.get_bytes())?;
+        raw::set_without_clear(formats::CF_DIBV5, &dib)?;
+        raw::set_without_clear(history_format.get(), &[1])?;
+        raw::set_without_clear(copy_format.get(), &1u32.to_le_bytes())?; // DROPEFFECT_COPY
+        raw::set_file_list_with(&[path.to_string_lossy()], options::NoClear)
+    })();
+
+    if let Err(error) = result {
+        let _ = std::fs::remove_file(path);
+        return Err(format!("Failed to set clipboard image: {error}"));
+    }
+    prune_history_image_copies(&dir);
+    Ok(())
+}
+
+#[cfg(target_os = "windows")]
+fn history_image_dib_v5(bmp: &[u8]) -> Option<Vec<u8>> {
+    const BMP_FILE_HEADER_SIZE: usize = 14;
+    const V4_HEADER_SIZE: usize = 108;
+    const V5_HEADER_SIZE: usize = 124;
+    const LCS_GM_IMAGES: u32 = 4;
+
+    let dib = bmp.get(BMP_FILE_HEADER_SIZE..)?;
+    let header_size = u32::from_le_bytes(dib.get(..4)?.try_into().ok()?) as usize;
+    if header_size == V5_HEADER_SIZE {
+        return dib.get(..V5_HEADER_SIZE).map(|_| dib.to_vec());
+    }
+    if header_size != V4_HEADER_SIZE {
+        return None;
+    }
+
+    // The RGBA BMP encoder uses V4. Extend its header for CF_DIBV5, preserving the pixels.
+    let mut upgraded = Vec::with_capacity(dib.len() + V5_HEADER_SIZE - V4_HEADER_SIZE);
+    upgraded.extend_from_slice(&(V5_HEADER_SIZE as u32).to_le_bytes());
+    upgraded.extend_from_slice(dib.get(4..V4_HEADER_SIZE)?);
+    upgraded.extend_from_slice(&LCS_GM_IMAGES.to_le_bytes());
+    upgraded.extend_from_slice(&[0; 12]); // Profile offset, profile size and reserved.
+    upgraded.extend_from_slice(&dib[V4_HEADER_SIZE..]);
+    Some(upgraded)
+}
+
+#[cfg(target_os = "windows")]
+fn save_history_image_png(dir: &std::path::Path, png: &[u8]) -> std::io::Result<std::path::PathBuf> {
+    use std::io::Write;
+
+    std::fs::create_dir_all(dir)?;
+    let timestamp = chrono::Local::now().format("%Y-%m-%d_%H-%M-%S");
+    let id = Uuid::new_v4().simple().to_string();
+    let path = dir.join(format!("CyberPaste-{timestamp}-{}.png", &id[..8]));
+    let mut file = std::fs::File::create_new(&path)?;
+    if let Err(error) = file.write_all(png) {
+        drop(file);
+        let _ = std::fs::remove_file(&path);
+        return Err(error);
+    }
+    Ok(path)
+}
+
+#[cfg(target_os = "windows")]
+fn prune_history_image_copies(dir: &std::path::Path) {
+    let Ok(entries) = std::fs::read_dir(dir) else { return; };
+    let retention = std::time::Duration::from_secs(24 * 60 * 60);
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        if name.starts_with("CyberPaste-")
+            && name.ends_with(".png")
+            && entry.file_type().is_ok_and(|kind| kind.is_file())
+            && entry.metadata().and_then(|metadata| metadata.modified())
+                .is_ok_and(|modified| modified.elapsed().is_ok_and(|age| age > retention))
+        {
+            let _ = std::fs::remove_file(entry.path());
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2237,6 +2356,60 @@ mod tests {
         assert!(!read_image(Some("explorer.exe"), true, false, true, true));
         assert!(!read_image(Some("WINWORD.EXE"), true, false, true, true));
         assert!(read_image(None, false, false, false, false));
+    }
+
+    #[test]
+    fn history_image_marker_keeps_hybrid_copies_in_the_image_flow() {
+        let source = (None, None, None, None, false);
+        let formats = |format| match format {
+            ContentFormat::Files => true,
+            ContentFormat::Other(name) => name == HISTORY_IMAGE_FORMAT || name == "PNG",
+            _ => false,
+        };
+        assert!(should_read_clipboard_image(&source, false, formats));
+        assert!(!should_read_clipboard_image(&source, true, formats));
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn history_image_dib_v5_preserves_rgba_pixels() {
+        let pixels = vec![40, 120, 220, 150, 210, 30, 90, 50];
+        let rgba = image::RgbaImage::from_raw(1, 2, pixels.clone()).unwrap();
+        let mut png = std::io::Cursor::new(Vec::new());
+        image::DynamicImage::ImageRgba8(rgba)
+            .write_to(&mut png, image::ImageOutputFormat::Png)
+            .unwrap();
+        let image = clipboard_rs::common::RustImageData::from_bytes(png.get_ref()).unwrap();
+        let bitmap = image.to_bitmap().unwrap();
+        let dib = history_image_dib_v5(bitmap.get_bytes()).unwrap();
+        assert_eq!(&dib[..4], &124u32.to_le_bytes());
+
+        let decoder = image::codecs::bmp::BmpDecoder::new_without_file_header(
+            std::io::Cursor::new(dib),
+        )
+        .unwrap();
+        let decoded = image::DynamicImage::from_decoder(decoder).unwrap();
+        assert_eq!(decoded.to_rgba8().into_raw(), pixels);
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn history_image_file_keeps_pixels_and_uses_a_distinct_png_path() {
+        let dir = std::env::temp_dir().join(format!("cyberpaste-image-test-{}", Uuid::new_v4()));
+        let image = image::DynamicImage::ImageRgba8(image::RgbaImage::from_pixel(
+            2, 3, image::Rgba([40, 120, 220, 150]),
+        ));
+        let mut png = std::io::Cursor::new(Vec::new());
+        image.write_to(&mut png, image::ImageOutputFormat::Png).unwrap();
+        let first = save_history_image_png(&dir, png.get_ref()).unwrap();
+        let second = save_history_image_png(&dir, png.get_ref()).unwrap();
+        assert_ne!(first, second);
+        assert_eq!(first.extension().unwrap(), "png");
+        assert_eq!(std::fs::read(&first).unwrap(), *png.get_ref());
+        assert_eq!(image::open(&second).unwrap().to_rgba8(), image.to_rgba8());
+        std::fs::remove_file(first).unwrap();
+        std::fs::remove_file(second).unwrap();
+        std::fs::remove_dir(dir).unwrap();
     }
 
     #[test]

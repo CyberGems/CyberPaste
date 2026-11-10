@@ -91,29 +91,6 @@ import {
   Filter,
 } from 'lucide-react';
 
-const base64ToBlob = (base64: string, mimeType: string = 'image/png'): Blob => {
-  const byteCharacters = atob(base64);
-  const byteNumbers = new Array(byteCharacters.length);
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteNumbers[i] = byteCharacters.charCodeAt(i);
-  }
-  const byteArray = new Uint8Array(byteNumbers);
-  return new Blob([byteArray], { type: mimeType });
-};
-
-const getImageMimeType = (metadata: string | null): string => {
-  if (!metadata) return 'image/png';
-  try {
-    const parsed = JSON.parse(metadata) as { format?: string };
-    const format = parsed.format?.toLowerCase();
-    if (format === 'jpeg' || format === 'jpg') return 'image/jpeg';
-    if (format === 'webp') return 'image/webp';
-  } catch {
-    // Ignore metadata parse errors and fall back.
-  }
-  return 'image/png';
-};
-
 function isLiveMainListClip(
   clipId: string | null | undefined,
   clips: { id: string }[],
@@ -2256,32 +2233,12 @@ function App() {
     [loadClips, loadFolders, refreshTotalCount, t]
   );
 
-  const getFullImageBlob = useCallback(
-    async (clipId: string, fallbackClip: AppClipboardItem): Promise<Blob> => {
-      const detail = await invoke<AppClipboardItem>('get_clip_detail', { id: clipId });
-      const mimeType = getImageMimeType(detail.metadata ?? fallbackClip.metadata);
-      return base64ToBlob(detail.content, mimeType);
-    },
-    []
-  );
-
   const handlePaste = useCallback(
     async (clipId: string, forcePaste = false) => {
       if (wasDraggingRef.current) {
         return;
       }
       try {
-        invoke('arm_ignore_clip_by_id', { id: clipId }).catch(() => {});
-        const clip = clipsRef.current.find((c) => c.id === clipId);
-        if (clip && clip.clip_type === 'image') {
-          try {
-            const blob = await getFullImageBlob(clipId, clip);
-            await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-          } catch (e) {
-            console.error('Frontend clipboard write failed', e);
-          }
-        }
-
         await invoke('paste_clip', { id: clipId, forcePaste });
         // Force immediate refresh
         if (settingsRef.current?.reset_view_on_paste) {
@@ -2307,23 +2264,12 @@ function App() {
         console.error('Failed to paste clip:', error);
       }
     },
-    [getFullImageBlob, handleSelectFolder, refreshCurrentFolder, refreshTotalCount]
+    [handleSelectFolder, refreshCurrentFolder, refreshTotalCount]
   );
 
   const handleCopy = useCallback(
     async (clipId: string) => {
       try {
-        invoke('arm_ignore_clip_by_id', { id: clipId }).catch(() => {});
-        const clip = clipsRef.current.find((c) => c.id === clipId);
-        if (clip && clip.clip_type === 'image') {
-          try {
-            const blob = await getFullImageBlob(clipId, clip);
-            await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-          } catch (e) {
-            console.warn('Frontend navigator.clipboard.write fallback:', e);
-          }
-        }
-
         await invoke('copy_clip', { clipId });
         refreshCurrentFolder();
         refreshTotalCount();
@@ -2333,7 +2279,7 @@ function App() {
         toast.error(t('notifications.copyFailed'));
       }
     },
-    [getFullImageBlob, refreshCurrentFolder, refreshTotalCount, t]
+    [refreshCurrentFolder, refreshTotalCount, t]
   );
 
   // Ctrl + wheel adjusts the Full-mode grid zoom (0.6x – 1.75x), persisted in settings

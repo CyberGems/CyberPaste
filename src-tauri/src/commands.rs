@@ -1274,7 +1274,7 @@ pub async fn paste_clip(
         .map_err(|e| e.to_string())?;
 
     match clip {
-        Some(clip) => {
+        Some(mut clip) => {
             // Synchronize clipboard access across the app
             let _guard = crate::clipboard::CLIPBOARD_SYNC.lock().await;
 
@@ -1290,7 +1290,7 @@ pub async fn paste_clip(
 
             if clip.clip_type == "image" {
                 crate::clipboard::set_ignore_hash(content_hash.clone());
-                // Frontend writes image via navigator.clipboard API.
+                final_res = copy_history_image(pool, &mut clip).await;
             } else if clip.clip_type == "file" {
                 let paths: Vec<String> = serde_json::from_slice(&clip.content).unwrap_or_default();
                 crate::clipboard::set_ignore_hash(content_hash.clone());
@@ -1621,6 +1621,11 @@ pub async fn paste_clip(
     }
 }
 
+async fn copy_history_image(pool: &SqlitePool, clip: &mut Clip) -> Result<(), String> {
+    let full = load_full_image_content(pool, clip).await?;
+    crate::clipboard::write_history_image(full).await
+}
+
 /// Copy a clip to the OS clipboard, bump it to the top of the main list (slot 1),
 /// emit changes, play sound, and display the usual copy toast, WITHOUT closing/hiding any window.
 #[tauri::command]
@@ -1656,15 +1661,7 @@ pub async fn copy_clip(
             let mut final_res = Ok(());
 
             if clip.clip_type == "image" {
-                let full = load_full_image_content(pool, &mut clip).await?;
-                if let Ok(ctx) = clipboard_rs::ClipboardContext::new() {
-                    use clipboard_rs::Clipboard;
-                    if let Ok(rust_img) = clipboard_rs::common::RustImage::from_bytes(&full) {
-                        if let Err(e) = ctx.set_image(rust_img) {
-                            log::warn!("Failed to set clipboard image via clipboard-rs: {}", e);
-                        }
-                    }
-                }
+                final_res = copy_history_image(pool, &mut clip).await;
             } else if clip.clip_type == "file" {
                 let paths: Vec<String> = serde_json::from_slice(&clip.content).unwrap_or_default();
                 let mut last_err = String::new();
@@ -1905,7 +1902,7 @@ pub async fn copy_clip(
             }
 
             // Show standard copy toast notification
-            if settings.toast_enabled {
+            if final_res.is_ok() && settings.toast_enabled {
                 let (image_b64, msg) = if clip.clip_type == "image" {
                     let full_bytes = load_full_image_content(pool, &mut clip).await.unwrap_or_default();
                     let thumb_b64 = if !full_bytes.is_empty() {

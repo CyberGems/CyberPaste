@@ -67,17 +67,6 @@ function debounce<T extends (...args: any[]) => any>(fn: T, delay: number) {
   };
 }
 
-function base64ToBlob(base64: string, mimeType: string = 'image/png'): Blob {
-  const cleanBase64 = base64.includes(',') ? base64.split(',')[1] : base64;
-  const byteCharacters = atob(cleanBase64);
-  const byteNumbers = new Array(byteCharacters.length);
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteNumbers[i] = byteCharacters.charCodeAt(i);
-  }
-  const byteArray = new Uint8Array(byteNumbers);
-  return new Blob([byteArray], { type: mimeType });
-}
-
 function detectMimeFromBase64(b64: string): string {
   try {
     const binary = atob(b64.slice(0, 32));
@@ -601,22 +590,6 @@ export function ImageViewerWindow() {
     const current = clipRef.current;
     if (!current) return;
     try {
-      if (current.clip_type === 'image') {
-        if (current.content) {
-          try {
-            const mime = mimeFromPath(current.image_path) || 'image/png';
-            const blob = base64ToBlob(current.content, mime.includes('png') ? 'image/png' : mime);
-            const pngBlob =
-              blob.type === 'image/png' ? blob : base64ToBlob(current.content, 'image/png');
-            await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
-          } catch (e) {
-            console.warn('Frontend navigator.clipboard.write fallback:', e);
-          }
-        }
-      } else {
-        const textToCopy = current.content || current.preview || '';
-        await navigator.clipboard.writeText(textToCopy);
-      }
       await invoke('copy_clip', { clipId: current.id });
       setCopied(true);
       showStatus(t('viewer.copied'));
