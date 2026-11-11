@@ -771,20 +771,22 @@ export const CompactView: React.FC<CompactViewProps> = ({
     () => [
       t('compact.typeToSearch'),
       t('compact.arrowsFolders'),
-      t('compact.peekHint'),
+      // Peek and emoji hotkeys have no shared-record entry: their tooltips are
+      // state-dependent, so they come straight from TITLEBAR_HOTKEYS.
+      t('compact.peekHint', { hotkey: TITLEBAR_HOTKEYS.peek.toUpperCase() }),
       t('compact.densityHint'),
-      t('compact.pauseHint'),
+      t('compact.pauseHint', { hotkey: hints.pauseMonitoring.keys.toUpperCase() }),
       // The lock button only exists when App Lock is enabled, so its hint too.
-      ...(lockEnabled ? [t('compact.lockHint')] : []),
+      ...(lockEnabled ? [t('compact.lockHint', { hotkey: hints.lockNow.keys.toUpperCase() })] : []),
     ],
-    [t, lockEnabled]
+    [t, lockEnabled, hints]
   );
   const emojiHints = useMemo(
     () => [
       isPinned ? t('emoji.hintPinned') : t('emoji.hintPin'),
       t('emoji.hintNavigate'),
       t('emoji.hintSearch'),
-      t('emoji.hintToggle'),
+      t('emoji.hintToggle', { emojiHotkey: TITLEBAR_HOTKEYS.emoji.toUpperCase() }),
     ],
     [t, isPinned]
   );
