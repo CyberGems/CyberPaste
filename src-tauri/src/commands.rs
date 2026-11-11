@@ -5280,6 +5280,16 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
         tauri::Theme::Dark
     };
 
+    // WebView2 suspends rendering while the window is hidden, so the first
+    // frames after show() are painted by the native window/webview background.
+    // Using the viewer's own theme color there turns that gap into the viewer
+    // surface instead of a white flash.
+    let viewer_background = if settings.theme == "light" {
+        tauri::webview::Color(244, 244, 245, 255)
+    } else {
+        tauri::webview::Color(13, 15, 23, 255)
+    };
+
     let mut builder = tauri::WebviewWindowBuilder::new(
         &app,
         window_label,
@@ -5291,7 +5301,11 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
     .decorations(false)
     .transparent(false)
     .theme(Some(theme_mode))
-    .maximized(settings.viewer_window_maximized)
+    .background_color(viewer_background)
+    // Never ask tao for a maximized window here: on Windows (tao 0.35) the
+    // maximize is applied with ShowWindow, which reveals the window while it is
+    // still blank, and WebView2 needs a moment to paint. The frontend maximizes
+    // the window right after showing it, already themed.
     .visible(false)
     .always_on_top(false);
 

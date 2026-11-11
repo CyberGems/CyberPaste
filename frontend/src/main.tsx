@@ -18,6 +18,12 @@ attachConsole()
 
 const windowLabel = getCurrentWindow().label;
 
+// Mark the viewer surface before the first render so the document paints the
+// themed background instead of a transparent page over the native surface.
+if (windowLabel === 'image_viewer') {
+  document.documentElement.classList.add('viewer-window');
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   windowLabel === 'settings' ? (
     <SettingsWindow />

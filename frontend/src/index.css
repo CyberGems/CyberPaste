@@ -462,6 +462,12 @@
     background-color: #0d0f17 !important;
   }
 
+  html.viewer-window.viewer-light,
+  html.viewer-window.viewer-light body,
+  html.viewer-window.viewer-light #root {
+    background-color: #f4f4f5 !important;
+  }
+
   /* Toast window needs fully transparent background */
   html.toast-window,
   html.toast-window body,

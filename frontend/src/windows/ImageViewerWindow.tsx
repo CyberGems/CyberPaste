@@ -268,6 +268,7 @@ export function ImageViewerWindow() {
         document.documentElement.classList.remove('dark');
       }
     }
+    document.documentElement.classList.toggle('viewer-light', !dark);
     setIsDark(dark);
   }, []);
 
@@ -430,20 +431,23 @@ export function ImageViewerWindow() {
       .then((s) => {
         settingsRef.current = s;
         applyTheme(s.theme);
-        if (s.viewer_window_maximized) {
-          appWindow.maximize().catch(() => {});
-        }
         // Reveal the window now that the theme has been applied, so the user
-        // never sees a blank white surface before the dark background. Mirror
-        // the settings window: give the DOM one frame to render the themed
-        // classes before showing the window.
+        // never sees a blank surface before the themed background. Mirror the
+        // settings window: give the DOM one frame to render the themed classes
+        // before showing the window, then maximize once it is visible (calling
+        // maximize on a hidden window makes Windows show it unthemed).
         if (!hasRevealedRef.current) {
           const timer = setTimeout(() => {
             hasRevealedRef.current = true;
             document.documentElement.classList.add('viewer-window');
             appWindow
               .show()
-              .then(() => appWindow.setFocus().catch(() => {}))
+              .then(() => {
+                if (s.viewer_window_maximized) {
+                  appWindow.maximize().catch(() => {});
+                }
+                appWindow.setFocus().catch(() => {});
+              })
               .catch(() => {});
           }, 50);
           return () => clearTimeout(timer);
