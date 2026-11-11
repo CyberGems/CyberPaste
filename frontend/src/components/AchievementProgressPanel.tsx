@@ -10,6 +10,7 @@ import {
   Trophy,
   Flame,
   FileText,
+  FileCode2,
   Code,
   Image as ImageIcon,
   Link,
@@ -149,17 +150,19 @@ export function AchievementProgressPanel({
       </section>
 
       <section className="space-y-3">
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {summary.map(({ label, value, icon: Icon, color }) => (
-            <div key={label} className="rounded-xl border border-border bg-card p-4">
-              <Icon className={`mb-3 h-5 w-5 ${color}`} />
-              <p className="font-mono text-xl font-semibold tabular-nums text-foreground">
-                {formatNumber(value, locale)}
-              </p>
-              <p className="mt-1 text-[11px] text-muted-foreground">{label}</p>
-            </div>
-          ))}
-        </div>
+        {progress && (
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {summary.map(({ label, value, icon: Icon, color }) => (
+              <div key={label} className="rounded-xl border border-border bg-card p-4">
+                <Icon className={`mb-3 h-5 w-5 ${color}`} />
+                <p className="font-mono text-xl font-semibold tabular-nums text-foreground">
+                  {formatNumber(value, locale)}
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">{label}</p>
+              </div>
+            ))}
+          </div>
+        )}
 
         {(() => {
           const firstUsedAt = progress?.first_used_at ?? settings.first_used_at ?? null;
@@ -184,10 +187,7 @@ export function AchievementProgressPanel({
                         <>
                           <span className="opacity-30">•</span>
                           <span className="font-mono font-medium tabular-nums text-primary">
-                            {t('settings.progressTotalDays', {
-                              count: totalDays,
-                              defaultValue: `${formatNumber(totalDays, locale)} días totales`,
-                            })}
+                            {t('settings.progressTotalDays', { count: totalDays })}
                           </span>
                         </>
                       )}
@@ -345,6 +345,15 @@ export function AchievementProgressPanel({
               bg: 'bg-amber-500/10 border-amber-500/20',
               bar: 'bg-amber-400',
             },
+            {
+              type: 'html',
+              label: t('clipType.html'),
+              count: Number(progress.totals.captured_html || 0),
+              icon: FileCode2,
+              color: 'text-fuchsia-400',
+              bg: 'bg-fuchsia-500/10 border-fuchsia-500/20',
+              bar: 'bg-fuchsia-400',
+            },
           ];
 
           const totalCaptured = typeItems.reduce((acc, item) => acc + item.count, 0);
@@ -357,15 +366,12 @@ export function AchievementProgressPanel({
                 </h3>
                 {totalCaptured > 0 && (
                   <span className="font-mono text-[11px] text-muted-foreground/80">
-                    {t('settings.progressTotalCaptured', {
-                      count: totalCaptured,
-                      defaultValue: `${formatNumber(totalCaptured, locale)} clips capturados`,
-                    })}
+                    {t('settings.progressTotalCaptured', { count: totalCaptured })}
                   </span>
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
                 {typeItems.map(({ type, label, count, icon: Icon, color, bg, bar }) => {
                   const pct = totalCaptured > 0 ? Math.round((count / totalCaptured) * 100) : 0;
                   return (
@@ -421,6 +427,18 @@ export function AchievementProgressPanel({
         ) : !progress ? (
           <div className="rounded-xl border border-border bg-card p-6 text-center text-xs text-muted-foreground">
             {t('settings.achievementsUnavailable')}
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setLoading(true);
+                  loadProgress();
+                }}
+                className="btn rounded-[4px] border border-border bg-secondary px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
+              >
+                {t('settings.achievementsRetry')}
+              </button>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

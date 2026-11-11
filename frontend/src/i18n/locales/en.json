@@ -771,6 +771,7 @@
     "achievementsList": "Achievements",
     "achievementsLoading": "Loading your progress...",
     "achievementsUnavailable": "Progress is not available right now.",
+    "achievementsRetry": "Retry",
     "achievementUnlocked": "Unlocked",
     "achievementUnlockedOn": "Unlocked on {{date}}",
     "achievementUnlockedToast": "Achievement unlocked: {{achievement}}",

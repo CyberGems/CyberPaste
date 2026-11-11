@@ -771,6 +771,7 @@
     "achievementsList": "Logros",
     "achievementsLoading": "Cargando tu progreso...",
     "achievementsUnavailable": "El progreso no está disponible en este momento.",
+    "achievementsRetry": "Reintentar",
     "achievementUnlocked": "Desbloqueado",
     "achievementUnlockedOn": "Desbloqueado el {{date}}",
     "achievementUnlockedToast": "Logro desbloqueado: {{achievement}}",
