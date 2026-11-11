@@ -67,3 +67,30 @@ export const HUD_HINT_ORDER: readonly (keyof ShortcutHints)[] = [
 /** Formats a hint as a button tooltip label: "{{label}} ({{hotkey}})". */
 export const hintWithHotkey = (t: TFunction, hint: ShortcutHint): string =>
   t('common.tooltipWithHotkey', { label: hint.label, hotkey: hint.keys });
+
+/**
+ * Compact window's rotating footer hints, as plain inline strings with the
+ * hotkeys already embedded in the label. Peek and emoji have no shared-record
+ * entry: their button tooltips are state-dependent, so they come straight from
+ * TITLEBAR_HOTKEYS. Pause and lock keys still flow through buildShortcutHints.
+ */
+export const buildCompactFooterHints = (t: TFunction, lockEnabled: boolean): string[] => {
+  const hints = buildShortcutHints(t);
+  return [
+    t('compact.typeToSearch'),
+    t('compact.arrowsFolders'),
+    t('compact.peekHint', { hotkey: TITLEBAR_HOTKEYS.peek.toUpperCase() }),
+    t('compact.densityHint'),
+    t('compact.pauseHint', { hotkey: hints.pauseMonitoring.keys.toUpperCase() }),
+    // The lock button only exists when App Lock is enabled, so its hint too.
+    ...(lockEnabled ? [t('compact.lockHint', { hotkey: hints.lockNow.keys.toUpperCase() })] : []),
+  ];
+};
+
+/** Emoji panel's rotating hints, shown in the compact footer's hint slot. */
+export const buildEmojiHints = (t: TFunction, isPinned: boolean): string[] => [
+  isPinned ? t('emoji.hintPinned') : t('emoji.hintPin'),
+  t('emoji.hintNavigate'),
+  t('emoji.hintSearch'),
+  t('emoji.hintToggle', { emojiHotkey: TITLEBAR_HOTKEYS.emoji.toUpperCase() }),
+];

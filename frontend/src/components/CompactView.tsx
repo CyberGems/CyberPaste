@@ -111,7 +111,12 @@ import {
   TITLEBAR_ICON_BUTTON,
 } from './ui/titlebarButtons';
 import { TITLEBAR_HOTKEYS } from '../hooks/useKeyboard';
-import { buildShortcutHints, hintWithHotkey } from '../utils/shortcutHints';
+import {
+  buildCompactFooterHints,
+  buildEmojiHints,
+  buildShortcutHints,
+  hintWithHotkey,
+} from '../utils/shortcutHints';
 import { de, enUS, es, fr, ja, zhCN } from 'date-fns/locale';
 import { List, useListRef, type RowComponentProps } from 'react-window';
 import { CONTEXT_MENU_EVENT, type ContextMenuEventDetail } from '../utils/contextMenuEvents';
@@ -767,29 +772,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
   }, [isEmojiMode]);
 
   const { isPaused, toggleMonitoring } = useClipboardMonitoring();
-  const footerHints = useMemo(
-    () => [
-      t('compact.typeToSearch'),
-      t('compact.arrowsFolders'),
-      // Peek and emoji hotkeys have no shared-record entry: their tooltips are
-      // state-dependent, so they come straight from TITLEBAR_HOTKEYS.
-      t('compact.peekHint', { hotkey: TITLEBAR_HOTKEYS.peek.toUpperCase() }),
-      t('compact.densityHint'),
-      t('compact.pauseHint', { hotkey: hints.pauseMonitoring.keys.toUpperCase() }),
-      // The lock button only exists when App Lock is enabled, so its hint too.
-      ...(lockEnabled ? [t('compact.lockHint', { hotkey: hints.lockNow.keys.toUpperCase() })] : []),
-    ],
-    [t, lockEnabled, hints]
-  );
-  const emojiHints = useMemo(
-    () => [
-      isPinned ? t('emoji.hintPinned') : t('emoji.hintPin'),
-      t('emoji.hintNavigate'),
-      t('emoji.hintSearch'),
-      t('emoji.hintToggle', { emojiHotkey: TITLEBAR_HOTKEYS.emoji.toUpperCase() }),
-    ],
-    [t, isPinned]
-  );
+  // Footer and emoji rotators come from the shared hint module, like the Full
+  // window's HUD, so one file defines every hint of the app.
+  const footerHints = useMemo(() => buildCompactFooterHints(t, lockEnabled), [t, lockEnabled]);
+  const emojiHints = useMemo(() => buildEmojiHints(t, isPinned), [t, isPinned]);
   const activeHints = isEmojiMode ? emojiHints : footerHints;
   const [footerHintIndex, setFooterHintIndex] = useState(0);
 
