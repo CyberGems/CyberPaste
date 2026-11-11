@@ -56,6 +56,7 @@ import {
 } from 'lucide-react';
 import { FolderItem } from '../types';
 import { CONTEXT_MENU_EVENT, type ContextMenuEventDetail } from '../utils/contextMenuEvents';
+import { buildShortcutHints, hintWithHotkey, HUD_HINT_ORDER } from '../utils/shortcutHints';
 import { clsx } from 'clsx';
 import { useTranslation } from 'react-i18next';
 import Tooltip from './Tooltip';
@@ -607,18 +608,9 @@ export const ControlBar: React.FC<ControlBarProps> = ({
     }
   }, [selectedFolder]);
 
-  // ── Shortcut hint cycling ──
-  const HINTS = [
-    { keys: 'Ctrl+F', action: t('common.search') },
-    { keys: 'Enter', action: t('contextMenu.paste') },
-    { keys: 'Del', action: t('common.delete') },
-    { keys: 'Alt+P', action: t('contextMenu.pin') },
-    { keys: TITLEBAR_HOTKEYS.pauseMonitoring, action: t('common.pauseMonitoring') },
-    { keys: TITLEBAR_HOTKEYS.lock, action: t('common.lockNow') },
-    { keys: t('common.ctrlWheelHint', 'Ctrl+Rueda'), action: t('common.zoomShort', 'Zoom') },
-    { keys: 'I', action: t('detailPanel.title') },
-    { keys: 'Esc', action: t('common.close') },
-  ];
+  // ── Shortcut hint cycling (labels and hotkeys come from the shared hint source) ──
+  const hints = buildShortcutHints(t);
+  const HINTS = HUD_HINT_ORDER.map((key) => hints[key]);
   const [hintIndex, setHintIndex] = useState(0);
   useEffect(() => {
     if (!isWindowActive) return;
@@ -687,7 +679,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                     {HINTS[hintIndex].keys}
                   </kbd>
                   <span className="truncate text-muted-foreground/80">
-                    {HINTS[hintIndex].action}
+                    {HINTS[hintIndex].label}
                   </span>
                 </div>
               </div>
@@ -716,13 +708,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             iconSize={15}
           />
           {lockEnabled && onLockNow && (
-            <Tooltip
-              label={t('common.tooltipWithHotkey', {
-                label: t('common.lockNow'),
-                hotkey: TITLEBAR_HOTKEYS.lock,
-              })}
-              placement="bottom"
-            >
+            <Tooltip label={hintWithHotkey(t, hints.lockNow)} placement="bottom">
               <button
                 type="button"
                 onClick={onLockNow}
@@ -734,10 +720,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           )}
 
           <Tooltip
-            label={t('common.tooltipWithHotkey', {
-              label: isPaused ? t('common.resumeMonitoring') : t('common.pauseMonitoring'),
-              hotkey: TITLEBAR_HOTKEYS.pauseMonitoring,
-            })}
+            label={hintWithHotkey(t, isPaused ? hints.resumeMonitoring : hints.pauseMonitoring)}
             placement="bottom"
           >
             <button
@@ -754,13 +737,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             </button>
           </Tooltip>
 
-          <Tooltip
-            label={t('common.tooltipWithHotkey', {
-              label: t('settings.title'),
-              hotkey: TITLEBAR_HOTKEYS.settings,
-            })}
-            placement="bottom"
-          >
+          <Tooltip label={hintWithHotkey(t, hints.settings)} placement="bottom">
             <button onClick={onMoreClick} className={headerBtnClass}>
               <Settings size={15} />
             </button>
@@ -780,10 +757,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
 
           {onTogglePin && (
             <Tooltip
-              label={t('common.tooltipWithHotkey', {
-                label: isPinned ? t('common.unpinWindow') : t('common.pinWindow'),
-                hotkey: TITLEBAR_HOTKEYS.pin,
-              })}
+              label={hintWithHotkey(t, isPinned ? hints.unpinWindow : hints.pinWindow)}
               placement="bottom"
             >
               <button
@@ -831,13 +805,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             </button>
           </Tooltip>
 
-          <Tooltip
-            label={t('common.tooltipWithHotkey', {
-              label: t('common.closeWindow'),
-              hotkey: 'Esc',
-            })}
-            placement="bottom"
-          >
+          <Tooltip label={hintWithHotkey(t, hints.closeWindow)} placement="bottom">
             <button
               onClick={() => {
                 if (onRequestClose) {
@@ -864,8 +832,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         <Tooltip
           label={
             typeToSearch
-              ? t('common.searchTooltipTyping', { hotkey: 'Ctrl+F' })
-              : t('common.tooltipWithHotkey', { label: t('common.search'), hotkey: 'Ctrl+F' })
+              ? t('common.searchTooltipTyping', { hotkey: hints.search.keys })
+              : hintWithHotkey(t, hints.search)
           }
           placement="top"
         >
