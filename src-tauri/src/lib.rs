@@ -1666,6 +1666,27 @@ pub fn is_logical_point_on_any_monitor(window: &tauri::WebviewWindow, x: f64, y:
     false
 }
 
+/// Monitor whose logical bounds contain the given logical point.
+pub fn monitor_for_logical_point(
+    window: &tauri::WebviewWindow,
+    x: f64,
+    y: f64,
+) -> Option<tauri::Monitor> {
+    let Ok(monitors) = window.available_monitors() else {
+        return None;
+    };
+    monitors.into_iter().find(|m| {
+        let scale = m.scale_factor().max(0.1);
+        let pos = m.position();
+        let size = m.size();
+        let lx = pos.x as f64 / scale;
+        let ly = pos.y as f64 / scale;
+        let lw = size.width as f64 / scale;
+        let lh = size.height as f64 / scale;
+        x >= lx && x < lx + lw && y >= ly && y < ly + lh
+    })
+}
+
 /// Canonical theme id. Maps legacy values and unknowns to the supported set.
 pub fn normalize_theme(theme: &str) -> &str {
     match theme {

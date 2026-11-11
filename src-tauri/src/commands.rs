@@ -5261,15 +5261,48 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
         _ => None,
     };
 
-    let position = if let Some(ref_win) = &reference_window {
-        let saved_on_screen = saved_pos
-            .filter(|(x, y)| crate::is_logical_point_on_any_monitor(ref_win, *x, *y));
-        saved_on_screen.or_else(|| {
-            crate::get_monitor_at_cursor(ref_win)
-                .map(|m| crate::logical_center_on_monitor(&m, width, height))
+    // Monitor that owns the viewer: the one holding the saved position, else the
+    // one under the cursor.
+    let viewer_monitor = reference_window.as_ref().and_then(|ref_win| {
+        saved_pos
+            .and_then(|(x, y)| crate::monitor_for_logical_point(ref_win, x, y))
+            .or_else(|| crate::get_monitor_at_cursor(ref_win))
+    });
+
+    // A viewer saved as maximized is built at the target monitor's work area so
+    // the trailing maximize() has nothing to animate: no visible size jump.
+    let maximized_rect = if settings.viewer_window_maximized {
+        viewer_monitor.as_ref().map(|m| {
+            let scale = m.scale_factor().max(0.1);
+            let area = m.work_area();
+            (
+                area.position.x as f64 / scale,
+                area.position.y as f64 / scale,
+                area.size.width as f64 / scale,
+                area.size.height as f64 / scale,
+            )
         })
     } else {
+        None
+    };
+
+    let position = if let Some((x, y, _, _)) = maximized_rect {
+        Some((x, y))
+    } else if let Some(ref_win) = &reference_window {
         saved_pos
+            .filter(|(x, y)| crate::is_logical_point_on_any_monitor(ref_win, *x, *y))
+            .or_else(|| {
+                viewer_monitor
+                    .as_ref()
+                    .map(|m| crate::logical_center_on_monitor(m, width, height))
+            })
+    } else {
+        saved_pos
+    };
+
+    let (initial_width, initial_height) = match maximized_rect {
+        Some((_, _, w, h)) => (w, h),
+        None => (width, height),
     };
 
     let theme_mode = if settings.theme == "dark" || settings.theme == "cyberpaste" {
@@ -5296,7 +5329,7 @@ pub async fn open_image_viewer(app: AppHandle, clip_id: String) -> Result<(), St
         tauri::WebviewUrl::App(format!("index.html?clip_id={}", clip_id).into()),
     )
     .title("CyberPaste Viewer")
-    .inner_size(width, height)
+    .inner_size(initial_width, initial_height)
     .min_inner_size(300.0, 200.0)
     .decorations(false)
     .transparent(false)
