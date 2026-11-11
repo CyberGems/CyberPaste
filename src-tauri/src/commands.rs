@@ -5567,6 +5567,13 @@ static UPDATE_AVAILABLE: AtomicBool = AtomicBool::new(false);
 /// Set when a cold-created window still needs to be positioned+shown by `tray_menu_ready`.
 static TRAY_MENU_PENDING_SHOW: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
+/// Set by the tray's "Check for Update..." when the About window has to be
+/// created fresh: its webview mounts after the action, so the delayed
+/// `about-check-updates` event cannot reach it. The window claims the request
+/// via `consume_about_update_check` once its event listener is live. The value
+/// is the request timestamp in ms; unclaimed entries simply expire.
+static PENDING_ABOUT_UPDATE_CHECK_MS: std::sync::atomic::AtomicU64 =
+    std::sync::atomic::AtomicU64::new(0);
 
 /// Logical width of the menu card (MENU_WIDTH in TrayMenuWindow.tsx).
 const TRAY_MENU_WIDTH: f64 = 268.0;
@@ -5973,6 +5980,19 @@ pub async fn open_about(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+/// Called by the About window once its `about-check-updates` listener is live.
+/// Claims the pending tray "Check for Update..." request if one is still fresh;
+/// returns whether the caller should start an update check right away.
+#[tauri::command]
+pub fn consume_about_update_check() -> bool {
+    let requested_at = PENDING_ABOUT_UPDATE_CHECK_MS.load(Ordering::SeqCst);
+    if requested_at == 0 {
+        return false;
+    }
+    PENDING_ABOUT_UPDATE_CHECK_MS.store(0, Ordering::SeqCst);
+    tray_menu_now_ms().saturating_sub(requested_at) < 30_000
+}
+
 fn open_about_window(app: &AppHandle) {
     if let Some(about_win) = app.get_webview_window("about") {
         crate::suppress_window_border(&about_win);
@@ -6152,12 +6172,25 @@ pub async fn tray_menu_action(app: AppHandle, action: String) -> Result<(), Stri
         }
         "about" => open_about_window(&app),
         "check_updates" => {
+            // An already-open About has its event listener live, so the delayed
+            // event below reaches it. A freshly created one mounts later and
+            // would miss it; in that case record the request and let the new
+            // window claim it on mount (`consume_about_update_check`).
+            let about_is_open = app.get_webview_window("about").is_some();
+            if !about_is_open {
+                PENDING_ABOUT_UPDATE_CHECK_MS.store(
+                    tray_menu_now_ms(),
+                    std::sync::atomic::Ordering::SeqCst,
+                );
+            }
             open_about_window(&app);
-            let handle = app.clone();
-            tauri::async_runtime::spawn(async move {
-                tokio::time::sleep(std::time::Duration::from_millis(400)).await;
-                let _ = handle.emit("about-check-updates", ());
-            });
+            if about_is_open {
+                let handle = app.clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_millis(400)).await;
+                    let _ = handle.emit("about-check-updates", ());
+                });
+            }
         }
         "lock" => {
             crate::app_lock::lock_now(&app);

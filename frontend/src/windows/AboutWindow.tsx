@@ -311,11 +311,30 @@ export function AboutWindow() {
   }, [toggleUpdatePreview]);
 
   useEffect(() => {
-    const unlisten = listen('about-check-updates', () => {
+    let cancelled = false;
+    let unlistenFn: (() => void) | null = null;
+    listen('about-check-updates', () => {
       void checkForUpdates();
-    });
+    })
+      .then((unlisten) => {
+        if (cancelled) {
+          unlisten();
+          return;
+        }
+        unlistenFn = unlisten;
+        // A cold About opened by the tray's "Check for Update..." mounts after
+        // the backend fires its delayed event, so the backend records the
+        // request instead and this fresh window claims it once listening.
+        invoke<boolean>('consume_about_update_check')
+          .then((pending) => {
+            if (!cancelled && pending) void checkForUpdates();
+          })
+          .catch(console.error);
+      })
+      .catch(console.error);
     return () => {
-      unlisten.then((f) => f());
+      cancelled = true;
+      unlistenFn?.();
     };
   }, [checkForUpdates]);
 

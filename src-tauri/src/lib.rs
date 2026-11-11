@@ -953,6 +953,7 @@ pub fn run_app() {
             commands::toggle_clipboard_monitoring,
             commands::is_clipboard_monitoring_paused,
             commands::get_tray_menu_state,
+            commands::consume_about_update_check,
             commands::set_update_available,
             commands::hide_tray_menu,
             commands::tray_menu_ready,
