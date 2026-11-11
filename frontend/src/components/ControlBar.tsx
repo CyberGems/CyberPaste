@@ -1,5 +1,5 @@
 // HMR Force Reload
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import {
   Search,
   Plus,
@@ -119,6 +119,11 @@ const IconMap: Record<string, any> = {
   Smile,
   Sun,
 };
+
+/** Gap kept between the centered HUD pill and the titlebar button groups. */
+const HUD_SIDE_GUTTER = 12;
+/** Below this width a centered pill is unreadable, so it is hidden instead. */
+const HUD_MIN_WIDTH = 120;
 
 interface ControlBarProps {
   folders: FolderItem[];
@@ -621,6 +626,44 @@ export const ControlBar: React.FC<ControlBarProps> = ({
     return () => clearInterval(timer);
   }, [isWindowActive]);
 
+  const titleBarRef = useRef<HTMLDivElement>(null);
+  const titleBarLeadingRef = useRef<HTMLDivElement>(null);
+  const titleBarTrailingRef = useRef<HTMLDivElement>(null);
+  const [hudMaxWidth, setHudMaxWidth] = useState<number | null>(null);
+
+  // The pill is anchored to the real centre of the titlebar. A flex-1 slot
+  // would centre it between the logo and the (much wider) button group, which
+  // pushes it noticeably to the left. Cap its width to the narrowest side gap
+  // so it never sits on top of either group on narrow windows.
+  useLayoutEffect(() => {
+    if (!showHud) return;
+    const bar = titleBarRef.current;
+    const leading = titleBarLeadingRef.current;
+    const trailing = titleBarTrailingRef.current;
+    if (!bar || !leading || !trailing) return;
+
+    const measure = () => {
+      const barRect = bar.getBoundingClientRect();
+      const leadingRect = leading.getBoundingClientRect();
+      const trailingRect = trailing.getBoundingClientRect();
+      const center = barRect.left + barRect.width / 2;
+      const halfRoom =
+        Math.min(center - leadingRect.right, trailingRect.left - center) - HUD_SIDE_GUTTER;
+      setHudMaxWidth(Math.max(0, Math.floor(halfRoom * 2)));
+    };
+
+    measure();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', measure);
+      return () => window.removeEventListener('resize', measure);
+    }
+    const observer = new ResizeObserver(measure);
+    observer.observe(bar);
+    observer.observe(leading);
+    observer.observe(trailing);
+    return () => observer.disconnect();
+  }, [showHud]);
+
   // Titlebar buttons share one hover language: background tint only, no
   // border outline and no glow shadow (see ui/titlebarButtons.ts).
   const headerBtnClass = clsx(TITLEBAR_ICON_BUTTON, 'h-8 w-8 rounded-lg', TITLEBAR_BTN_IDLE);
@@ -637,7 +680,10 @@ export const ControlBar: React.FC<ControlBarProps> = ({
       }}
     >
       {/* ═══ Header — logo, optional info, window actions ═══ */}
-      <div className="relative flex h-11 shrink-0 select-none items-center justify-between overflow-hidden border-b border-border bg-card/65 px-3 backdrop-blur-sm">
+      <div
+        ref={titleBarRef}
+        className="relative flex h-11 shrink-0 select-none items-center justify-between overflow-hidden border-b border-border bg-card/65 px-3 backdrop-blur-sm"
+      >
         <HudKeyframes />
         {titleBarAnimationEnabled && (
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -652,7 +698,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           </div>
         )}
 
-        <div className="z-10 flex shrink-0 items-center gap-2">
+        <div ref={titleBarLeadingRef} className="z-10 flex shrink-0 items-center gap-2">
           <Tooltip label={t('common.openAbout')} placement="bottom">
             <button
               type="button"
@@ -668,12 +714,16 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           </Tooltip>
         </div>
 
-        {showHud && (
-          <div className="z-10 mx-3 hidden min-w-0 flex-1 items-center justify-center sm:flex">
+        {showHud && hudMaxWidth !== null && hudMaxWidth >= HUD_MIN_WIDTH && (
+          <div className="absolute inset-y-0 left-1/2 z-10 hidden -translate-x-1/2 items-center sm:flex">
             <Tooltip label={t('common.keyboardShortcuts')} placement="bottom">
               {/* All hints stacked in one grid cell: the widest one sizes the pill,
-                  so nothing truncates and the width never jumps while rotating. */}
-              <div className="grid max-w-full items-center justify-center rounded-lg border border-border/60 bg-secondary/20 px-2 py-1 text-[10px] text-muted-foreground/70">
+                  so the width never jumps while rotating. The measured max width
+                  keeps it centered and lets labels truncate on narrow windows. */}
+              <div
+                className="grid min-w-0 grid-cols-[minmax(0,1fr)] items-center overflow-hidden rounded-lg border border-border/60 bg-secondary/20 px-2 py-1 text-[10px] text-muted-foreground/70"
+                style={{ maxWidth: hudMaxWidth }}
+              >
                 {HINTS.map((hint, i) => {
                   const visible = i === hintIndex % HINTS.length;
                   return (
@@ -689,7 +739,9 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                       <kbd className="shrink-0 rounded border border-primary/25 bg-primary/10 px-1.5 py-0.5 font-mono font-bold leading-none text-primary">
                         {hint.keys}
                       </kbd>
-                      <span className="truncate text-muted-foreground/80">{hint.label}</span>
+                      <span className="min-w-0 truncate text-muted-foreground/80">
+                        {hint.label}
+                      </span>
                     </div>
                   );
                 })}
@@ -698,9 +750,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           </div>
         )}
 
-        {!showHud && <div className="min-w-0 flex-1" />}
-
-        <div className="z-10 flex shrink-0 items-center gap-0.5">
+        <div ref={titleBarTrailingRef} className="z-10 flex shrink-0 items-center gap-0.5">
           <TitleBarUpdateButton
             visible={updateAvailable}
             version={updateVersion}
