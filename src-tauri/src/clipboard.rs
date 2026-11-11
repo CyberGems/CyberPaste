@@ -582,12 +582,13 @@ async fn process_clipboard_change(
                             let html = maybe_html.unwrap();
                             clip_content = html.as_bytes().to_vec();
                             clip_hash = calculate_hash(&clip_content);
-                            clip_type = "html";
+                            clip_type = "code";
                             clip_preview = strip_html_tags(&html)
                                 .chars()
                                 .take(200)
                                 .collect::<String>();
-                            metadata = serde_json::json!({"format": "html"}).to_string();
+                            metadata =
+                                serde_json::json!({"format": "html", "language": "html"}).to_string();
                             found_content = true;
                             log::debug!("CLIPBOARD: Found structural rich HTML: {}", clip_preview);
                         } else {
@@ -614,12 +615,13 @@ async fn process_clipboard_change(
                     if is_rich_html(&html) {
                         clip_content = html.as_bytes().to_vec();
                         clip_hash = calculate_hash(&clip_content);
-                        clip_type = "html";
+                        clip_type = "code";
                         clip_preview = strip_html_tags(&html)
                             .chars()
                             .take(200)
                             .collect::<String>();
-                        metadata = serde_json::json!({"format": "html"}).to_string();
+                        metadata =
+                            serde_json::json!({"format": "html", "language": "html"}).to_string();
                         found_content = true;
                         log::debug!("CLIPBOARD: Found standalone HTML: {}", clip_preview);
                     } else {
@@ -1748,14 +1750,13 @@ pub fn collapse_presentation_html(
     clip_type: &str,
     content: &[u8],
 ) -> Option<(String, &'static str, String)> {
-    if !matches!(clip_type, "html" | "code" | "text" | "rtf") {
+    if !matches!(clip_type, "code" | "text" | "rtf") {
         return None;
     }
     let raw = String::from_utf8_lossy(content);
     let trimmed = raw.trim();
-    let looks_like_html = clip_type == "html"
-        || trimmed.contains("StartFragment")
-        || (trimmed.contains('<') && trimmed.contains("</"));
+    let looks_like_html =
+        trimmed.contains("StartFragment") || (trimmed.contains('<') && trimmed.contains("</"));
     if !looks_like_html || is_structural_rich_html(trimmed) {
         return None;
     }
@@ -2442,7 +2443,7 @@ mod tests {
     fn styled_html_fragment_collapses_to_plain_text() {
         let html = r#"<html><body><!--StartFragment--><span style="color: rgb(237, 237, 237); font-family: Segoe UI;">Continúa por favor</span><!--EndFragment--></body></html>"#;
         let (plain, kind, preview) =
-            collapse_presentation_html("html", html.as_bytes()).expect("should collapse");
+            collapse_presentation_html("code", html.as_bytes()).expect("should collapse");
         assert_eq!(plain, "Continúa por favor");
         assert_eq!(kind, "text");
         assert_eq!(preview, "Continúa por favor");
@@ -2451,7 +2452,7 @@ mod tests {
     #[test]
     fn structural_html_is_kept() {
         let html = "<table><tr><td>A</td><td>B</td></tr></table>";
-        assert!(collapse_presentation_html("html", html.as_bytes()).is_none());
+        assert!(collapse_presentation_html("code", html.as_bytes()).is_none());
     }
 
     #[test]

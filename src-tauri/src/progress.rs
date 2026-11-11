@@ -233,10 +233,9 @@ const ACHIEVEMENTS: &[AchievementDefinition] = &[
     AchievementDefinition {
         id: "all_types",
         metric: AchievementMetric::AllTypes,
-        // RTF never becomes a primary clip type (RTF sources are converted to
-        // text/url/code), so only six of the tracked columns can ever exceed
-        // zero. Targeting all six keeps the achievement reachable.
-        target: 6,
+        // Five primary clip types exist (HTML lives inside the code category
+        // and RTF sources always convert), so this targets all five.
+        target: 5,
     },
 ];
 
@@ -413,8 +412,9 @@ fn captured_type_column(clip_type: &str) -> Option<&'static str> {
         "code" => Some("captured_code"),
         "url" => Some("captured_url"),
         "file" => Some("captured_file"),
-        "html" => Some("captured_html"),
-        "rtf" => Some("captured_rtf"),
+        // The legacy captured_html/captured_rtf columns stay in the schema but
+        // are frozen: HTML is part of the code category and RTF sources always
+        // convert to text/url/code.
         _ => None,
     }
 }
@@ -442,15 +442,15 @@ async fn unlock_achievements(
             .await?
             .into_iter()
             .collect();
-    // Same six primary types as the all_types achievement target: RTF is a
-    // source format that always converts, so captured_rtf stays at zero.
+    // Same five primary types as the all_types achievement target: HTML lives
+    // inside code and RTF sources always convert, so captured_html/captured_rtf
+    // stay at zero.
     let all_types = [
         totals.captured_text,
         totals.captured_image,
         totals.captured_code,
         totals.captured_url,
         totals.captured_file,
-        totals.captured_html,
     ]
     .iter()
     .filter(|count| **count > 0)
@@ -571,7 +571,6 @@ pub async fn progress_data(
         snapshot.totals.captured_code,
         snapshot.totals.captured_url,
         snapshot.totals.captured_file,
-        snapshot.totals.captured_html,
     ]
     .iter()
     .filter(|count| **count > 0)

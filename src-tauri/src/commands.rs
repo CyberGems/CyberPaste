@@ -162,8 +162,10 @@ pub async fn copy_clip_text(
         Some(clip) => {
             let plain_text = match clip.clip_type.as_str() {
                 "image" | "file" => return Err("Clip has no text content".to_string()),
-                "html" => crate::clipboard::strip_html_tags(&String::from_utf8_lossy(&clip.content)),
                 "rtf" => crate::clipboard::strip_rtf_tags(&String::from_utf8_lossy(&clip.content)),
+                _ if clip_is_rich_html(&clip) => {
+                    crate::clipboard::strip_html_tags(&String::from_utf8_lossy(&clip.content))
+                }
                 _ => String::from_utf8_lossy(&clip.content).to_string(),
             };
 
@@ -237,10 +239,10 @@ pub async fn ai_process_clip(
         .map_err(|e| e.to_string())?
         .ok_or("Clip not found")?;
 
-    let text_content = if clip.clip_type == "text" || clip.clip_type == "url" || clip.clip_type == "code" {
-        String::from_utf8_lossy(&clip.content).to_string()
-    } else if clip.clip_type == "html" {
+    let text_content = if clip_is_rich_html(&clip) {
         crate::clipboard::strip_html_tags(&String::from_utf8_lossy(&clip.content))
+    } else if clip.clip_type == "text" || clip.clip_type == "url" || clip.clip_type == "code" {
+        String::from_utf8_lossy(&clip.content).to_string()
     } else if clip.clip_type == "rtf" {
         crate::clipboard::strip_rtf_tags(&String::from_utf8_lossy(&clip.content))
     } else {
@@ -982,12 +984,13 @@ pub enum ClipTypeFilter {
     File,
 }
 
-/// Types matched by the filter. `code` groups code+html (matches frontend semantics).
+/// Types matched by the filter. HTML lives inside the code category, stored
+/// as `code` clips with `{"format":"html"}` metadata.
 fn type_matches_filter(filter: &Option<ClipTypeFilter>) -> Vec<&'static str> {
     match filter {
         None | Some(ClipTypeFilter::All) => Vec::new(),
         Some(ClipTypeFilter::Text) => vec!["text"],
-        Some(ClipTypeFilter::Code) => vec!["code", "html"],
+        Some(ClipTypeFilter::Code) => vec!["code"],
         Some(ClipTypeFilter::Image) => vec!["image"],
         Some(ClipTypeFilter::Url) => vec!["url"],
         Some(ClipTypeFilter::File) => vec!["file"],
@@ -1316,7 +1319,7 @@ pub async fn paste_clip(
                 if !last_err.is_empty() {
                     final_res = Err(format!("Failed to set clipboard files: {}", last_err));
                 }
-            } else if clip.clip_type == "html" {
+            } else if clip_is_rich_html(&clip) {
                 let html_content = String::from_utf8_lossy(&clip.content).to_string();
                 let plain_text = crate::clipboard::strip_html_tags(&html_content);
                 crate::clipboard::set_ignore_hash(content_hash.clone());
@@ -1546,8 +1549,8 @@ pub async fn paste_clip(
                 let content = if clip.clip_type == "image" {
                     "[Image]".to_string()
                 } else if clip.clip_type == "file"
-                    || clip.clip_type == "html"
                     || clip.clip_type == "rtf"
+                    || clip_is_rich_html(&clip)
                 {
                     clip.text_preview.clone()
                 } else {
@@ -1685,7 +1688,7 @@ pub async fn copy_clip(
                 if !last_err.is_empty() {
                     final_res = Err(format!("Failed to set clipboard files: {}", last_err));
                 }
-            } else if clip.clip_type == "html" {
+            } else if clip_is_rich_html(&clip) {
                 let html_content = String::from_utf8_lossy(&clip.content).to_string();
                 let plain_text = crate::clipboard::strip_html_tags(&html_content);
                 let mut last_err = String::new();
@@ -3407,14 +3410,12 @@ pub async fn get_clip_stats(
     let pool = &db.pool;
 
     let row = sqlx::query(
-        r#"SELECT 
+        r#"SELECT
             COUNT(*) as total,
             SUM(CASE WHEN clip_type = 'image' THEN 1 ELSE 0 END) as images,
             SUM(CASE WHEN clip_type = 'text' THEN 1 ELSE 0 END) as text,
             SUM(CASE WHEN clip_type = 'code' THEN 1 ELSE 0 END) as code,
             SUM(CASE WHEN clip_type = 'file' THEN 1 ELSE 0 END) as files,
-            SUM(CASE WHEN clip_type = 'html' THEN 1 ELSE 0 END) as html,
-            SUM(CASE WHEN clip_type = 'rtf' THEN 1 ELSE 0 END) as rtf,
             COALESCE(SUM(CASE WHEN clip_type = 'url' THEN 1 ELSE 0 END), 0) as urls
          FROM clips WHERE is_deleted = 0 AND folder_id IS NULL"#,
     )
@@ -3427,9 +3428,7 @@ pub async fn get_clip_stats(
     let text: i64 = row.get(2);
     let code: i64 = row.get(3);
     let files: i64 = row.get(4);
-    let html: i64 = row.get(5);
-    let rtf: i64 = row.get(6);
-    let urls: i64 = row.get(7);
+    let urls: i64 = row.get(5);
 
     Ok(serde_json::json!({
         "total": total,
@@ -3437,8 +3436,6 @@ pub async fn get_clip_stats(
         "text": text,
         "code": code,
         "files": files,
-        "html": html,
-        "rtf": rtf,
         "urls": urls
     }))
 }
@@ -4207,12 +4204,24 @@ fn metadata_object(clip: &Clip) -> serde_json::Map<String, serde_json::Value> {
 
 fn text_export_extension(clip: &Clip) -> &'static str {
     let metadata = metadata_object(clip);
+    if metadata.get("format").and_then(|v| v.as_str()) == Some("html") {
+        return "html";
+    }
     match clip.clip_type.as_str() {
-        "html" => "html",
         "rtf" if metadata.get("converted") != Some(&serde_json::Value::Bool(true)) => "rtf",
         "url" => "url",
         _ => "txt",
     }
+}
+
+/// True when the clip stores raw HTML content from the clipboard's HTML
+/// flavor. HTML lives inside the code category; the format metadata keeps the
+/// rich behaviors (paste as HTML, rendered preview, .html export) working.
+fn clip_is_rich_html(clip: &Clip) -> bool {
+    metadata_object(clip)
+        .get("format")
+        .and_then(|v| v.as_str())
+        == Some("html")
 }
 
 fn available_export_path(folder: &Path, file_name: &str) -> std::path::PathBuf {
@@ -4835,7 +4844,7 @@ pub async fn show_toast(
     app: AppHandle,
     message: String,
     toast_type: String,            // "success", "error", "info", "update"
-    clip_type: Option<String>,     // "text", "image", "html", "rtf", "file", "url"
+    clip_type: Option<String>,     // "text", "image", "code", "rtf", "file", "url"
     image_preview: Option<String>, // base64 encoded tiny thumbnail for images
     clip_uuid: Option<String>,
     source_app: Option<String>,
@@ -4988,7 +4997,7 @@ async fn dispatch_toast(app: AppHandle, payload: ToastPayload) -> Result<(), Str
             || payload.image_preview.is_some()
             || matches!(
                 payload.clip_type.as_deref(),
-                Some("text" | "image" | "html" | "rtf" | "file" | "url" | "code")
+                Some("text" | "image" | "rtf" | "file" | "url" | "code")
             );
         if clip_like {
             return Ok(());

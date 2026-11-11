@@ -768,6 +768,15 @@ impl Database {
         .execute(&self.pool)
         .await;
 
+        // Normalize any legacy HTML clips to code (HTML lives in the code category)
+        let _ = sqlx::query(
+            r#"
+            UPDATE clips SET clip_type = 'code' WHERE clip_type = 'html'
+            "#,
+        )
+        .execute(&self.pool)
+        .await;
+
         sqlx::query(
             r#"
             CREATE TABLE IF NOT EXISTS clip_images (

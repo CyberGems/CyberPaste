@@ -39,7 +39,7 @@ pub fn normalize_storage_quota_bytes(value: i64) -> i64 {
 }
 
 pub fn is_text_clip_type(clip_type: &str) -> bool {
-    matches!(clip_type, "text" | "url" | "code" | "html" | "rtf")
+    matches!(clip_type, "text" | "url" | "code" | "rtf")
 }
 
 #[derive(Debug, Clone, Serialize)]
