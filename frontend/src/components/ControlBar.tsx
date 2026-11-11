@@ -671,20 +671,28 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         {showHud && (
           <div className="z-10 mx-3 hidden min-w-0 flex-1 items-center justify-center sm:flex">
             <Tooltip label={t('common.keyboardShortcuts')} placement="bottom">
-              <div className="flex w-[156px] items-center justify-center gap-1.5 rounded-lg border border-border/60 bg-secondary/20 px-2 py-1 text-[10px] text-muted-foreground/70">
-                <Keyboard size={11} className="flex-shrink-0 text-muted-foreground/50" />
-                <div
-                  key={hintIndex}
-                  className="flex min-w-0 items-center gap-1.5"
-                  style={{ animation: 'hud-hint-fade 0.5s ease-out' }}
-                >
-                  <kbd className="shrink-0 rounded border border-primary/25 bg-primary/10 px-1.5 py-0.5 font-mono font-bold leading-none text-primary">
-                    {HINTS[hintIndex % HINTS.length].keys}
-                  </kbd>
-                  <span className="truncate text-muted-foreground/80">
-                    {HINTS[hintIndex % HINTS.length].label}
-                  </span>
-                </div>
+              {/* All hints stacked in one grid cell: the widest one sizes the pill,
+                  so nothing truncates and the width never jumps while rotating. */}
+              <div className="grid max-w-full items-center justify-center rounded-lg border border-border/60 bg-secondary/20 px-2 py-1 text-[10px] text-muted-foreground/70">
+                {HINTS.map((hint, i) => {
+                  const visible = i === hintIndex % HINTS.length;
+                  return (
+                    <div
+                      key={`${hint.keys}-${hint.label}`}
+                      className={clsx(
+                        'flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap [grid-area:1/1]',
+                        !visible && 'invisible'
+                      )}
+                      style={{ animation: visible ? 'hud-hint-fade 0.5s ease-out' : undefined }}
+                    >
+                      <Keyboard size={11} className="flex-shrink-0 text-muted-foreground/50" />
+                      <kbd className="shrink-0 rounded border border-primary/25 bg-primary/10 px-1.5 py-0.5 font-mono font-bold leading-none text-primary">
+                        {hint.keys}
+                      </kbd>
+                      <span className="truncate text-muted-foreground/80">{hint.label}</span>
+                    </div>
+                  );
+                })}
               </div>
             </Tooltip>
           </div>
