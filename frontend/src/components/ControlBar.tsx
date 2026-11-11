@@ -609,8 +609,11 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   }, [selectedFolder]);
 
   // ── Shortcut hint cycling (labels and hotkeys come from the shared hint source) ──
-  const hints = buildShortcutHints(t);
-  const HINTS = HUD_HINT_ORDER.map((key) => hints[key]);
+  const hints = buildShortcutHints(t, hotkey);
+  const HINTS = HUD_HINT_ORDER.flatMap((key) => {
+    const hint = hints[key];
+    return hint ? [hint] : [];
+  });
   const [hintIndex, setHintIndex] = useState(0);
   useEffect(() => {
     if (!isWindowActive) return;
@@ -666,7 +669,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         </div>
 
         {showHud && (
-          <div className="z-10 mx-3 hidden min-w-0 flex-1 items-center justify-center gap-2 sm:flex">
+          <div className="z-10 mx-3 hidden min-w-0 flex-1 items-center justify-center sm:flex">
             <Tooltip label={t('common.keyboardShortcuts')} placement="bottom">
               <div className="flex w-[156px] items-center justify-center gap-1.5 rounded-lg border border-border/60 bg-secondary/20 px-2 py-1 text-[10px] text-muted-foreground/70">
                 <Keyboard size={11} className="flex-shrink-0 text-muted-foreground/50" />
@@ -676,25 +679,14 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                   style={{ animation: 'hud-hint-fade 0.5s ease-out' }}
                 >
                   <kbd className="shrink-0 rounded border border-primary/25 bg-primary/10 px-1.5 py-0.5 font-mono font-bold leading-none text-primary">
-                    {HINTS[hintIndex].keys}
+                    {HINTS[hintIndex % HINTS.length].keys}
                   </kbd>
                   <span className="truncate text-muted-foreground/80">
-                    {HINTS[hintIndex].label}
+                    {HINTS[hintIndex % HINTS.length].label}
                   </span>
                 </div>
               </div>
             </Tooltip>
-
-            {hotkey && (
-              <>
-                <div className="h-3 w-px bg-border" />
-                <Tooltip label={t('common.globalHotkey')} placement="bottom">
-                  <span className="rounded border border-primary/20 bg-primary/10 px-1.5 py-px font-mono text-[10px] font-bold text-primary">
-                    {hotkey}
-                  </span>
-                </Tooltip>
-              </>
-            )}
           </div>
         )}
 

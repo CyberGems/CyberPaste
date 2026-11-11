@@ -9,6 +9,8 @@ export interface ShortcutHint {
 }
 
 export interface ShortcutHints {
+  /** Global hotkey that shows/hides the window; only present when configured */
+  summon?: ShortcutHint;
   search: ShortcutHint;
   paste: ShortcutHint;
   delete: ShortcutHint;
@@ -29,7 +31,8 @@ export interface ShortcutHints {
  * Feeds both the rotating HUD in the title bar (ControlBar) and the fixed
  * button tooltips, so the two can never drift apart again.
  */
-export const buildShortcutHints = (t: TFunction): ShortcutHints => ({
+export const buildShortcutHints = (t: TFunction, globalHotkey?: string | null): ShortcutHints => ({
+  ...(globalHotkey ? { summon: { keys: globalHotkey, label: t('common.showHide') } } : {}),
   search: { keys: 'Ctrl+F', label: t('common.search') },
   paste: { keys: 'Enter', label: t('contextMenu.paste') },
   delete: { keys: 'Del', label: t('common.delete') },
@@ -45,8 +48,10 @@ export const buildShortcutHints = (t: TFunction): ShortcutHints => ({
   closeWindow: { keys: 'Esc', label: t('common.closeWindow') },
 });
 
-/** Order the rotating HUD hint cycles through. */
+/** Order the rotating HUD hint cycles through. Entries without a configured
+ *  value (e.g. `summon` when no global hotkey is set) are skipped. */
 export const HUD_HINT_ORDER: readonly (keyof ShortcutHints)[] = [
+  'summon',
   'search',
   'paste',
   'delete',

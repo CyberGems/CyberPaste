@@ -111,6 +111,7 @@ import {
   TITLEBAR_ICON_BUTTON,
 } from './ui/titlebarButtons';
 import { TITLEBAR_HOTKEYS } from '../hooks/useKeyboard';
+import { buildShortcutHints, hintWithHotkey } from '../utils/shortcutHints';
 import { de, enUS, es, fr, ja, zhCN } from 'date-fns/locale';
 import { List, useListRef, type RowComponentProps } from 'react-window';
 import { CONTEXT_MENU_EVENT, type ContextMenuEventDetail } from '../utils/contextMenuEvents';
@@ -733,6 +734,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
   onPasteEmoji,
 }) => {
   const { t } = useTranslation();
+  const hints = buildShortcutHints(t);
   const [emojiCategory, setEmojiCategory] = useState<string>('recent');
 
   useEffect(() => {
@@ -1694,10 +1696,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
 
           {onTogglePin && (
             <Tooltip
-              label={t('common.tooltipWithHotkey', {
-                label: isPinned ? t('common.unpinWindowShort') : t('common.pinWindowShort'),
-                hotkey: TITLEBAR_HOTKEYS.pin,
-              })}
+              label={hintWithHotkey(t, isPinned ? hints.unpinWindow : hints.pinWindow)}
               placement="bottom"
             >
               <button
