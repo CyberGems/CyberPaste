@@ -628,13 +628,11 @@ function TrayItem({
           : compact
             ? 'min-h-[26px] px-2.5 py-1'
             : 'min-h-[30px] px-2.5 py-1.5',
-        danger
-          ? 'hover:bg-rose-500/12 text-foreground/90 hover:text-foreground'
-          : warning
-            ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500/15 hover:text-amber-400'
-            : compact
-              ? 'text-foreground/90 hover:bg-primary/10 hover:text-foreground'
-              : 'text-foreground/90 hover:translate-x-0.5 hover:bg-primary/10 hover:text-foreground',
+        warning
+          ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500/15 hover:text-amber-400'
+          : compact
+            ? 'text-foreground/90 hover:bg-primary/10 hover:text-foreground'
+            : 'text-foreground/90 hover:translate-x-0.5 hover:bg-primary/10 hover:text-foreground',
         'active:scale-[0.98]'
       )}
     >
