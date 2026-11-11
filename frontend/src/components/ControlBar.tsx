@@ -67,6 +67,7 @@ import { useFolderFlash } from '../hooks/useFolderFlash';
 import { useHoldToScroll } from '../hooks/useHoldToScroll';
 import { TITLEBAR_HOTKEYS } from '../hooks/useKeyboard';
 import { useClipboardMonitoring } from '../hooks/useClipboardMonitoring';
+import { useRotatingIndex } from '../hooks/useRotatingIndex';
 import {
   TITLEBAR_BTN_DANGER,
   TITLEBAR_BTN_IDLE,
@@ -619,12 +620,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
     const hint = hints[key];
     return hint ? [hint] : [];
   });
-  const [hintIndex, setHintIndex] = useState(0);
-  useEffect(() => {
-    if (!isWindowActive) return;
-    const timer = setInterval(() => setHintIndex((i) => (i + 1) % HINTS.length), 4000);
-    return () => clearInterval(timer);
-  }, [isWindowActive]);
+  const hintIndex = useRotatingIndex(HINTS.length, 4000, isWindowActive);
 
   const titleBarRef = useRef<HTMLDivElement>(null);
   const titleBarLeadingRef = useRef<HTMLDivElement>(null);

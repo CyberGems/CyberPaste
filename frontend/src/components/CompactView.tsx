@@ -129,6 +129,7 @@ import { useHoldToScroll } from '../hooks/useHoldToScroll';
 import { useDeleteFlash } from '../hooks/useDeleteFlash';
 import { useClipboardMonitoring } from '../hooks/useClipboardMonitoring';
 import { usePeekPointerArm } from '../hooks/usePeekPointerArm';
+import { useRotatingIndex } from '../hooks/useRotatingIndex';
 import {
   isListHoverLocked,
   subscribeListHoverLock,
@@ -776,18 +777,12 @@ export const CompactView: React.FC<CompactViewProps> = ({
   // window's HUD, so one file defines every hint of the app.
   const footerHints = useMemo(() => buildCompactFooterHints(t, lockEnabled), [t, lockEnabled]);
   const emojiHints = useMemo(() => buildEmojiHints(t, isPinned), [t, isPinned]);
-  const activeHints = isEmojiMode ? emojiHints : footerHints;
-  const [footerHintIndex, setFooterHintIndex] = useState(0);
-
-  useEffect(() => {
-    setFooterHintIndex(0);
-  }, [isEmojiMode]);
-
-  useEffect(() => {
-    if (!isWindowActive) return;
-    const timer = setInterval(() => setFooterHintIndex((i) => (i + 1) % activeHints.length), 6000);
-    return () => clearInterval(timer);
-  }, [isWindowActive, activeHints.length]);
+  const footerHintIndex = useRotatingIndex(
+    (isEmojiMode ? emojiHints : footerHints).length,
+    6000,
+    isWindowActive,
+    isEmojiMode
+  );
 
   const brandingDragRef = useRef({ isDown: false, startX: 0, startY: 0, dragged: false });
 
