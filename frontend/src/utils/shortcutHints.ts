@@ -72,7 +72,8 @@ export const hintWithHotkey = (t: TFunction, hint: ShortcutHint): string =>
  * Compact window's rotating footer hints, as plain inline strings with the
  * hotkeys already embedded in the label. Peek and emoji have no shared-record
  * entry: their button tooltips are state-dependent, so they come straight from
- * TITLEBAR_HOTKEYS. Pause and lock keys still flow through buildShortcutHints.
+ * TITLEBAR_HOTKEYS. Pause and lock keys still flow through buildShortcutHints,
+ * and the wheel combo reuses the same translation the Full zoom hint uses.
  */
 export const buildCompactFooterHints = (t: TFunction, lockEnabled: boolean): string[] => {
   const hints = buildShortcutHints(t);
@@ -80,7 +81,7 @@ export const buildCompactFooterHints = (t: TFunction, lockEnabled: boolean): str
     t('compact.typeToSearch'),
     t('compact.arrowsFolders'),
     t('compact.peekHint', { hotkey: TITLEBAR_HOTKEYS.peek.toUpperCase() }),
-    t('compact.densityHint'),
+    t('compact.densityHint', { hotkey: t('common.ctrlWheelHint', 'Ctrl+Wheel').toUpperCase() }),
     t('compact.pauseHint', { hotkey: hints.pauseMonitoring.keys.toUpperCase() }),
     // The lock button only exists when App Lock is enabled, so its hint too.
     ...(lockEnabled ? [t('compact.lockHint', { hotkey: hints.lockNow.keys.toUpperCase() })] : []),
