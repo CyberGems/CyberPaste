@@ -1128,6 +1128,7 @@ async fn process_clipboard_change(
         let settings = manager.get();
         if settings.clipboard_sound_enabled
             && !crate::quiet_hours::is_active(&settings)
+            && !settings.notifications_paused()
             && (!was_existing || settings.duplicate_toast_enabled)
             && !(was_existing && is_self_app)
         {

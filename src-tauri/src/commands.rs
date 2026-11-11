@@ -1900,7 +1900,10 @@ pub async fn copy_clip(
             }
 
             // Play clipboard sound if enabled
-            if settings.clipboard_sound_enabled && !crate::quiet_hours::is_active(&settings) {
+            if settings.clipboard_sound_enabled
+                && !crate::quiet_hours::is_active(&settings)
+                && !settings.notifications_paused()
+            {
                 let _ = play_clipboard_sound(settings.clipboard_sound_path.clone());
             }
 
@@ -4824,7 +4827,10 @@ pub async fn toast_ready(
             use std::sync::Arc;
             let manager = app.state::<Arc<SettingsManager>>();
             let settings = manager.get();
-            if settings.startup_sound_enabled && !crate::quiet_hours::is_active(&settings) {
+            if settings.startup_sound_enabled
+                && !crate::quiet_hours::is_active(&settings)
+                && !settings.notifications_paused()
+            {
                 let path_to_play = if settings.startup_sound_path.is_empty() {
                     let data_dir = crate::get_data_dir();
                     data_dir.join("activation_sound.wav").to_string_lossy().to_string()
@@ -5031,7 +5037,10 @@ async fn dispatch_toast(app: AppHandle, payload: ToastPayload) -> Result<(), Str
         // If this is the welcome toast and the window already exists, play the sound immediately
         if is_welcome {
             let settings = manager.get();
-            if settings.startup_sound_enabled && !crate::quiet_hours::is_active(&settings) {
+            if settings.startup_sound_enabled
+                && !crate::quiet_hours::is_active(&settings)
+                && !settings.notifications_paused()
+            {
                 let path_to_play = if settings.startup_sound_path.is_empty() {
                     let data_dir = crate::get_data_dir();
                     data_dir.join("activation_sound.wav").to_string_lossy().to_string()
