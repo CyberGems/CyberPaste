@@ -77,17 +77,7 @@
     "deselect": "Deselect",
     "undoDelete": "Undo deletion",
     "pauseMonitoring": "Pause Monitoring",
-    "resumeMonitoring": "Resume Monitoring",
-    "pauseNotifications": "Pause Notifications",
-    "resumeNotifications": "Resume Notifications",
-    "pausedUntil": "Paused until {{time}}",
-    "pausedPermanently": "Paused until you turn them back on",
-    "pause1h": "For 1 hour",
-    "pause6h": "For 6 hours",
-    "pause12h": "For 12 hours",
-    "pause24h": "For 24 hours",
-    "pause24hSuggested": "Suggested",
-    "pausePermanent": "Until I turn them back on"
+    "resumeMonitoring": "Resume Monitoring"
   },
   "closeDialog": {
     "title": "Close Window",
@@ -151,7 +141,19 @@
     "suiteMore": "More details online...",
     "suiteAll": "View all at cybergems.org",
     "back": "Back",
-    "pinTrayIcon": "Pin icon to taskbar..."
+    "pinTrayIcon": "Pin icon to taskbar...",
+    "pauseNotifications": "Pause Notifications",
+    "resumeNotifications": "Resume Notifications",
+    "pausedUntil": "Paused until {{time}}",
+    "pausedPermanently": "Paused until you turn them back on",
+    "pause1h": "For 1 hour",
+    "pause6h": "For 6 hours",
+    "pause12h": "For 12 hours",
+    "pause24h": "For 24 hours",
+    "pause24hSuggested": "Suggested",
+    "pausePermanent": "Until I turn them back on",
+    "lock": "Lock now",
+    "unlock": "Unlock..."
   },
   "trayPinTip": {
     "title": "Keep CyberPaste visible in the tray",

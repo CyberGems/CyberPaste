@@ -77,17 +77,7 @@
     "deselect": "Deseleccionar",
     "undoDelete": "Deshacer eliminación",
     "pauseMonitoring": "Pausar monitoreo",
-    "resumeMonitoring": "Reanudar monitoreo",
-    "pauseNotifications": "Pausar notificaciones",
-    "resumeNotifications": "Reanudar notificaciones",
-    "pausedUntil": "Pausadas hasta las {{time}}",
-    "pausedPermanently": "Pausadas hasta que las reactives",
-    "pause1h": "Por 1 hora",
-    "pause6h": "Por 6 horas",
-    "pause12h": "Por 12 horas",
-    "pause24h": "Por 24 horas",
-    "pause24hSuggested": "Sugerida",
-    "pausePermanent": "Hasta que las reactive"
+    "resumeMonitoring": "Reanudar monitoreo"
   },
   "closeDialog": {
     "title": "Cerrar ventana",
@@ -151,7 +141,19 @@
     "suiteMore": "Más detalles online...",
     "suiteAll": "Ver todas en cybergems.org",
     "back": "Atrás",
-    "pinTrayIcon": "Fijar icono en la bandeja..."
+    "pinTrayIcon": "Fijar icono en la bandeja...",
+    "pauseNotifications": "Pausar notificaciones",
+    "resumeNotifications": "Reanudar notificaciones",
+    "pausedUntil": "Pausadas hasta las {{time}}",
+    "pausedPermanently": "Pausadas hasta que las reactives",
+    "pause1h": "Por 1 hora",
+    "pause6h": "Por 6 horas",
+    "pause12h": "Por 12 horas",
+    "pause24h": "Por 24 horas",
+    "pause24hSuggested": "Sugerida",
+    "pausePermanent": "Hasta que las reactive",
+    "lock": "Bloquear ahora",
+    "unlock": "Desbloquear..."
   },
   "trayPinTip": {
     "title": "Mantén CyberPaste visible en la bandeja",
