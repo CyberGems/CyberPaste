@@ -34,7 +34,6 @@
     "image": "Image",
     "url": "URL",
     "file": "Fichier",
-    "html": "HTML",
     "rtf": "Texte enrichi"
   },
   "detailPanel": {

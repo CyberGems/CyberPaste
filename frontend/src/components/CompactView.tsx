@@ -356,7 +356,7 @@ const TypeFilterDropdown: React.FC<{
 
 export const matchesTypeFilter = (clipType: string, filter: CompactTypeFilter): boolean => {
   if (filter === 'all') return true;
-  if (filter === 'code') return clipType === 'code' || clipType === 'html' || clipType === 'rtf';
+  if (filter === 'code') return clipType === 'code' || clipType === 'rtf';
   if (filter === 'text') return clipType === 'text';
   return clipType === filter;
 };
@@ -998,7 +998,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
     let file = 0;
     clips.forEach((c) => {
       if (c.clip_type === 'text') text++;
-      else if (c.clip_type === 'code' || c.clip_type === 'html' || c.clip_type === 'rtf') code++;
+      else if (c.clip_type === 'code' || c.clip_type === 'rtf') code++;
       else if (c.clip_type === 'image') image++;
       else if (c.clip_type === 'url') url++;
       else if (c.clip_type === 'file') file++;
@@ -1381,7 +1381,6 @@ export const CompactView: React.FC<CompactViewProps> = ({
         clip.clip_type === 'text' ||
         clip.clip_type === 'code' ||
         clip.clip_type === 'url' ||
-        clip.clip_type === 'html' ||
         clip.clip_type === 'rtf' ||
         clip.clip_type === 'file';
       const previewText = (clip.preview || '').trim();
@@ -2731,7 +2730,7 @@ const ClipRow = memo(function ClipRow({
     if (clip.clip_type === 'file') return t('common.file') || 'File';
     if (clip.clip_type === 'url')
       return t('compact.filterUrl') === 'compact.filterUrl' ? 'URL' : t('compact.filterUrl');
-    if (clip.clip_type === 'code' || clip.clip_type === 'html' || clip.clip_type === 'rtf')
+    if (clip.clip_type === 'code' || clip.clip_type === 'rtf')
       return t('compact.filterCode') === 'compact.filterCode' ? 'Code' : t('compact.filterCode');
     return t('compact.filterText') === 'compact.filterText' ? 'Text' : t('compact.filterText');
   }, [clip.clip_type, t]);
@@ -3022,9 +3021,7 @@ const ClipRow = memo(function ClipRow({
                 const TypeIcon =
                   clip.clip_type === 'image'
                     ? ImageIcon
-                    : clip.clip_type === 'html' ||
-                        clip.clip_type === 'rtf' ||
-                        clip.clip_type === 'code'
+                    : clip.clip_type === 'rtf' || clip.clip_type === 'code'
                       ? Code
                       : clip.clip_type === 'url'
                         ? Link

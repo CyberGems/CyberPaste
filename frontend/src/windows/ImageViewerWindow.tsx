@@ -1015,7 +1015,17 @@ export function ImageViewerWindow() {
   const isCodeClip = clip?.clip_type === 'code';
   const isUrlClip = clip?.clip_type === 'url' || Boolean(urlObj);
   const isFileClip = clip?.clip_type === 'file';
-  const isHtmlClip = clip?.clip_type === 'html' || clip?.clip_type === 'rtf';
+  // Rich HTML content lives in the code category; the format metadata keeps
+  // the rendered/source toggle working for it.
+  const isHtmlClip = useMemo(() => {
+    if (clip?.clip_type === 'rtf') return true;
+    if (!clip?.metadata) return false;
+    try {
+      return (JSON.parse(clip.metadata) as { format?: string }).format === 'html';
+    } catch {
+      return false;
+    }
+  }, [clip?.clip_type, clip?.metadata]);
 
   return (
     <div
@@ -1219,7 +1229,8 @@ export function ImageViewerWindow() {
                     </button>
                   </Tooltip>
                 </>
-              ) : isCodeClip || (!isImageClip && !isFileClip && !isUrlClip && !isHtmlClip) ? (
+              ) : (isCodeClip && !isHtmlClip) ||
+                (!isImageClip && !isFileClip && !isUrlClip && !isHtmlClip) ? (
                 <>
                   <Tooltip label={t('viewer.toggleWrap')} placement="bottom">
                     <button

@@ -527,6 +527,7 @@ function App() {
             clipId: (fullClip as any).id || (fullClip as any).uuid,
             content: (fullClip as any).content,
             clipType: (fullClip as any).clip_type,
+            metadata: (fullClip as any).metadata ?? null,
           });
         })
         .catch((err) => {
@@ -1978,8 +1979,6 @@ function App() {
   const [textCount, setTextCount] = useState(0);
   const [codeCount, setCodeCount] = useState(0);
   const [fileCount, setFileCount] = useState(0);
-  const [htmlCount, setHtmlCount] = useState(0);
-  const [rtfCount, setRtfCount] = useState(0);
   const [urlCount, setUrlCount] = useState(0);
 
   const refreshTotalCount = useCallback(async () => {
@@ -1989,8 +1988,6 @@ function App() {
       setTextCount(0);
       setCodeCount(0);
       setFileCount(0);
-      setHtmlCount(0);
-      setRtfCount(0);
       setUrlCount(0);
       return;
     }
@@ -2001,8 +1998,6 @@ function App() {
         text: number;
         code: number;
         files: number;
-        html: number;
-        rtf: number;
         urls: number;
       }>('get_clip_stats');
       setTotalClipCount(stats.total);
@@ -2010,8 +2005,6 @@ function App() {
       setTextCount(stats.text);
       setCodeCount(stats.code || 0);
       setFileCount(stats.files || 0);
-      setHtmlCount(stats.html || 0);
-      setRtfCount(stats.rtf || 0);
       setUrlCount(stats.urls || 0);
     } catch (e) {
       console.error('Failed to get clip stats', e);
@@ -2020,10 +2013,9 @@ function App() {
 
   // Counts for the Full-mode type filter chips
   const typeFilterCounts = useMemo(() => {
-    const codeTotal = (codeCount || 0) + (htmlCount || 0) + (rtfCount || 0);
     const perType: Record<Exclude<FullTypeFilter, 'all'>, number> = {
       text: textCount,
-      code: codeTotal,
+      code: codeCount || 0,
       image: imageCount,
       url: urlCount,
       file: fileCount,
@@ -2032,7 +2024,7 @@ function App() {
       ...perType,
       all: perType.text + perType.code + perType.image + perType.url + perType.file,
     };
-  }, [textCount, codeCount, htmlCount, rtfCount, imageCount, fileCount, urlCount]);
+  }, [textCount, codeCount, imageCount, fileCount, urlCount]);
 
   useEffect(() => {
     if (isLocked) {
@@ -3066,11 +3058,13 @@ function App() {
     clipId: string;
     content: string;
     clipType: string;
+    metadata: string | null;
   }>({
     isOpen: false,
     clipId: '',
     content: '',
     clipType: 'text',
+    metadata: null,
   });
   const [moveToFolderClipId, setMoveToFolderClipId] = useState<string | null>(null);
 
@@ -3154,6 +3148,7 @@ function App() {
           clipId: (fullClip as any).id || (fullClip as any).uuid,
           content: (fullClip as any).content,
           clipType: (fullClip as any).clip_type,
+          metadata: (fullClip as any).metadata ?? null,
         });
       })
       .catch((err) => {
@@ -3351,6 +3346,7 @@ function App() {
                     clipId: (fullClip as any).id || (fullClip as any).uuid,
                     content: (fullClip as any).content,
                     clipType: (fullClip as any).clip_type,
+                    metadata: (fullClip as any).metadata ?? null,
                   });
                 })
                 .catch((err) => {
@@ -3360,6 +3356,7 @@ function App() {
                     clipId: clip.id,
                     content: clip.content || clip.preview,
                     clipType: clip.clip_type,
+                    metadata: clip.metadata ?? null,
                   });
                 });
             },
@@ -4243,6 +4240,7 @@ function App() {
           isOpen={editClip.isOpen}
           content={editClip.content}
           clipType={editClip.clipType}
+          metadata={editClip.metadata}
           onClose={() => setEditClip((prev) => ({ ...prev, isOpen: false }))}
           onSave={(newContent) => handleUpdateClipContent(editClip.clipId, newContent)}
         />

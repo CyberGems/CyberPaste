@@ -106,7 +106,6 @@
     "image": "Imagen",
     "url": "URL",
     "file": "Archivo",
-    "html": "HTML",
     "rtf": "Texto enriquecido"
   },
   "detailPanel": {
@@ -947,8 +946,6 @@
       "text_copied": "Texto copiado",
       "code_cut": "Código cortado",
       "code_copied": "Código copiado",
-      "html_cut": "HTML cortado",
-      "html_copied": "HTML copiado",
       "rtf_cut": "Texto enriquecido cortado",
       "rtf_copied": "Texto enriquecido copiado",
       "file_cut": "Archivo cortado",
@@ -960,7 +957,6 @@
       "image_duplicate": "Imagen duplicada",
       "text_duplicate": "Texto duplicado",
       "code_duplicate": "Código duplicado",
-      "html_duplicate": "HTML duplicado",
       "rtf_duplicate": "Texto enriquecido duplicado",
       "file_duplicate": "Archivo duplicado",
       "url_duplicate": "URL duplicada",

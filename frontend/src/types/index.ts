@@ -155,8 +155,6 @@ export interface UsageTotals {
   captured_code: number;
   captured_url: number;
   captured_file: number;
-  captured_html: number;
-  captured_rtf: number;
   pastes: number;
   copies: number;
   searches: number;
@@ -199,12 +197,11 @@ export interface AppLockKeyResult {
   recovery_key: string;
 }
 
-export type ClipType = 'text' | 'image' | 'html' | 'rtf' | 'file' | 'url' | 'code';
+export type ClipType = 'text' | 'image' | 'rtf' | 'file' | 'url' | 'code';
 
 export const CLIP_TYPE_LABELS: Record<ClipType, string> = {
   text: 'Text',
   image: 'Image',
-  html: 'HTML',
   rtf: 'Rich Text',
   file: 'File',
   url: 'URL',
@@ -214,7 +211,6 @@ export const CLIP_TYPE_LABELS: Record<ClipType, string> = {
 export const CLIP_TYPE_ICONS: Record<ClipType, string> = {
   text: 'FileText',
   image: 'Image',
-  html: 'Code',
   rtf: 'Type',
   file: 'File',
   url: 'Link',
@@ -225,7 +221,7 @@ export type ClipFilterCategory = 'text' | 'code' | 'image' | 'url' | 'file';
 
 export function getFilterForClipType(clipType: string): ClipFilterCategory {
   if (clipType === 'image') return 'image';
-  if (clipType === 'code' || clipType === 'html' || clipType === 'rtf') return 'code';
+  if (clipType === 'code' || clipType === 'rtf') return 'code';
   if (clipType === 'url') return 'url';
   if (clipType === 'file') return 'file';
   return 'text';

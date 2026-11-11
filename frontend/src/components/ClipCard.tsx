@@ -126,8 +126,6 @@ export const ClipCard = memo(
         return t('clipType.url') === 'clipType.url' ? 'URL' : t('clipType.url');
       if (clip.clip_type === 'code')
         return t('clipType.code') === 'clipType.code' ? 'Code' : t('clipType.code');
-      if (clip.clip_type === 'html')
-        return t('clipType.html') === 'clipType.html' ? 'HTML' : t('clipType.html');
       if (clip.clip_type === 'rtf')
         return t('clipType.rtf') === 'clipType.rtf' ? 'Rich Text' : t('clipType.rtf');
       return t('clipType.text') === 'clipType.text' ? 'Text' : t('clipType.text');
@@ -230,7 +228,7 @@ export const ClipCard = memo(
             )}
           </div>
         );
-      } else if (clip.clip_type === 'html' || clip.clip_type === 'rtf') {
+      } else if (clip.clip_type === 'rtf') {
         return (
           <pre className="whitespace-pre-wrap break-all font-mono text-[13px] leading-tight text-foreground/80">
             <span>{(clip.preview || clip.content).substring(0, PREVIEW_CHAR_LIMIT)}</span>
@@ -802,9 +800,7 @@ export const ClipCard = memo(
                     const TypeIcon =
                       clip.clip_type === 'image'
                         ? ImageIcon
-                        : clip.clip_type === 'html' ||
-                            clip.clip_type === 'rtf' ||
-                            clip.clip_type === 'code'
+                        : clip.clip_type === 'rtf' || clip.clip_type === 'code'
                           ? Code
                           : clip.clip_type === 'url'
                             ? Link

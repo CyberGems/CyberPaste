@@ -14,6 +14,7 @@ interface EditClipModalProps {
   isOpen: boolean;
   content: string;
   clipType: string;
+  metadata?: string | null;
   onClose: () => void;
   onSave: (newContent: string) => void;
 }
@@ -22,6 +23,7 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
   isOpen,
   content,
   clipType,
+  metadata,
   onClose,
   onSave,
 }) => {
@@ -125,8 +127,19 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
     }
   };
 
+  // HTML clips live in the code category; the format metadata keeps their
+  // .html export extension.
+  const isRichHtml = useMemo(() => {
+    if (!metadata) return false;
+    try {
+      return (JSON.parse(metadata) as { format?: string }).format === 'html';
+    } catch {
+      return false;
+    }
+  }, [metadata]);
+
   const handleExport = async () => {
-    const extension = clipType === 'html' ? 'html' : 'txt';
+    const extension = isRichHtml ? 'html' : 'txt';
     try {
       await saveTextToFile(
         editedContent,
@@ -161,7 +174,7 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
 
   if (!isOpen) return null;
 
-  const isCode = clipType === 'code' || clipType === 'html';
+  const isCode = clipType === 'code';
   const typeLabel = t(`clipType.${clipType}`, { defaultValue: t('clipType.text') });
 
   return (

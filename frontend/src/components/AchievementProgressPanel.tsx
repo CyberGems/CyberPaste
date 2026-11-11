@@ -10,7 +10,6 @@ import {
   Trophy,
   Flame,
   FileText,
-  FileCode2,
   Code,
   Image as ImageIcon,
   Link,
@@ -345,15 +344,6 @@ export function AchievementProgressPanel({
               bg: 'bg-amber-500/10 border-amber-500/20',
               bar: 'bg-amber-400',
             },
-            {
-              type: 'html',
-              label: t('clipType.html'),
-              count: Number(progress.totals.captured_html || 0),
-              icon: FileCode2,
-              color: 'text-fuchsia-400',
-              bg: 'bg-fuchsia-500/10 border-fuchsia-500/20',
-              bar: 'bg-fuchsia-400',
-            },
           ];
 
           const totalCaptured = typeItems.reduce((acc, item) => acc + item.count, 0);
@@ -371,7 +361,7 @@ export function AchievementProgressPanel({
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
                 {typeItems.map(({ type, label, count, icon: Icon, color, bg, bar }) => {
                   const pct = totalCaptured > 0 ? Math.round((count / totalCaptured) * 100) : 0;
                   return (

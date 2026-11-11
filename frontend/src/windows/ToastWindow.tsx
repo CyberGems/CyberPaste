@@ -89,8 +89,6 @@ function getClipTitle(
         return t('toasts.titles.text_duplicate');
       case 'code':
         return t('toasts.titles.code_duplicate');
-      case 'html':
-        return t('toasts.titles.html_duplicate');
       case 'rtf':
         return t('toasts.titles.rtf_duplicate');
       case 'file':
@@ -111,8 +109,6 @@ function getClipTitle(
         return t('toasts.titles.text_cut');
       case 'code':
         return t('toasts.titles.code_cut');
-      case 'html':
-        return t('toasts.titles.html_cut');
       case 'rtf':
         return t('toasts.titles.rtf_cut');
       case 'file':
@@ -138,8 +134,6 @@ function getClipTitle(
       return t('toasts.titles.text_copied');
     case 'code':
       return t('toasts.titles.code_copied');
-    case 'html':
-      return t('toasts.titles.html_copied');
     case 'rtf':
       return t('toasts.titles.rtf_copied');
     case 'file':
@@ -185,7 +179,6 @@ function getHeaderClipIcon(
     case 'text':
       return <TypeIcon className={cls} style={{ color }} />;
     case 'code':
-    case 'html':
       return <CodeIcon className={cls} style={{ color }} />;
     case 'rtf':
       return <FileTextIcon className={cls} style={{ color }} />;
@@ -665,8 +658,7 @@ export function ToastWindow() {
     }
     if (clickAction === 'system_viewer' && toast && toast.clip_uuid) {
       const isImage = toast.clip_type === 'image';
-      const isText =
-        toast.clip_type && ['text', 'code', 'html', 'rtf', 'url'].includes(toast.clip_type);
+      const isText = toast.clip_type && ['text', 'code', 'rtf', 'url'].includes(toast.clip_type);
       if (isImage || isText) {
         invoke<any>('get_clip', { clipId: toast.clip_uuid })
           .then(async (clip) => {
@@ -784,8 +776,7 @@ export function ToastWindow() {
     });
 
     const isImage = toast.clip_type === 'image';
-    const isText =
-      toast.clip_type && ['text', 'code', 'html', 'rtf', 'url'].includes(toast.clip_type);
+    const isText = toast.clip_type && ['text', 'code', 'rtf', 'url'].includes(toast.clip_type);
 
     if (isImage || isText) {
       contextMenuOptions.push({

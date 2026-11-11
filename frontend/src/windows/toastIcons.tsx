@@ -54,7 +54,6 @@ export function getClipIcon(
       Cmp = Type;
       break;
     case 'code':
-    case 'html':
       Cmp = Code;
       break;
     case 'rtf':

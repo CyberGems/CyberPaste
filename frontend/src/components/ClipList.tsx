@@ -352,7 +352,6 @@ export const ClipList: React.FC<ClipListProps> = ({
         clip.clip_type === 'text' ||
         clip.clip_type === 'code' ||
         clip.clip_type === 'url' ||
-        clip.clip_type === 'html' ||
         clip.clip_type === 'rtf' ||
         clip.clip_type === 'file';
       const previewText = (clip.preview || clip.content || '').trim();
