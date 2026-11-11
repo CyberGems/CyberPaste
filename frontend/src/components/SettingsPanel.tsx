@@ -29,6 +29,7 @@ import {
   Database,
   HardDrive,
   Bell,
+  BellOff,
   Layers,
   List,
   LayoutGrid,
@@ -3396,6 +3397,52 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                   <h3 className="flex items-center gap-2 text-[13px] font-semibold text-primary/80">
                     <Bell size={14} className="shrink-0" /> {t('settings.toasts')}
                   </h3>
+
+                  {(() => {
+                    const until = settings.notifications_pause_until
+                      ? new Date(settings.notifications_pause_until)
+                      : null;
+                    const paused =
+                      settings.notifications_pause_permanent ||
+                      (until !== null &&
+                        !Number.isNaN(until.getTime()) &&
+                        until.getTime() > Date.now());
+                    if (!paused) return null;
+                    const timeLabel = settings.notifications_pause_permanent
+                      ? t('settings.pausedPermanently')
+                      : t('settings.pausedUntilTime', {
+                          time: until?.toLocaleTimeString(i18n.language || 'en', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          }),
+                        });
+                    return (
+                      <div className="flex items-center justify-between gap-4 rounded-[4px] border border-amber-500/20 bg-amber-500/5 p-3">
+                        <div className="flex items-center gap-2.5">
+                          <BellOff size={15} className="shrink-0 text-amber-500" />
+                          <div>
+                            <p className="text-xs font-medium text-foreground">
+                              {t('settings.notificationsPausedBanner')}
+                            </p>
+                            <p className="mt-0.5 text-[11px] text-muted-foreground">
+                              {timeLabel} · {t('settings.notificationsPausedDesc')}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            invoke('tray_menu_action', { action: 'resume_notifications' }).catch(
+                              console.error
+                            )
+                          }
+                          className="btn flex-shrink-0 rounded-[4px] border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium text-amber-500 hover:bg-amber-500/20"
+                        >
+                          {t('settings.resumeNow')}
+                        </button>
+                      </div>
+                    );
+                  })()}
 
                   <div className="flex items-center justify-between gap-4 rounded-[4px] border border-border bg-secondary p-3">
                     <div>

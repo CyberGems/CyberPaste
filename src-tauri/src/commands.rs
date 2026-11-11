@@ -1905,7 +1905,7 @@ pub async fn copy_clip(
             }
 
             // Show standard copy toast notification
-            if final_res.is_ok() && settings.toast_enabled {
+            if final_res.is_ok() && settings.toast_enabled && !settings.notifications_paused() {
                 let (image_b64, msg) = if clip.clip_type == "image" {
                     let full_bytes = load_full_image_content(pool, &mut clip).await.unwrap_or_default();
                     let thumb_b64 = if !full_bytes.is_empty() {
@@ -4984,6 +4984,13 @@ async fn dispatch_toast(app: AppHandle, payload: ToastPayload) -> Result<(), Str
         }
     }
 
+    // Tray "Pause notifications": silence everything except error alerts while
+    // the pause is active. Evaluated per toast, so timed pauses expire on their
+    // own.
+    if settings.notifications_paused() && payload.toast_type != "error" {
+        return Ok(());
+    }
+
     let payload = payload;
     if crate::quiet_hours::is_active(&settings)
         && payload.toast_type != "error"
@@ -5566,6 +5573,9 @@ pub struct TrayMenuState {
     pub show_app_recommendations: bool,
     pub lock_enabled: bool,
     pub locked: bool,
+    pub notifications_paused: bool,
+    pub notifications_pause_until: Option<String>,
+    pub notifications_pause_permanent: bool,
 }
 
 static TRAY_MENU_ANCHOR: std::sync::Mutex<Option<(i32, i32)>> = std::sync::Mutex::new(None);
@@ -5687,6 +5697,9 @@ pub fn collect_tray_menu_state(app: &AppHandle) -> TrayMenuState {
         show_app_recommendations: settings.show_app_recommendations,
         lock_enabled: crate::app_lock::is_enabled(),
         locked: crate::app_lock::is_locked(),
+        notifications_paused: settings.notifications_paused(),
+        notifications_pause_until: settings.notifications_pause_until.clone(),
+        notifications_pause_permanent: settings.notifications_pause_permanent,
     }
 }
 
@@ -6145,7 +6158,11 @@ fn open_settings_window(app: &AppHandle, tab: Option<&str>) {
 }
 
 #[tauri::command]
-pub async fn tray_menu_action(app: AppHandle, action: String) -> Result<(), String> {
+pub async fn tray_menu_action(
+    app: AppHandle,
+    action: String,
+    duration_minutes: Option<i64>,
+) -> Result<(), String> {
     // Hide popup first so it doesn't sit over the next UI
     if let Some(win) = app.get_webview_window("tray_menu") {
         let _ = win.hide();
@@ -6203,6 +6220,37 @@ pub async fn tray_menu_action(app: AppHandle, action: String) -> Result<(), Stri
         }
         "lock" => {
             crate::app_lock::lock_now(&app);
+        }
+        "pause_notifications" => {
+            let manager = app.state::<Arc<SettingsManager>>();
+            let result = match duration_minutes {
+                Some(mins) if mins > 0 => {
+                    let until = (chrono::Utc::now() + chrono::Duration::minutes(mins)).to_rfc3339();
+                    manager.update_sync(move |s| {
+                        s.notifications_pause_until = Some(until);
+                        s.notifications_pause_permanent = false;
+                    })
+                }
+                // No duration (or non-positive) pauses until resumed manually.
+                _ => manager.update_sync(|s| {
+                    s.notifications_pause_until = None;
+                    s.notifications_pause_permanent = true;
+                }),
+            };
+            result.map_err(|e| e.to_string())?;
+            crate::settings_manager::emit_changed(&app);
+            let _ = crate::rebuild_tray_menu(&app);
+        }
+        "resume_notifications" => {
+            let manager = app.state::<Arc<SettingsManager>>();
+            manager
+                .update_sync(|s| {
+                    s.notifications_pause_until = None;
+                    s.notifications_pause_permanent = false;
+                })
+                .map_err(|e| e.to_string())?;
+            crate::settings_manager::emit_changed(&app);
+            let _ = crate::rebuild_tray_menu(&app);
         }
         "unlock" => {
             if let Some(win) = app.get_webview_window("main") {

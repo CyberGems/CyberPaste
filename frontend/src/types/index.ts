@@ -79,6 +79,8 @@ export interface Settings {
   toast_duration?: number;
   toast_enabled?: boolean;
   duplicate_toast_enabled?: boolean;
+  notifications_pause_until?: string | null;
+  notifications_pause_permanent?: boolean;
   toast_monitor?: string;
   toast_click_action?: 'none' | 'close' | 'open' | 'system_viewer' | 'toggle_pin';
   quiet_hours_enabled?: boolean;

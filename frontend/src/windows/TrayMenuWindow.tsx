@@ -6,12 +6,16 @@ import { useTranslation } from 'react-i18next';
 import {
   AppWindow,
   ArrowRight,
+  Bell,
+  BellOff,
   Book,
   ChevronLeft,
   ChevronRight,
+  Clock,
   Heart,
   HelpCircle,
   Info,
+  Infinity as InfinityIcon,
   Gem,
   Lock,
   Unlock,
@@ -57,6 +61,9 @@ export interface TrayMenuState {
   show_app_recommendations?: boolean;
   lock_enabled?: boolean;
   locked?: boolean;
+  notifications_paused?: boolean;
+  notifications_pause_until?: string | null;
+  notifications_pause_permanent?: boolean;
 }
 
 type TrayAction =
@@ -67,8 +74,10 @@ type TrayAction =
   | 'check_updates'
   | 'quit'
   | 'lock'
-  | 'unlock';
-type TrayView = 'main' | 'help' | 'suite';
+  | 'unlock'
+  | 'pause_notifications'
+  | 'resume_notifications';
+type TrayView = 'main' | 'help' | 'suite' | 'pauseNotifications';
 
 const DONATE_URL = 'https://github.com/CyberGems/CyberPaste#%EF%B8%8F-donate';
 const WIKI_URL = 'https://github.com/CyberGems/CyberPaste/wiki';
@@ -151,12 +160,12 @@ export function TrayMenuWindow() {
     }
   }, []);
 
-  const runAction = useCallback(async (action: TrayAction) => {
+  const runAction = useCallback(async (action: TrayAction, durationMinutes?: number) => {
     openRef.current = false;
     viewRef.current = 'main';
     setView('main');
     try {
-      await invoke('tray_menu_action', { action });
+      await invoke('tray_menu_action', { action, durationMinutes: durationMinutes ?? null });
     } catch (e) {
       console.error('tray_menu_action failed:', e);
     }
@@ -279,6 +288,24 @@ export function TrayMenuWindow() {
   const suiteEnabled = state?.show_app_recommendations ?? true;
   const suiteLocale = suiteLanguage(i18n.language);
 
+  const notificationsPausedLabel = (() => {
+    if (state?.notifications_pause_permanent) {
+      return t('tray.pausedPermanently', { defaultValue: 'Paused permanently' });
+    }
+    if (state?.notifications_pause_until) {
+      const until = new Date(state.notifications_pause_until);
+      if (!Number.isNaN(until.getTime())) {
+        return t('tray.pausedUntil', {
+          time: until.toLocaleTimeString(i18n.language || 'en', {
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+        });
+      }
+    }
+    return undefined;
+  })();
+
   return (
     <div
       ref={rootRef}
@@ -349,6 +376,22 @@ export function TrayMenuWindow() {
                 warning={Boolean(state?.is_paused)}
                 onClick={() => runAction('toggle_pause')}
               />
+              {state?.notifications_paused ? (
+                <TrayItem
+                  icon={<BellOff size={16} strokeWidth={1.75} />}
+                  label={t('tray.resumeNotifications', { defaultValue: 'Resume notifications' })}
+                  description={notificationsPausedLabel}
+                  warning
+                  onClick={() => runAction('resume_notifications')}
+                />
+              ) : (
+                <TrayItem
+                  icon={<Bell size={16} strokeWidth={1.75} />}
+                  label={t('tray.pauseNotifications', { defaultValue: 'Pause notifications' })}
+                  nav
+                  onClick={() => goView('pauseNotifications')}
+                />
+              )}
               {state?.lock_enabled ? (
                 state?.locked ? (
                   <TrayItem
@@ -461,6 +504,51 @@ export function TrayMenuWindow() {
                 icon={<RefreshCw size={14} strokeWidth={1.75} />}
                 label={t('tray.checkUpdates', { defaultValue: 'Check for Update...' })}
                 onClick={() => runAction('check_updates')}
+              />
+            </div>
+          </div>
+        ) : null}
+
+        {view === 'pauseNotifications' ? (
+          <div key="pauseNotifications">
+            <SubHeader
+              title={t('tray.pauseNotifications', { defaultValue: 'Pause notifications' })}
+              backLabel={t('tray.back', { defaultValue: 'Back' })}
+              onBack={() => goView('main')}
+            />
+            <TrayDivider />
+            <div className="flex flex-col gap-0.5 px-1.5 py-1">
+              <TrayItem
+                compact
+                icon={<Clock size={14} strokeWidth={1.75} />}
+                label={t('tray.pause1h', { defaultValue: 'For 1 hour' })}
+                onClick={() => runAction('pause_notifications', 60)}
+              />
+              <TrayItem
+                compact
+                icon={<Clock size={14} strokeWidth={1.75} />}
+                label={t('tray.pause6h', { defaultValue: 'For 6 hours' })}
+                onClick={() => runAction('pause_notifications', 360)}
+              />
+              <TrayItem
+                compact
+                icon={<Clock size={14} strokeWidth={1.75} />}
+                label={t('tray.pause12h', { defaultValue: 'For 12 hours' })}
+                onClick={() => runAction('pause_notifications', 720)}
+              />
+              <TrayItem
+                compact
+                icon={<Clock size={14} strokeWidth={1.75} />}
+                label={t('tray.pause24h', { defaultValue: 'For 24 hours' })}
+                description={t('tray.pause24hSuggested', { defaultValue: 'Suggested' })}
+                onClick={() => runAction('pause_notifications', 1440)}
+              />
+              <div className="mx-2 my-1 h-px bg-border/70" />
+              <TrayItem
+                compact
+                icon={<InfinityIcon size={14} strokeWidth={1.75} />}
+                label={t('tray.pausePermanent', { defaultValue: 'Until I turn them back on' })}
+                onClick={() => runAction('pause_notifications')}
               />
             </div>
           </div>

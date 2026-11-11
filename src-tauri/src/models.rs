@@ -84,6 +84,13 @@ pub struct AppSettings {
     pub toast_enabled: bool,
     #[serde(default = "default_true")]
     pub duplicate_toast_enabled: bool,
+    /// Tray "Pause notifications": RFC3339 expiry timestamp; None when not
+    /// paused on a timer (permanent pauses use notifications_pause_permanent).
+    #[serde(default)]
+    pub notifications_pause_until: Option<String>,
+    /// Tray "Pause notifications": pause until resumed manually.
+    #[serde(default)]
+    pub notifications_pause_permanent: bool,
     pub toast_monitor: String,
     pub toast_click_action: String,
     #[serde(default)]
@@ -264,6 +271,8 @@ impl Default for AppSettings {
             toast_duration: 3000,
             toast_enabled: true,
             duplicate_toast_enabled: true,
+            notifications_pause_until: None,
+            notifications_pause_permanent: false,
             toast_monitor: "primary".to_string(),
             toast_click_action: "close".to_string(),
             quiet_hours_enabled: false,
@@ -468,3 +477,20 @@ pub struct SourceAppItem {
     pub count: i64,
 }
 
+
+impl AppSettings {
+    /// True while toasts are paused from the tray menu, either permanently or
+    /// until the stored expiry timestamp. Evaluated dynamically, so a timed
+    /// pause expires without any cleanup step.
+    pub fn notifications_paused(&self) -> bool {
+        if self.notifications_pause_permanent {
+            return true;
+        }
+        match &self.notifications_pause_until {
+            Some(until) => chrono::DateTime::parse_from_rfc3339(until)
+                .map(|expiry| expiry > chrono::Utc::now())
+                .unwrap_or(false),
+            None => false,
+        }
+    }
+}
