@@ -182,6 +182,7 @@ mod highlight;
 mod models;
 mod ocr;
 mod progress;
+mod power_resume;
 mod quiet_hours;
 mod secrets;
 mod settings_commands;
@@ -542,6 +543,8 @@ pub fn run_app() {
                 crate::app_lock::init(&manager.get());
             }
             crate::app_lock::start_session_lock_watcher(app.handle().clone());
+            // Repair transparent windows if their alpha is lost on wake from sleep.
+            crate::power_resume::start_power_resume_listener(app.handle().clone());
             {
                 let idle_handle = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
