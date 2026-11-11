@@ -61,7 +61,7 @@
 
 ## 👋 Introducción
 
-Copia algo, copia tres cosas más y la primera ya no está. CyberPaste guarda un historial buscable de todo lo que copias —texto, código, imágenes, enlaces, archivos, HTML y RTF— en una base de datos SQLite local con carpetas, favoritos, anclaje y edición. Encuentra un clip con la búsqueda instantánea o el atajo global, pégalo directamente en la app que estabas usando, extrae texto de una imagen con OCR y deja que un proveedor de IA opcional resuma o transforme un clip cuando conectes uno. Las copias automáticas, la retención configurable y un bloqueo con PIN o contraseña lo mantienen práctico. Construido con **Tauri 2** y **React**.
+Copia algo, copia tres cosas más y la primera ya no está. CyberPaste guarda un historial buscable de todo lo que copias —texto, código, imágenes, enlaces y archivos, con contenido enriquecido HTML y RTF preservado de forma nativa— en una base de datos SQLite local con carpetas, favoritos, anclaje y edición. Encuentra un clip con la búsqueda instantánea o el atajo global, pégalo directamente en la app que estabas usando, extrae texto de una imagen con OCR y deja que un proveedor de IA opcional resuma o transforme un clip cuando conectes uno. Las copias automáticas, la retención configurable y un bloqueo con PIN o contraseña lo mantienen práctico. Construido con **Tauri 2** y **React**.
 
 *Gratuito y de código abierto (GPLv3): sin anuncios, sin analíticas de red, sin telemetría y sin recogida en la nube. Los logros y el progreso opcionales se quedan en tu equipo.*
 
@@ -83,7 +83,7 @@ La mayoría de los gestores de portapapeles envían tus datos a la nube o son de
 |---|---|
 | Recupera cualquier cosa que hayas copiado | Historial completo del portapapeles con búsqueda instantánea y filtros por tipo |
 | Mantén los datos sensibles privados | Solo SQLite local, cero analíticas de red, cero telemetría, sin sincronización en la nube |
-| Trabaja con contenido enriquecido | Texto, código (con resaltado de sintaxis), imágenes (con OCR), HTML, RTF, archivos, URLs |
+| Trabaja con contenido enriquecido | Texto, código (con resaltado de sintaxis, HTML incluido), imágenes (con OCR), texto enriquecido (RTF), archivos, URLs |
 | Procesa clips con IA | Resume, traduce, explica código, corrige gramática; funciona con cualquier proveedor compatible con OpenAI |
 | Mantente organizado | Carpetas, favoritos, gestión por lotes, dos modos de vista |
 | Accede desde cualquier lugar | Atajo global, compatible con múltiples monitores, inyección de pegado automático |
@@ -94,7 +94,7 @@ La mayoría de los gestores de portapapeles envían tus datos a la nube o son de
 ## ✨ Funciones principales
 
 ### 📋 Motor del portapapeles
-- **Soporte de contenido enriquecido**: captura automáticamente texto con formato, código (con resaltado de sintaxis e insignias de lenguaje), HTML, RTF, imágenes (con visor universal de inspección y extracción de texto por OCR), URLs y archivos
+- **Soporte de contenido enriquecido**: captura automáticamente texto con formato, código (con resaltado de sintaxis, insignias de lenguaje y manejo nativo de HTML), texto enriquecido RTF, imágenes (con visor universal de inspección y extracción de texto por OCR), URLs y archivos
 - **Monitorización inteligente**: detecta las operaciones de cortar (Ctrl+X, Mayús+Supr) mediante ganchos globales de teclado, suprime los eventos duplicados e incluye botón de alternancia en la barra de título
 - **Búsqueda instantánea y filtros por app**: búsqueda de texto completo en tiempo real con filtros rápidos (Texto, Código, Imágenes, Enlaces, Archivos), filtrado por aplicación de origen y contadores en vivo
 

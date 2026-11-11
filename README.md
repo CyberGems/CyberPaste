@@ -61,7 +61,7 @@
 
 ## 👋 Introduction
 
-Copy something, copy three more things, and the first one is already gone. CyberPaste keeps a searchable history of everything you copy — text, code, images, links, files, HTML and RTF — in a local SQLite database with folders, favorites, pinning and editing. Find a clip with instant search or the global hotkey, paste it straight into the app you were using, pull text out of an image with OCR, and let an optional AI provider summarize or transform a clip once you connect one. Automatic backups, configurable retention and a PIN or password lock keep it practical. Built with **Tauri 2** and **React**.
+Copy something, copy three more things, and the first one is already gone. CyberPaste keeps a searchable history of everything you copy — text, code, images, links and files, with rich HTML and RTF content preserved natively — in a local SQLite database with folders, favorites, pinning and editing. Find a clip with instant search or the global hotkey, paste it straight into the app you were using, pull text out of an image with OCR, and let an optional AI provider summarize or transform a clip once you connect one. Automatic backups, configurable retention and a PIN or password lock keep it practical. Built with **Tauri 2** and **React**.
 
 *Free and open source (GPLv3): no ads, no network analytics, no telemetry, and no cloud collection. Optional achievements and progress stay on your device.*
 
@@ -83,7 +83,7 @@ Most clipboard managers either send your data to the cloud or are too basic to b
 |---|---|
 | Recall anything you've copied | Full clipboard history with instant search and type filtering |
 | Keep sensitive data private | Local-only SQLite, zero network analytics, zero telemetry, no cloud sync |
-| Work with rich content | Text, code (syntax highlighting), images (with OCR), HTML, RTF, files, URLs |
+| Work with rich content | Text, code (syntax highlighting, HTML included), images (with OCR), rich text (RTF), files, URLs |
 | Process clips with AI | Summarize, translate, explain code, fix grammar — works with any OpenAI-compatible provider |
 | Stay organized | Folders, favorites, bulk management, dual view modes |
 | Access anywhere | Global hotkey, multi-monitor aware, auto-paste injection |
@@ -94,7 +94,7 @@ Most clipboard managers either send your data to the cloud or are too basic to b
 ## ✨ Key Features
 
 ### 📋 Clipboard Engine
-- **Rich Content Support** — Automatically captures formatted Text, Code (with syntax highlighting and language badges), HTML, RTF, Images (with universal Visor inspection & OCR text extraction), URLs, and Files
+- **Rich Content Support** — Automatically captures formatted Text, Code (with syntax highlighting, language badges and native HTML handling), Rich Text (RTF), Images (with universal Visor inspection & OCR text extraction), URLs, and Files
 - **Smart Monitoring** — Detects cut operations (Ctrl+X, Shift+Delete) via global keyboard hooks, suppresses duplicate events, and includes a titlebar monitoring toggle
 - **Instant Search & App Filters** — Real-time full-text search with quick filter chips (Text, Code, Images, Links, Files) and source application filtering with live database counters
 
