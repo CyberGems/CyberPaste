@@ -321,7 +321,7 @@ export function TrayMenuWindow() {
                 </span>
                 {state?.update_available ? (
                   <span
-                    className="h-2 w-2 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.85)]"
+                    className="h-2 w-2 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]"
                     aria-label={t('tray.updateAvailable', { defaultValue: 'Update available' })}
                   />
                 ) : null}
@@ -571,7 +571,7 @@ function SubHeader({
           className="group flex items-center gap-1.5 rounded-md pr-1 text-[12px] font-semibold tracking-wide text-muted-foreground transition-colors hover:text-foreground"
         >
           {icon ? (
-            <span className="text-primary drop-shadow-[0_0_5px_rgba(var(--primary-rgb),0.5)] transition-transform group-hover:scale-105">
+            <span className="text-primary drop-shadow-[0_0_5px_rgba(var(--primary-rgb),0.35)] transition-transform group-hover:scale-105">
               {icon}
             </span>
           ) : null}
@@ -580,7 +580,7 @@ function SubHeader({
       ) : (
         <span className="flex items-center gap-1.5 pr-1 text-[12px] font-semibold tracking-wide text-muted-foreground">
           {icon ? (
-            <span className="text-primary drop-shadow-[0_0_5px_rgba(var(--primary-rgb),0.5)]">
+            <span className="text-primary drop-shadow-[0_0_5px_rgba(var(--primary-rgb),0.35)]">
               {icon}
             </span>
           ) : null}
@@ -643,7 +643,7 @@ function TrayItem({
             ? 'text-rose-400 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)] group-hover:text-rose-300'
             : warning
               ? 'text-amber-500 drop-shadow-[0_0_5px_rgba(245,158,11,0.5)] group-hover:text-amber-400'
-              : 'text-primary drop-shadow-[0_0_4px_rgba(var(--primary-rgb),0.45)]'
+              : 'text-primary drop-shadow-[0_0_4px_rgba(var(--primary-rgb),0.32)]'
         )}
       >
         {icon}
