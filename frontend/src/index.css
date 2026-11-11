@@ -453,6 +453,15 @@
     background-color: transparent;
   }
 
+  /* Viewer window: keep the first paint dark so the user never sees a white
+   * flash while the WebView2 surface initializes before the theme kicks in. */
+  body.viewer-window,
+  html.viewer-window,
+  html.viewer-window body,
+  html.viewer-window #root {
+    background-color: #0d0f17 !important;
+  }
+
   /* Toast window needs fully transparent background */
   html.toast-window,
   html.toast-window body,

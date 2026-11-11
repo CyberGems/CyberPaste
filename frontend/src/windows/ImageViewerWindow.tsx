@@ -433,14 +433,20 @@ export function ImageViewerWindow() {
         if (s.viewer_window_maximized) {
           appWindow.maximize().catch(() => {});
         }
-        // Reveal the window now that the theme has been applied, so the
-        // user never sees a blank white surface before the dark background.
+        // Reveal the window now that the theme has been applied, so the user
+        // never sees a blank white surface before the dark background. Mirror
+        // the settings window: give the DOM one frame to render the themed
+        // classes before showing the window.
         if (!hasRevealedRef.current) {
-          hasRevealedRef.current = true;
-          appWindow
-            .show()
-            .then(() => appWindow.setFocus().catch(() => {}))
-            .catch(() => {});
+          const timer = setTimeout(() => {
+            hasRevealedRef.current = true;
+            document.documentElement.classList.add('viewer-window');
+            appWindow
+              .show()
+              .then(() => appWindow.setFocus().catch(() => {}))
+              .catch(() => {});
+          }, 50);
+          return () => clearTimeout(timer);
         }
       })
       .catch((err) => {
@@ -448,6 +454,7 @@ export function ImageViewerWindow() {
         // Fallback: reveal even if settings failed
         if (!hasRevealedRef.current) {
           hasRevealedRef.current = true;
+          document.documentElement.classList.add('viewer-window');
           appWindow
             .show()
             .then(() => appWindow.setFocus().catch(() => {}))
