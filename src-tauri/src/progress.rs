@@ -233,7 +233,10 @@ const ACHIEVEMENTS: &[AchievementDefinition] = &[
     AchievementDefinition {
         id: "all_types",
         metric: AchievementMetric::AllTypes,
-        target: 7,
+        // RTF never becomes a primary clip type (RTF sources are converted to
+        // text/url/code), so only six of the tracked columns can ever exceed
+        // zero. Targeting all six keeps the achievement reachable.
+        target: 6,
     },
 ];
 
@@ -439,6 +442,8 @@ async fn unlock_achievements(
             .await?
             .into_iter()
             .collect();
+    // Same six primary types as the all_types achievement target: RTF is a
+    // source format that always converts, so captured_rtf stays at zero.
     let all_types = [
         totals.captured_text,
         totals.captured_image,
@@ -446,7 +451,6 @@ async fn unlock_achievements(
         totals.captured_url,
         totals.captured_file,
         totals.captured_html,
-        totals.captured_rtf,
     ]
     .iter()
     .filter(|count| **count > 0)
@@ -568,7 +572,6 @@ pub async fn progress_data(
         snapshot.totals.captured_url,
         snapshot.totals.captured_file,
         snapshot.totals.captured_html,
-        snapshot.totals.captured_rtf,
     ]
     .iter()
     .filter(|count| **count > 0)
