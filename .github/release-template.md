@@ -8,7 +8,7 @@
 
 <!-- IMPORTANT FOR AGENTS & MAINTAINERS: Always rewrite this entire section with the ACTUAL release notes for this specific version before tagging. NEVER leave or copy previous version notes! Use 25-45 words, lead with user-facing changes, and do not repeat the app name or version. -->
 <!-- changelog-summary:start -->
-Single-key hotkeys to lock the app and pause monitoring, context-aware folder targets, a calmer steel-teal selection and window edge, a branded installer header with VirusTotal report links, and an evenly spaced compact header headline this release.
+Pause notifications from the tray with flexible durations, a unified Code category that absorbs HTML clips with their rich behavior intact, a visor that opens cleanly maximized, transparency that survives sleep, and a fully localized tray menu headline this release.
 <!-- changelog-summary:end -->
 
 > **New to CyberPaste?** A fast, privacy-first Windows clipboard manager with history, folders, OCR, and configurable AI actions.
@@ -17,31 +17,28 @@ Single-key hotkeys to lock the app and pause monitoring, context-aware folder ta
 
 ### ✨ Key Features & Highlights
 
-- ⌨️ **New Single-Key Hotkeys**:
-  - **`Alt+L` locks the app now**: The titlebar padlock gets its own shortcut, working in Full Screen and Compact modes alike.
-  - **`Ctrl+K` pauses clipboard monitoring**: Pause or resume capture instantly, with the state mirrored on the titlebar button.
-  - **Discoverable everywhere**: Both shortcuts appear in the HUD hint cycle, the Compact footer hints, and their titlebar tooltips.
+- 🔕 **Pause Notifications from the Tray**:
+  - **Flexible durations**: Pause for 1, 6, 12, or 24 hours (the suggested default) or until you turn them back on. The amber tray item shows the resume time and re-enables with one click.
+  - **Synced with Settings**: A banner in Settings > Notifications mirrors the pause with a "Resume now" button, and the state survives restarts.
+  - **True silence**: Capture, duplicate, and startup sounds are muted while paused; error alerts still come through.
 
-- 🖱️ **Context-Aware Folder Targets**:
-  - **No wasted destinations**: The "Copy to folder" dialog hides the folder you are browsing.
-  - **Bulk bar parity**: The main clipboard is only offered when browsing a folder, exactly like the bulk action bar.
+- 🗂️ **One Code Category (HTML included)**:
+  - **HTML joins Code**: Structural HTML captures now live in the single Code category with HTML syntax highlighting; the separate HTML type is gone from filters, stats, toasts, and achievements.
+  - **Rich behavior intact**: Pasting still restores styled HTML, the visor keeps its rendered/source toggle, and Save As still exports `.html` files.
+  - **Automatic migration**: Existing history converts on first launch, and the all-types achievement is now actually reachable.
 
-- 🎨 **Quieter Selection & Window Edge**:
-  - **Steel-teal selection**: The default theme's selected clip swaps neon cyan for a desaturated steel-teal across border, tint, and glow.
-  - **Refined silver**: The monochrome dark theme gets a whisper-dimmer silver selection; the light theme is untouched.
-  - **Calm window edge**: The compact window border trades neon for the same steel-teal, and the selected row's accent bar fades with a vertical gradient.
+- 🖥️ **Visor & Tray Polish**:
+  - **Cleaner visor opens**: The viewer opens maximized at work-area size with a dark first frame and no blank flash.
+  - **Calmer tray menu**: The Quit item behaves exactly like every other item, the card shadow turns dark and 30% softer without the cyan glow, and icon glows are toned down.
 
-- 📦 **Installer Polish & VirusTotal Reports**:
-  - **Branded header banner**: The installer header shows a dedicated 150x57 artwork instead of the distorted icon that default NSIS drew at scaled DPI.
-  - **VirusTotal links**: Both artifacts link to their VirusTotal reports, submitted automatically by the release workflow.
-  - **Even header rhythm**: Folder pills share the search bar's exact height, so the search-to-folders and folders-to-clips gaps match.
-  - **40% saturation tray logo**: The tray menu logo idles with a hint of color instead of full grayscale.
+- 🛠️ **Fixes**:
+  - **Working update check**: "Check for Update..." from the tray now starts the search even when the About window has to open fresh.
+  - **No more black blocks**: Transparent windows (tray menu, toasts) regain their transparency automatically after sleep/resume.
+  - **History that behaves**: Clipboard order survives restarts, pasting a history image saves it as a file in Explorer, and mixed CyberSnap copies prefer the image.
 
-- 🧹 **Cleaner More Menu**:
-  - **No duplicated actions**: "Lock now" and "Pause monitoring" left the More menu since both have visible titlebar buttons with real hotkeys.
-
-- ⚡ **Performance**:
-  - **Stable vendor chunks**: The bundle splits into React, motion, i18n, and vendor chunks, so app updates no longer invalidate the third-party cache.
+- ⌨️ **Hints & Localization**:
+  - **One hint source**: The Full mode HUD, Compact footer, and emoji hints all draw from a single shared module; hotkeys interpolate from shared constants and the HUD pill centers on the titlebar.
+  - **Fully localized tray**: The tray menu is completely translated in English and Spanish (including "Lock now"), guarded by a new `i18n:check` audit that fails on missing keys.
 
 <details>
 <summary><b>🇪🇸 Ver notas de la versión en Español</b></summary>
@@ -50,7 +47,7 @@ Single-key hotkeys to lock the app and pause monitoring, context-aware folder ta
 
 ### 🚀 Novedades de esta versión
 
-Atajos de una tecla para bloquear la app y pausar el monitoreo, destinos de carpeta contextuales, una selección y ventana en teal acero más serenos, un encabezado de instalador con marca y enlaces a VirusTotal, y un header compacto con ritmo parejo encabezan esta versión.
+Pausa notificaciones desde el tray con duraciones flexibles, una categoría Código unificada que absorbe los clips HTML conservando su comportamiento enriquecido, un visor que abre maximizado sin parpadeos, transparencia que sobrevive a la suspensión y un tray totalmente traducido encabezan esta versión.
 
 > **¿Nuevo en CyberPaste?** Un gestor de portapapeles rápido y privado para Windows, con historial, carpetas, OCR y acciones de IA configurables.
 
@@ -58,31 +55,28 @@ Atajos de una tecla para bloquear la app y pausar el monitoreo, destinos de carp
 
 ### ✨ Novedades destacadas
 
-- ⌨️ **Nuevos atajos de una tecla**:
-  - **`Alt+L` bloquea la app ahora**: El candado de la titlebar tiene su propio atajo, en Modo Pantalla Completa y Compacto por igual.
-  - **`Ctrl+K` pausa el monitoreo del portapapeles**: Pausa o reanuda la captura al instante, con el estado reflejado en el botón de la titlebar.
-  - **Descubribles en todos lados**: Ambos atajos aparecen en el ciclo de hints del HUD, en los hints del footer compacto y en los tooltips de la titlebar.
+- 🔕 **Pausa notificaciones desde el tray**:
+  - **Duraciones flexibles**: Pausa por 1, 6, 12 o 24 horas (la opción sugerida) o hasta que las reactives. El ítem ámbar del tray muestra la hora de reanudación y las reactiva con un clic.
+  - **Sincronizado con Configuración**: Un banner en Configuración > Notificaciones refleja la pausa con botón "Reanudar ahora", y el estado sobrevive a los reinicios.
+  - **Silencio real**: Los sonidos de captura, duplicado y bienvenida también se silencian; las alertas de error siguen llegando.
 
-- 🖱️ **Destinos de carpeta contextuales**:
-  - **Sin destinos en vano**: El diálogo "Copiar a carpeta" oculta la carpeta en la que estás.
-  - **Paridad con la barra masiva**: El portapapeles principal solo se ofrece cuando navegas una carpeta, igual que en la barra de acciones en masa.
+- 🗂️ **Una sola categoría Código (HTML incluido)**:
+  - **HTML pasa a Código**: Las capturas de HTML estructural viven ahora en la única categoría Código con resaltado de sintaxis HTML; el tipo HTML separado desaparece de filtros, estadísticas, toasts y logros.
+  - **Comportamiento rico intacto**: Pegar sigue restaurando el HTML con estilo, el visor conserva su alternancia renderizado/fuente y Guardar como sigue exportando `.html`.
+  - **Migración automática**: El historial existente se convierte al primer arranque, y el logro de todos los tipos ahora sí es alcanzable.
 
-- 🎨 **Selección y borde de ventana más serenos**:
-  - **Selección teal acero**: El clip seleccionado del tema default cambia el cian neón por un teal acero desaturado en borde, tinte y glow.
-  - **Plata refinada**: El tema oscuro monocromo estrena una plata apenas más discreta; el tema claro queda intacto.
-  - **Borde de ventana tranquilo**: El borde de la ventana compacta cambia el neón por el mismo teal acero, y la barra de acento de la fila seleccionada se desvanece con un degradado vertical.
+- 🖥️ **Pulido del visor y del tray**:
+  - **Aperturas limpias del visor**: El visor abre maximizado al tamaño del área de trabajo, con primer fotograma oscuro y sin flash en blanco.
+  - **Tray más calmado**: El ítem Salir se comporta exactamente igual que los demás, la sombra pasa a oscura y un 30% más suave sin el glow cian, y los glows de los iconos bajan de intensidad.
 
-- 📦 **Instalador con marca y reportes de VirusTotal**:
-  - **Banner de encabezado con marca**: El instalador muestra un arte dedicado de 150x57 en lugar del icono distorsionado que el NSIS por defecto dibujaba con DPI escalado.
-  - **Enlaces a VirusTotal**: Ambos artefactos enlazan a sus reportes de VirusTotal, enviados automáticamente por el workflow de release.
-  - **Ritmo parejo del header**: Las pills de carpeta comparten la altura exacta del buscador, así el gap buscador→carpetas coincide con el de carpetas→clips.
-  - **Logo del tray al 40% de saturación**: El logo del menú del tray reposa con un toque de color en vez de escala de grises total.
+- 🛠️ **Correcciones**:
+  - **Búsqueda de actualizaciones funcional**: "Buscar actualizaciones..." desde el tray lanza la búsqueda aunque la ventana About tenga que abrirse de cero.
+  - **Adiós a los bloques negros**: Las ventanas transparentes (menú del tray, toasts) recuperan su transparencia automáticamente tras suspender/reanudar.
+  - **Un historial que se porta bien**: El orden del portapapeles sobrevive a los reinicios, pegar una imagen del historial la guarda como archivo en el Explorador y las copias mixtas de CyberSnap prefieren la imagen.
 
-- 🧹 **Menú More más limpio**:
-  - **Sin acciones duplicadas**: "Bloquear ahora" y "Pausar monitoreo" salieron del menú More porque ambos tienen botón visible en la titlebar con atajo real.
-
-- ⚡ **Rendimiento**:
-  - **Chunks de vendor estables**: El bundle se divide en chunks de React, motion, i18n y vendor, así las actualizaciones de la app ya no invalidan la caché de terceros.
+- ⌨️ **Hints y localización**:
+  - **Una sola fuente de hints**: El HUD de Pantalla Completa, el footer Compacto y los hints de emojis salen de un módulo compartido; los atajos se interpolan desde constantes compartidas y la píldora del HUD se centra en la titlebar.
+  - **Tray totalmente traducido**: El menú del tray está completamente traducido en inglés y español (incluido "Bloquear ahora"), con una nueva auditoría `i18n:check` que falla si falta una clave.
 
 
 

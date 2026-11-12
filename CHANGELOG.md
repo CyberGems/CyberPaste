@@ -2,6 +2,31 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.31.0] — 2026-11-11
+
+### 🔕 Pause Notifications from the Tray
+- **New tray item with flexible durations**: pause notifications for 1, 6, 12, or 24 hours (the suggested default) or until you turn them back on. While paused, the amber item shows the resume time and re-enables with one click.
+- **Synced with Settings**: a banner in Settings > Notifications mirrors the pause with a "Resume now" button; the state persists across restarts.
+- **True silence**: capture, duplicate, and startup sounds are muted while paused; error alerts still come through.
+
+### 🗂️ One Code Category (HTML included)
+- **HTML joins Code**: structural HTML captures now live in the single Code category with HTML syntax highlighting. The separate HTML type is gone from filters, stats, toasts, and achievements.
+- **Rich behavior intact**: pasting still restores styled HTML, the visor keeps its rendered/source toggle, and Save As still exports `.html` files.
+- **Automatic migration**: existing history converts on first launch. The achievements breakdown shows the five final types, and the all-types achievement is now actually reachable.
+
+### 🖥️ Visor & Tray Polish
+- **Cleaner visor opens**: the viewer opens maximized at work-area size with a dark first frame and no blank flash.
+- **Calmer tray menu**: the Quit item behaves exactly like every other item, the card shadow turns dark and 30% softer without the cyan glow, and icon glows are toned down to match.
+
+### 🛠️ Fixes
+- **Working update check**: "Check for Update..." from the tray now starts the search even when the About window has to open fresh.
+- **No more black blocks**: transparent windows (tray menu, toasts) regain their transparency automatically after sleep/resume.
+- **History that behaves**: clipboard order survives restarts, pasting a history image saves it as a file in Explorer, and mixed CyberSnap copies prefer the image.
+
+### ⌨️ Hints & Localization
+- **One hint source**: the Full mode HUD, Compact footer, and emoji hints all draw from a single shared module with a shared rotation hook; hotkeys interpolate from shared constants and the HUD pill centers on the titlebar while fitting its widest entry.
+- **Fully localized tray**: the tray menu is completely translated in English and Spanish (including "Lock now"), guarded by a new `i18n:check` audit that fails when a referenced key is missing.
+
 ## [1.30.0] — 2026-11-08
 
 ### ⌨️ New Single-Key Hotkeys & Cleaner Menus
