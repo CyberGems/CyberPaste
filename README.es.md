@@ -37,12 +37,10 @@
 - [🖼️ Capturas](#️-capturas)
 - [📋 ¿Por qué CyberPaste?](#-por-qué-cyberpaste)
 - [✨ Funciones principales](#-funciones-principales)
-- [🚀 Instalación](#-instalación)
+- [⬇️ Instalación](#️-instalación)
 - [🧭 Cómo usar la app](#-cómo-usar-la-app)
 - [🛠️ Stack tecnológico y arquitectura](#️-stack-tecnológico-y-arquitectura)
 - [⌨️ Atajos de teclado](#️-atajos-de-teclado)
-- [🤝 Contribuir](#-contribuir)
-- [🙏 Agradecimientos](#-agradecimientos)
 - [❤️ Donar](#️-donar)
 - [📄 Licencia](#-licencia)
 - [❓ Preguntas frecuentes](#-preguntas-frecuentes)
@@ -133,9 +131,10 @@ La mayoría de los gestores de portapapeles envían tus datos a la nube o son de
 - **4 opciones de tema:** CyberPaste, Oscuro, Claro y Sistema (sigue a Windows)
 - **Efectos Mica**: vibrancias nativas de Windows Mica y Mica-Alt con radios de esquina personalizados
 - **6 idiomas + automático**: inglés, español, alemán, francés, japonés y chino, con detección automática del idioma del sistema. Las traducciones de alemán, francés, japonés y chino están en proceso de actualización
+
 ---
 
-## 🚀 Instalación
+## ⬇️ Instalación
 
 ### Instalación (recomendada)
 
@@ -169,6 +168,7 @@ Windows muestra este aviso para cualquier instalador sin un certificado de firma
 Puedes verificar el archivo de forma independiente: compara el SHA con el release de GitHub, escanéalo en VirusTotal o compila desde el código fuente. Más detalles: [guía de SmartScreen en el sitio web](https://cybergems.org/download#smartscreen).
 
 </details>
+
 ---
 
 ## 🧭 Cómo usar la app
@@ -240,6 +240,17 @@ npm run tauri dev
 ```bash
 npm run tauri build
 ```
+
+### 🤝 Contribuir
+
+Las contribuciones son bienvenidas. Abre un issue describiendo el cambio antes de empezar trabajos grandes y envía pull requests contra la rama principal.
+
+### 🙏 Agradecimientos
+
+Originalmente hace un fork de [PastePaw](https://github.com/XueshiQiao/PastePaw) de [XueshiQiao](https://github.com/XueshiQiao). Desde entonces, CyberPaste ha sido reescrito y ampliado extensamente por [CyberGems](https://cybergems.org/).
+
+Este proyecto también se construye sobre componentes de código abierto como Tauri, React, SQLite y Rust, gracias a sus autores y mantenedores.
+
 ---
 
 ## ⌨️ Atajos de teclado
@@ -293,18 +304,6 @@ npm run tauri build
 
 ---
 
-## 🤝 Contribuir
-
-Las contribuciones son bienvenidas. Abre un issue describiendo el cambio antes de empezar trabajos grandes y envía pull requests contra la rama principal.
-
-## 🙏 Agradecimientos
-
-Originalmente hace un fork de [PastePaw](https://github.com/XueshiQiao/PastePaw) de [XueshiQiao](https://github.com/XueshiQiao). Desde entonces, CyberPaste ha sido reescrito y ampliado extensamente por [CyberGems](https://cybergems.org/).
-
-Este proyecto también se construye sobre componentes de código abierto como Tauri, React, SQLite y Rust, gracias a sus autores y mantenedores.
-
----
-
 ## ❤️ Donar
 
 **CyberPaste** es 100% gratis y de código abierto. Si te resulta útil, por favor considera [donar](https://cybergems.org/donate) o [dar una estrella al repo en GitHub](https://github.com/CyberGems/CyberPaste) para apoyar el desarrollo continuo. [Lee la historia completa](https://cybergems.org/about/) del proyecto. ¡Gracias! 🙏
@@ -339,6 +338,7 @@ Este proyecto también se construye sobre componentes de código abierto como Ta
 </details>
 
 </div>
+
 ---
 
 ## 📄 Licencia

@@ -37,12 +37,10 @@
 - [🖼️ Screenshots](#️-screenshots)
 - [📋 Why CyberPaste?](#-why-cyberpaste)
 - [✨ Key Features](#-key-features)
-- [🚀 Installation](#-installation)
+- [⬇️ Installation](#️-installation)
 - [🧭 Using the App](#-using-the-app)
 - [🛠️ Tech Stack & Architecture](#️-tech-stack--architecture)
 - [⌨️ Keyboard Shortcuts](#️-keyboard-shortcuts)
-- [🤝 Contributing](#-contributing)
-- [🙏 Acknowledgments](#-acknowledgments)
 - [❤️ Donate](#️-donate)
 - [📄 License](#-license)
 - [❓ FAQ](#-faq)
@@ -136,7 +134,7 @@ Most clipboard managers either send your data to the cloud or are too basic to b
 
 ---
 
-## 🚀 Installation
+## ⬇️ Installation
 
 ### Install (Recommended)
 
@@ -243,6 +241,16 @@ npm run tauri dev
 npm run tauri build
 ```
 
+### 🤝 Contributing
+
+Contributions are welcome. Please open an issue describing the change before starting large work, and submit pull requests against the main branch.
+
+### 🙏 Acknowledgments
+
+Originally forked from [PastePaw](https://github.com/XueshiQiao/PastePaw) by [XueshiQiao](https://github.com/XueshiQiao). CyberPaste has since been extensively rewritten and expanded by [CyberGems](https://cybergems.org/).
+
+This project also builds on open-source components including Tauri, React, SQLite, and Rust, thanks to their authors and maintainers.
+
 ---
 
 ## ⌨️ Keyboard Shortcuts
@@ -293,18 +301,6 @@ npm run tauri build
 | `Tab` | Insert 2 spaces |
 | `Ctrl+S` / `Ctrl+Enter` | Save |
 | `Escape` | Cancel |
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome. Please open an issue describing the change before starting large work, and submit pull requests against the main branch.
-
-## 🙏 Acknowledgments
-
-Originally forked from [PastePaw](https://github.com/XueshiQiao/PastePaw) by [XueshiQiao](https://github.com/XueshiQiao). CyberPaste has since been extensively rewritten and expanded by [CyberGems](https://cybergems.org/).
-
-This project also builds on open-source components including Tauri, React, SQLite, and Rust, thanks to their authors and maintainers.
 
 ---
 
