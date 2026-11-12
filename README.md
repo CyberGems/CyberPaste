@@ -37,7 +37,8 @@
 - [🖼️ Screenshots](#️-screenshots)
 - [📋 Why CyberPaste?](#-why-cyberpaste)
 - [✨ Key Features](#-key-features)
-- [🚀 Getting Started](#-getting-started)
+- [🚀 Installation](#-installation)
+- [🧭 Using the App](#-using-the-app)
 - [🛠️ Tech Stack & Architecture](#️-tech-stack--architecture)
 - [⌨️ Keyboard Shortcuts](#️-keyboard-shortcuts)
 - [🤝 Contributing](#-contributing)
@@ -135,7 +136,7 @@ Most clipboard managers either send your data to the cloud or are too basic to b
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Installation
 
 ### Install (Recommended)
 
@@ -169,6 +170,20 @@ Windows shows this warning for any installer without a paid code-signing certifi
 You can verify the file independently: compare the SHA with the GitHub release, scan it on VirusTotal, or build from source. More details: [SmartScreen guide on the website](https://cybergems.org/download#smartscreen).
 
 </details>
+
+---
+
+## 🧭 Using the App
+
+CyberPaste records everything you copy and keeps it on your PC: no account, no cloud.
+
+1. Copy anything as usual; CyberPaste saves it automatically.
+2. Press `Ctrl+Shift+V` to open your clipboard history.
+3. Search or scroll to the clip you need, then click to paste it back.
+
+Use `Ctrl+M` to switch between Full and Compact view, and organise clips into folders and favourites. Both global hotkeys are customizable.
+
+See [How Do You Use CyberPaste?](https://github.com/CyberGems/CyberPaste/wiki/How-Do-You-Use) for everyday examples and the full guides.
 
 ---
 

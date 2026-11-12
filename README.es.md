@@ -37,7 +37,8 @@
 - [🖼️ Capturas](#️-capturas)
 - [📋 ¿Por qué CyberPaste?](#-por-qué-cyberpaste)
 - [✨ Funciones principales](#-funciones-principales)
-- [🚀 Primeros pasos](#-primeros-pasos)
+- [🚀 Instalación](#-instalación)
+- [🧭 Cómo usar la app](#-cómo-usar-la-app)
 - [🛠️ Stack tecnológico y arquitectura](#️-stack-tecnológico-y-arquitectura)
 - [⌨️ Atajos de teclado](#️-atajos-de-teclado)
 - [🤝 Contribuir](#-contribuir)
@@ -134,7 +135,7 @@ La mayoría de los gestores de portapapeles envían tus datos a la nube o son de
 - **6 idiomas + automático**: inglés, español, alemán, francés, japonés y chino, con detección automática del idioma del sistema. Las traducciones de alemán, francés, japonés y chino están en proceso de actualización
 ---
 
-## 🚀 Primeros pasos
+## 🚀 Instalación
 
 ### Instalación (recomendada)
 
@@ -168,6 +169,20 @@ Windows muestra este aviso para cualquier instalador sin un certificado de firma
 Puedes verificar el archivo de forma independiente: compara el SHA con el release de GitHub, escanéalo en VirusTotal o compila desde el código fuente. Más detalles: [guía de SmartScreen en el sitio web](https://cybergems.org/download#smartscreen).
 
 </details>
+---
+
+## 🧭 Cómo usar la app
+
+CyberPaste guarda todo lo que copias y lo conserva en tu PC: sin cuenta y sin nube.
+
+1. Copia cualquier cosa como siempre. CyberPaste la guarda automáticamente.
+2. Pulsa `Ctrl+Shift+V` para abrir tu historial del portapapeles.
+3. Búscalo o desplázate y haz clic para volver a pegarlo.
+
+Usa `Ctrl+M` para alternar entre la vista completa y la compacta, y organiza los clips en carpetas y favoritos. Ambos atajos globales son personalizables.
+
+Consulta [¿Cómo se usa CyberPaste?](https://github.com/CyberGems/CyberPaste/wiki/How-Do-You-Use-es) para ver ejemplos cotidianos y las guías completas.
+
 ---
 
 ## 🛠️ Stack tecnológico y arquitectura
