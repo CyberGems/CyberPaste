@@ -1934,7 +1934,7 @@ export function ImageViewerWindow() {
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-2 rounded-xl border border-border/50 bg-muted/30 p-3">
                     <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                      {t('folders.type', 'Tipo')}
+                      {t('viewer.typeLabel')}
                     </span>
                     <span className="font-bold text-foreground">
                       {clip.clip_type.toUpperCase()}
@@ -1977,7 +1977,7 @@ export function ImageViewerWindow() {
                   {clip.source_app && (
                     <div className="flex flex-col gap-1 rounded-xl border border-border/50 bg-muted/30 p-3">
                       <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                        {t('filters.allApps', 'App')}
+                        {t('viewer.sourceAppLabel')}
                       </span>
                       <span className="font-medium text-foreground">{clip.source_app}</span>
                     </div>

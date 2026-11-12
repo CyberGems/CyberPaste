@@ -2671,7 +2671,7 @@ function App() {
       } catch (e) {
         cancelDeleteFlash(ids);
         console.error('Bulk delete failed:', e);
-        toast.error(t('notifications.deleteFailed'));
+        toast.error(t('notifications.clipDeleteFailed'));
       }
     },
     [getNearestClipIdAfterDelete, loadFolders, refreshCurrentFolder, refreshTotalCount, t]

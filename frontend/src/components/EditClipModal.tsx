@@ -307,7 +307,7 @@ export const EditClipModal: React.FC<EditClipModalProps> = ({
               spellCheck={false}
               autoFocus
               className="custom-scrollbar min-h-0 flex-1 resize-none bg-transparent p-2.5 font-mono text-xs leading-[20px] text-foreground transition-all placeholder:text-muted-foreground/40 focus:outline-none sm:p-3 sm:text-[13px] sm:leading-[22px]"
-              placeholder={t('common.typeHere', { defaultValue: '...' })}
+              placeholder={t('common.typeHere')}
             />
           </div>
 
