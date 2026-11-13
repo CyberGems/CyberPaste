@@ -29,4 +29,10 @@
   ${EndIf}
 !macroend
 
+; Add/Remove Programs "Comments": the Tauri NSIS template does not write it.
+; Keep this line in sync with description in package.json.
+!macro NSIS_HOOK_POSTINSTALL
+  WriteRegStr SHCTX "${UNINSTKEY}" "Comments" "Recall anything you have ever copied: text, code, images and files, entirely local."
+!macroend
+
 !endif ; CYBERPASTE_INSTALLER_NSH

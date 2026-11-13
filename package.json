@@ -1,7 +1,7 @@
 {
   "name": "cyberpaste",
   "version": "1.31.0",
-  "description": "A beautiful clipboard history manager",
+  "description": "Recall anything you have ever copied: text, code, images and files, entirely local.",
   "license": "GPL-3.0-only",
   "type": "module",
   "scripts": {
