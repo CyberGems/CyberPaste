@@ -6,12 +6,12 @@
 
 ### 🚀 What's new in this release
 
-<!-- IMPORTANT FOR AGENTS & MAINTAINERS: Always rewrite this entire section with the ACTUAL release notes for this specific version before tagging. NEVER leave or copy previous version notes! Use 25-45 words, lead with user-facing changes, and do not repeat the app name or version. -->
+<!-- IMPORTANT FOR AGENTS & MAINTAINERS: Always rewrite this entire section and highlights with the ACTUAL release notes for this specific new version before tagging. NEVER leave or copy previous version notes! Use 25-45 words for the summary, lead with user-facing changes, and do not repeat the app name or version. Keep the Spanish mirror inside the details block in sync: translate the summary and rewrite the highlights. -->
 <!-- changelog-summary:start -->
 Pause notifications from the tray with flexible durations, a unified Code category that absorbs HTML clips with their rich behavior intact, a visor that opens cleanly maximized, transparency that survives sleep, and a fully localized tray menu headline this release.
 <!-- changelog-summary:end -->
 
-> **New to CyberPaste?** A fast, privacy-first Windows clipboard manager with history, folders, OCR, and configurable AI actions.
+> **New to CyberPaste?** A fast, privacy-first Windows clipboard manager with history, folders, OCR, and optional AI actions.
 
 ---
 
@@ -43,13 +43,11 @@ Pause notifications from the tray with flexible durations, a unified Code catego
 <details>
 <summary><b>🇪🇸 Ver notas de la versión en Español</b></summary>
 
-<!-- Maintainer: Traduce el resumen y los puntos clave de arriba al español en cada release. -->
-
 ### 🚀 Novedades de esta versión
 
 Pausa notificaciones desde el tray con duraciones flexibles, una categoría Código unificada que absorbe los clips HTML conservando su comportamiento enriquecido, un visor que abre maximizado sin parpadeos, transparencia que sobrevive a la suspensión y un tray totalmente traducido encabezan esta versión.
 
-> **¿Nuevo en CyberPaste?** Un gestor de portapapeles rápido y privado para Windows, con historial, carpetas, OCR y acciones de IA configurables.
+> **¿Nuevo en CyberPaste?** Un gestor de portapapeles rápido y privado para Windows, con historial, carpetas, OCR y acciones de IA opcionales.
 
 ---
 
