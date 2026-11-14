@@ -107,7 +107,7 @@ Pausa notificaciones desde el tray con duraciones flexibles, una categoría Cód
 
 ### 🔐 VirusTotal and SHA256
 
-> 🛡️ The report opens on VirusTotal in a new tab and does not download anything.
+> 🛡️ The report opens on VirusTotal and does not download anything.
 
 **Installer**: [View VirusTotal report](https://www.virustotal.com/gui/file/{{INSTALLER_HASH}})
 
@@ -115,7 +115,7 @@ Pausa notificaciones desde el tray con duraciones flexibles, una categoría Cód
 {{INSTALLER_HASH}}
 ```
 
-**Portable edition**: [View VirusTotal report](https://www.virustotal.com/gui/file/{{PORTABLE_HASH}})
+**Portable**: [View VirusTotal report](https://www.virustotal.com/gui/file/{{PORTABLE_HASH}})
 
 ```text
 {{PORTABLE_HASH}}
