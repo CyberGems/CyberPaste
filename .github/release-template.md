@@ -78,7 +78,19 @@ Pausa notificaciones desde el tray con duraciones flexibles, una categoría Cód
   - **Una sola fuente de hints**: El HUD de Pantalla Completa, el footer Compacto y los hints de emojis salen de un módulo compartido; los atajos se interpolan desde constantes compartidas y la píldora del HUD se centra en la titlebar.
   - **Tray totalmente traducido**: El menú del tray está completamente traducido en inglés y español (incluido "Bloquear ahora"), con una nueva auditoría `i18n:check` que falla si falta una clave.
 
+### ⚠️ Antes de instalar
 
+- **Windows:** esta versión aún no está firmada digitalmente. SmartScreen puede avisar antes de ejecutarla: **Más información › Ejecutar de todas formas**. Cuando Smart App Control está activado, Windows rechaza programas sin firmar; consulta la [política de firma de código](https://github.com/CyberGems/.github/blob/main/CODE_SIGNING.md). Verifica la descarga con los checksums SHA256 que aparecen más abajo.
+
+</details>
+
+
+
+---
+
+### ⚠️ Before you install
+
+- **Windows:** this release is not code-signed yet. SmartScreen may ask before it runs: **More info › Run anyway**. Where Smart App Control is on, Windows refuses unsigned programs; see the [code signing policy](https://github.com/CyberGems/.github/blob/main/CODE_SIGNING.md). Verify the download with the SHA256 checksums below.
 
 ---
 
