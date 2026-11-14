@@ -82,8 +82,6 @@ Pausa notificaciones desde el tray con duraciones flexibles, una categoría Cód
 
 </details>
 
-
-
 ---
 
 ### ⚠️ Before you install
