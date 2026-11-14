@@ -119,4 +119,6 @@ Pausa notificaciones desde el tray con duraciones flexibles, una categoría Cód
 {{MSI_BLOCK}}
 ---
 
+📜 **Full changelog:** browse every version in [CHANGELOG.md](https://github.com/CyberGems/CyberPaste/blob/main/CHANGELOG.md).
+
 *Crafted with precision by [CyberGems](https://cybergems.org)*
