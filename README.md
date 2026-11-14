@@ -222,7 +222,7 @@ CyberPaste/
 └── README.md
 ```
 
-#### Building from Source (Developers)
+### Building from Source (Developers)
 
 Only needed if you want to work on CyberPaste or build it yourself; regular users can skip this section.
 
