@@ -10,6 +10,10 @@ function sanitizeNotes(text: string): string {
       // Strip download / asset tables and checksum sections from modal preview
       .replace(/#{2,4}\s*📦\s*(?:Downloads|Descargas)[\s\S]*/i, '')
       .replace(/#{2,4}\s*🔐\s*(?:Checksums|Sumas de verificación)[\s\S]*/i, '')
+      // Strip the Before you install block (release-page furniture; the
+      // checksums it references are not part of the modal preview)
+      .replace(/^#{2,4}\s*⚠️\s*(?:Before you install|Antes de instalar)[\s\S]*?\n---/gim, '')
+      .replace(/^#{2,4}\s*⚠️\s*(?:Before you install|Antes de instalar)[\s\S]*$/gim, '')
       // Strip footer
       .replace(/\*Crafted with precision[\s\S]*/i, '')
       // Strip introductory blockquotes
