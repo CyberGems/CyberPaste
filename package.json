@@ -47,7 +47,7 @@
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "sharp": "^0.35.5",
-    "tailwindcss": "^3.3.6",
+    "tailwindcss": "^4.3.5",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.3.3",
     "vite": "^5.0.8"
