@@ -112,6 +112,22 @@ fn foreground_window_relation(
 }
 
 #[cfg(target_os = "windows")]
+fn describe_hwnd(hwnd: windows::Win32::Foundation::HWND) -> String {
+    use windows::Win32::UI::WindowsAndMessaging::GetClassNameW;
+    if hwnd.0.is_null() {
+        return "null".to_string();
+    }
+    let mut buf = [0u16; 64];
+    let len = unsafe { GetClassNameW(hwnd, &mut buf) };
+    let class = if len > 0 {
+        String::from_utf16_lossy(&buf[..len as usize])
+    } else {
+        "?".to_string()
+    };
+    format!("{class}(0x{:x})", hwnd.0 as usize)
+}
+
+#[cfg(target_os = "windows")]
 fn force_window_foreground(window: &tauri::WebviewWindow) {
     use windows::Win32::Foundation::HWND;
     use windows::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId};
@@ -231,6 +247,12 @@ fn start_main_window_outside_click_watcher(app: tauri::AppHandle) {
                     && !foreground.0.is_null()
                     && fg_switched_to_other_app;
                 if clicked_outside || focus_left {
+                    log::debug!(
+                        "Auto-hide trigger=watcher clicked_outside={} focus_left={} fg={}",
+                        clicked_outside,
+                        focus_left,
+                        describe_hwnd(foreground)
+                    );
                     crate::animate_window_hide(&win, None);
                 }
             }
@@ -331,6 +353,8 @@ pub fn run_app() {
             .any(|arg| arg.eq_ignore_ascii_case("--autostart"));
 
     let mut log_builder = tauri_plugin_log::Builder::default()
+        .max_file_size(256 * 1024)
+        .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepSome(2))
         .format(|out, message, record| {
             out.finish(format_args!(
                 "[{}][{}][{}] {}",
@@ -578,13 +602,16 @@ pub fn run_app() {
                                 }
 
                                 #[cfg(target_os = "windows")]
-                                {
-                                    let (_fg, fg_is_ours, fg_is_sibling) =
+                                let fg_desc = {
+                                    let (fg, fg_is_ours, fg_is_sibling) =
                                         foreground_window_relation(win_clone.app_handle(), &win_clone);
                                     if fg_is_ours || fg_is_sibling {
                                         return;
                                     }
-                                }
+                                    describe_hwnd(fg)
+                                };
+                                #[cfg(not(target_os = "windows"))]
+                                let fg_desc = "n/a".to_string();
 
                                 // NEW SAFETY: If cursor is inside/near window bounds and left mouse button is down, don't hide (fixes dragging/resizing)
                                 let is_inside_and_dragging_or_resizing = if let (Ok(pos), Ok(size)) = (win_clone.outer_position(), win_clone.outer_size()) {
@@ -628,11 +655,19 @@ pub fn run_app() {
                                     if is_pinned {
                                         position_window_at_bottom(&win_clone);
                                         let _ = win_clone.show();
-                                        let _ = win_clone.set_focus();
+                                        force_window_foreground(&win_clone);
                                     } else {
+                                        log::debug!(
+                                            "Auto-hide trigger=focused_false moved_screens=true fg={}",
+                                            fg_desc
+                                        );
                                         crate::animate_window_hide(&win_clone, None);
                                     }
                                 } else if win_clone.is_visible().unwrap_or(false) {
+                                    log::debug!(
+                                        "Auto-hide trigger=focused_false moved_screens=false fg={}",
+                                        fg_desc
+                                    );
                                     crate::animate_window_hide(&win_clone, None);
                                 }
                             });
@@ -1348,7 +1383,7 @@ pub fn animate_view_mode_transition(window: &tauri::WebviewWindow) {
 
     let _ = window.set_always_on_top(true);
 
-    let _ = window.set_focus();
+    force_window_foreground(window);
 }
 
 pub fn animate_window_show(window: &tauri::WebviewWindow) {
