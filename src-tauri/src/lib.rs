@@ -14,6 +14,10 @@ use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 static IS_ANIMATING: AtomicBool = AtomicBool::new(false);
 static LAST_SHOW_TIME: AtomicI64 = AtomicI64::new(0);
+static SHOW_GEN: AtomicUsize = AtomicUsize::new(0);
+static MAIN_SAW_FOREGROUND: AtomicBool = AtomicBool::new(false);
+static SHOW_INITIAL_FG: std::sync::atomic::AtomicPtr<()> =
+    std::sync::atomic::AtomicPtr::new(std::ptr::null_mut());
 static STARTUP_FOCUS_GRACE_UNTIL: AtomicI64 = AtomicI64::new(0);
 static SKIP_LOCK_ON_NEXT_HIDE: AtomicBool = AtomicBool::new(false);
 static BLOCK_WINDOW_HIDE: AtomicBool = AtomicBool::new(false);
@@ -78,6 +82,81 @@ fn cursor_inside_window(win: &tauri::WebviewWindow, x: i32, y: i32) -> bool {
     }
 }
 
+#[cfg(target_os = "windows")]
+fn foreground_window_relation(
+    app: &tauri::AppHandle,
+    win: &tauri::WebviewWindow,
+) -> (windows::Win32::Foundation::HWND, bool, bool) {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::{GetAncestor, GetForegroundWindow, GA_ROOT};
+
+    let our_hwnd = win.hwnd().ok().map(|handle| HWND(handle.0 as _));
+    let foreground = unsafe { GetForegroundWindow() };
+    let foreground_root = unsafe { GetAncestor(foreground, GA_ROOT) };
+    let foreground_is_ours = our_hwnd.is_some_and(|hwnd| {
+        hwnd == foreground || hwnd == foreground_root
+    });
+    // Settings, About and the image viewer are real windows the user
+    // switched to. Toasts and the tray popup must not veto hiding.
+    let foreground_is_sibling = ["settings", "about", "image_viewer"]
+        .iter()
+        .any(|label| {
+            app.get_webview_window(label)
+                .and_then(|secondary| secondary.hwnd().ok())
+                .is_some_and(|handle| {
+                    let hwnd = HWND(handle.0 as _);
+                    hwnd == foreground || hwnd == foreground_root
+                })
+        });
+    (foreground, foreground_is_ours, foreground_is_sibling)
+}
+
+#[cfg(target_os = "windows")]
+fn force_window_foreground(window: &tauri::WebviewWindow) {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId};
+    use windows::Win32::UI::WindowsAndMessaging::{
+        BringWindowToTop, GetForegroundWindow, GetWindowThreadProcessId, SetForegroundWindow,
+    };
+
+    let _ = window.set_focus();
+    let Ok(handle) = window.hwnd() else {
+        return;
+    };
+    let hwnd = HWND(handle.0 as _);
+    unsafe {
+        let fg = GetForegroundWindow();
+        if fg == hwnd {
+            return;
+        }
+        // Global hotkeys from a background thread can be blocked by Windows'
+        // foreground lock; temporarily attach to the foreground thread so
+        // SetForegroundWindow succeeds reliably.
+        let fg_thread = if !fg.0.is_null() {
+            GetWindowThreadProcessId(fg, None)
+        } else {
+            0
+        };
+        let our_thread = GetCurrentThreadId();
+        let attached = fg_thread != 0
+            && fg_thread != our_thread
+            && AttachThreadInput(our_thread, fg_thread, true).as_bool();
+
+        let _ = BringWindowToTop(hwnd);
+        let _ = SetForegroundWindow(hwnd);
+
+        if attached {
+            let _ = AttachThreadInput(our_thread, fg_thread, false);
+        }
+    }
+    let _ = window.set_focus();
+}
+
+#[cfg(not(target_os = "windows"))]
+fn force_window_foreground(window: &tauri::WebviewWindow) {
+    let _ = window.set_focus();
+}
+
 /// Always-on-top windows on Windows often keep focus when the user clicks the
 /// desktop, so `Focused(false)` never arrives. Watch the foreground window and
 /// outside clicks directly.
@@ -85,41 +164,32 @@ fn start_main_window_outside_click_watcher(app: tauri::AppHandle) {
     #[cfg(target_os = "windows")]
     {
         std::thread::spawn(move || {
-            use windows::Win32::Foundation::{HWND, POINT};
+            use windows::Win32::Foundation::POINT;
             use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON};
-            use windows::Win32::UI::WindowsAndMessaging::{
-                GetAncestor, GetCursorPos, GetForegroundWindow, GA_ROOT,
-            };
+            use windows::Win32::UI::WindowsAndMessaging::GetCursorPos;
 
             let mut prev_down = false;
             loop {
                 std::thread::sleep(std::time::Duration::from_millis(16));
+                let key_state = unsafe { GetAsyncKeyState(VK_LBUTTON.0 as i32) as u16 };
+                let down = (key_state & 0x8000) != 0;
+                // Only detect fresh left-button presses after the grace window;
+                // never use bit 0x0001 which preserves clicks from before show().
+                let clicked = down && !prev_down;
+                prev_down = down;
+
                 let Some(win) = app.get_webview_window("main") else {
                     continue;
                 };
                 if !win.is_visible().unwrap_or(false) || IS_ANIMATING.load(Ordering::SeqCst) {
-                    prev_down = false;
                     continue;
                 }
 
-                let our_hwnd = win.hwnd().ok().map(|handle| HWND(handle.0 as _));
-                let foreground = unsafe { GetForegroundWindow() };
-                let foreground_root = unsafe { GetAncestor(foreground, GA_ROOT) };
-                let foreground_is_ours = our_hwnd.is_some_and(|hwnd| {
-                    hwnd == foreground || hwnd == foreground_root
-                });
-                // Settings, About and the image viewer are real windows the user
-                // switched to. Toasts and the tray popup must not veto hiding.
-                let foreground_is_sibling = ["settings", "about", "image_viewer"]
-                    .iter()
-                    .any(|label| {
-                        app.get_webview_window(label)
-                            .and_then(|secondary| secondary.hwnd().ok())
-                            .is_some_and(|handle| {
-                                let hwnd = HWND(handle.0 as _);
-                                hwnd == foreground || hwnd == foreground_root
-                            })
-                    });
+                let (foreground, foreground_is_ours, foreground_is_sibling) =
+                    foreground_window_relation(&app, &win);
+                if foreground_is_ours {
+                    MAIN_SAW_FOREGROUND.store(true, Ordering::SeqCst);
+                }
 
                 // Update TARGET_FOREGROUND_HND whenever an external application is active
                 if !foreground.0.is_null() && !foreground_is_ours && !foreground_is_sibling {
@@ -139,14 +209,9 @@ fn start_main_window_outside_click_watcher(app: tauri::AppHandle) {
                 if now < STARTUP_FOCUS_GRACE_UNTIL.load(Ordering::SeqCst) {
                     continue;
                 }
-                if now - LAST_SHOW_TIME.load(Ordering::SeqCst) < 400 {
+                if now - LAST_SHOW_TIME.load(Ordering::SeqCst) < 500 {
                     continue;
                 }
-
-                let key_state = unsafe { GetAsyncKeyState(VK_LBUTTON.0 as i32) as u16 };
-                let down = (key_state & 0x8000) != 0;
-                let clicked = (down && !prev_down) || (key_state & 0x0001) != 0;
-                prev_down = down;
 
                 let mut point = POINT { x: 0, y: 0 };
                 let have_cursor = unsafe { GetCursorPos(&mut point) }.is_ok();
@@ -157,7 +222,14 @@ fn start_main_window_outside_click_watcher(app: tauri::AppHandle) {
                 }
 
                 let clicked_outside = clicked && have_cursor && !inside;
-                let focus_left = !foreground_is_ours && !foreground_is_sibling && !foreground.0.is_null();
+                let saw_fg = MAIN_SAW_FOREGROUND.load(Ordering::SeqCst);
+                let initial_fg = SHOW_INITIAL_FG.load(Ordering::SeqCst);
+                let fg_switched_to_other_app =
+                    saw_fg || (!initial_fg.is_null() && foreground.0 as *mut () != initial_fg);
+                let focus_left = !foreground_is_ours
+                    && !foreground_is_sibling
+                    && !foreground.0.is_null()
+                    && fg_switched_to_other_app;
                 if clicked_outside || focus_left {
                     crate::animate_window_hide(&win, None);
                 }
@@ -412,106 +484,158 @@ pub fn run_app() {
                     });
                 }
                 tauri::WindowEvent::Focused(focused) => {
-                    if !focused {
-                        let label = window.label();
+                    let label = window.label();
+                    if *focused {
                         if label == "main" {
-                            if is_window_hide_blocked() || has_pending_undos() || native_dialog_is_open() {
-                                return;
-                            }
+                            MAIN_SAW_FOREGROUND.store(true, Ordering::SeqCst);
+                        }
+                    } else if label == "main" {
+                        if is_window_hide_blocked() || has_pending_undos() || native_dialog_is_open() {
+                            return;
+                        }
 
-                            if window
-                                .app_handle()
-                                .get_webview_window("settings")
-                                .and_then(|settings| settings.is_visible().ok())
-                                .unwrap_or(false)
-                            {
-                                return;
-                            }
+                        let any_sibling_visible = ["settings", "about", "image_viewer"]
+                            .iter()
+                            .any(|sibling| {
+                                window
+                                    .app_handle()
+                                    .get_webview_window(sibling)
+                                    .and_then(|w| w.is_visible().ok())
+                                    .unwrap_or(false)
+                            });
+                        if any_sibling_visible {
+                            return;
+                        }
 
-                            let hide_on_blur = window
-                                .app_handle()
-                                .try_state::<Arc<crate::settings_manager::SettingsManager>>()
-                                .map(|manager| manager.get().hide_on_blur)
-                                .unwrap_or(true);
-                            if !hide_on_blur {
-                                return;
-                            }
+                        let hide_on_blur = window
+                            .app_handle()
+                            .try_state::<Arc<crate::settings_manager::SettingsManager>>()
+                            .map(|manager| manager.get().hide_on_blur)
+                            .unwrap_or(true);
+                        if !hide_on_blur {
+                            return;
+                        }
 
-                            let last_show = LAST_SHOW_TIME.load(Ordering::SeqCst);
-                            let now = chrono::Local::now().timestamp_millis();
-                            if now < STARTUP_FOCUS_GRACE_UNTIL.load(Ordering::SeqCst) {
-                                return;
-                            }
-                            let debounce_ms = 500;
-                            if now - last_show < debounce_ms {
-                                return;
-                            }
+                        let show_gen = SHOW_GEN.load(Ordering::SeqCst);
+                        let last_show = LAST_SHOW_TIME.load(Ordering::SeqCst);
+                        let now = chrono::Local::now().timestamp_millis();
+                        if now < STARTUP_FOCUS_GRACE_UNTIL.load(Ordering::SeqCst) {
+                            return;
+                        }
+                        let debounce_ms = 500;
+                        if now - last_show < debounce_ms {
+                            return;
+                        }
 
-                            if let Some(win) = window.app_handle().get_webview_window(label) {
-                                 let win_clone = win.clone();
-                                 std::thread::spawn(move || {
-                                     let is_pinned = {
-                                         let manager = win_clone.state::<Arc<crate::settings_manager::SettingsManager>>();
-                                         manager.get().pinned
-                                     };
+                        if let Some(win) = window.app_handle().get_webview_window(label) {
+                            let win_clone = win.clone();
+                            std::thread::spawn(move || {
+                                // Let transient WebView2 / Win32 activation focus shifts settle
+                                std::thread::sleep(std::time::Duration::from_millis(80));
 
-                                     // NEW SAFETY: If cursor is inside/near window bounds and left mouse button is down, don't hide (fixes dragging/resizing)
-                                     let is_inside_and_dragging_or_resizing = if let (Ok(pos), Ok(size)) = (win_clone.outer_position(), win_clone.outer_size()) {
-                                         use windows::Win32::Foundation::POINT;
-                                         use windows::Win32::UI::WindowsAndMessaging::GetCursorPos;
-                                         use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON};
-                                         let mut point = POINT { x: 0, y: 0 };
-                                         let has_cursor = unsafe { GetCursorPos(&mut point).is_ok() };
-                                         if has_cursor {
-                                             // Allow a 10px margin around the window to capture resize borders
-                                             let cursor_inside_or_near = point.x >= pos.x - 10 && point.x <= pos.x + size.width as i32 + 10 &&
-                                                 point.y >= pos.y - 10 && point.y <= pos.y + size.height as i32 + 10;
-                                             let lbutton_down = (unsafe { GetAsyncKeyState(VK_LBUTTON.0 as i32) } as u16 & 0x8000) != 0;
-                                             cursor_inside_or_near && lbutton_down
-                                         } else {
-                                             false
-                                         }
-                                     } else {
-                                         false
-                                     };
+                                if SHOW_GEN.load(Ordering::SeqCst) != show_gen {
+                                    return;
+                                }
 
-                                     if is_pinned || is_inside_and_dragging_or_resizing {
-                                         log::info!("Auto-hide skipped: pinned={} dragging_or_resizing={}", is_pinned, is_inside_and_dragging_or_resizing);
-                                         return;
-                                     }
+                                let now_after = chrono::Local::now().timestamp_millis();
+                                if now_after < STARTUP_FOCUS_GRACE_UNTIL.load(Ordering::SeqCst)
+                                    || now_after - LAST_SHOW_TIME.load(Ordering::SeqCst) < debounce_ms
+                                {
+                                    return;
+                                }
 
-                                     if IS_ANIMATING.load(Ordering::SeqCst) || !win_clone.is_visible().unwrap_or(false) {
-                                         return;
-                                     }
+                                if is_window_hide_blocked() || has_pending_undos() || native_dialog_is_open() {
+                                    return;
+                                }
 
-                                     let current_monitor = win_clone.current_monitor().ok().flatten();
-                                     let cursor_monitor = get_monitor_at_cursor(&win_clone);
+                                let sibling_visible_after = ["settings", "about", "image_viewer"]
+                                    .iter()
+                                    .any(|sibling| {
+                                        win_clone
+                                            .app_handle()
+                                            .get_webview_window(sibling)
+                                            .and_then(|w| w.is_visible().ok())
+                                            .unwrap_or(false)
+                                    });
+                                if sibling_visible_after {
+                                    return;
+                                }
 
-                                     let mut moved_screens = false;
-                                     if let (Some(cm), Some(crm)) = (&current_monitor, &cursor_monitor) {
-                                         if cm.position().x != crm.position().x || cm.position().y != crm.position().y {
-                                             moved_screens = true;
-                                         }
-                                     }
+                                let (hide_on_blur, is_pinned) = {
+                                    let manager = win_clone.state::<Arc<crate::settings_manager::SettingsManager>>();
+                                    let s = manager.get();
+                                    (s.hide_on_blur, s.pinned)
+                                };
+                                if !hide_on_blur || is_pinned {
+                                    return;
+                                }
 
-                                      if moved_screens {
-                                          // Only reposition to new monitor if window is pinned
-                                          let manager = win_clone.state::<Arc<SettingsManager>>();
-                                          let is_pinned = manager.get().pinned;
-                                          if is_pinned {
-                                              position_window_at_bottom(&win_clone);
-                                              let _ = win_clone.show();
-                                              let _ = win_clone.set_focus();
-                                          } else {
-                                              crate::animate_window_hide(&win_clone, None);
-                                          }
-                                      } else {
-                                          if win_clone.is_visible().unwrap_or(false) {
-                                              crate::animate_window_hide(&win_clone, None);
-                                          }
-                                      }
-                                 });
-                            }
+                                if IS_ANIMATING.load(Ordering::SeqCst)
+                                    || !win_clone.is_visible().unwrap_or(false)
+                                    || win_clone.is_focused().unwrap_or(false)
+                                {
+                                    return;
+                                }
+
+                                #[cfg(target_os = "windows")]
+                                {
+                                    let (_fg, fg_is_ours, fg_is_sibling) =
+                                        foreground_window_relation(win_clone.app_handle(), &win_clone);
+                                    if fg_is_ours || fg_is_sibling {
+                                        return;
+                                    }
+                                }
+
+                                // NEW SAFETY: If cursor is inside/near window bounds and left mouse button is down, don't hide (fixes dragging/resizing)
+                                let is_inside_and_dragging_or_resizing = if let (Ok(pos), Ok(size)) = (win_clone.outer_position(), win_clone.outer_size()) {
+                                    use windows::Win32::Foundation::POINT;
+                                    use windows::Win32::UI::WindowsAndMessaging::GetCursorPos;
+                                    use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON};
+                                    let mut point = POINT { x: 0, y: 0 };
+                                    let has_cursor = unsafe { GetCursorPos(&mut point).is_ok() };
+                                    if has_cursor {
+                                        // Allow a 10px margin around the window to capture resize borders
+                                        let cursor_inside_or_near = point.x >= pos.x - 10 && point.x <= pos.x + size.width as i32 + 10 &&
+                                            point.y >= pos.y - 10 && point.y <= pos.y + size.height as i32 + 10;
+                                        let lbutton_down = (unsafe { GetAsyncKeyState(VK_LBUTTON.0 as i32) } as u16 & 0x8000) != 0;
+                                        cursor_inside_or_near && lbutton_down
+                                    } else {
+                                        false
+                                    }
+                                } else {
+                                    false
+                                };
+
+                                if is_inside_and_dragging_or_resizing {
+                                    log::info!("Auto-hide skipped: dragging_or_resizing=true");
+                                    return;
+                                }
+
+                                let current_monitor = win_clone.current_monitor().ok().flatten();
+                                let cursor_monitor = get_monitor_at_cursor(&win_clone);
+
+                                let mut moved_screens = false;
+                                if let (Some(cm), Some(crm)) = (&current_monitor, &cursor_monitor) {
+                                    if cm.position().x != crm.position().x || cm.position().y != crm.position().y {
+                                        moved_screens = true;
+                                    }
+                                }
+
+                                if moved_screens {
+                                    // Only reposition to new monitor if window is pinned
+                                    let manager = win_clone.state::<Arc<SettingsManager>>();
+                                    let is_pinned = manager.get().pinned;
+                                    if is_pinned {
+                                        position_window_at_bottom(&win_clone);
+                                        let _ = win_clone.show();
+                                        let _ = win_clone.set_focus();
+                                    } else {
+                                        crate::animate_window_hide(&win_clone, None);
+                                    }
+                                } else if win_clone.is_visible().unwrap_or(false) {
+                                    crate::animate_window_hide(&win_clone, None);
+                                }
+                            });
                         }
                     }
                 }
@@ -1236,6 +1360,18 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
         }
     }
 
+    SHOW_GEN.fetch_add(1, Ordering::SeqCst);
+    MAIN_SAW_FOREGROUND.store(false, Ordering::SeqCst);
+    #[cfg(target_os = "windows")]
+    {
+        let (fg, fg_is_ours, fg_is_sibling) = foreground_window_relation(window.app_handle(), window);
+        let initial_ptr = if !fg_is_ours && !fg_is_sibling {
+            fg.0 as *mut ()
+        } else {
+            std::ptr::null_mut()
+        };
+        SHOW_INITIAL_FG.store(initial_ptr, Ordering::SeqCst);
+    }
     LAST_SHOW_TIME.store(chrono::Local::now().timestamp_millis(), Ordering::SeqCst);
     let window = window.clone();
 
@@ -1407,7 +1543,7 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                 crate::apply_window_effect(&window, &mica_effect, &current_theme, round_corners);
                 let _ = window.show();
                 let _ = window.unminimize();
-                let _ = window.set_focus();
+                force_window_foreground(&window);
 
                 // Re-apply size after show — webview may have stale DPI scale factor
                 std::thread::sleep(std::time::Duration::from_millis(50));
@@ -1417,6 +1553,7 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                 }));
 
                 let _ = window.set_always_on_top(true);
+                force_window_foreground(&window);
             } else {
                 // Full mode fills the monitor's work area: flush to the screen
                 // edges, square corners so the flush look leaves no gaps, and
@@ -1446,7 +1583,7 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                 crate::apply_window_effect(&window, &mica_effect, &current_theme, false);
                 let _ = window.show();
                 let _ = window.unminimize();
-                let _ = window.set_focus();
+                force_window_foreground(&window);
 
                 // Re-apply size once after showing to ensure full width overrides
                 // any stale value restored by the window-state plugin.
@@ -1455,6 +1592,7 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                     height: window_height_px,
                 }));
                 let _ = window.set_always_on_top(true);
+                force_window_foreground(&window);
             }
         } else {
             let current_theme = if theme_str == "light" {
@@ -1467,7 +1605,11 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
             crate::apply_window_effect(&window, &mica_effect, &current_theme, round_corners);
             let _ = window.show();
             let _ = window.unminimize();
+            let _ = window.set_always_on_top(true);
+            force_window_foreground(&window);
         }
+
+        LAST_SHOW_TIME.store(chrono::Local::now().timestamp_millis(), Ordering::SeqCst);
     });
 }
 
