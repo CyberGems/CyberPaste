@@ -137,8 +137,8 @@ export const AppFilterDropdown: React.FC<AppFilterDropdownProps> = ({
           className={clsx(
             'flex flex-shrink-0 items-center font-medium transition-all',
             variant === 'compact'
-              ? 'h-8 rounded-lg border border-transparent bg-primary/15 text-primary'
-              : 'h-7 rounded-full border border-primary/40 bg-primary/15 text-primary',
+              ? 'h-8 rounded-lg border border-transparent bg-primary/15 text-[11px] text-primary'
+              : 'h-7 rounded-full border border-primary/40 bg-primary/15 text-[11px] leading-normal text-primary',
             isOpen && 'bg-primary/20'
           )}
         >

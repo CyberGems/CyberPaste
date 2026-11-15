@@ -609,7 +609,8 @@ export const ClipCard = memo(
             <div
               data-el="clip-card-content"
               className={clsx(
-                'relative z-10 flex-1 overflow-hidden p-2',
+                'relative z-10 min-h-0 flex-1 overflow-hidden p-2',
+                clip.clip_type !== 'image' && 'pb-1',
                 isSelected || isBulkSelected
                   ? 'bg-transparent'
                   : clip.clip_type === 'image'
@@ -617,14 +618,20 @@ export const ClipCard = memo(
                     : 'bg-card/90'
               )}
             >
-              {renderedContent}
-              {clip.clip_type !== 'image' && (
+              {clip.clip_type !== 'image' && clip.clip_type !== 'file' ? (
                 <div
-                  className={clsx(
-                    'pointer-events-none absolute bottom-0 left-0 right-0 bg-gradient-to-t from-card/100 to-card/30',
-                    cardFormat === 'panoramic' ? 'h-7' : 'h-12'
-                  )}
-                />
+                  className="h-full overflow-hidden"
+                  style={{
+                    WebkitMaskImage:
+                      'linear-gradient(to bottom, #000 calc(100% - 14px), transparent 100%)',
+                    maskImage:
+                      'linear-gradient(to bottom, #000 calc(100% - 14px), transparent 100%)',
+                  }}
+                >
+                  {renderedContent}
+                </div>
+              ) : (
+                renderedContent
               )}
             </div>
 
@@ -637,10 +644,13 @@ export const ClipCard = memo(
                 onCancelPeek?.();
               }}
               className={clsx(
-                'absolute bottom-0 left-0 right-0 z-10 flex h-8 items-center justify-center px-2.5 py-1',
+                'z-10 flex h-8 items-center justify-center px-2.5 py-1',
                 clip.clip_type === 'image'
-                  ? 'bg-gradient-to-t from-card/95 via-card/80 to-transparent'
-                  : 'bg-gradient-to-t from-card via-card/95 to-transparent'
+                  ? 'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-card/95 via-card/80 to-transparent'
+                  : clsx(
+                      'relative flex-shrink-0',
+                      isSelected || isBulkSelected ? 'bg-transparent' : 'bg-card/90'
+                    )
               )}
             >
               {/* Content area: Metadata in rest, Quick Actions centered in hover */}
