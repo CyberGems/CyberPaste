@@ -281,6 +281,7 @@ mod quiet_hours;
 mod secrets;
 mod settings_commands;
 mod settings_manager;
+mod window_position;
 #[cfg(target_os = "windows")]
 mod tray_pin_tip;
 #[cfg(target_os = "windows")]
@@ -1398,7 +1399,7 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
     SHOW_GEN.fetch_add(1, Ordering::SeqCst);
     MAIN_SAW_FOREGROUND.store(false, Ordering::SeqCst);
     #[cfg(target_os = "windows")]
-    {
+    let initial_fg_raw: isize = {
         let (fg, fg_is_ours, fg_is_sibling) = foreground_window_relation(window.app_handle(), window);
         let initial_ptr = if !fg_is_ours && !fg_is_sibling {
             fg.0 as *mut ()
@@ -1406,7 +1407,12 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
             std::ptr::null_mut()
         };
         SHOW_INITIAL_FG.store(initial_ptr, Ordering::SeqCst);
-    }
+        if !fg_is_ours && !fg_is_sibling {
+            fg.0 as isize
+        } else {
+            0
+        }
+    };
     LAST_SHOW_TIME.store(chrono::Local::now().timestamp_millis(), Ordering::SeqCst);
     let window = window.clone();
 
@@ -1458,65 +1464,39 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
             )
         };
 
-        let (target_pos, monitor) = {
-            use windows::Win32::Foundation::POINT;
-            use windows::Win32::Graphics::Gdi::ClientToScreen;
-            use windows::Win32::UI::WindowsAndMessaging::{
-                GetCursorPos, GetForegroundWindow, GetGUIThreadInfo, GetWindowThreadProcessId,
-                GUITHREADINFO,
-            };
+        let (resolved_target, monitor) = {
+            #[cfg(target_os = "windows")]
+            {
+                use windows::Win32::Foundation::{HWND, POINT};
 
-            let mut point = POINT { x: 0, y: 0 };
-            let mut found = false;
-
-            if view_mode == "compact" {
-                if compact_pos_mode == "caret" {
-                    let mut info = GUITHREADINFO::default();
-                    info.cbSize = std::mem::size_of::<GUITHREADINFO>() as u32;
-                    let hwnd = unsafe { GetForegroundWindow() };
-                    let thread_id = unsafe { GetWindowThreadProcessId(hwnd, None) };
-
-                    if unsafe { GetGUIThreadInfo(thread_id, &mut info).is_ok() }
-                        && !info.hwndCaret.is_invalid()
-                    {
-                        let mut caret_pt = POINT {
-                            x: info.rcCaret.left,
-                            y: info.rcCaret.bottom,
-                        };
-                        if unsafe { ClientToScreen(info.hwndCaret, &mut caret_pt).as_bool() } {
-                            point = caret_pt;
-                            found = true;
-                        }
-                    }
+                let initial_fg = if initial_fg_raw != 0 {
+                    Some(HWND(initial_fg_raw as *mut core::ffi::c_void))
+                } else {
+                    None
+                };
+                if let Some(target) = window_position::resolve_window_target(&compact_pos_mode, initial_fg) {
+                    let monitor_pt = POINT {
+                        x: target.monitor_point.0,
+                        y: target.monitor_point.1,
+                    };
+                    (Some(target), get_monitor_at_point(&window, monitor_pt))
+                } else {
+                    let mon = window
+                        .primary_monitor()
+                        .ok()
+                        .flatten()
+                        .or_else(|| window.current_monitor().ok().flatten());
+                    (None, mon)
                 }
             }
-
-
-            if !found {
-                if unsafe { GetCursorPos(&mut point).is_ok() } {
-                    found = true;
-                }
-            }
-
-            if found {
-                (point, get_monitor_at_point(&window, point))
-            } else {
+            #[cfg(not(target_os = "windows"))]
+            {
                 let mon = window
                     .primary_monitor()
                     .ok()
                     .flatten()
                     .or_else(|| window.current_monitor().ok().flatten());
-                let pt = if let Some(ref m) = mon {
-                    let pos = m.position();
-                    let size = m.size();
-                    POINT {
-                        x: pos.x + (size.width / 2) as i32,
-                        y: pos.y + (size.height / 2) as i32,
-                    }
-                } else {
-                    POINT { x: 0, y: 0 }
-                };
-                (pt, mon)
+                (None::<window_position::ResolvedTarget>, mon)
             }
         };
 
@@ -1527,10 +1507,11 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
             let work_area = monitor.work_area();
 
             log::info!(
-                "Showing window on monitor: pos={:?}, size={:?}, work_area={:?}",
+                "Showing window on monitor: pos={:?}, size={:?}, work_area={:?}, anchor={:?}",
                 monitor_pos,
                 monitor_size,
-                work_area
+                work_area,
+                resolved_target.as_ref().map(|t| t.source)
             );
 
             if view_mode == "compact" {
@@ -1552,8 +1533,23 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
                     height: window_height_px,
                 }));
 
-                let preferred_x = target_pos.x - (window_width_px / 2) as i32;
-                let preferred_y = target_pos.y - (window_height_px / 4) as i32;
+                let (preferred_x, preferred_y) = if let Some(ref target) = resolved_target {
+                    window_position::compute_compact_preferred_origin(
+                        target,
+                        window_width_px,
+                        window_height_px,
+                        work_area.position.y,
+                        work_area.position.y + work_area.size.height as i32,
+                        scale_factor,
+                    )
+                } else {
+                    let cx = work_area.position.x + (work_area.size.width / 2) as i32;
+                    let cy = work_area.position.y + (work_area.size.height / 2) as i32;
+                    (
+                        cx - (window_width_px / 2) as i32,
+                        cy - (window_height_px / 2) as i32,
+                    )
+                };
                 let (target_x, target_y) = clamp_compact_to_work_area(
                     preferred_x,
                     preferred_y,

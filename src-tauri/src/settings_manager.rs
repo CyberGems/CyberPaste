@@ -80,13 +80,11 @@ impl SettingsManager {
             settings.mica_effect = derived_effect;
             needs_save = true;
         }
-        // Retire the legacy "auto" compact position mode: it ran the exact same
-        // caret-with-cursor-fallback path as "caret", so "cursor" is the honest
-        // default and anything unknown falls back to it.
-        if settings.compact_view_position_mode != "caret"
-            && settings.compact_view_position_mode != "cursor"
-        {
-            settings.compact_view_position_mode = "cursor".to_string();
+        // Normalize compact_view_position_mode (migrating legacy "auto" or unknown values to "smart").
+        let normalized_pos_mode =
+            crate::window_position::normalize_position_mode(&settings.compact_view_position_mode);
+        if settings.compact_view_position_mode != normalized_pos_mode {
+            settings.compact_view_position_mode = normalized_pos_mode.to_string();
             needs_save = true;
         }
 

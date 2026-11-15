@@ -270,7 +270,7 @@ export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
     labelKey: 'settings.compactViewPosition',
     descKey: 'settings.compactViewPositionDesc',
     sectionKey: 'settings.layoutNavigation',
-    extraKeys: ['settings.positionCursor', 'settings.positionCaret'],
+    extraKeys: ['settings.positionSmart', 'settings.positionCursor', 'settings.positionCaret'],
   },
   {
     tab: 'compact',

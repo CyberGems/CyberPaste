@@ -2983,9 +2983,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           </p>
                         </label>
                         <Select
-                          value={settings.compact_view_position_mode || 'cursor'}
+                          value={settings.compact_view_position_mode || 'smart'}
                           onChange={(val) => updateSetting('compact_view_position_mode', val)}
                           options={[
+                            { value: 'smart', label: t('settings.positionSmart') },
                             { value: 'cursor', label: t('settings.positionCursor') },
                             { value: 'caret', label: t('settings.positionCaret') },
                           ]}

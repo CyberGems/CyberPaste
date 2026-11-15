@@ -105,7 +105,7 @@ pub struct AppSettings {
     pub auto_backup_folder: String,
     #[serde(default = "default_backup_retention")]
     pub auto_backup_retention: i64,
-    pub compact_view_position_mode: String, // "cursor" or "caret"
+    pub compact_view_position_mode: String, // "smart", "cursor", or "caret"
     pub viewer_window_width: f64,
     pub viewer_window_height: f64,
     pub viewer_window_x: Option<i32>,
@@ -281,7 +281,7 @@ impl Default for AppSettings {
             auto_backup_enabled: true,
             auto_backup_folder: "".to_string(),
             auto_backup_retention: 3,
-            compact_view_position_mode: "cursor".to_string(),
+            compact_view_position_mode: "smart".to_string(),
             viewer_window_width: 800.0,
             viewer_window_height: 600.0,
             viewer_window_x: None,
