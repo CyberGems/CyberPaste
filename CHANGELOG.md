@@ -946,42 +946,6 @@ All notable changes to CyberPaste are documented here.
   - Acciones de IA ocultas para clips no textuales (imagen/archivo) en el menú contextual.
   - Objetivos de clic del checkbox de multiselección ampliados para evitar cierres accidentales de la ventana.
 
-## [1.6.0] - 2026-08-01
-
-### 🇺🇸 English
-
-- **Full-mode overhaul**
-  - Type filter chip row (all/text/code/image/url/file) with SQL-backed filtering and counter badges
-  - Adaptive grid columns that scale with window width (2–12 columns) and persistent zoom (Ctrl+Wheel / ControlBar buttons, 0.6x–1.75x)
-  - Keyboard grid navigation: `←/→` move between cards, `Ctrl+←/→` switches folders, `Ctrl+Enter` copies as plain text, `Shift+Enter` opens preview
-  - Full-screen clip preview modal with syntect syntax highlighting (LRU cache, language detection)
-  - Bulk selection via `Ctrl+Click` / `Shift+Click` with an action bar (move to folder / delete)
-  - Collapsible HUD info strip and clip-details side panel (toggle with `i` or the PanelTop button)
-  - Inline OCR shortcut on image cards when text has been cached
-- Context menu: "Copy as Plain Text" action (backed by new `copy_clip_text` command)
-- i18n: added `clipType.*`, `bulk.*`, `detailPanel.*` keys across all six supported locales
-- Remove dead `SearchBar` component
-- Fix selected card scale transform that caused visual jump when navigating between clips
-- Fix `hasMore` pagination guard to use the actual page size instead of a hardcoded 20
-- Add `'code'` to the `ClipType` union (the backend already produced this value)
-
-### 🇪🇸 Español
-
-- **Renovación total del modo Completo**
-  - Fila de chips de filtro por tipo (all/text/code/image/url/file) con filtrado respaldado en SQL y badges de contador
-  - Columnas adaptativas que escalan con el ancho de la ventana (2–12 columnas) y zoom persistente (Ctrl+Rueda / botones de la barra de control, 0.6x–1.75x)
-  - Navegación de cuadrícula por teclado: `←/→` se mueven entre tarjetas, `Ctrl+←/→` cambia de carpeta, `Ctrl+Enter` copia como texto plano, `Shift+Enter` abre la previsualización
-  - Modal de previsualización de clips a pantalla completa con resaltado de sintaxis syntect (caché LRU, detección de idioma)
-  - Selección múltiple con `Ctrl+Clic` / `Shift+Clic` y una barra de acciones (mover a carpeta / borrar)
-  - Tira de información del HUD colapsable y panel lateral de detalles del clip (toggle con `i` o el botón PanelTop)
-  - Atajo de OCR inline en las tarjetas de imagen cuando hay texto en caché
-- Menú contextual: acción "Copiar como texto plano" (respaldada por el nuevo comando `copy_clip_text`)
-- i18n: claves `clipType.*`, `bulk.*`, `detailPanel.*` añadidas en los seis idiomas soportados
-- Eliminado el componente `SearchBar` sin uso
-- Corregida la transformación de escala de la tarjeta seleccionada que provocaba saltos visuales al navegar entre clips
-- Corregida la guarda de paginación `hasMore` para usar el tamaño de página real en lugar de un 20 fijo
-- Añadido `'code'` a la unión `ClipType` (el backend ya producía este valor)
-
 ## [1.5.1] - 2026-05-30
 
 ### 🇺🇸 English
@@ -1002,7 +966,7 @@ All notable changes to CyberPaste are documented here.
 - **Resaltes de soltado simétricos en carpetas**: Estilos de hover y selección conflictivos en la pestaña principal del portapapeles y las carpetas pulidos durante las operaciones de arrastrar y soltar, evitando parpadeos y reinicios del estado de selección.
 - **Opción "Mover a carpeta" en el menú contextual**: Nueva opción "Mover a carpeta..." en el menú de tres puntos de la tarjeta del clip para migraciones rápidas de carpeta.
 
-## [1.2.0] - 2026-08-10
+## [1.2.0] - 2026-05-19
 
 ### 🇺🇸 English
 
