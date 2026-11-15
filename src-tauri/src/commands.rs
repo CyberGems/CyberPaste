@@ -1,7 +1,8 @@
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_clipboard_x::{
-    read_text, start_listening, stop_listening, write_files, write_html, write_rtf, write_text,
+    read_text, start_listening, stop_listening, write_files, write_rtf, write_text,
 };
+use crate::clipboard::write_html;
 
 use crate::ai::{self, AiAction, AiConfig};
 use crate::database::Database;

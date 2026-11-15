@@ -958,19 +958,26 @@ async fn process_clipboard_change(
                 }
             }
         } else {
+            let metadata_opt = if metadata.is_empty() {
+                None
+            } else {
+                Some(metadata.clone())
+            };
             let _ = sqlx::query(r#"
                 UPDATE clips 
                 SET created_at = CASE WHEN is_pinned = 1 THEN created_at ELSE CURRENT_TIMESTAMP END, 
                     is_deleted = 0, 
                     folder_id = NULL,
                     source_app = CASE WHEN ? THEN source_app ELSE ? END, 
-                    source_icon = CASE WHEN ? THEN source_icon ELSE ? END 
+                    source_icon = CASE WHEN ? THEN source_icon ELSE ? END,
+                    metadata = COALESCE(NULLIF(metadata, ''), ?)
                 WHERE uuid = ?
             "#)
                 .bind(is_self_app)
                 .bind(&source_app)
                 .bind(is_self_app)
                 .bind(&source_icon)
+                .bind(metadata_opt)
                 .bind(&existing_id)
                 .execute(pool)
                 .await;
@@ -986,6 +993,11 @@ async fn process_clipboard_change(
             .await
             .unwrap_or(0);
 
+        let metadata_opt = if metadata.is_empty() {
+            None
+        } else {
+            Some(metadata.clone())
+        };
         let _ = sqlx::query(
             r#"
             INSERT INTO clips (uuid, clip_type, content, text_preview, content_hash, folder_id, is_deleted, is_thumbnail, source_app, source_icon, metadata, sort_order, created_at, last_accessed)
@@ -1000,11 +1012,7 @@ async fn process_clipboard_change(
         .bind(false)
         .bind(&source_app)
         .bind(&source_icon)
-        .bind(if clip_type == "image" {
-            Some(metadata)
-        } else {
-            None
-        })
+        .bind(metadata_opt)
         .bind(new_sort_order)
         .execute(pool)
         .await;
@@ -1780,14 +1788,28 @@ pub fn collapse_presentation_html(
 pub fn is_structural_rich_html(html: &str) -> bool {
     let bytes = html.as_bytes();
     let mut i = 0;
+    let mut tr_count = 0usize;
+    let mut cell_count = 0usize;
     while i < bytes.len() {
         if bytes[i] == b'<' {
             i += 1;
-            if i < bytes.len() && (bytes[i] == b'!' || bytes[i] == b'?') {
+            if i < bytes.len() && bytes[i] == b'!' {
+                // Skip HTML comments (e.g. <!--StartFragment-->) so tags inside comments are ignored.
+                if bytes[i..].starts_with(b"!--") {
+                    if let Some(rel_end) = html[i + 3..].find("-->") {
+                        i = i + 3 + rel_end + 3;
+                        continue;
+                    }
+                }
                 i += 1;
                 continue;
             }
-            if i < bytes.len() && bytes[i] == b'/' {
+            if i < bytes.len() && bytes[i] == b'?' {
+                i += 1;
+                continue;
+            }
+            let is_closing = i < bytes.len() && bytes[i] == b'/';
+            if is_closing {
                 i += 1;
             }
             let start = i;
@@ -1795,13 +1817,27 @@ pub fn is_structural_rich_html(html: &str) -> bool {
                 i += 1;
             }
             let end = i;
-            if end > start {
+            if !is_closing && end > start {
                 let tag_name = std::str::from_utf8(&bytes[start..end]).unwrap_or("");
-                let tag_lower = tag_name.to_lowercase();
+                let tag_lower = tag_name.to_ascii_lowercase();
                 match tag_lower.as_str() {
-                    "table" | "tr" | "td" | "th" | "thead" | "tbody" | "tfoot" | "img"
-                    | "iframe" | "svg" | "canvas" | "video" | "audio" => {
+                    "img" | "iframe" | "svg" | "canvas" | "video" | "audio" => {
                         return true;
+                    }
+                    // Browsers/Electron wrap a single-cell text selection in
+                    // <table><tbody><tr><td>...</td></tr></tbody></table>; require
+                    // at least two rows or two cells before treating a table as structural.
+                    "tr" => {
+                        tr_count += 1;
+                        if tr_count >= 2 {
+                            return true;
+                        }
+                    }
+                    "td" | "th" => {
+                        cell_count += 1;
+                        if cell_count >= 2 {
+                            return true;
+                        }
                     }
                     _ => {}
                 }
@@ -1867,6 +1903,69 @@ pub fn rtf_has_formatting(rtf: &str) -> bool {
     markers.iter().any(|m| rtf.contains(m))
 }
 
+/// Wrap an HTML fragment or document with the Windows CF_HTML header when
+/// needed (`clipboard-rs` omits this header inside `ClipboardContext::set`).
+#[cfg(target_os = "windows")]
+pub fn to_cf_html(html: &str) -> String {
+    if html.trim_start().starts_with("Version:") {
+        return html.to_string();
+    }
+
+    const PLACEHOLDER: &str = "0000000000";
+    let mut buffer = format!(
+        "Version:0.9\r\nStartHTML:{p}\r\nEndHTML:{p}\r\nStartFragment:{p}\r\nEndFragment:{p}\r\n",
+        p = PLACEHOLDER
+    );
+
+    let start_html = buffer.len();
+    let lower = html.to_ascii_lowercase();
+    if lower.contains("<html") {
+        buffer.push_str(html);
+    } else {
+        buffer.push_str("<html>\r\n<body>\r\n<!--StartFragment-->");
+        buffer.push_str(html);
+        buffer.push_str("<!--EndFragment-->\r\n</body>\r\n</html>");
+    }
+    let end_html = buffer.len();
+
+    const START_MARKER: &str = "<!--StartFragment-->";
+    const END_MARKER: &str = "<!--EndFragment-->";
+    let html_slice = &buffer[start_html..end_html];
+    let start_fragment = html_slice
+        .find(START_MARKER)
+        .map(|idx| start_html + idx + START_MARKER.len())
+        .unwrap_or(start_html);
+    let end_fragment = html_slice
+        .find(END_MARKER)
+        .map(|idx| start_html + idx)
+        .filter(|&end| end >= start_fragment)
+        .unwrap_or(end_html);
+
+    let header = format!(
+        "Version:0.9\r\nStartHTML:{:010}\r\nEndHTML:{:010}\r\nStartFragment:{:010}\r\nEndFragment:{:010}\r\n",
+        start_html, end_html, start_fragment, end_fragment
+    );
+    buffer.replace_range(..start_html, &header);
+    buffer
+}
+
+fn prepare_clipboard_html(html: String) -> String {
+    #[cfg(target_os = "windows")]
+    {
+        to_cf_html(&html)
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        html
+    }
+}
+
+/// Write plain text plus HTML so rich targets restore the HTML formatting while
+/// plain targets fall back to the text.
+pub async fn write_html(plain: String, html: String) -> Result<(), String> {
+    write_rich(plain, Some(html), None).await
+}
+
 /// Write plain text plus optional rich flavors (HTML and/or RTF) so rich
 /// targets restore the original formatting while plain targets fall back
 /// to the text.
@@ -1877,7 +1976,7 @@ pub async fn write_rich(
 ) -> Result<(), String> {
     let mut contents = vec![ClipboardContent::Text(plain)];
     if let Some(html) = html {
-        contents.push(ClipboardContent::Html(html));
+        contents.push(ClipboardContent::Html(prepare_clipboard_html(html)));
     }
     if let Some(rtf) = rtf {
         contents.push(ClipboardContent::Rtf(rtf));
@@ -2454,6 +2553,50 @@ mod tests {
     fn structural_html_is_kept() {
         let html = "<table><tr><td>A</td><td>B</td></tr></table>";
         assert!(collapse_presentation_html("code", html.as_bytes()).is_none());
+        assert!(is_structural_rich_html(
+            "<table><tr><td>A</td></tr><tr><td>B</td></tr></table>"
+        ));
+        assert!(is_structural_rich_html(
+            "<table><tr><td><img src=\"x.png\"></td></tr></table>"
+        ));
+    }
+
+    #[test]
+    fn single_cell_table_wrapper_collapses_to_plain_text() {
+        let html = "<html>\n<body>\n<!--StartFragment--><table><tbody><tr><td><code>privacy-first</code></td></tr></tbody></table><!--EndFragment-->\n</body>\n</html>";
+        assert!(!is_structural_rich_html(html));
+        assert!(!is_rich_html(html));
+        let (plain, kind, preview) =
+            collapse_presentation_html("code", html.as_bytes()).expect("should collapse");
+        assert_eq!(plain, "privacy-first");
+        assert_eq!(kind, "text");
+        assert_eq!(preview, "privacy-first");
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn to_cf_html_adds_valid_byte_offsets() {
+        let doc = "<html>\n<body>\n<!--StartFragment--><table><tr><td>A</td><td>B</td></tr></table><!--EndFragment-->\n</body>\n</html>";
+        let cf = to_cf_html(doc);
+        assert!(cf.starts_with("Version:0.9\r\n"));
+        let parse = |key: &str| -> usize {
+            cf.lines()
+                .find_map(|line| line.strip_prefix(&format!("{key}:")))
+                .unwrap()
+                .parse()
+                .unwrap()
+        };
+        let sh = parse("StartHTML");
+        let eh = parse("EndHTML");
+        let sf = parse("StartFragment");
+        let ef = parse("EndFragment");
+        assert_eq!(&cf.as_bytes()[sh..eh], doc.as_bytes());
+        assert_eq!(
+            &cf.as_bytes()[sf..ef],
+            b"<table><tr><td>A</td><td>B</td></tr></table>"
+        );
+        // Already-prefixed payloads stay untouched
+        assert_eq!(to_cf_html(&cf), cf);
     }
 
     #[test]

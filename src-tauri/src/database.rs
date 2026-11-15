@@ -771,6 +771,15 @@ impl Database {
         // Normalize any legacy HTML clips to code (HTML lives in the code category)
         let _ = sqlx::query(
             r#"
+            UPDATE clips
+            SET metadata = '{"format":"html","language":"html"}'
+            WHERE clip_type = 'html' AND (metadata IS NULL OR metadata = '')
+            "#,
+        )
+        .execute(&self.pool)
+        .await;
+        let _ = sqlx::query(
+            r#"
             UPDATE clips SET clip_type = 'code' WHERE clip_type = 'html'
             "#,
         )
