@@ -132,40 +132,66 @@ fn force_window_foreground(window: &tauri::WebviewWindow) {
     use windows::Win32::Foundation::HWND;
     use windows::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId};
     use windows::Win32::UI::WindowsAndMessaging::{
-        BringWindowToTop, GetForegroundWindow, GetWindowThreadProcessId, SetForegroundWindow,
+        AllowSetForegroundWindow, BringWindowToTop, GetForegroundWindow, GetWindowThreadProcessId,
+        SetForegroundWindow, ASFW_ANY,
     };
 
-    let _ = window.set_focus();
     let Ok(handle) = window.hwnd() else {
+        let _ = window.set_focus();
         return;
     };
-    let hwnd = HWND(handle.0 as _);
-    unsafe {
-        let fg = GetForegroundWindow();
-        if fg == hwnd {
-            return;
-        }
-        // Global hotkeys from a background thread can be blocked by Windows'
-        // foreground lock; temporarily attach to the foreground thread so
-        // SetForegroundWindow succeeds reliably.
-        let fg_thread = if !fg.0.is_null() {
-            GetWindowThreadProcessId(fg, None)
-        } else {
-            0
-        };
-        let our_thread = GetCurrentThreadId();
-        let attached = fg_thread != 0
-            && fg_thread != our_thread
-            && AttachThreadInput(our_thread, fg_thread, true).as_bool();
+    let hwnd_raw = handle.0 as isize;
 
-        let _ = BringWindowToTop(hwnd);
-        let _ = SetForegroundWindow(hwnd);
+    let apply = move |win: &tauri::WebviewWindow| {
+        let hwnd = HWND(hwnd_raw as *mut core::ffi::c_void);
+        unsafe {
+            let _ = AllowSetForegroundWindow(ASFW_ANY);
+            let fg = GetForegroundWindow();
+            if fg != hwnd {
+                let fg_thread = if !fg.0.is_null() {
+                    GetWindowThreadProcessId(fg, None)
+                } else {
+                    0
+                };
+                let ui_thread = GetCurrentThreadId();
+                let attached = fg_thread != 0
+                    && fg_thread != ui_thread
+                    && AttachThreadInput(ui_thread, fg_thread, true).as_bool();
 
-        if attached {
-            let _ = AttachThreadInput(our_thread, fg_thread, false);
+                let _ = BringWindowToTop(hwnd);
+                let _ = SetForegroundWindow(hwnd);
+
+                if attached {
+                    let _ = AttachThreadInput(ui_thread, fg_thread, false);
+                }
+            }
         }
+        let _ = win.set_focus();
+        LAST_SHOW_TIME.store(chrono::Local::now().timestamp_millis(), Ordering::SeqCst);
+    };
+
+    let ui_thread = unsafe { GetWindowThreadProcessId(HWND(hwnd_raw as _), None) };
+    let current_thread = unsafe { GetCurrentThreadId() };
+    if ui_thread == 0 || ui_thread == current_thread {
+        apply(window);
+        return;
     }
-    let _ = window.set_focus();
+
+    // Run on the HWND's owning UI thread so AttachThreadInput attaches the
+    // actual message queue and waits for cold-wake paging before stamping LAST_SHOW_TIME.
+    let (tx, rx) = std::sync::mpsc::sync_channel::<()>(1);
+    let win_for_ui = window.clone();
+    if window
+        .run_on_main_thread(move || {
+            apply(&win_for_ui);
+            let _ = tx.try_send(());
+        })
+        .is_ok()
+    {
+        let _ = rx.recv_timeout(std::time::Duration::from_millis(500));
+    } else {
+        apply(window);
+    }
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -185,6 +211,8 @@ fn start_main_window_outside_click_watcher(app: tauri::AppHandle) {
             use windows::Win32::UI::WindowsAndMessaging::GetCursorPos;
 
             let mut prev_down = false;
+            let mut focus_left_streak: u8 = 0;
+            let mut tracked_show_gen = SHOW_GEN.load(Ordering::SeqCst);
             loop {
                 std::thread::sleep(std::time::Duration::from_millis(16));
                 let key_state = unsafe { GetAsyncKeyState(VK_LBUTTON.0 as i32) as u16 };
@@ -194,10 +222,18 @@ fn start_main_window_outside_click_watcher(app: tauri::AppHandle) {
                 let clicked = down && !prev_down;
                 prev_down = down;
 
+                let current_gen = SHOW_GEN.load(Ordering::SeqCst);
+                if current_gen != tracked_show_gen {
+                    tracked_show_gen = current_gen;
+                    focus_left_streak = 0;
+                }
+
                 let Some(win) = app.get_webview_window("main") else {
+                    focus_left_streak = 0;
                     continue;
                 };
                 if !win.is_visible().unwrap_or(false) || IS_ANIMATING.load(Ordering::SeqCst) {
+                    focus_left_streak = 0;
                     continue;
                 }
 
@@ -216,16 +252,20 @@ fn start_main_window_outside_click_watcher(app: tauri::AppHandle) {
                     .try_state::<Arc<settings_manager::SettingsManager>>()
                     .map(|manager| manager.get());
                 let Some(settings) = settings else {
+                    focus_left_streak = 0;
                     continue;
                 };
                 if !settings.hide_on_blur || settings.pinned || is_window_hide_blocked() || has_pending_undos() || native_dialog_is_open() {
+                    focus_left_streak = 0;
                     continue;
                 }
                 let now = chrono::Local::now().timestamp_millis();
                 if now < STARTUP_FOCUS_GRACE_UNTIL.load(Ordering::SeqCst) {
+                    focus_left_streak = 0;
                     continue;
                 }
-                if now - LAST_SHOW_TIME.load(Ordering::SeqCst) < 500 {
+                if now - LAST_SHOW_TIME.load(Ordering::SeqCst) < 750 {
+                    focus_left_streak = 0;
                     continue;
                 }
 
@@ -234,6 +274,7 @@ fn start_main_window_outside_click_watcher(app: tauri::AppHandle) {
                 let inside = have_cursor && cursor_inside_window(&win, point.x, point.y);
                 // Resize/drag keeps the button down over the window.
                 if down && inside {
+                    focus_left_streak = 0;
                     continue;
                 }
 
@@ -242,11 +283,18 @@ fn start_main_window_outside_click_watcher(app: tauri::AppHandle) {
                 let initial_fg = SHOW_INITIAL_FG.load(Ordering::SeqCst);
                 let fg_switched_to_other_app =
                     saw_fg || (!initial_fg.is_null() && foreground.0 as *mut () != initial_fg);
-                let focus_left = !foreground_is_ours
+                let focus_left_now = !foreground_is_ours
                     && !foreground_is_sibling
                     && !foreground.0.is_null()
                     && fg_switched_to_other_app;
+                if focus_left_now {
+                    focus_left_streak = focus_left_streak.saturating_add(1);
+                } else {
+                    focus_left_streak = 0;
+                }
+                let focus_left = focus_left_streak >= 5;
                 if clicked_outside || focus_left {
+                    focus_left_streak = 0;
                     log::debug!(
                         "Auto-hide trigger=watcher clicked_outside={} focus_left={} fg={}",
                         clicked_outside,
@@ -547,7 +595,7 @@ pub fn run_app() {
                         if now < STARTUP_FOCUS_GRACE_UNTIL.load(Ordering::SeqCst) {
                             return;
                         }
-                        let debounce_ms = 500;
+                        let debounce_ms = 750;
                         if now - last_show < debounce_ms {
                             return;
                         }
@@ -556,7 +604,7 @@ pub fn run_app() {
                             let win_clone = win.clone();
                             std::thread::spawn(move || {
                                 // Let transient WebView2 / Win32 activation focus shifts settle
-                                std::thread::sleep(std::time::Duration::from_millis(80));
+                                std::thread::sleep(std::time::Duration::from_millis(100));
 
                                 if SHOW_GEN.load(Ordering::SeqCst) != show_gen {
                                     return;
@@ -604,8 +652,19 @@ pub fn run_app() {
 
                                 #[cfg(target_os = "windows")]
                                 let fg_desc = {
-                                    let (fg, fg_is_ours, fg_is_sibling) =
+                                    let (mut fg, mut fg_is_ours, mut fg_is_sibling) =
                                         foreground_window_relation(win_clone.app_handle(), &win_clone);
+                                    if fg.0.is_null() {
+                                        // Foreground can read null briefly mid-transition during cold wake.
+                                        std::thread::sleep(std::time::Duration::from_millis(60));
+                                        if SHOW_GEN.load(Ordering::SeqCst) != show_gen
+                                            || win_clone.is_focused().unwrap_or(false)
+                                        {
+                                            return;
+                                        }
+                                        (fg, fg_is_ours, fg_is_sibling) =
+                                            foreground_window_relation(win_clone.app_handle(), &win_clone);
+                                    }
                                     if fg_is_ours || fg_is_sibling {
                                         return;
                                     }
