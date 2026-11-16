@@ -420,6 +420,7 @@ pub fn run_app() {
     {
         log_builder = log_builder.targets([
             tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Stdout),
+            tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir { file_name: None }),
             tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Webview),
         ]);
     }
