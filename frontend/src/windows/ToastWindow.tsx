@@ -326,6 +326,8 @@ export function ToastWindow() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [version, setVersion] = useState<string>('');
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const contextMenuRef = useRef<{ x: number; y: number } | null>(null);
+  contextMenuRef.current = contextMenu;
   const [isPinned, setIsPinnedState] = useState(false);
   const isPinnedRef = useRef(false);
   const toastCardRef = useRef<HTMLDivElement>(null);
@@ -337,6 +339,10 @@ export function ToastWindow() {
   };
 
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const closeAnimTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const focusBlurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastEpochRef = useRef(0);
+  const hasShownToastRef = useRef(false);
   const isMouseInsideRef = useRef(false);
   const TOAST_BLEED = 8;
   const TOAST_VERTICAL_BLEED = 12;
@@ -344,10 +350,17 @@ export function ToastWindow() {
   const normalHeightRef = useRef(110 + TOAST_VERTICAL_BLEED);
 
   useEffect(() => {
-    if (!toast) return;
+    if (!toast) {
+      if (hasShownToastRef.current && !isClosingRef.current) {
+        invoke('hide_toast').catch(console.error);
+      }
+      return;
+    }
+
+    hasShownToastRef.current = true;
 
     const measureAndResize = async () => {
-      if (toastCardRef.current) {
+      if (toastCardRef.current && toastRef.current) {
         const rect = toastCardRef.current.getBoundingClientRect();
         const measuredHeight = Math.ceil(rect.height);
         if (measuredHeight > 0) {
@@ -394,21 +407,37 @@ export function ToastWindow() {
   })();
 
   const closeToast = () => {
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+    if (closeAnimTimerRef.current) {
+      clearTimeout(closeAnimTimerRef.current);
+      closeAnimTimerRef.current = null;
+    }
     setIsClosing(true);
     isClosingRef.current = true;
     setIsPinned(false);
+    setContextMenu(null);
+    contextMenuRef.current = null;
     getCurrentWindow().setFocusable(false).catch(console.error);
-    setTimeout(() => {
+    const epochAtClose = toastEpochRef.current;
+    closeAnimTimerRef.current = setTimeout(() => {
+      closeAnimTimerRef.current = null;
+      if (epochAtClose !== toastEpochRef.current) {
+        return;
+      }
       if (pendingNextToastRef.current) {
         const nextToast = pendingNextToastRef.current;
         pendingNextToastRef.current = null;
         handleToastUpdate(nextToast);
       } else {
-        invoke('hide_toast').catch(console.error);
+        isMouseInsideRef.current = false;
         setToast(null);
         toastRef.current = null;
         setIsClosing(false);
         isClosingRef.current = false;
+        invoke('hide_toast').catch(console.error);
       }
     }, 300);
   };
@@ -450,11 +479,23 @@ export function ToastWindow() {
       return;
     }
 
+    if (closeAnimTimerRef.current) {
+      clearTimeout(closeAnimTimerRef.current);
+      closeAnimTimerRef.current = null;
+    }
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+
+    const epoch = ++toastEpochRef.current;
+
     if (!isIncomingUpdate) {
       pendingNextToastRef.current = null;
     }
 
     const freshSettings = await invoke<Settings>('get_settings').catch(() => null);
+    if (epoch !== toastEpochRef.current) return;
     if (freshSettings) setSettings(freshSettings);
 
     setIsPinned(false); // Reset pin state synchronously to prevent carryover
@@ -470,6 +511,7 @@ export function ToastWindow() {
       width: width + TOAST_BLEED * 2,
       height: windowHeight,
     }).catch(console.error);
+    if (epoch !== toastEpochRef.current) return;
 
     setToast(payload);
     toastRef.current = payload;
@@ -477,6 +519,7 @@ export function ToastWindow() {
     isClosingRef.current = false;
     isMouseInsideRef.current = false;
     setContextMenu(null);
+    contextMenuRef.current = null;
     getCurrentWindow().setFocusable(false).catch(console.error);
 
     let isClipPinned = false;
@@ -546,14 +589,23 @@ export function ToastWindow() {
   };
 
   const closeContextMenu = async () => {
+    const hadMenu = contextMenuRef.current !== null;
     setContextMenu(null);
-    await invoke('set_toast_position', {
-      width: normalWidthRef.current + TOAST_BLEED * 2,
-      height: normalHeightRef.current,
-    }).catch(console.error);
+    contextMenuRef.current = null;
     await getCurrentWindow().setFocusable(false).catch(console.error);
 
-    if (!isMouseInsideRef.current) {
+    if (!toastRef.current) {
+      invoke('hide_toast').catch(console.error);
+      return;
+    }
+    if (hadMenu) {
+      await invoke('set_toast_position', {
+        width: normalWidthRef.current + TOAST_BLEED * 2,
+        height: normalHeightRef.current,
+      }).catch(console.error);
+    }
+
+    if (!isMouseInsideRef.current && !isPinnedRef.current && !isClosingRef.current) {
       const bar = document.getElementById('toast-progress-bar');
       if (bar) {
         bar.style.animationPlayState = 'running';
@@ -590,8 +642,19 @@ export function ToastWindow() {
     const win = getCurrentWindow();
     const unlistenFocus = win.onFocusChanged(({ payload: focused }) => {
       if (!focused) {
-        window.setTimeout(() => {
-          closeContextMenu();
+        if (focusBlurTimerRef.current) {
+          clearTimeout(focusBlurTimerRef.current);
+        }
+        focusBlurTimerRef.current = window.setTimeout(() => {
+          focusBlurTimerRef.current = null;
+          if (contextMenuRef.current) {
+            closeContextMenu();
+          } else if (toastRef.current && isMouseInsideRef.current && !isPinnedRef.current) {
+            isMouseInsideRef.current = false;
+            startCloseTimer();
+          } else if (!toastRef.current && hasShownToastRef.current && !isClosingRef.current) {
+            invoke('hide_toast').catch(console.error);
+          }
         }, 80);
       }
     });
@@ -615,6 +678,8 @@ export function ToastWindow() {
       media.removeEventListener('change', onOsTheme);
       window.removeEventListener('contextmenu', preventDefaultMenu);
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+      if (closeAnimTimerRef.current) clearTimeout(closeAnimTimerRef.current);
+      if (focusBlurTimerRef.current) clearTimeout(focusBlurTimerRef.current);
     };
   }, []);
 

@@ -4807,6 +4807,7 @@ pub struct ToastPayload {
 
 static PENDING_TOAST: Lazy<Mutex<Option<ToastPayload>>> =
     Lazy::new(|| Mutex::new(None));
+static TOAST_ACTIVE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 #[tauri::command]
 pub async fn toast_ready(
@@ -5028,11 +5029,11 @@ async fn dispatch_toast(app: AppHandle, payload: ToastPayload) -> Result<(), Str
         let mut lock = PENDING_TOAST.lock();
         *lock = Some(payload.clone());
     }
+    TOAST_ACTIVE.store(true, std::sync::atomic::Ordering::SeqCst);
 
     if let Some(win) = app.get_webview_window(window_label) {
         let _ = win.set_focusable(false);
         ensure_toast_noactivate(&win);
-        raise_toast_topmost(&win);
         let is_welcome = payload.clip_type.as_deref() == Some("welcome");
         win.emit("update-toast", &payload).map_err(|e| e.to_string())?;
 
@@ -5084,6 +5085,8 @@ async fn dispatch_toast(app: AppHandle, payload: ToastPayload) -> Result<(), Str
 
 #[tauri::command]
 pub async fn hide_toast(app: AppHandle) -> Result<(), String> {
+    TOAST_ACTIVE.store(false, std::sync::atomic::Ordering::SeqCst);
+    *PENDING_TOAST.lock() = None;
     if let Some(win) = app.get_webview_window("toast") {
         let _ = win.hide();
     }
@@ -5092,6 +5095,8 @@ pub async fn hide_toast(app: AppHandle) -> Result<(), String> {
 
 #[tauri::command]
 pub async fn click_toast(app: AppHandle, clip_uuid: String) -> Result<(), String> {
+    TOAST_ACTIVE.store(false, std::sync::atomic::Ordering::SeqCst);
+    *PENDING_TOAST.lock() = None;
     if let Some(toast_win) = app.get_webview_window("toast") {
         let _ = toast_win.hide();
     }
@@ -5119,6 +5124,11 @@ pub async fn click_toast(app: AppHandle, clip_uuid: String) -> Result<(), String
 #[tauri::command]
 pub async fn set_toast_position(app: AppHandle, width: f64, height: f64) -> Result<(), String> {
     if let Some(win) = app.get_webview_window("toast") {
+        // Never allow stale async position/blur calls to make an empty toast visible.
+        if !TOAST_ACTIVE.load(std::sync::atomic::Ordering::SeqCst) {
+            let _ = win.hide();
+            return Ok(());
+        }
         let manager = app.state::<Arc<SettingsManager>>();
         let position_setting = manager.get().toast_position;
         let monitor_setting = manager.get().toast_monitor;
