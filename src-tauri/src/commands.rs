@@ -5031,6 +5031,7 @@ async fn dispatch_toast(app: AppHandle, payload: ToastPayload) -> Result<(), Str
 
     if let Some(win) = app.get_webview_window(window_label) {
         let _ = win.set_focusable(false);
+        ensure_toast_noactivate(&win);
         raise_toast_topmost(&win);
         let is_welcome = payload.clip_type.as_deref() == Some("welcome");
         win.emit("update-toast", &payload).map_err(|e| e.to_string())?;
@@ -5073,7 +5074,9 @@ async fn dispatch_toast(app: AppHandle, payload: ToastPayload) -> Result<(), Str
         .visible(false) // hidden until positioned
         .build();
         drop(webview_create_guard);
-        result.map_err(|e| format!("Failed to create toast window: {}", e))?;
+        let toast_win = result.map_err(|e| format!("Failed to create toast window: {}", e))?;
+        let _ = toast_win.set_focusable(false);
+        ensure_toast_noactivate(&toast_win);
     }
 
     Ok(())
@@ -5191,11 +5194,53 @@ pub async fn set_toast_position(app: AppHandle, width: f64, height: f64) -> Resu
                 x: target_x,
                 y: target_y,
             }));
-            let _ = win.show();
+            show_toast_noactivate(&win);
             raise_toast_topmost(&win);
         }
     }
     Ok(())
+}
+
+/// Keep non-focusable toast windows flagged `WS_EX_NOACTIVATE` so showing or
+/// clicking them never steals Win32 foreground focus from the main window or active app.
+fn ensure_toast_noactivate(win: &tauri::WebviewWindow) {
+    #[cfg(windows)]
+    if let Ok(handle) = win.hwnd() {
+        use windows::Win32::Foundation::HWND;
+        use windows::Win32::UI::WindowsAndMessaging::{
+            GetWindowLongPtrW, SetWindowLongPtrW, GWL_EXSTYLE, WS_EX_NOACTIVATE,
+        };
+        let hwnd = HWND(handle.0 as _);
+        unsafe {
+            let ex_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+            let noactivate = WS_EX_NOACTIVATE.0 as isize;
+            if (ex_style & noactivate) == 0 {
+                let _ = SetWindowLongPtrW(hwnd, GWL_EXSTYLE, ex_style | noactivate);
+            }
+        }
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = win;
+    }
+}
+
+/// Show the toast without calling `win.show()` (`SW_SHOW`), which would otherwise
+/// activate a newly initialized WebView2 toast window and steal focus.
+fn show_toast_noactivate(win: &tauri::WebviewWindow) {
+    #[cfg(windows)]
+    if let Ok(handle) = win.hwnd() {
+        use windows::Win32::Foundation::HWND;
+        use windows::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_SHOWNA};
+        unsafe {
+            let _ = ShowWindow(HWND(handle.0 as _), SW_SHOWNA);
+        }
+        return;
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = win.show();
+    }
 }
 
 /// Hidden toast windows lose WS_EX_TOPMOST after lock screen, fullscreen apps,
