@@ -199,12 +199,15 @@ mod win32 {
         SafeArrayUnaccessData,
     };
     use windows::Win32::System::Threading::GetCurrentProcessId;
-    use windows::Win32::System::Variant::{VARIANT, VARIANT_0, VARIANT_0_0, VARIANT_0_0_0, VT_I4};
+    use windows::Win32::System::Variant::{
+        VariantClear, VARIANT, VARIANT_0, VARIANT_0_0, VARIANT_0_0_0, VT_I4,
+    };
     use windows::Win32::UI::Accessibility::{
         AccessibleObjectFromWindow, CUIAutomation, IAccessible, IUIAutomation,
-        IUIAutomationTextPattern, IUIAutomationTextPattern2, IUIAutomationTextRange,
-        TextPatternRangeEndpoint_End, TextPatternRangeEndpoint_Start, UIA_TextPattern2Id,
-        UIA_TextPatternId,
+        IUIAutomationElement, IUIAutomationTextEditPattern, IUIAutomationTextPattern,
+        IUIAutomationTextPattern2, IUIAutomationTextRange, IUIAutomationValuePattern,
+        TextPatternRangeEndpoint_End, TextPatternRangeEndpoint_Start, UIA_EditControlTypeId,
+        UIA_TextEditPatternId, UIA_TextPattern2Id, UIA_TextPatternId, UIA_ValuePatternId,
     };
     use windows::Win32::UI::WindowsAndMessaging::{
         GetClassNameW, GetCursorPos, GetForegroundWindow, GetGUIThreadInfo, GetWindowRect,
@@ -336,18 +339,45 @@ mod win32 {
         validate_caret_rect(left, top, left + width.max(1), top + height, fg_bounds)
     }
 
+    enum UiaCaretOutcome {
+        Hit(CaretRect, &'static str),
+        EditableNoRange,
+        NotEditable,
+        Unavailable,
+    }
+
+    fn element_accepts_text_input(focused: &IUIAutomationElement) -> bool {
+        if let Ok(vp) =
+            unsafe { focused.GetCurrentPatternAs::<IUIAutomationValuePattern>(UIA_ValuePatternId) }
+        {
+            if let Ok(ro) = unsafe { vp.CurrentIsReadOnly() } {
+                return !ro.as_bool();
+            }
+        }
+        if unsafe {
+            focused
+                .GetCurrentPatternAs::<IUIAutomationTextEditPattern>(UIA_TextEditPatternId)
+                .is_ok()
+        } {
+            return true;
+        }
+        unsafe { focused.CurrentControlType() }.is_ok_and(|ct| ct == UIA_EditControlTypeId)
+    }
+
     fn probe_uia_caret(
         automation: &IUIAutomation,
         _fg_hwnd: HWND,
         fg_bounds: Option<(i32, i32, i32, i32)>,
-    ) -> Option<(CaretRect, &'static str)> {
-        let focused = unsafe { automation.GetFocusedElement() }.ok()?;
+    ) -> UiaCaretOutcome {
+        let Ok(focused) = (unsafe { automation.GetFocusedElement() }) else {
+            return UiaCaretOutcome::Unavailable;
+        };
         let self_pid = unsafe { GetCurrentProcessId() };
         // Allow hosted child processes (UWP/WebView2/Chrome OOP iframes) as long as
         // it is not CyberPaste itself and the resulting rect sits inside fg_bounds.
         if let Ok(elem_pid) = unsafe { focused.CurrentProcessId() } {
             if elem_pid as u32 == self_pid {
-                return None;
+                return UiaCaretOutcome::Unavailable;
             }
         }
 
@@ -358,10 +388,20 @@ mod win32 {
             if let Ok(range) = unsafe { tp2.GetCaretRange(&mut is_active) } {
                 if is_active.as_bool() {
                     if let Some(rect) = unsafe { rect_from_text_range(&range, fg_bounds) } {
-                        return Some((rect, "uia-text2"));
+                        return UiaCaretOutcome::Hit(rect, "uia-text2");
                     }
                 }
             }
+        }
+
+        let is_editable = element_accepts_text_input(&focused);
+        if !is_editable {
+            let ct = unsafe { focused.CurrentControlType() }.map(|c| c.0).unwrap_or(0);
+            log::debug!(
+                "position.caret-probe: non-editable focus control_type={}, skipping msaa/win32 fallback",
+                ct
+            );
+            return UiaCaretOutcome::NotEditable;
         }
 
         if let Ok(tp) =
@@ -382,7 +422,7 @@ mod win32 {
                             if is_collapsed {
                                 if let Some(rect) = unsafe { rect_from_text_range(&range, fg_bounds) }
                                 {
-                                    return Some((rect, "uia-selection"));
+                                    return UiaCaretOutcome::Hit(rect, "uia-selection");
                                 }
                             }
                         }
@@ -391,13 +431,17 @@ mod win32 {
             }
         }
 
-        None
+        UiaCaretOutcome::EditableNoRange
     }
 
     fn probe_msaa_caret(
         target_hwnd: HWND,
         fg_bounds: Option<(i32, i32, i32, i32)>,
     ) -> Option<CaretRect> {
+        const STATE_SYSTEM_UNAVAILABLE: u32 = 0x0000_0001;
+        const STATE_SYSTEM_INVISIBLE: u32 = 0x0000_8000;
+        const STATE_SYSTEM_OFFSCREEN: u32 = 0x0001_0000;
+
         if target_hwnd.0.is_null() {
             return None;
         }
@@ -426,6 +470,26 @@ mod win32 {
                 }),
             },
         };
+        if let Ok(mut state_var) = unsafe { acc.get_accState(&var_child) } {
+            let state_hidden = unsafe {
+                let is_i4 = state_var.Anonymous.Anonymous.vt == VT_I4;
+                let flags = if is_i4 {
+                    state_var.Anonymous.Anonymous.Anonymous.lVal as u32
+                } else {
+                    0
+                };
+                let _ = VariantClear(&mut state_var);
+                is_i4
+                    && (flags
+                        & (STATE_SYSTEM_UNAVAILABLE
+                            | STATE_SYSTEM_INVISIBLE
+                            | STATE_SYSTEM_OFFSCREEN))
+                        != 0
+            };
+            if state_hidden {
+                return None;
+            }
+        }
         let (mut left, mut top, mut width, mut height) = (0i32, 0i32, 0i32, 0i32);
         unsafe {
             acc.accLocation(&mut left, &mut top, &mut width, &mut height, &var_child)
@@ -472,8 +536,10 @@ mod win32 {
         fg_bounds: Option<(i32, i32, i32, i32)>,
     ) -> Option<(CaretRect, &'static str)> {
         if let Some(uia) = automation {
-            if let Some(hit) = probe_uia_caret(uia, fg_hwnd, fg_bounds) {
-                return Some(hit);
+            match probe_uia_caret(uia, fg_hwnd, fg_bounds) {
+                UiaCaretOutcome::Hit(rect, layer) => return Some((rect, layer)),
+                UiaCaretOutcome::NotEditable => return None,
+                UiaCaretOutcome::EditableNoRange | UiaCaretOutcome::Unavailable => {}
             }
         }
 
