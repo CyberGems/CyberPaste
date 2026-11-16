@@ -90,7 +90,6 @@ pub fn choose_compact_anchor(
     mode: &str,
     caret: Option<CaretRect>,
     cursor: Option<(i32, i32)>,
-    cursor_same_monitor_as_fg: bool,
     fg_center: Option<(i32, i32)>,
 ) -> Option<ResolvedTarget> {
     match normalize_position_mode(mode) {
@@ -128,8 +127,8 @@ pub fn choose_compact_anchor(
                 source: AnchorSource::Cursor,
             })
         }
-        // "smart": prefer real caret, else mouse cursor if on active window's monitor,
-        // else active window center (so typing on monitor A never jumps to mouse on B).
+        // "smart": anchor to active typing caret (across monitors) when one exists,
+        // otherwise follow the mouse cursor rather than snapping back to a window without a caret.
         _ => {
             if let Some(rect) = caret {
                 return Some(ResolvedTarget {
@@ -138,24 +137,19 @@ pub fn choose_compact_anchor(
                     source: AnchorSource::Caret(rect),
                 });
             }
-            match (fg_center, cursor) {
-                (Some(_), Some(c)) if cursor_same_monitor_as_fg => Some(ResolvedTarget {
+            cursor
+                .map(|c| ResolvedTarget {
                     point: c,
                     monitor_point: c,
                     source: AnchorSource::Cursor,
-                }),
-                (Some(fg), _) => Some(ResolvedTarget {
-                    point: fg,
-                    monitor_point: fg,
-                    source: AnchorSource::ForegroundWindow,
-                }),
-                (None, Some(c)) => Some(ResolvedTarget {
-                    point: c,
-                    monitor_point: c,
-                    source: AnchorSource::Cursor,
-                }),
-                (None, None) => None,
-            }
+                })
+                .or_else(|| {
+                    fg_center.map(|fg| ResolvedTarget {
+                        point: fg,
+                        monitor_point: fg,
+                        source: AnchorSource::ForegroundWindow,
+                    })
+                })
         }
     }
 }
@@ -196,9 +190,7 @@ mod win32 {
     use std::time::Duration;
     use windows::core::BOOL;
     use windows::Win32::Foundation::{HWND, POINT, RECT};
-    use windows::Win32::Graphics::Gdi::{
-        ClientToScreen, MonitorFromPoint, MonitorFromWindow, MONITOR_DEFAULTTONULL,
-    };
+    use windows::Win32::Graphics::Gdi::ClientToScreen;
     use windows::Win32::System::Com::{
         CoCreateInstance, CoInitializeEx, CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED,
     };
@@ -211,7 +203,8 @@ mod win32 {
     use windows::Win32::UI::Accessibility::{
         AccessibleObjectFromWindow, CUIAutomation, IAccessible, IUIAutomation,
         IUIAutomationTextPattern, IUIAutomationTextPattern2, IUIAutomationTextRange,
-        UIA_TextPattern2Id, UIA_TextPatternId,
+        TextPatternRangeEndpoint_End, TextPatternRangeEndpoint_Start, UIA_TextPattern2Id,
+        UIA_TextPatternId,
     };
     use windows::Win32::UI::WindowsAndMessaging::{
         GetClassNameW, GetCursorPos, GetForegroundWindow, GetGUIThreadInfo, GetWindowRect,
@@ -219,7 +212,7 @@ mod win32 {
         OBJID_CARET,
     };
 
-    const CARET_PROBE_TIMEOUT_MS: u64 = 65;
+    const CARET_PROBE_TIMEOUT_MS: u64 = 120;
 
     struct CaretProbeRequest {
         fg_hwnd_raw: isize,
@@ -345,18 +338,16 @@ mod win32 {
 
     fn probe_uia_caret(
         automation: &IUIAutomation,
-        fg_hwnd: HWND,
+        _fg_hwnd: HWND,
         fg_bounds: Option<(i32, i32, i32, i32)>,
     ) -> Option<(CaretRect, &'static str)> {
-        let mut fg_pid: u32 = 0;
-        unsafe { GetWindowThreadProcessId(fg_hwnd, Some(&mut fg_pid)) };
-
         let focused = unsafe { automation.GetFocusedElement() }.ok()?;
-        if fg_pid != 0 {
-            if let Ok(elem_pid) = unsafe { focused.CurrentProcessId() } {
-                if elem_pid as u32 != fg_pid {
-                    return None;
-                }
+        let self_pid = unsafe { GetCurrentProcessId() };
+        // Allow hosted child processes (UWP/WebView2/Chrome OOP iframes) as long as
+        // it is not CyberPaste itself and the resulting rect sits inside fg_bounds.
+        if let Ok(elem_pid) = unsafe { focused.CurrentProcessId() } {
+            if elem_pid as u32 == self_pid {
+                return None;
             }
         }
 
@@ -365,8 +356,10 @@ mod win32 {
         {
             let mut is_active = BOOL(0);
             if let Ok(range) = unsafe { tp2.GetCaretRange(&mut is_active) } {
-                if let Some(rect) = unsafe { rect_from_text_range(&range, fg_bounds) } {
-                    return Some((rect, "uia-text2"));
+                if is_active.as_bool() {
+                    if let Some(rect) = unsafe { rect_from_text_range(&range, fg_bounds) } {
+                        return Some((rect, "uia-text2"));
+                    }
                 }
             }
         }
@@ -378,8 +371,19 @@ mod win32 {
                 if let Ok(len) = unsafe { sel.Length() } {
                     if len > 0 {
                         if let Ok(range) = unsafe { sel.GetElement(0) } {
-                            if let Some(rect) = unsafe { rect_from_text_range(&range, fg_bounds) } {
-                                return Some((rect, "uia-selection"));
+                            let is_collapsed = unsafe {
+                                range.CompareEndpoints(
+                                    TextPatternRangeEndpoint_Start,
+                                    &range,
+                                    TextPatternRangeEndpoint_End,
+                                )
+                            }
+                            .is_ok_and(|cmp| cmp == 0);
+                            if is_collapsed {
+                                if let Some(rect) = unsafe { rect_from_text_range(&range, fg_bounds) }
+                                {
+                                    return Some((rect, "uia-selection"));
+                                }
                             }
                         }
                     }
@@ -554,16 +558,6 @@ mod win32 {
         let fg = usable_foreground_window(initial_fg);
         let fg_center = fg.map(|(_, (l, t, r, b))| ((l + r) / 2, (t + b) / 2));
 
-        let cursor_same_monitor = match (fg, cursor) {
-            (Some((fg_hwnd, _)), Some((cx, cy))) => {
-                let fg_mon = unsafe { MonitorFromWindow(fg_hwnd, MONITOR_DEFAULTTONULL) };
-                let cur_mon =
-                    unsafe { MonitorFromPoint(POINT { x: cx, y: cy }, MONITOR_DEFAULTTONULL) };
-                !fg_mon.is_invalid() && !cur_mon.is_invalid() && fg_mon == cur_mon
-            }
-            _ => true,
-        };
-
         let caret = if normalized == "cursor" {
             None
         } else if let Some((fg_hwnd, fg_bounds)) = fg {
@@ -572,7 +566,7 @@ mod win32 {
             None
         };
 
-        choose_compact_anchor(normalized, caret, cursor, cursor_same_monitor, fg_center)
+        choose_compact_anchor(normalized, caret, cursor, fg_center)
     }
 }
 
@@ -600,34 +594,25 @@ mod tests {
     #[test]
     fn smart_prefers_caret_when_available() {
         let caret = sample_caret();
-        let target = choose_compact_anchor("smart", Some(caret), Some((2500, 400)), false, Some((500, 400)))
+        let target = choose_compact_anchor("smart", Some(caret), Some((2500, 400)), Some((500, 400)))
             .expect("target should resolve");
         assert_eq!(target.source, AnchorSource::Caret(caret));
         assert_eq!(target.monitor_point, (301, 211));
     }
 
     #[test]
-    fn smart_uses_cursor_when_no_caret_and_cursor_is_on_active_monitor() {
-        let target = choose_compact_anchor("smart", None, Some((640, 360)), true, Some((500, 400)))
+    fn smart_uses_cursor_when_no_caret_even_across_monitors() {
+        // Focused window on monitor A without an active caret should still open at mouse cursor on monitor B
+        let target = choose_compact_anchor("smart", None, Some((2500, 400)), Some((500, 400)))
             .expect("target should resolve");
         assert_eq!(target.source, AnchorSource::Cursor);
-        assert_eq!(target.point, (640, 360));
-        assert_eq!(target.monitor_point, (640, 360));
-    }
-
-    #[test]
-    fn smart_stays_on_foreground_window_when_cursor_is_on_other_monitor() {
-        // User typing in Word on monitor A while mouse cursor rests on monitor B
-        let target = choose_compact_anchor("smart", None, Some((2500, 400)), false, Some((500, 400)))
-            .expect("target should resolve");
-        assert_eq!(target.source, AnchorSource::ForegroundWindow);
-        assert_eq!(target.point, (500, 400));
-        assert_eq!(target.monitor_point, (500, 400));
+        assert_eq!(target.point, (2500, 400));
+        assert_eq!(target.monitor_point, (2500, 400));
     }
 
     #[test]
     fn caret_mode_falls_back_to_foreground_window_before_other_monitor_cursor() {
-        let target = choose_compact_anchor("caret", None, Some((2500, 400)), false, Some((500, 400)))
+        let target = choose_compact_anchor("caret", None, Some((2500, 400)), Some((500, 400)))
             .expect("target should resolve");
         assert_eq!(target.source, AnchorSource::ForegroundWindow);
         assert_eq!(target.monitor_point, (500, 400));
@@ -636,7 +621,7 @@ mod tests {
     #[test]
     fn cursor_mode_strictly_follows_mouse_cursor() {
         let caret = sample_caret();
-        let target = choose_compact_anchor("cursor", Some(caret), Some((2500, 400)), false, Some((500, 400)))
+        let target = choose_compact_anchor("cursor", Some(caret), Some((2500, 400)), Some((500, 400)))
             .expect("target should resolve");
         assert_eq!(target.source, AnchorSource::Cursor);
         assert_eq!(target.point, (2500, 400));
@@ -670,4 +655,3 @@ mod tests {
         assert!(validate_caret_rect(600, 600, 600, 622, Some((500, 500, 1200, 900))).is_some());
     }
 }
-
