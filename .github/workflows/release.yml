@@ -263,3 +263,21 @@ jobs:
           } catch {
             Write-Warning "Could not update latest.json with bilingual notes: $_"
           }
+
+          # winget manifests for the setup installer. winget versions carry no
+          # 'v' prefix (1.31.0, not v1.31.0); URLs keep the tag's.
+          $manifestFiles = @{
+              "winget-version.yaml"   = "CyberGems.CyberPaste.yaml"
+              "winget-locale.yaml"    = "CyberGems.CyberPaste.locale.en-US.yaml"
+              "winget-installer.yaml" = "CyberGems.CyberPaste.installer.yaml"
+          }
+          New-Item -ItemType Directory -Path winget-pkg -Force | Out-Null
+          foreach ($entry in $manifestFiles.GetEnumerator()) {
+              $manifestTemplate = [System.IO.File]::ReadAllText($entry.Key, [System.Text.Encoding]::UTF8)
+              $manifest = $manifestTemplate.Replace("{{VERSION}}", $versionNum).Replace("{{TAG}}", $tag).Replace("{{INSTALLER_HASH}}", $installerHash)
+              [System.IO.File]::WriteAllText("winget-pkg/$($entry.Value)", $manifest, [System.Text.Encoding]::UTF8)
+          }
+          winget validate winget-pkg
+          if ($LASTEXITCODE -ne 0) { throw "winget manifest validation failed." }
+          gh release upload $tag winget-pkg/CyberGems.CyberPaste.yaml winget-pkg/CyberGems.CyberPaste.locale.en-US.yaml winget-pkg/CyberGems.CyberPaste.installer.yaml --clobber
+          Write-Host "Generated, validated and uploaded winget manifests for $tag."

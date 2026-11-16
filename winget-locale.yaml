@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
+PackageIdentifier: CyberGems.CyberPaste
+PackageVersion: {{VERSION}}
+PackageLocale: en-US
+Publisher: CyberGems
+PackageName: CyberPaste
+PackageUrl: https://cybergems.org/apps/cyberpaste/
+License: GPL-3.0-or-later
+LicenseUrl: https://github.com/CyberGems/CyberPaste/blob/main/LICENSE
+Copyright: Copyright (C) 2026 CyberGems
+ShortDescription: Local clipboard history with search, OCR and pinning for Windows
+Description: Copy something, copy three more things, and the first one is already gone. CyberPaste keeps a searchable history of everything you copy, including text, code, images, links and files, with rich HTML and RTF content preserved natively, in a local SQLite database, with folders, favorites, pinning and editing. One global hotkey pastes straight into the app you were using; instant search and local OCR find a clip from weeks ago or the words inside an image, and an optional AI provider can summarize or transform a clip once you connect one. Configurable retention, a PIN or password lock, quiet hours, a tray pause with flexible durations and automatic backups round it out, with no account and no telemetry. Built with Tauri.
+Tags:
+- clipboard
+- clipboard-manager
+- paste
+- history
+- productivity
+Moniker: cyberpaste
+ReleaseNotesUrl: https://github.com/CyberGems/CyberPaste/releases/tag/{{TAG}}
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0
