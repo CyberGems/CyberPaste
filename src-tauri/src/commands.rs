@@ -5083,23 +5083,23 @@ async fn dispatch_toast(app: AppHandle, payload: ToastPayload) -> Result<(), Str
     Ok(())
 }
 
-#[tauri::command]
-pub async fn hide_toast(app: AppHandle) -> Result<(), String> {
+pub fn force_hide_toast(app: &AppHandle) {
     TOAST_ACTIVE.store(false, std::sync::atomic::Ordering::SeqCst);
     *PENDING_TOAST.lock() = None;
     if let Some(win) = app.get_webview_window("toast") {
-        let _ = win.hide();
+        hide_toast_window(&win);
     }
+}
+
+#[tauri::command]
+pub async fn hide_toast(app: AppHandle) -> Result<(), String> {
+    force_hide_toast(&app);
     Ok(())
 }
 
 #[tauri::command]
 pub async fn click_toast(app: AppHandle, clip_uuid: String) -> Result<(), String> {
-    TOAST_ACTIVE.store(false, std::sync::atomic::Ordering::SeqCst);
-    *PENDING_TOAST.lock() = None;
-    if let Some(toast_win) = app.get_webview_window("toast") {
-        let _ = toast_win.hide();
-    }
+    force_hide_toast(&app);
 
     if crate::app_lock::is_locked() {
         if let Some(main_win) = app.get_webview_window("main") {
@@ -5126,7 +5126,7 @@ pub async fn set_toast_position(app: AppHandle, width: f64, height: f64) -> Resu
     if let Some(win) = app.get_webview_window("toast") {
         // Never allow stale async position/blur calls to make an empty toast visible.
         if !TOAST_ACTIVE.load(std::sync::atomic::Ordering::SeqCst) {
-            let _ = win.hide();
+            hide_toast_window(&win);
             return Ok(());
         }
         let manager = app.state::<Arc<SettingsManager>>();
@@ -5204,8 +5204,12 @@ pub async fn set_toast_position(app: AppHandle, width: f64, height: f64) -> Resu
                 x: target_x,
                 y: target_y,
             }));
-            show_toast_noactivate(&win);
-            raise_toast_topmost(&win);
+            if TOAST_ACTIVE.load(std::sync::atomic::Ordering::SeqCst) {
+                raise_toast_topmost(&win);
+                show_toast_noactivate(&win);
+            } else {
+                hide_toast_window(&win);
+            }
         }
     }
     Ok(())
@@ -5235,6 +5239,29 @@ fn ensure_toast_noactivate(win: &tauri::WebviewWindow) {
     }
 }
 
+/// Hide the toast window both via Tauri and directly on the Win32 HWND.
+/// `show_toast_noactivate` uses `ShowWindow(SW_SHOWNA)` so `tao`'s cached
+/// `WindowFlags::VISIBLE` can remain `false`, making `win.hide()` alone a no-op.
+fn hide_toast_window(win: &tauri::WebviewWindow) {
+    let _ = win.hide();
+    #[cfg(windows)]
+    if let Ok(handle) = win.hwnd() {
+        use windows::Win32::Foundation::HWND;
+        use windows::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_HIDE};
+        let hwnd_raw = handle.0 as isize;
+        unsafe {
+            let _ = ShowWindow(HWND(hwnd_raw as _), SW_HIDE);
+        }
+        let _ = win.run_on_main_thread(move || {
+            if !TOAST_ACTIVE.load(std::sync::atomic::Ordering::SeqCst) {
+                unsafe {
+                    let _ = ShowWindow(HWND(hwnd_raw as _), SW_HIDE);
+                }
+            }
+        });
+    }
+}
+
 /// Show the toast without calling `win.show()` (`SW_SHOW`), which would otherwise
 /// activate a newly initialized WebView2 toast window and steal focus.
 fn show_toast_noactivate(win: &tauri::WebviewWindow) {
@@ -5242,9 +5269,14 @@ fn show_toast_noactivate(win: &tauri::WebviewWindow) {
     if let Ok(handle) = win.hwnd() {
         use windows::Win32::Foundation::HWND;
         use windows::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_SHOWNA};
-        unsafe {
-            let _ = ShowWindow(HWND(handle.0 as _), SW_SHOWNA);
-        }
+        let hwnd_raw = handle.0 as isize;
+        let _ = win.run_on_main_thread(move || {
+            if TOAST_ACTIVE.load(std::sync::atomic::Ordering::SeqCst) {
+                unsafe {
+                    let _ = ShowWindow(HWND(hwnd_raw as _), SW_SHOWNA);
+                }
+            }
+        });
         return;
     }
     #[cfg(not(windows))]
@@ -5254,8 +5286,7 @@ fn show_toast_noactivate(win: &tauri::WebviewWindow) {
 }
 
 /// Hidden toast windows lose WS_EX_TOPMOST after lock screen, fullscreen apps,
-/// or hours of sitting idle. Re-assert it on every show so the toast stays above
-/// other windows without stealing focus.
+/// or hours of sitting idle. Re-assert it on every show without altering visibility.
 fn raise_toast_topmost(win: &tauri::WebviewWindow) {
     let _ = win.set_always_on_top(true);
     #[cfg(windows)]
@@ -5263,7 +5294,6 @@ fn raise_toast_topmost(win: &tauri::WebviewWindow) {
         use windows::Win32::Foundation::HWND;
         use windows::Win32::UI::WindowsAndMessaging::{
             SetWindowPos, HWND_NOTOPMOST, HWND_TOPMOST, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE,
-            SWP_SHOWWINDOW,
         };
         let hwnd = HWND(handle.0 as _);
         unsafe {
@@ -5283,7 +5313,7 @@ fn raise_toast_topmost(win: &tauri::WebviewWindow) {
                 0,
                 0,
                 0,
-                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW,
+                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
             );
         }
     }

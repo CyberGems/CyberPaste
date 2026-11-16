@@ -374,9 +374,7 @@ fn apply_lock_side_effects(app: &AppHandle) {
     if let Some(win) = app.get_webview_window("image_viewer") {
         let _ = win.close();
     }
-    if let Some(win) = app.get_webview_window("toast") {
-        let _ = win.hide();
-    }
+    crate::commands::force_hide_toast(app);
     let _ = crate::rebuild_tray_menu(app);
     emit_status(app);
 }

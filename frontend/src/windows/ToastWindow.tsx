@@ -789,13 +789,13 @@ export function ToastWindow() {
 
     const toastWindow = getCurrentWindow();
     await toastWindow.setFocusable(true).catch(console.error);
-    await toastWindow.setFocus().catch(console.error);
 
     // Resize window to allow context menu to render without being cut off
     await invoke('set_toast_position', {
       width: normalWidthRef.current + TOAST_BLEED * 2,
       height: normalHeightRef.current + menuHeight,
     }).catch(console.error);
+    await toastWindow.setFocus().catch(console.error);
 
     const adjustedY = e.clientY + (isBottomEdge ? menuHeight : 0);
     setContextMenu({ x: e.clientX, y: adjustedY });
