@@ -8,7 +8,7 @@
 
 <!-- IMPORTANT FOR AGENTS & MAINTAINERS: Always rewrite this entire section and highlights with the ACTUAL release notes for this specific new version before tagging. NEVER leave or copy previous version notes! Use 25-45 words for the summary, lead with user-facing changes, and do not repeat the app name or version. Keep the Spanish mirror inside the details block in sync: translate the summary and rewrite the highlights. -->
 <!-- changelog-summary:start -->
-Pause notifications from the tray with flexible durations, a unified Code category that absorbs HTML clips with their rich behavior intact, a visor that opens cleanly maximized, transparency that survives sleep, and a fully localized tray menu headline this release.
+Pasting lands next to the right caret thanks to three-layer detection and Smart positioning, toasts no longer steal focus or block clicks, and focus races after the global hotkey are gone. Table selections and clip metadata persist, uninstall metadata gains the website, and releases ship winget manifests.
 <!-- changelog-summary:end -->
 
 > **New to CyberPaste?** A fast, privacy-first Windows clipboard manager with history, folders, OCR, and optional AI actions.
@@ -17,35 +17,27 @@ Pause notifications from the tray with flexible durations, a unified Code catego
 
 ### ✨ Key Features & Highlights
 
-- 🔕 **Pause Notifications from the Tray**:
-  - **Flexible durations**: Pause for 1, 6, 12, or 24 hours (the suggested default) or until you turn them back on. The amber tray item shows the resume time and re-enables with one click.
-  - **Synced with Settings**: A banner in Settings > Notifications mirrors the pause with a "Resume now" button, and the state survives restarts.
-  - **True silence**: Capture, duplicate, and startup sounds are muted while paused; error alerts still come through.
+- 🎯 **Smarter paste positioning**:
+  - Three-layer caret detection across UIA, MSAA and cached carets finds the right insertion point, and Smart positioning follows the caret of the active window.
+  - Cached MSAA carets are ignored when the UIA focus is not on an editable control.
 
-- 🗂️ **One Code Category (HTML included)**:
-  - **HTML joins Code**: Structural HTML captures now live in the single Code category with HTML syntax highlighting; the separate HTML type is gone from filters, stats, toasts, and achievements.
-  - **Rich behavior intact**: Pasting still restores styled HTML, the visor keeps its rendered/source toggle, and Save As still exports `.html` files.
-  - **Automatic migration**: Existing history converts on first launch, and the all-types achievement is now actually reachable.
+- 🔇 **Toasts that never interrupt**:
+  - Notification toasts appear without activating or stealing focus, and hiding one forces the window off-screen.
+  - Empty transparent toast windows no longer linger invisibly and block clicks.
 
-- 🖥️ **Visor & Tray Polish**:
-  - **Cleaner visor opens**: The viewer opens maximized at work-area size with a dark first frame and no blank flash.
-  - **Calmer tray menu**: The Quit item behaves exactly like every other item, the card shadow turns dark and 30% softer without the cyan glow, and icon glows are toned down.
+- 🪟 **Focus races fixed**:
+  - Showing the window via the global hotkey no longer hides it immediately, view transitions force the foreground, and the blur watcher debounces after idle wake.
 
-- 🛠️ **Fixes**:
-  - **Working update check**: "Check for Update..." from the tray now starts the search even when the About window has to open fresh.
-  - **No more black blocks**: Transparent windows (tray menu, toasts) regain their transparency automatically after sleep/resume.
-  - **History that behaves**: Clipboard order survives restarts, pasting a history image saves it as a file in Explorer, and mixed CyberSnap copies prefer the image.
-
-- ⌨️ **Hints & Localization**:
-  - **One hint source**: The Full mode HUD, Compact footer, and emoji hints all draw from a single shared module; hotkeys interpolate from shared constants and the HUD pill centers on the titlebar.
-  - **Fully localized tray**: The tray menu is completely translated in English and Spanish (including "Lock now"), guarded by a new `i18n:check` audit that fails on missing keys.
+- 🧹 **Data, uninstall and maintenance**:
+  - Single-cell table selections stay text, HTML clip metadata persists, and the active app filter text size aligns with a reserved clip card footer.
+  - The Windows uninstall entry shows the website and description, the update modal skips "Before you install", 15 npm and 20 cargo dependencies are refreshed, and every release ships winget manifests.
 
 <details>
 <summary><b>🇪🇸 Ver notas de la versión en Español</b></summary>
 
 ### 🚀 Novedades de esta versión
 
-Pausa notificaciones desde el tray con duraciones flexibles, una categoría Código unificada que absorbe los clips HTML conservando su comportamiento enriquecido, un visor que abre maximizado sin parpadeos, transparencia que sobrevive a la suspensión y un tray totalmente traducido encabezan esta versión.
+El pegado cae junto al cursor correcto gracias a la detección en tres capas y al posicionamiento Smart, las notificaciones ya no roban el foco ni bloquean clics, y desaparecen las carreras de foco tras el atajo global. Las selecciones de tabla de una celda y los metadatos de clips se conservan, la entrada de desinstalación suma la web y los releases publican manifiestos winget.
 
 > **¿Nuevo en CyberPaste?** Un gestor de portapapeles rápido y privado para Windows, con historial, carpetas, OCR y acciones de IA opcionales.
 
@@ -53,28 +45,20 @@ Pausa notificaciones desde el tray con duraciones flexibles, una categoría Cód
 
 ### ✨ Novedades destacadas
 
-- 🔕 **Pausa notificaciones desde el tray**:
-  - **Duraciones flexibles**: Pausa por 1, 6, 12 o 24 horas (la opción sugerida) o hasta que las reactives. El ítem ámbar del tray muestra la hora de reanudación y las reactiva con un clic.
-  - **Sincronizado con Configuración**: Un banner en Configuración > Notificaciones refleja la pausa con botón "Reanudar ahora", y el estado sobrevive a los reinicios.
-  - **Silencio real**: Los sonidos de captura, duplicado y bienvenida también se silencian; las alertas de error siguen llegando.
+- 🎯 **Posicionado de pegado más inteligente**:
+  - La detección de cursor en tres capas sobre UIA, MSAA y cursores cacheados encuentra el punto de inserción correcto, y el posicionamiento Smart sigue el cursor de la ventana activa.
+  - Los cursores MSAA cacheados se ignoran cuando el foco UIA no está sobre un control editable.
 
-- 🗂️ **Una sola categoría Código (HTML incluido)**:
-  - **HTML pasa a Código**: Las capturas de HTML estructural viven ahora en la única categoría Código con resaltado de sintaxis HTML; el tipo HTML separado desaparece de filtros, estadísticas, toasts y logros.
-  - **Comportamiento rico intacto**: Pegar sigue restaurando el HTML con estilo, el visor conserva su alternancia renderizado/fuente y Guardar como sigue exportando `.html`.
-  - **Migración automática**: El historial existente se convierte al primer arranque, y el logro de todos los tipos ahora sí es alcanzable.
+- 🔇 **Toasts que nunca interrumpen**:
+  - Las notificaciones toast aparecen sin activarse ni robar el foco, y al ocultarlas la ventana se retira de la pantalla.
+  - Las ventanas toast transparentes y vacías ya no permanecen invisibles bloqueando clics.
 
-- 🖥️ **Pulido del visor y del tray**:
-  - **Aperturas limpias del visor**: El visor abre maximizado al tamaño del área de trabajo, con primer fotograma oscuro y sin flash en blanco.
-  - **Tray más calmado**: El ítem Salir se comporta exactamente igual que los demás, la sombra pasa a oscura y un 30% más suave sin el glow cian, y los glows de los iconos bajan de intensidad.
+- 🪟 **Carreras de foco resueltas**:
+  - Abrir la ventana con el atajo global ya no la oculta de inmediato, los cambios de vista fuerzan el primer plano y el vigilador de desenfoque se amortigua tras despertar de la inactividad.
 
-- 🛠️ **Correcciones**:
-  - **Búsqueda de actualizaciones funcional**: "Buscar actualizaciones..." desde el tray lanza la búsqueda aunque la ventana About tenga que abrirse de cero.
-  - **Adiós a los bloques negros**: Las ventanas transparentes (menú del tray, toasts) recuperan su transparencia automáticamente tras suspender/reanudar.
-  - **Un historial que se porta bien**: El orden del portapapeles sobrevive a los reinicios, pegar una imagen del historial la guarda como archivo en el Explorador y las copias mixtas de CyberSnap prefieren la imagen.
-
-- ⌨️ **Hints y localización**:
-  - **Una sola fuente de hints**: El HUD de Pantalla Completa, el footer Compacto y los hints de emojis salen de un módulo compartido; los atajos se interpolan desde constantes compartidas y la píldora del HUD se centra en la titlebar.
-  - **Tray totalmente traducido**: El menú del tray está completamente traducido en inglés y español (incluido "Bloquear ahora"), con una nueva auditoría `i18n:check` que falla si falta una clave.
+- 🧹 **Datos, desinstalación y mantenimiento**:
+  - Las selecciones de una sola celda de tabla se conservan como texto, los metadatos HTML de los clips persisten, y el tamaño del filtro de app activa se alinea con el pie reservado de las tarjetas de clip.
+  - La entrada de desinstalación de Windows muestra el sitio web y la descripción, el modal de actualización omite «Antes de instalar», se renuevan 15 dependencias de npm y 20 de cargo, y cada release publica manifiestos winget.
 
 ### ⚠️ Antes de instalar
 

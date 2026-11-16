@@ -2,6 +2,30 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.31.1] - 2026-11-16
+
+### 🇺🇸 English
+
+- Find the right insertion point for every paste: three-layer caret detection across UIA, MSAA and cached carets, with Smart positioning following the active window's caret.
+- Show notification toasts without activating or stealing focus, and keep invisible toast windows from lingering and blocking clicks.
+- Fix the immediate hide-on-blur race when summoning the window with the global hotkey, force the foreground on view transitions, and debounce the blur watcher after idle wake.
+- Keep single-cell table selections as text and persist HTML clip metadata.
+- Align the active app filter text size and reserve clip card footer space.
+- Show the CyberPaste website and description in the Windows uninstall entry.
+- Hide the Before you install guidance from the update modal.
+- Update 15 npm and 20 cargo dependencies and ship winget manifests with every release.
+
+### 🇪🇸 Español
+
+- Encuentra el punto de inserción correcto para cada pegado: detección de cursor en tres capas sobre UIA, MSAA y cursores cacheados, con el posicionamiento Smart siguiendo el cursor de la ventana activa.
+- Muestra las notificaciones toast sin activar ni robar el foco, e impide que una ventana toast invisible siga presente bloqueando clics.
+- Corrige la carrera de ocultación inmediata al abrir la ventana con el atajo global, fuerza el primer plano en los cambios de vista y amortigua el vigilador de desenfoque tras despertar de la inactividad.
+- Conserva como texto las selecciones de una sola celda de tabla y persiste los metadatos HTML de los clips.
+- Ajusta el tamaño del texto del filtro de app activa y reserva el pie de las tarjetas de clip.
+- Muestra el sitio web de CyberPaste y su descripción en la entrada de desinstalación de Windows.
+- Oculta la guía Antes de instalar del modal de actualización.
+- Actualiza 15 dependencias de npm y 20 de cargo, y publica manifiestos winget con cada release.
+
 ## [1.31.0] - 2026-11-12
 
 ### 🇺🇸 English
