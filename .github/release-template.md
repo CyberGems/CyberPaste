@@ -60,7 +60,7 @@ El pegado cae junto al cursor correcto gracias a la detección en tres capas y a
   - Las selecciones de una sola celda de tabla se conservan como texto, los metadatos HTML de los clips persisten, y el tamaño del filtro de app activa se alinea con el pie reservado de las tarjetas de clip.
   - La entrada de desinstalación de Windows muestra el sitio web y la descripción, el modal de actualización omite «Antes de instalar», se renuevan 15 dependencias de npm y 20 de cargo, y cada release publica manifiestos winget.
 
-### ⚠️ Antes de instalar
+### ℹ️ Antes de instalar
 
 - **Windows:** esta versión aún no está firmada digitalmente. SmartScreen puede avisar antes de ejecutarla: **Más información › Ejecutar de todas formas**. Cuando Smart App Control está activado, Windows rechaza programas sin firmar; consulta la [política de firma de código](https://github.com/CyberGems/.github/blob/main/CODE_SIGNING.md). Verifica la descarga con los checksums SHA256 que aparecen más abajo.
 
@@ -68,7 +68,7 @@ El pegado cae junto al cursor correcto gracias a la detección en tres capas y a
 
 ---
 
-### ⚠️ Before you install
+### ℹ️ Before you install
 
 - **Windows:** this release is not code-signed yet. SmartScreen may ask before it runs: **More info › Run anyway**. Where Smart App Control is on, Windows refuses unsigned programs; see the [code signing policy](https://github.com/CyberGems/.github/blob/main/CODE_SIGNING.md). Verify the download with the SHA256 checksums below.
 
