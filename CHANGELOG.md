@@ -2,6 +2,16 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.31.2] - 2026-11-18
+
+### 🇺🇸 English
+
+- Convert the tray submenus (`Pause notifications`, `Help`, and `More from CyberGems`) into side-by-side flyout panels with dwell hover, click toggling, automatic left/right monitor placement, transparent outside-click dismissal, and keyboard arrow navigation.
+
+### 🇪🇸 Español
+
+- Convierte los submenús de la bandeja (`Pausar notificaciones`, `Ayuda` y `Más de CyberGems`) en paneles flyout laterales con retardo al pasar el cursor, alternancia por clic, colocación automática según el monitor, cierre al pulsar fuera y navegación con flechas del teclado.
+
 ## [1.31.1] - 2026-11-16
 
 ### 🇺🇸 English
