@@ -5671,6 +5671,8 @@ pub struct TrayMenuState {
     pub notifications_paused: bool,
     pub notifications_pause_until: Option<String>,
     pub notifications_pause_permanent: bool,
+    pub flyout_side: String,
+    pub vertical_align: String,
 }
 
 static TRAY_MENU_ANCHOR: std::sync::Mutex<Option<(i32, i32)>> = std::sync::Mutex::new(None);
@@ -5691,15 +5693,12 @@ static PENDING_ABOUT_UPDATE_CHECK_MS: std::sync::atomic::AtomicU64 =
 
 /// Logical width of the menu card (MENU_WIDTH in TrayMenuWindow.tsx).
 const TRAY_MENU_WIDTH: f64 = 268.0;
+const TRAY_MENU_FLYOUT_EXTRA_W: f64 = 276.0; // 268px flyout card + 8px gap
 /// Transparent bleed around the card for the CSS box-shadow (SHADOW_PAD in TrayMenuWindow.tsx).
 /// Must be >= the shadow's max extent (offset-y 6px + blur 20px = 26px at the bottom).
 const TRAY_MENU_SHADOW_PAD: f64 = 26.0;
-/// Estimated logical height of the card content. Used to show the window instantly on open;
-/// `tray_menu_ready` corrects afterwards only if the measured size differs meaningfully.
-/// Exact sum from TrayMenuWindow.tsx Tailwind classes:
-///   header(14+18+10) + divider(1) + group1[p1.5=12 + 3xgap0.5=6 + 4x36] + divider(1)
-///   + exit-group(6+36+8) + border(2) = 258
 const TRAY_MENU_EST_HEIGHT: f64 = 295.0;
+const TRAY_MENU_CANVAS_EST_HEIGHT: f64 = 450.0;
 
 fn tray_menu_now_ms() -> u64 {
     SystemTime::now()
@@ -5708,17 +5707,20 @@ fn tray_menu_now_ms() -> u64 {
         .unwrap_or(0)
 }
 
-/// Compute window position + physical size for the tray popup near the anchor point.
+/// Compute window position + physical size for the tray two-column canvas near the anchor point,
+/// keeping the main card anchored at its exact position while reserving a side-by-side flyout slot.
 fn tray_menu_geometry(
     win: &tauri::WebviewWindow,
     anchor_x: i32,
     anchor_y: i32,
-    logical_w: f64,
-    logical_h: f64,
-) -> (i32, i32, u32, u32) {
+    main_logical_w: f64,
+    main_logical_h: f64,
+    canvas_logical_h: f64,
+) -> (i32, i32, u32, u32, &'static str, &'static str) {
     let scale = win.scale_factor().unwrap_or(1.0);
-    let width_px = (logical_w * scale).round() as i32;
-    let height_px = (logical_h * scale).round() as i32;
+    let main_w_px = (main_logical_w * scale).round() as i32;
+    let main_h_px = (main_logical_h * scale).round() as i32;
+    let extra_w_px = (TRAY_MENU_FLYOUT_EXTRA_W * scale).round() as i32;
 
     // Prefer the monitor under the tray icon / cursor
     let monitor = win
@@ -5749,27 +5751,80 @@ fn tray_menu_geometry(
         (0, 0, 1920, 1080)
     };
 
-    // Center horizontally on anchor; place above the tray icon.
-    // Pull window down by the transparent shadow pad so the *card* (not the
-    // empty bleed) sits close to the icon — matches SHADOW_PAD in TrayMenuWindow.
+    // Anchor main card near cursor/icon horizontally centered and above (or below) the icon.
     let gap = (4.0 * scale).round() as i32;
     let shadow_pad_px = (TRAY_MENU_SHADOW_PAD * scale).round() as i32;
-    let mut x = anchor_x - width_px / 2;
-    let mut y = anchor_y - height_px - gap + shadow_pad_px;
+    let mut main_x = anchor_x - main_w_px / 2;
+    let mut main_y = anchor_y - main_h_px - gap + shadow_pad_px;
+    let mut vertical_align = "bottom";
 
-    x = x.clamp(min_x + 4, (max_x - width_px - 4).max(min_x + 4));
-    if y + height_px - shadow_pad_px < min_y + 4 {
-        // Not enough room above — open below the icon
-        y = anchor_y + gap - shadow_pad_px;
+    main_x = main_x.clamp(min_x + 4, (max_x - main_w_px - 4).max(min_x + 4));
+    if main_y + main_h_px - shadow_pad_px < min_y + 4 || anchor_y < (min_y + max_y) / 2 {
+        if main_y + main_h_px - shadow_pad_px < min_y + 4 {
+            main_y = anchor_y + gap - shadow_pad_px;
+        }
+        if anchor_y < (min_y + max_y) / 2 {
+            vertical_align = "top";
+        }
     }
-    y = y.clamp(min_y + 4, (max_y - height_px - 4).max(min_y + 4));
+    main_y = main_y.clamp(min_y + 4, (max_y - main_h_px - 4).max(min_y + 4));
+
+    let space_left = (main_x + shadow_pad_px) - (min_x + 4);
+    let space_right = (max_x - 4) - (main_x + main_w_px - shadow_pad_px);
+    let flyout_side = if space_left >= extra_w_px && space_right < extra_w_px {
+        "left"
+    } else if space_right >= extra_w_px && space_left < extra_w_px {
+        "right"
+    } else if anchor_x >= (min_x + max_x) / 2 {
+        "left"
+    } else {
+        "right"
+    };
+
+    let canvas_w_px = (main_w_px + extra_w_px).max(1);
+    let max_canvas_h = (max_y - min_y - 8).max(main_h_px);
+    let canvas_h_px = ((canvas_logical_h.max(main_logical_h) * scale).round() as i32)
+        .clamp(main_h_px, max_canvas_h);
+
+    let canvas_x = if flyout_side == "left" {
+        (main_x - extra_w_px).clamp(min_x + 4, (max_x - canvas_w_px - 4).max(min_x + 4))
+    } else {
+        main_x.clamp(min_x + 4, (max_x - canvas_w_px - 4).max(min_x + 4))
+    };
+    let canvas_y = if vertical_align == "top" {
+        main_y
+    } else {
+        (main_y + main_h_px - canvas_h_px).max(min_y + 4)
+    };
 
     (
-        x,
-        y,
-        width_px.max(1) as u32,
-        height_px.max(1) as u32,
+        canvas_x,
+        canvas_y,
+        canvas_w_px as u32,
+        canvas_h_px as u32,
+        flyout_side,
+        vertical_align,
     )
+}
+
+fn current_tray_flyout_orientation(app: &AppHandle) -> (&'static str, &'static str) {
+    let Some(win) = app.get_webview_window("tray_menu") else {
+        return ("left", "bottom");
+    };
+    let Some((anchor_x, anchor_y)) = TRAY_MENU_ANCHOR.lock().ok().and_then(|g| *g) else {
+        return ("left", "bottom");
+    };
+    let est_w = TRAY_MENU_WIDTH + 2.0 * TRAY_MENU_SHADOW_PAD;
+    let est_h = TRAY_MENU_EST_HEIGHT + 2.0 * TRAY_MENU_SHADOW_PAD;
+    let (_, _, _, _, flyout_side, vertical_align) = tray_menu_geometry(
+        &win,
+        anchor_x,
+        anchor_y,
+        est_w,
+        est_h,
+        TRAY_MENU_CANVAS_EST_HEIGHT,
+    );
+    (flyout_side, vertical_align)
 }
 
 pub fn collect_tray_menu_state(app: &AppHandle) -> TrayMenuState {
@@ -5781,6 +5836,7 @@ pub fn collect_tray_menu_state(app: &AppHandle) -> TrayMenuState {
         .unwrap_or(false);
     let is_paused =
         crate::clipboard::CLIPBOARD_MONITORING_PAUSED.load(std::sync::atomic::Ordering::SeqCst);
+    let (flyout_side, vertical_align) = current_tray_flyout_orientation(app);
 
     TrayMenuState {
         version: env!("CARGO_PKG_VERSION").to_string(),
@@ -5795,6 +5851,8 @@ pub fn collect_tray_menu_state(app: &AppHandle) -> TrayMenuState {
         notifications_paused: settings.notifications_paused(),
         notifications_pause_until: settings.notifications_pause_until.clone(),
         notifications_pause_permanent: settings.notifications_pause_permanent,
+        flyout_side: flyout_side.to_string(),
+        vertical_align: vertical_align.to_string(),
     }
 }
 
@@ -5826,6 +5884,8 @@ fn show_tray_menu_fast(app: &AppHandle, anchor_x: i32, anchor_y: i32) -> Result<
     let window_label = "tray_menu";
     let est_w = TRAY_MENU_WIDTH + 2.0 * TRAY_MENU_SHADOW_PAD;
     let est_h = TRAY_MENU_EST_HEIGHT + 2.0 * TRAY_MENU_SHADOW_PAD;
+    let est_canvas_w = est_w + TRAY_MENU_FLYOUT_EXTRA_W;
+    let est_canvas_h = TRAY_MENU_CANVAS_EST_HEIGHT;
 
     let (created_now, win) = if let Some(win) = app.get_webview_window(window_label) {
         (false, win)
@@ -5839,7 +5899,7 @@ fn show_tray_menu_fast(app: &AppHandle, anchor_x: i32, anchor_y: i32) -> Result<
             tauri::WebviewUrl::App("index.html?window=tray_menu".into()),
         )
         .title("CyberPaste Tray Menu")
-        .inner_size(est_w, est_h)
+        .inner_size(est_canvas_w, est_canvas_h)
         .decorations(false)
         .transparent(true)
         .always_on_top(true)
@@ -5876,7 +5936,8 @@ fn show_tray_menu_fast(app: &AppHandle, anchor_x: i32, anchor_y: i32) -> Result<
     crate::disable_window_transitions(&win);
     crate::suppress_window_border(&win);
 
-    let (x, y, w_px, h_px) = tray_menu_geometry(&win, anchor_x, anchor_y, est_w, est_h);
+    let (x, y, w_px, h_px, _, _) =
+        tray_menu_geometry(&win, anchor_x, anchor_y, est_w, est_h, est_canvas_h);
     let _ = win.set_size(tauri::Size::Physical(tauri::PhysicalSize {
         width: w_px,
         height: h_px,
@@ -5945,31 +6006,37 @@ pub async fn warm_tray_menu(app: AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn tray_menu_ready(app: AppHandle, width: f64, height: f64) -> Result<(), String> {
+pub async fn tray_menu_ready(
+    app: AppHandle,
+    width: f64,
+    height: f64,
+    canvas_height: Option<f64>,
+) -> Result<(), String> {
     let Some(win) = app.get_webview_window("tray_menu") else {
         return Ok(());
     };
 
-    // A view transition resizes/repositions the native popup while the pointer is still down.
-    // Ignore the resulting transient outside-click sample so internal navigation cannot dismiss it.
     TRAY_MENU_IGNORE_OUTSIDE_UNTIL_MS.store(
         tray_menu_now_ms().saturating_add(250),
         std::sync::atomic::Ordering::SeqCst,
     );
 
     let scale = win.scale_factor().unwrap_or(1.0);
-    let width_px = (width * scale).round() as u32;
-    let height_px = (height * scale).round() as u32;
+    let (anchor_x, anchor_y) = TRAY_MENU_ANCHOR
+        .lock()
+        .ok()
+        .and_then(|g| *g)
+        .unwrap_or((100, 100));
+    let (x, y, w, h, _, _) = tray_menu_geometry(
+        &win,
+        anchor_x,
+        anchor_y,
+        width,
+        height,
+        canvas_height.unwrap_or(height),
+    );
 
     if TRAY_MENU_PENDING_SHOW.swap(false, std::sync::atomic::Ordering::SeqCst) {
-        // Cold-created window: the Rust-side show used the estimated geometry; correct with the
-        // measured size now (the webview already holds focus, so plain show is enough).
-        let (anchor_x, anchor_y) = TRAY_MENU_ANCHOR
-            .lock()
-            .ok()
-            .and_then(|g| *g)
-            .unwrap_or((100, 100));
-        let (x, y, w, h) = tray_menu_geometry(&win, anchor_x, anchor_y, width, height);
         let _ = win.set_size(tauri::Size::Physical(tauri::PhysicalSize {
             width: w,
             height: h,
@@ -5979,22 +6046,13 @@ pub async fn tray_menu_ready(app: AppHandle, width: f64, height: f64) -> Result<
         return Ok(());
     }
 
-    // Warm window: already shown at the estimated size. Only correct when the measured content
-    // differs meaningfully, to avoid a visible resize jump on every open (labels changing change
-    // width by < 1px in practice).
     if let Ok(cur) = win.outer_size() {
-        let dw = (cur.width as i64 - width_px as i64).abs();
-        let dh = (cur.height as i64 - height_px as i64).abs();
+        let dw = (cur.width as i64 - w as i64).abs();
+        let dh = (cur.height as i64 - h as i64).abs();
         let tol = (6.0 * scale).round() as i64;
         if dw <= tol && dh <= tol {
             return Ok(());
         }
-        let (anchor_x, anchor_y) = TRAY_MENU_ANCHOR
-            .lock()
-            .ok()
-            .and_then(|g| *g)
-            .unwrap_or((100, 100));
-        let (x, y, w, h) = tray_menu_geometry(&win, anchor_x, anchor_y, width, height);
         let _ = win.set_size(tauri::Size::Physical(tauri::PhysicalSize {
             width: w,
             height: h,
