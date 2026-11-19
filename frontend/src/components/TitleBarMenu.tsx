@@ -7,6 +7,7 @@ import {
   Tag,
   Github,
   Info,
+  Power,
   Book,
   Trash2,
   Settings,
@@ -494,6 +495,22 @@ export function TitleBarMenu({
             >
               <Info size={14} className={iconClass} />
               <span>{t('titleBar.moreMenu.about')}</span>
+            </button>
+
+            <div role="separator" className="mx-2 my-1 h-px shrink-0 bg-foreground/15" />
+
+            <button
+              type="button"
+              role="menuitem"
+              className={itemClass}
+              onClick={() =>
+                closeAnd(() => {
+                  invoke('handle_close_choice', { action: 'quit', remember: false }).catch(console.error);
+                })
+              }
+            >
+              <Power size={14} className="shrink-0 text-rose-400" />
+              <span>{t('titleBar.moreMenu.exit')}</span>
             </button>
           </div>,
           document.body
