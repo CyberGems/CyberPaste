@@ -5707,8 +5707,110 @@ fn tray_menu_now_ms() -> u64 {
         .unwrap_or(0)
 }
 
+#[cfg(target_os = "windows")]
+fn tray_monitor_work_area_and_scale(anchor_x: i32, anchor_y: i32) -> Option<(i32, i32, i32, i32, f64)> {
+    use windows::Win32::Foundation::POINT;
+    use windows::Win32::Graphics::Gdi::{
+        GetMonitorInfoW, MonitorFromPoint, HMONITOR, MONITORINFO, MONITOR_DEFAULTTONEAREST,
+    };
+
+    #[link(name = "shcore")]
+    extern "system" {
+        fn GetDpiForMonitor(
+            hmonitor: HMONITOR,
+            dpi_type: i32,
+            dpi_x: *mut u32,
+            dpi_y: *mut u32,
+        ) -> i32;
+    }
+
+    let monitor = unsafe {
+        MonitorFromPoint(
+            POINT {
+                x: anchor_x,
+                y: anchor_y,
+            },
+            MONITOR_DEFAULTTONEAREST,
+        )
+    };
+    if monitor.is_invalid() {
+        return None;
+    }
+    let mut info = MONITORINFO {
+        cbSize: std::mem::size_of::<MONITORINFO>() as u32,
+        ..Default::default()
+    };
+    if !unsafe { GetMonitorInfoW(monitor, &mut info) }.as_bool() {
+        return None;
+    }
+    let mut dpi_x: u32 = 0;
+    let mut dpi_y: u32 = 0;
+    let hr = unsafe { GetDpiForMonitor(monitor, 0, &mut dpi_x, &mut dpi_y) };
+    let scale = if hr == 0 && dpi_x > 0 {
+        dpi_x as f64 / 96.0
+    } else {
+        0.0
+    };
+    Some((
+        info.rcWork.left,
+        info.rcWork.top,
+        info.rcWork.right,
+        info.rcWork.bottom,
+        scale,
+    ))
+}
+
+#[cfg(target_os = "windows")]
+fn set_tray_window_rect_atomic(win: &tauri::WebviewWindow, x: i32, y: i32, w: u32, h: u32) -> bool {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::{
+        SetWindowPos, HWND_TOP, SWP_NOACTIVATE, SWP_NOZORDER,
+    };
+
+    let Ok(hwnd) = win.hwnd() else {
+        return false;
+    };
+    let _ = unsafe {
+        SetWindowPos(
+            HWND(hwnd.0),
+            Some(HWND_TOP),
+            x,
+            y,
+            w as i32,
+            h as i32,
+            SWP_NOZORDER | SWP_NOACTIVATE,
+        )
+    };
+    true
+}
+
+fn apply_tray_window_rect(win: &tauri::WebviewWindow, x: i32, y: i32, w: u32, h: u32) {
+    #[cfg(target_os = "windows")]
+    if set_tray_window_rect_atomic(win, x, y, w, h) {
+        // Crossing onto a monitor with a different DPI triggers WM_DPICHANGED during SetWindowPos,
+        // which can rescale/reposition via the OS suggested rect. Re-assert once already on target.
+        let pos_mismatch = win
+            .outer_position()
+            .map(|p| p.x != x || p.y != y)
+            .unwrap_or(true);
+        let size_mismatch = win
+            .outer_size()
+            .map(|s| s.width != w || s.height != h)
+            .unwrap_or(true);
+        if pos_mismatch || size_mismatch {
+            let _ = set_tray_window_rect_atomic(win, x, y, w, h);
+        }
+        return;
+    }
+    let _ = win.set_size(tauri::Size::Physical(tauri::PhysicalSize {
+        width: w,
+        height: h,
+    }));
+    let _ = win.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
+}
+
 /// Compute window position + physical size for the tray two-column canvas near the anchor point,
-/// keeping the main card anchored at its exact position while reserving a side-by-side flyout slot.
+/// resolving target-monitor DPI & work area so mixed-DPI and vertical taskbars stay aligned.
 fn tray_menu_geometry(
     win: &tauri::WebviewWindow,
     anchor_x: i32,
@@ -5716,12 +5818,7 @@ fn tray_menu_geometry(
     main_logical_w: f64,
     main_logical_h: f64,
     canvas_logical_h: f64,
-) -> (i32, i32, u32, u32, &'static str, &'static str) {
-    let scale = win.scale_factor().unwrap_or(1.0);
-    let main_w_px = (main_logical_w * scale).round() as i32;
-    let main_h_px = (main_logical_h * scale).round() as i32;
-    let extra_w_px = (TRAY_MENU_FLYOUT_EXTRA_W * scale).round() as i32;
-
+) -> (i32, i32, u32, u32, &'static str, &'static str, f64) {
     // Prefer the monitor under the tray icon / cursor
     let monitor = win
         .available_monitors()
@@ -5738,39 +5835,75 @@ fn tray_menu_geometry(
         .or_else(|| win.primary_monitor().ok().flatten())
         .or_else(|| win.current_monitor().ok().flatten());
 
-    let (min_x, min_y, max_x, max_y) = if let Some(m) = monitor {
-        let pos = m.position();
-        let size = m.size();
-        (
-            pos.x,
-            pos.y,
-            pos.x + size.width as i32,
-            pos.y + size.height as i32,
-        )
-    } else {
-        (0, 0, 1920, 1080)
-    };
+    #[cfg(target_os = "windows")]
+    let win_mon_info = tray_monitor_work_area_and_scale(anchor_x, anchor_y);
+    #[cfg(not(target_os = "windows"))]
+    let win_mon_info: Option<(i32, i32, i32, i32, f64)> = None;
 
-    // Anchor main card near cursor/icon horizontally centered and above (or below) the icon.
+    let (min_x, min_y, max_x, max_y, scale) =
+        if let Some((wa_x0, wa_y0, wa_x1, wa_y1, dpi_scale)) = win_mon_info {
+            let resolved_scale = if dpi_scale > 0.0 {
+                dpi_scale
+            } else {
+                monitor
+                    .as_ref()
+                    .map(|m| m.scale_factor())
+                    .unwrap_or_else(|| win.scale_factor().unwrap_or(1.0))
+            };
+            (wa_x0, wa_y0, wa_x1, wa_y1, resolved_scale)
+        } else if let Some(m) = monitor {
+            let pos = m.position();
+            let size = m.size();
+            (
+                pos.x,
+                pos.y,
+                pos.x + size.width as i32,
+                pos.y + size.height as i32,
+                m.scale_factor(),
+            )
+        } else {
+            (0, 0, 1920, 1080, win.scale_factor().unwrap_or(1.0))
+        };
+
+    let width_px = (main_logical_w * scale).round() as i32;
+    let height_px = (main_logical_h * scale).round() as i32;
     let gap = (4.0 * scale).round() as i32;
     let shadow_pad_px = (TRAY_MENU_SHADOW_PAD * scale).round() as i32;
-    let mut main_x = anchor_x - main_w_px / 2;
-    let mut main_y = anchor_y - main_h_px - gap + shadow_pad_px;
-    let mut vertical_align = "bottom";
+    let extra_w_px = (TRAY_MENU_FLYOUT_EXTRA_W * scale).round() as i32;
 
-    main_x = main_x.clamp(min_x + 4, (max_x - main_w_px - 4).max(min_x + 4));
-    if main_y + main_h_px - shadow_pad_px < min_y + 4 || anchor_y < (min_y + max_y) / 2 {
-        if main_y + main_h_px - shadow_pad_px < min_y + 4 {
-            main_y = anchor_y + gap - shadow_pad_px;
-        }
-        if anchor_y < (min_y + max_y) / 2 {
-            vertical_align = "top";
+    let max_card_h = (max_y - min_y - 2 * gap).max(200);
+    let card_w = (width_px - 2 * shadow_pad_px).max(1);
+    let card_h = (height_px - 2 * shadow_pad_px).min(max_card_h).max(1);
+    let main_w_px = card_w + 2 * shadow_pad_px;
+    let main_h_px = card_h + 2 * shadow_pad_px;
+
+    let anchor_in_left_strip = anchor_x < min_x;
+    let anchor_in_right_strip = anchor_x >= max_x;
+    let is_taskbar_at_top = anchor_y < (min_y + max_y) / 2;
+    let (mut card_x, mut card_y);
+    if anchor_in_left_strip {
+        card_x = anchor_x + gap;
+        card_y = anchor_y - card_h / 2;
+    } else if anchor_in_right_strip {
+        card_x = anchor_x - card_w - gap;
+        card_y = anchor_y - card_h / 2;
+    } else {
+        card_x = anchor_x - card_w / 2;
+        if is_taskbar_at_top {
+            card_y = anchor_y + gap;
+        } else {
+            card_y = (anchor_y - card_h - gap).max(min_y);
         }
     }
-    main_y = main_y.clamp(min_y + 4, (max_y - main_h_px - 4).max(min_y + 4));
 
-    let space_left = (main_x + shadow_pad_px) - (min_x + 4);
-    let space_right = (max_x - 4) - (main_x + main_w_px - shadow_pad_px);
+    card_x = card_x.clamp(min_x, (max_x - card_w).max(min_x));
+    card_y = card_y.clamp(min_y, (max_y - card_h).max(min_y));
+
+    let main_win_x = card_x - shadow_pad_px;
+    let main_win_y = card_y - shadow_pad_px;
+
+    let space_left = card_x - min_x;
+    let space_right = max_x - (card_x + card_w);
     let flyout_side = if space_left >= extra_w_px && space_right < extra_w_px {
         "left"
     } else if space_right >= extra_w_px && space_left < extra_w_px {
@@ -5781,20 +5914,26 @@ fn tray_menu_geometry(
         "right"
     };
 
+    let vertical_align = if is_taskbar_at_top { "top" } else { "bottom" };
+
+    let canvas_card_h = (((canvas_logical_h.max(main_logical_h) - 2.0 * TRAY_MENU_SHADOW_PAD)
+        * scale)
+        .round() as i32)
+        .clamp(card_h, max_card_h);
+    let canvas_h_px = canvas_card_h + 2 * shadow_pad_px;
     let canvas_w_px = (main_w_px + extra_w_px).max(1);
-    let max_canvas_h = (max_y - min_y - 8).max(main_h_px);
-    let canvas_h_px = ((canvas_logical_h.max(main_logical_h) * scale).round() as i32)
-        .clamp(main_h_px, max_canvas_h);
 
     let canvas_x = if flyout_side == "left" {
-        (main_x - extra_w_px).clamp(min_x + 4, (max_x - canvas_w_px - 4).max(min_x + 4))
+        main_win_x - extra_w_px
     } else {
-        main_x.clamp(min_x + 4, (max_x - canvas_w_px - 4).max(min_x + 4))
+        main_win_x
     };
+    let min_canvas_y = min_y - shadow_pad_px;
+    let max_canvas_y = (max_y + shadow_pad_px - canvas_h_px).max(min_canvas_y);
     let canvas_y = if vertical_align == "top" {
-        main_y
+        main_win_y.clamp(min_canvas_y, max_canvas_y)
     } else {
-        (main_y + main_h_px - canvas_h_px).max(min_y + 4)
+        (main_win_y + main_h_px - canvas_h_px).clamp(min_canvas_y, max_canvas_y)
     };
 
     (
@@ -5804,6 +5943,7 @@ fn tray_menu_geometry(
         canvas_h_px as u32,
         flyout_side,
         vertical_align,
+        scale,
     )
 }
 
@@ -5816,7 +5956,7 @@ fn current_tray_flyout_orientation(app: &AppHandle) -> (&'static str, &'static s
     };
     let est_w = TRAY_MENU_WIDTH + 2.0 * TRAY_MENU_SHADOW_PAD;
     let est_h = TRAY_MENU_EST_HEIGHT + 2.0 * TRAY_MENU_SHADOW_PAD;
-    let (_, _, _, _, flyout_side, vertical_align) = tray_menu_geometry(
+    let (_, _, _, _, flyout_side, vertical_align, _) = tray_menu_geometry(
         &win,
         anchor_x,
         anchor_y,
@@ -5936,41 +6076,43 @@ fn show_tray_menu_fast(app: &AppHandle, anchor_x: i32, anchor_y: i32) -> Result<
     crate::disable_window_transitions(&win);
     crate::suppress_window_border(&win);
 
-    let (x, y, w_px, h_px, _, _) =
+    // Stage the hidden window onto the destination monitor first so WebView2 adopts the target
+    // DPI and paints the updated flyout side before `tray_menu_ready` reveals it.
+    let (x, y, w_px, h_px, _, _, _) =
         tray_menu_geometry(&win, anchor_x, anchor_y, est_w, est_h, est_canvas_h);
-    let _ = win.set_size(tauri::Size::Physical(tauri::PhysicalSize {
-        width: w_px,
-        height: h_px,
-    }));
-    let _ = win.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
+    apply_tray_window_rect(&win, x, y, w_px, h_px);
 
-    if created_now {
-        // The webview is still booting; it will invoke `tray_menu_ready` on mount, which takes
-        // the pending-show branch to re-position (it already has focus, so show() alone suffices).
-        TRAY_MENU_PENDING_SHOW.store(true, std::sync::atomic::Ordering::SeqCst);
-        let _ = win.show();
+    TRAY_MENU_PENDING_SHOW.store(true, std::sync::atomic::Ordering::SeqCst);
 
-        // Cold-start safety: if the mount-time ready call never arrives, force-show anyway.
-        let app_retry = app.clone();
-        tauri::async_runtime::spawn(async move {
-            for delay_ms in [120u64, 300, 600, 1000] {
-                tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
-                if !TRAY_MENU_PENDING_SHOW.load(std::sync::atomic::Ordering::SeqCst) {
+    let state = collect_tray_menu_state(app);
+    let _ = app.emit("tray-menu-state", &state);
+    let _ = app.emit("tray-menu-show", ());
+
+    // Safety fallback: if `tray_menu_ready` hasn't revealed the window (e.g., cold boot),
+    // show it cleanly rather than leaving it hidden.
+    let app_retry = app.clone();
+    let retry_delays: &[u64] = if created_now {
+        &[120, 300, 600, 1000]
+    } else {
+        &[120]
+    };
+    tauri::async_runtime::spawn(async move {
+        for &delay_ms in retry_delays {
+            tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
+            if !TRAY_MENU_PENDING_SHOW.load(std::sync::atomic::Ordering::SeqCst) {
+                break;
+            }
+            match app_retry.get_webview_window("tray_menu") {
+                Some(w) => {
+                    TRAY_MENU_PENDING_SHOW.store(false, std::sync::atomic::Ordering::SeqCst);
+                    let _ = w.show();
+                    let _ = w.set_focus();
                     break;
                 }
-                match app_retry.get_webview_window("tray_menu") {
-                    Some(w) => {
-                        let _ = w.show();
-                        let _ = w.set_focus();
-                    }
-                    None => break,
-                }
+                None => break,
             }
-        });
-    } else {
-        let _ = win.show();
-        let _ = win.set_focus();
-    }
+        }
+    });
 
     // Dismiss on outside click — always-on-top webviews often keep focus when
     // clicking the desktop, so Focused(false) alone is not enough on Windows.
@@ -5983,10 +6125,6 @@ pub async fn show_tray_menu_at(app: AppHandle, anchor_x: i32, anchor_y: i32) -> 
     if let Ok(mut slot) = TRAY_MENU_ANCHOR.lock() {
         *slot = Some((anchor_x, anchor_y));
     }
-
-    let state = collect_tray_menu_state(&app);
-    let _ = app.emit("tray-menu-state", &state);
-    let _ = app.emit("tray-menu-show", ());
 
     show_tray_menu_fast(&app, anchor_x, anchor_y)
 }
@@ -6021,13 +6159,12 @@ pub async fn tray_menu_ready(
         std::sync::atomic::Ordering::SeqCst,
     );
 
-    let scale = win.scale_factor().unwrap_or(1.0);
     let (anchor_x, anchor_y) = TRAY_MENU_ANCHOR
         .lock()
         .ok()
         .and_then(|g| *g)
         .unwrap_or((100, 100));
-    let (x, y, w, h, _, _) = tray_menu_geometry(
+    let (x, y, w, h, _, _, scale) = tray_menu_geometry(
         &win,
         anchor_x,
         anchor_y,
@@ -6037,27 +6174,24 @@ pub async fn tray_menu_ready(
     );
 
     if TRAY_MENU_PENDING_SHOW.swap(false, std::sync::atomic::Ordering::SeqCst) {
-        let _ = win.set_size(tauri::Size::Physical(tauri::PhysicalSize {
-            width: w,
-            height: h,
-        }));
-        let _ = win.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
+        apply_tray_window_rect(&win, x, y, w, h);
         let _ = win.show();
+        let _ = win.set_focus();
         return Ok(());
     }
 
-    if let Ok(cur) = win.outer_size() {
-        let dw = (cur.width as i64 - w as i64).abs();
-        let dh = (cur.height as i64 - h as i64).abs();
-        let tol = (6.0 * scale).round() as i64;
-        if dw <= tol && dh <= tol {
-            return Ok(());
+    let needs_update = match (win.outer_position(), win.outer_size()) {
+        (Ok(pos), Ok(cur)) => {
+            let tol = (4.0 * scale).round() as i64;
+            (cur.width as i64 - w as i64).abs() > tol
+                || (cur.height as i64 - h as i64).abs() > tol
+                || (pos.x as i64 - x as i64).abs() > tol
+                || (pos.y as i64 - y as i64).abs() > tol
         }
-        let _ = win.set_size(tauri::Size::Physical(tauri::PhysicalSize {
-            width: w,
-            height: h,
-        }));
-        let _ = win.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
+        _ => true,
+    };
+    if needs_update {
+        apply_tray_window_rect(&win, x, y, w, h);
     }
 
     Ok(())

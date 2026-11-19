@@ -100,6 +100,7 @@ export function TrayMenuWindow() {
   const helpFlyoutRef = useRef<HTMLDivElement>(null);
   const suiteFlyoutRef = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<TrayMenuState | null>(null);
+  const [stageVisible, setStageVisible] = useState(false);
   const [activeFlyout, setActiveFlyout] = useState<TrayFlyoutId | null>(null);
   const activeFlyoutRef = useRef<TrayFlyoutId | null>(null);
   activeFlyoutRef.current = activeFlyout;
@@ -109,6 +110,12 @@ export function TrayMenuWindow() {
   });
   const closingRef = useRef(false);
   const openRef = useRef(false);
+  const reportSeqRef = useRef(0);
+  const reportTimersRef = useRef<{ raf1: number | null; raf2: number | null; fallback: number | null }>({
+    raf1: null,
+    raf2: null,
+    fallback: null,
+  });
 
   const cancelFlyoutTimers = useCallback(() => {
     if (flyoutTimersRef.current.open !== null) window.clearTimeout(flyoutTimersRef.current.open);
@@ -277,21 +284,52 @@ export function TrayMenuWindow() {
     [cancelFlyoutTimers]
   );
 
+  const cancelPendingReport = useCallback(() => {
+    const t = reportTimersRef.current;
+    if (t.raf1 !== null) window.cancelAnimationFrame(t.raf1);
+    if (t.raf2 !== null) window.cancelAnimationFrame(t.raf2);
+    if (t.fallback !== null) window.clearTimeout(t.fallback);
+    reportTimersRef.current = { raf1: null, raf2: null, fallback: null };
+  }, []);
+
+  const schedulePaintedReport = useCallback(() => {
+    cancelPendingReport();
+    const seq = ++reportSeqRef.current;
+    let sent = false;
+    const fire = () => {
+      if (sent || seq !== reportSeqRef.current) return;
+      sent = true;
+      cancelPendingReport();
+      reportSize();
+    };
+    if (rootRef.current) void rootRef.current.offsetWidth;
+    reportTimersRef.current.fallback = window.setTimeout(fire, 60);
+    reportTimersRef.current.raf1 = window.requestAnimationFrame(() => {
+      reportTimersRef.current.raf1 = null;
+      reportTimersRef.current.raf2 = window.requestAnimationFrame(() => {
+        reportTimersRef.current.raf2 = null;
+        fire();
+      });
+    });
+  }, [cancelPendingReport, reportSize]);
+
   const flyoutSide = state?.flyout_side === 'right' ? 'right' : 'left';
   const verticalAlign = state?.vertical_align === 'top' ? 'top' : 'bottom';
   const suiteEnabled = state?.show_app_recommendations ?? true;
 
   useEffect(() => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(reportSize);
-    });
+    if (!stageVisible) return;
+    schedulePaintedReport();
   }, [
+    stageVisible,
+    state?.flyout_side,
+    state?.vertical_align,
     state?.notifications_paused,
     state?.lock_enabled,
     state?.locked,
     state?.show_app_recommendations,
     i18n.language,
-    reportSize,
+    schedulePaintedReport,
   ]);
 
   useEffect(() => {
@@ -309,15 +347,17 @@ export function TrayMenuWindow() {
       closingRef.current = false;
       cancelFlyoutTimers();
       setActiveFlyout(null);
-      requestAnimationFrame(() => {
-        requestAnimationFrame(reportSize);
-      });
+      setStageVisible(true);
+      schedulePaintedReport();
     });
 
     const unlistenHide = listen('tray-menu-hide', () => {
       openRef.current = false;
+      reportSeqRef.current += 1;
+      cancelPendingReport();
       cancelFlyoutTimers();
       setActiveFlyout(null);
+      setStageVisible(false);
     });
 
     const unlistenSettings = listen<AppSettings>('settings-changed', (event) => {
@@ -345,11 +385,22 @@ export function TrayMenuWindow() {
         }
         openRef.current = true;
         closingRef.current = false;
-        requestAnimationFrame(() => {
-          requestAnimationFrame(reportSize);
-        });
+        setStageVisible(true);
+        schedulePaintedReport();
       })
       .catch(console.error);
+
+    let dprMedia: MediaQueryList | null = null;
+    const onDprChange = () => {
+      if (openRef.current) schedulePaintedReport();
+      watchDpr();
+    };
+    const watchDpr = () => {
+      if (dprMedia) dprMedia.removeEventListener('change', onDprChange);
+      dprMedia = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+      dprMedia.addEventListener('change', onDprChange, { once: true });
+    };
+    watchDpr();
 
     const onKey = (e: KeyboardEvent) => {
       const openFlyoutEl = getFlyoutElement(activeFlyoutRef.current);
@@ -406,7 +457,9 @@ export function TrayMenuWindow() {
     window.addEventListener('keydown', onKey);
 
     return () => {
+      cancelPendingReport();
       cancelFlyoutTimers();
+      if (dprMedia) dprMedia.removeEventListener('change', onDprChange);
       unlistenState.then((f) => f());
       unlistenShow.then((f) => f());
       unlistenHide.then((f) => f());
@@ -414,13 +467,14 @@ export function TrayMenuWindow() {
       window.removeEventListener('keydown', onKey);
     };
   }, [
+    cancelPendingReport,
     cancelFlyoutTimers,
     closeFlyoutAndReturnFocus,
     flyoutSide,
     hide,
     i18n,
     openFlyoutAndFocusFirst,
-    reportSize,
+    schedulePaintedReport,
   ]);
 
   const showLabel = state?.is_visible
@@ -479,6 +533,7 @@ export function TrayMenuWindow() {
       <div
         className={clsx(
           'flex h-full w-full gap-1',
+          !stageVisible && 'invisible',
           flyoutSide === 'left' ? 'flex-row-reverse' : 'flex-row',
           verticalAlign === 'top' ? 'items-start' : 'items-end'
         )}
