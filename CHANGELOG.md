@@ -2,6 +2,18 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.31.4] - 2026-11-19
+
+### 🇺🇸 English
+
+- Fix tray menu positioning, mixed-DPI scaling, vertical taskbar placement, and painted reveal across multi-monitor setups so menus open cleanly without initial jumps or flicker.
+- Add an `Exit CyberPaste` action to the titlebar More menu.
+
+### 🇪🇸 Español
+
+- Corrige el posicionamiento, escalado en DPI mixto, anclaje en barra de tareas vertical y revelado pintado del menú de bandeja en configuraciones multimonitor para abrir sin saltos iniciales ni parpadeos.
+- Añade la opción `Salir de CyberPaste` al menú Más de la barra de título.
+
 ## [1.31.3] - 2026-11-18
 
 ### 🇺🇸 English

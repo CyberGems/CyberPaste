@@ -8,7 +8,7 @@
 
 <!-- IMPORTANT FOR AGENTS & MAINTAINERS: Always rewrite this entire section and highlights with the ACTUAL release notes for this specific new version before tagging. NEVER leave or copy previous version notes! Use 25-45 words for the summary, lead with user-facing changes, and do not repeat the app name or version. Keep the Spanish mirror inside the details block in sync: translate the summary and rewrite the highlights. -->
 <!-- changelog-summary:start -->
-Tightens the horizontal gap between the system tray menu card and its side-by-side flyout panels so submenus sit closer and transition more naturally under pointer hover without changing keyboard navigation or screen-edge placement.
+Fixes system tray menu positioning, mixed-DPI scaling, vertical taskbar anchoring, and painted reveal across multi-monitor setups so menus open cleanly without jumps or flicker, and adds an Exit option to the titlebar More menu.
 <!-- changelog-summary:end -->
 
 > **New to CyberPaste?** A fast, privacy-first Windows clipboard manager with history, folders, OCR, and optional AI actions.
@@ -17,14 +17,15 @@ Tightens the horizontal gap between the system tray menu card and its side-by-si
 
 ### ✨ Key Features & Highlights
 
-- 🪟 **Closer tray flyout alignment**: Reduced the gap between the main tray card and its side-by-side flyout panels (`Pause notifications`, `Help`, and `More from CyberGems`) from `8px` to `4px`, updating the tray canvas geometry so hover transitions and visual grouping feel tighter.
+- 🪟 **Accurate multi-monitor and mixed-DPI tray placement**: Reworked tray positioning in physical coordinates with per-monitor DPI handling and painted reveal so the menu opens flush beside vertical or horizontal taskbars without jumping or flickering.
+- 🚪 **Exit from the titlebar menu**: Added an `Exit CyberPaste` item to the titlebar More menu for quick full shutdown without using the system tray.
 
 <details>
 <summary><b>🇪🇸 Ver notas de la versión en Español</b></summary>
 
 ### 🚀 Novedades de esta versión
 
-Reduce la separación horizontal entre la tarjeta del menú de bandeja y sus paneles flyout laterales para que los submenús aparezcan más cerca y el paso del cursor resulte más natural, manteniendo la navegación con teclado y el ajuste automático a pantalla.
+Corrige el posicionamiento del menú de bandeja, el escalado en monitores con DPI mixto, el anclaje en barras verticales y el revelado pintado para abrir sin saltos ni parpadeos, y añade la opción Salir al menú Más de la barra de título.
 
 > **¿Nuevo en CyberPaste?** Un gestor de portapapeles rápido y privado para Windows, con historial, carpetas, OCR y acciones de IA opcionales.
 
@@ -32,7 +33,8 @@ Reduce la separación horizontal entre la tarjeta del menú de bandeja y sus pan
 
 ### ✨ Novedades destacadas
 
-- 🪟 **Submenús flyout más próximos**: Se redujo de `8px` a `4px` el espacio entre el menú principal de la bandeja y los paneles laterales (`Pausar notificaciones`, `Ayuda` y `Más de CyberGems`), ajustando el ancho del lienzo para que se integren con mayor cohesión visual.
+- 🪟 **Posicionamiento preciso en multimonitor y DPI mixto**: Se rehizo el cálculo de la bandeja en píxeles físicos con soporte DPI por monitor y revelado tras pintar, evitando saltos y parpadeos junto a barras verticales u horizontales.
+- 🚪 **Opción Salir en la barra de título**: Se agregó `Salir de CyberPaste` al menú Más de la barra de título para cerrar la aplicación por completo sin pasar por la bandeja del sistema.
 
 ### ℹ️ Antes de instalar
 

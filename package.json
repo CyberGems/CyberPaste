@@ -1,6 +1,6 @@
 {
   "name": "cyberpaste",
-  "version": "1.31.3",
+  "version": "1.31.4",
   "description": "Recall anything you have ever copied: text, code, images and files, entirely local.",
   "license": "GPL-3.0-only",
   "type": "module",
