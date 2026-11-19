@@ -2,6 +2,16 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.31.3] - 2026-11-18
+
+### 🇺🇸 English
+
+- Tighten the horizontal spacing between the tray menu card and its side-by-side flyout submenus (`Pause notifications`, `Help`, and `More from CyberGems`) from `8px` to `4px` so panels sit closer to the main menu.
+
+### 🇪🇸 Español
+
+- Reduce la separación horizontal entre la tarjeta principal de la bandeja y los submenús flyout (`Pausar notificaciones`, `Ayuda` y `Más de CyberGems`) de `8px` a `4px` para que aparezcan más pegados al menú.
+
 ## [1.31.2] - 2026-11-18
 
 ### 🇺🇸 English

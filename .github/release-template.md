@@ -8,7 +8,7 @@
 
 <!-- IMPORTANT FOR AGENTS & MAINTAINERS: Always rewrite this entire section and highlights with the ACTUAL release notes for this specific new version before tagging. NEVER leave or copy previous version notes! Use 25-45 words for the summary, lead with user-facing changes, and do not repeat the app name or version. Keep the Spanish mirror inside the details block in sync: translate the summary and rewrite the highlights. -->
 <!-- changelog-summary:start -->
-The system tray submenus now open as side-by-side flyout panels beside the main card, keeping primary controls reachable with hover dwell, click toggling, keyboard arrow navigation, and automatic screen-edge placement.
+Tightens the horizontal gap between the system tray menu card and its side-by-side flyout panels so submenus sit closer and transition more naturally under pointer hover without changing keyboard navigation or screen-edge placement.
 <!-- changelog-summary:end -->
 
 > **New to CyberPaste?** A fast, privacy-first Windows clipboard manager with history, folders, OCR, and optional AI actions.
@@ -17,14 +17,14 @@ The system tray submenus now open as side-by-side flyout panels beside the main 
 
 ### ✨ Key Features & Highlights
 
-- 🪟 **Side-by-side tray flyout panels**: `Pause notifications`, `Help`, and `More from CyberGems` open next to the main tray menu with hover dwell and click toggling, support keyboard arrows and `Escape`, and anchor cleanly to any monitor edge.
+- 🪟 **Closer tray flyout alignment**: Reduced the gap between the main tray card and its side-by-side flyout panels (`Pause notifications`, `Help`, and `More from CyberGems`) from `8px` to `4px`, updating the tray canvas geometry so hover transitions and visual grouping feel tighter.
 
 <details>
 <summary><b>🇪🇸 Ver notas de la versión en Español</b></summary>
 
 ### 🚀 Novedades de esta versión
 
-Los submenús de la bandeja del sistema ahora se abren como paneles flyout laterales junto a la tarjeta principal, manteniendo accesibles los controles base mediante retardo hover, clic, flechas del teclado y ajuste automático a los bordes de pantalla.
+Reduce la separación horizontal entre la tarjeta del menú de bandeja y sus paneles flyout laterales para que los submenús aparezcan más cerca y el paso del cursor resulte más natural, manteniendo la navegación con teclado y el ajuste automático a pantalla.
 
 > **¿Nuevo en CyberPaste?** Un gestor de portapapeles rápido y privado para Windows, con historial, carpetas, OCR y acciones de IA opcionales.
 
@@ -32,7 +32,7 @@ Los submenús de la bandeja del sistema ahora se abren como paneles flyout later
 
 ### ✨ Novedades destacadas
 
-- 🪟 **Paneles flyout laterales en la bandeja**: `Pausar notificaciones`, `Ayuda` y `Más de CyberGems` se abren junto al menú principal al pasar el cursor o hacer clic, admiten navegación con flechas y `Escape` y se adaptan automáticamente a cualquier borde del monitor.
+- 🪟 **Submenús flyout más próximos**: Se redujo de `8px` a `4px` el espacio entre el menú principal de la bandeja y los paneles laterales (`Pausar notificaciones`, `Ayuda` y `Más de CyberGems`), ajustando el ancho del lienzo para que se integren con mayor cohesión visual.
 
 ### ℹ️ Antes de instalar
 
