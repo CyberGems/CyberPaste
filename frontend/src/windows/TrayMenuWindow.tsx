@@ -478,7 +478,7 @@ export function TrayMenuWindow() {
     >
       <div
         className={clsx(
-          'flex h-full w-full gap-2',
+          'flex h-full w-full gap-1',
           flyoutSide === 'left' ? 'flex-row-reverse' : 'flex-row',
           verticalAlign === 'top' ? 'items-start' : 'items-end'
         )}

@@ -5693,7 +5693,7 @@ static PENDING_ABOUT_UPDATE_CHECK_MS: std::sync::atomic::AtomicU64 =
 
 /// Logical width of the menu card (MENU_WIDTH in TrayMenuWindow.tsx).
 const TRAY_MENU_WIDTH: f64 = 268.0;
-const TRAY_MENU_FLYOUT_EXTRA_W: f64 = 276.0; // 268px flyout card + 8px gap
+const TRAY_MENU_FLYOUT_EXTRA_W: f64 = 272.0; // 268px flyout card + 4px gap
 /// Transparent bleed around the card for the CSS box-shadow (SHADOW_PAD in TrayMenuWindow.tsx).
 /// Must be >= the shadow's max extent (offset-y 6px + blur 20px = 26px at the bottom).
 const TRAY_MENU_SHADOW_PAD: f64 = 26.0;
