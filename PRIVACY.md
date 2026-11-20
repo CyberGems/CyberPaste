@@ -2,7 +2,7 @@
 
 CyberPaste runs on your PC and keeps your data on your PC. It has **no account, no telemetry, no analytics SDK and no ads**. It never sends your clipboard history, images or settings to its author or to anyone else.
 
-Everything it knows (clipboard history, images or settings) stays in `%APPDATA%\CyberPaste\` (`cyber_paste.db`, `settings.json`, `Backups\` and saved images). AI API keys are protected with Windows DPAPI inside `settings.json`. The repo's installer does not configure app-data deletion; the data folder is kept.
+Everything it knows (clipboard history, images or settings) stays in `%APPDATA%\CyberPaste\` (`cyber_paste.db`, `settings.json`, `Backups\` and saved images). AI API keys are protected with Windows DPAPI inside `settings.json`. The installer does not remove app data; the data folder is kept.
 
 ## When CyberPaste goes online
 
@@ -13,7 +13,7 @@ These are all the connections CyberPaste makes by itself. None of them sends you
 | When the automatic check is enabled | `github.com` (latest.json), with release notes from `api.github.com` | Check for a newer version | `auto_check_updates` (off by default) |
 | Only when you run an AI action | your configured provider endpoint (default `https://api.openai.com/v1`) | Send the selected clip and your prompt to that provider | Do not run an AI action; a local endpoint such as Ollama is supported |
 
-No other automatic request was found in the app code.
+These are the only connections the app makes on its own.
 
 ## What CyberPaste reads on your PC
 

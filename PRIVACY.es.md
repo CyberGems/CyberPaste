@@ -2,7 +2,7 @@
 
 CyberPaste funciona en tu PC y guarda tus datos en tu PC. **No tiene cuenta, telemetría, SDK de analítica ni anuncios.** Nunca envía tu historial del portapapeles, imágenes o ajustes a su autor ni a nadie más.
 
-Todo lo que sabe (historial del portapapeles, imágenes o ajustes) se queda en `%APPDATA%\CyberPaste\` (`cyber_paste.db`, `settings.json`, `Backups\` e imágenes guardadas). Las claves de API de IA se protegen con DPAPI de Windows dentro de `settings.json`. El instalador del repo no configura el borrado de datos; la carpeta se conserva.
+Todo lo que sabe (historial del portapapeles, imágenes o ajustes) se queda en `%APPDATA%\CyberPaste\` (`cyber_paste.db`, `settings.json`, `Backups\` e imágenes guardadas). Las claves de API de IA se protegen con DPAPI de Windows dentro de `settings.json`. El instalador no elimina los datos de la app; la carpeta se conserva.
 
 ## Cuándo CyberPaste se conecta a internet
 
@@ -13,7 +13,7 @@ Estas son todas las conexiones que CyberPaste hace por su cuenta. Ninguna envía
 | Con la comprobación automática activada | `github.com` (latest.json), con notas desde `api.github.com` | Consultar una versión nueva | `auto_check_updates` (desactivado por defecto) |
 | Solo cuando ejecutas una acción de IA | el endpoint del proveedor configurado (por defecto `https://api.openai.com/v1`) | Enviar el clip seleccionado y tu prompt a ese proveedor | No ejecutar acciones de IA; se admite un endpoint local como Ollama |
 
-No se encontraron otras peticiones automáticas en el código de la app.
+Estas son las únicas conexiones que la app hace por su cuenta.
 
 ## Qué lee CyberPaste de tu PC
 
