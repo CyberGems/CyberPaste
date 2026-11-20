@@ -64,6 +64,8 @@ Copia algo, copia tres cosas más y la primera ya no está. CyberPaste guarda un
 
 *Gratuito y de código abierto (GPLv3): sin anuncios, sin analíticas de red, sin telemetría y sin recogida en la nube. Los logros y el progreso opcionales se quedan en tu equipo.*
 
+- **Privacidad:** consulta [PRIVACY.es.md](PRIVACY.es.md). CyberPaste no envía tus datos por su cuenta. Las únicas conexiones automáticas están listadas ahí y ninguna contiene datos personales.
+
 ---
 
 <!-- Capturas: pendiente de la galería bilingüe ES/EN del plan en https://github.com/CyberGems/CyberGems.github.io/blob/main/docs/screenshots.md — sustituir la cita, conservar este título y su entrada en el índice. -->

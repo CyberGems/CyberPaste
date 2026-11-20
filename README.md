@@ -64,6 +64,8 @@ Copy something, copy three more things, and the first one is already gone. Cyber
 
 *Free and open source (GPLv3): no ads, no network analytics, no telemetry, and no cloud collection. Optional achievements and progress stay on your device.*
 
+- **Privacy:** see [PRIVACY.md](PRIVACY.md). CyberPaste does not send your data anywhere by itself. The only automatic connections are listed there, and none of them carries personal data.
+
 ---
 
 <!-- Screenshots: pending the bilingual EN/ES gallery in the capture plan at https://github.com/CyberGems/CyberGems.github.io/blob/main/docs/screenshots.md — replace the blockquote, keep this heading and the TOC entry. -->
