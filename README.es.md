@@ -108,6 +108,7 @@ La mayoría de los gestores de portapapeles envían tus datos a la nube o son de
 - **Retención automática del historial**: política configurable de borrado automático en segundo plano para limpiar clips antiguos
 
 ### 🤖 Acciones de IA
+- **Opcionales por diseño:** CyberPaste funciona sin proveedor ni clave de API. Las acciones de IA solo se ejecutan cuando tú eliges una.
 - **Acciones inteligentes**: resume, traduce, explica código o corrige gramática
 - **Soporte de proveedores**: OpenAI, DeepSeek, Kimi, Gemini, Grok y Meta, además de cualquier endpoint personalizado compatible con OpenAI como Ollama, Groq u OpenRouter
 - **Totalmente personalizable**: prompts y nombres de acción personalizados para cada operación de IA

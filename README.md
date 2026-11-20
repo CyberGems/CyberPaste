@@ -108,6 +108,7 @@ Most clipboard managers either send your data to the cloud or are too basic to b
 - **Automatic History Retention** — Configurable background auto-deletion to automatically clean up older clips
 
 ### 🤖 AI Actions
+- **Optional by design:** CyberPaste works without a provider or API key. AI actions run only when you choose one.
 - **Smart Actions** — Summarize, translate, explain code, or fix grammar
 - **Provider Support:** OpenAI, DeepSeek, Kimi, Gemini, Grok and Meta, plus any OpenAI-compatible custom endpoint such as Ollama, Groq or OpenRouter
 - **Fully Customizable** — Custom prompts and action names for each AI operation
