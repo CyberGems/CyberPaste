@@ -8,3 +8,15 @@ on:
 jobs:
   tray-tooltip:
     uses: CyberGems/.github/.github/workflows/tray-tooltip-check.yml@main
+
+  tray-tooltip-tests:
+    name: Tray tooltip tests
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - working-directory: src-tauri
+        run: cargo test tray_tooltip
