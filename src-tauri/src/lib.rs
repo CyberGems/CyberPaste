@@ -2178,13 +2178,22 @@ pub fn generate_duplicate_sound_wav() -> Vec<u8> {
     wav
 }
 
+fn clamp_tray_tooltip(text: String) -> String {
+    if text.chars().count() > 63 {
+        format!("{}…", text.chars().take(62).collect::<String>())
+    } else {
+        text
+    }
+}
+
 pub fn format_tray_tooltip(shortcut: Option<&str>) -> String {
     let clean = shortcut.unwrap_or("").trim();
-    if clean.is_empty() {
+    let text = if clean.is_empty() {
         "CyberPaste".to_string()
     } else {
         format!("CyberPaste · {clean}")
-    }
+    };
+    clamp_tray_tooltip(text)
 }
 
 /// Refresh tray tooltip + push state to the HTML tray popup (no native Win32 menu).
