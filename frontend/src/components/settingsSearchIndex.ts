@@ -1,4 +1,5 @@
 import i18n from '../i18n/config';
+import { IS_PORTABLE_BUILD } from '../utils/build';
 
 /**
  * Static registry of every searchable settings row, mirroring the rows
@@ -97,6 +98,12 @@ export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
     descKey: 'settings.keepVisibleInTrayDesc',
     sectionKey: 'settings.otherSection',
   },
+  ...(!IS_PORTABLE_BUILD ? [{
+    tab: 'general' as const,
+    labelKey: 'settings.autoCheckUpdates',
+    descKey: 'settings.autoCheckUpdatesDesc',
+    sectionKey: 'settings.otherSection',
+  }] : []),
   {
     tab: 'general',
     labelKey: 'settings.showAppRecommendations',

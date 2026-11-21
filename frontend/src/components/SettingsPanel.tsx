@@ -57,6 +57,7 @@ import { emit, listen } from '@tauri-apps/api/event';
 import { getCurrentWindow, availableMonitors } from '@tauri-apps/api/window';
 import { getVersion } from '@tauri-apps/api/app';
 import { toast } from '../utils/toast';
+import { IS_PORTABLE_BUILD } from '../utils/build';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Select } from './ui/Select';
 import { Switch } from './ui/Switch';
@@ -1982,6 +1983,20 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           </button>
                         </Tooltip>
                       </div>
+
+                      {!IS_PORTABLE_BUILD && (
+                        <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">
+                          <div className="min-w-0">
+                            <span className="text-sm font-medium">{t('settings.autoCheckUpdates')}</span>
+                            <p className="mt-1 text-xs text-muted-foreground">{t('settings.autoCheckUpdatesDesc')}</p>
+                          </div>
+                          <Switch
+                            checked={settings.auto_check_updates ?? false}
+                            onChange={(value) => updateSetting('auto_check_updates', value)}
+                            aria-label={t('settings.autoCheckUpdates')}
+                          />
+                        </div>
+                      )}
 
                       <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">
                         <div className="flex min-w-0 gap-3">
