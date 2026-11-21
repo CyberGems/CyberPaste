@@ -13,6 +13,84 @@ use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 static IS_ANIMATING: AtomicBool = AtomicBool::new(false);
+
+// Win+Up / Win+Down and Alt+F4 never reach this window's WebView: it is a
+// layered, borderless panel, so the shell cannot snap it and Windows consumes
+// the keys before the page sees them. Both are handled natively instead.
+#[cfg(target_os = "windows")]
+fn alt_is_down() -> bool {
+    use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_MENU};
+    unsafe { (GetAsyncKeyState(VK_MENU.0 as i32) & 0x8000u16 as i16) != 0 }
+}
+
+#[cfg(not(target_os = "windows"))]
+fn alt_is_down() -> bool {
+    false
+}
+
+// is_maximized() can lag behind the native window for this layered panel, so
+// the gesture reads the real zoom state before choosing an action.
+#[cfg(target_os = "windows")]
+fn window_is_zoomed(win: &tauri::WebviewWindow) -> bool {
+    use windows::Win32::UI::WindowsAndMessaging::IsZoomed;
+    match win.hwnd() {
+        Ok(hwnd) => unsafe { IsZoomed(hwnd).as_bool() },
+        Err(_) => win.is_maximized().unwrap_or(false),
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+fn window_is_zoomed(win: &tauri::WebviewWindow) -> bool {
+    win.is_maximized().unwrap_or(false)
+}
+
+fn window_gesture_shortcuts() -> [tauri_plugin_global_shortcut::Shortcut; 2] {
+    use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut};
+    [
+        Shortcut::new(Some(Modifiers::SUPER), Code::ArrowUp),
+        Shortcut::new(Some(Modifiers::SUPER), Code::ArrowDown),
+    ]
+}
+
+// The gestures are registered only while the panel is focused, so Win+Up and
+// Win+Down keep working for every other window the rest of the time.
+fn set_window_gestures(app: &tauri::AppHandle, enabled: bool) {
+    use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
+
+    let [up, down] = window_gesture_shortcuts();
+    if !enabled {
+        let _ = app.global_shortcut().unregister(up);
+        let _ = app.global_shortcut().unregister(down);
+        return;
+    }
+
+    for (shortcut, maximize) in [(up, true), (down, false)] {
+        let handle = app.clone();
+        let _ = app.global_shortcut().on_shortcut(shortcut, move |_app, _shortcut, event| {
+            if event.state() != ShortcutState::Pressed {
+                return;
+            }
+            let Some(win) = handle.get_webview_window("main") else {
+                return;
+            };
+            if !win.is_focused().unwrap_or(false) {
+                return;
+            }
+            let zoomed = window_is_zoomed(&win);
+            // Windows semantics: Win+Up only maximizes; Win+Down restores a
+            // maximized window and minimizes any other one.
+            if maximize {
+                if !zoomed {
+                    let _ = win.maximize();
+                }
+            } else if zoomed {
+                let _ = win.unmaximize();
+            } else {
+                let _ = win.minimize();
+            }
+        });
+    }
+}
 static LAST_SHOW_TIME: AtomicI64 = AtomicI64::new(0);
 static SHOW_GEN: AtomicUsize = AtomicUsize::new(0);
 static MAIN_SAW_FOREGROUND: AtomicBool = AtomicBool::new(false);
@@ -479,7 +557,16 @@ pub fn run_app() {
             match event {
                 tauri::WindowEvent::CloseRequested { api, .. } if window.label() == "main" => {
                     api.prevent_close();
+                    // Alt+F4 is an explicit quit; the X still follows the saved
+                    // close behavior (or asks).
+                    if alt_is_down() {
+                        window.app_handle().exit(0);
+                        return;
+                    }
                     let _ = window.emit("close-requested", ());
+                }
+                tauri::WindowEvent::Focused(focused) if window.label() == "main" => {
+                    set_window_gestures(window.app_handle(), *focused);
                 }
                 tauri::WindowEvent::Moved(pos) => {
                     // The clamp is only for the hidden, borderless main window.

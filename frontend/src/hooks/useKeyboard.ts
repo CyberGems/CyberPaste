@@ -1,6 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import { getCurrentWindow } from '@tauri-apps/api/window';
 import { lockListHover } from './useListHoverLock';
 
 export const TITLEBAR_HOTKEYS = {
@@ -102,33 +100,9 @@ export function useKeyboard(options: KeyboardOptions) {
     const handleKeyDown = (e: KeyboardEvent) => {
       const options = optionsRef.current;
 
-      // Alt+F4 quits even when the X hides CyberPaste or asks what to do.
-      if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && (e.key === 'F4' || e.code === 'F4')) {
-        e.preventDefault();
-        e.stopPropagation();
-        void invoke('handle_close_choice', { action: 'quit', remember: false }).catch(() => {});
-        return;
-      }
-
-      // Win+Up / Win+Down are Windows gestures: the shell performs them and the
-      // key never reaches the app. A frameless window can be left out of them,
-      // so the same action runs here when the key does arrive.
-      if (e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
-        e.preventDefault();
-        e.stopPropagation();
-        const currentWindow = getCurrentWindow();
-        void (async () => {
-          const maximized = await currentWindow.isMaximized();
-          if (e.key === 'ArrowUp') {
-            if (!maximized) await currentWindow.toggleMaximize();
-          } else if (maximized) {
-            await currentWindow.toggleMaximize();
-          } else {
-            await currentWindow.minimize();
-          }
-        })().catch(() => {});
-        return;
-      }
+      // Alt+F4 and Win+Up / Win+Down never reach this WebView: CyberPaste is a
+      // layered, borderless panel, so Windows consumes those keys first. Both
+      // are handled natively in src-tauri/src/lib.rs.
 
       // Ignore all keyboard shortcuts when dragging
       if (document.body.classList.contains('is-dragging')) {
