@@ -10,8 +10,8 @@ export const TITLEBAR_HOTKEYS = {
   resetSize: 'Ctrl+R',
   settings: 'Ctrl+,',
   more: 'Alt+M',
-  // Windows owns Win+Up / Win+Down; the constant only feeds the tooltip.
-  maximize: 'Win+Up',
+  // Windows owns Win+↓ / Win+↑; the constant only feeds the tooltip.
+  maximize: 'Win+↑',
   mode: 'Ctrl+M',
   compactLayout: 'Ctrl+L',
   searchHistory: 'Ctrl+H',
