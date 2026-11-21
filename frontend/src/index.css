@@ -900,6 +900,11 @@
   }
 
   /* Toggles / Switcher styling */
+  :root:not(.dark):not(.cyberpaste) button[role='switch']:not(.bg-primary) {
+    background: hsl(var(--input));
+    border-color: hsl(var(--muted-foreground));
+  }
+
   .dark button[role='switch']:not(.bg-primary),
   .dark button.w-11.rounded-full:not(.bg-primary) {
     background: rgba(255, 255, 255, 0.08) !important;

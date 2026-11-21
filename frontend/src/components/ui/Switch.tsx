@@ -58,7 +58,7 @@ export const Switch: React.FC<SwitchProps> = ({
       <div
         className={clsx(
           'flex h-[18px] w-[18px] items-center justify-center rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.35)] transition-all duration-200',
-          isChecked ? 'translate-x-[23px] text-[#0F141C]' : 'translate-x-[3px] text-transparent'
+          isChecked ? 'translate-x-[21px] text-[#0F141C]' : 'translate-x-[3px] text-transparent'
         )}
       >
         <svg

@@ -1988,7 +1988,7 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                         <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">
                           <div className="min-w-0">
                             <span className="text-sm font-medium">{t('settings.autoCheckUpdates')}</span>
-                            <p className="mt-1 text-xs text-muted-foreground">{t('settings.autoCheckUpdatesDesc')}</p>
+                            <p className="mt-1 text-xs text-secondary-foreground">{t('settings.autoCheckUpdatesDesc')}</p>
                           </div>
                           <Switch
                             checked={settings.auto_check_updates ?? false}
