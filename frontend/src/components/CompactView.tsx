@@ -1723,7 +1723,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
           <Tooltip
             label={t('common.tooltipWithHotkey', {
               label: isMaximized ? t('common.restore') : t('common.maximize'),
-              hotkey: TITLEBAR_HOTKEYS.maximize,
+              hotkey: isMaximized ? TITLEBAR_HOTKEYS.restore : TITLEBAR_HOTKEYS.maximize,
             })}
             placement="bottom"
           >
