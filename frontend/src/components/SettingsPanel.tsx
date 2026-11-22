@@ -35,7 +35,6 @@ import {
   LayoutGrid,
   Monitor,
   Clock,
-  CornerDownLeft,
   Send,
   Languages,
   Palette,
@@ -546,6 +545,20 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  // Esc closes the settings window (suite standard). The search box consumes
+  // Esc first while it has a query (clears it), and hotkey recording owns the key.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
+      if (recordingTarget) return;
+      if (searchInputRef.current && document.activeElement === searchInputRef.current && settingsQuery) return;
+      e.preventDefault();
+      onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onClose, recordingTarget, settingsQuery]);
+
   // Synchronous search over the settings index — the registry is tiny, so
   // matching on every keystroke inside useLayoutEffect avoids any flicker
   // between pending and settled results.
@@ -706,15 +719,23 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
   // ── Saved indicator ─────────────────────────────────────────────────────
   const [savedVisible, setSavedVisible] = useState(false);
+  // Bumped on every completed settings write so the sidebar hairline replays
+  // its green pulse per save action (suite standard).
+  const [savePulse, setSavePulse] = useState(0);
+  const savePulseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const showSaved = useCallback(() => {
     if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
     setSavedVisible(true);
-    savedTimerRef.current = setTimeout(() => setSavedVisible(false), 5000);
+    savedTimerRef.current = setTimeout(() => setSavedVisible(false), 2200);
+    setSavePulse((p) => p + 1);
+    if (savePulseTimerRef.current) clearTimeout(savePulseTimerRef.current);
+    savePulseTimerRef.current = setTimeout(() => setSavePulse(0), 1600);
   }, []);
   useEffect(
     () => () => {
       if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+      if (savePulseTimerRef.current) clearTimeout(savePulseTimerRef.current);
     },
     []
   );
@@ -1449,7 +1470,10 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
             </div>
 
             {/* Saved indicator + close — pinned to the bottom of the sidebar */}
-            <div className="mt-auto border-t border-border/60 pt-2.5">
+            <div className="relative mt-auto border-t border-border/60 pt-2.5">
+              {savePulse > 0 && (
+                <span key={savePulse} aria-hidden="true" className="settings-save-separator-pulse" />
+              )}
               <div
                 aria-live="polite"
                 className={clsx(
@@ -1471,8 +1495,8 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                 className="flex w-full items-center justify-center gap-1.5 rounded-[4px] border border-border bg-transparent py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 {t('common.close')}
-                <span className="flex h-4 w-4 items-center justify-center rounded-[3px] border border-border bg-secondary/70">
-                  <CornerDownLeft size={9} />
+                <span className="flex h-4 min-w-[18px] items-center justify-center rounded-[3px] border border-border bg-secondary/70 px-[3px] text-[9px] font-semibold leading-none">
+                  Esc
                 </span>
               </button>
             </div>
