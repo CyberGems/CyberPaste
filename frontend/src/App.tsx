@@ -429,8 +429,12 @@ function App() {
       setIsLoading(false);
     }, 2000);
 
+    let cancelled = false;
+    let startupUpdateTimer: ReturnType<typeof setTimeout> | undefined;
     invoke<Settings>('get_settings')
       .then((s) => {
+        if (cancelled) return;
+        settingsRef.current = s;
         setTheme(s.theme);
         setSettings(s);
         recentSearchesRef.current = s.recent_searches ?? [];
@@ -446,10 +450,13 @@ function App() {
           const welcomeWillShow = (s.toast_enabled ?? true) && (s.show_action_messages ?? true);
           const welcomeDelay = welcomeWillShow ? 1500 + (s.toast_duration || 3000) + 600 : 2000;
 
-          setTimeout(() => {
+          startupUpdateTimer = setTimeout(() => {
+            if (!settingsRef.current?.auto_check_updates) return;
             check({ timeout: 15000 })
               .then((update) => {
-                if (update && !isSkippedUpdateVersion(update.version, s.skipped_update_version)) {
+                const currentSettings = settingsRef.current;
+                if (cancelled || !currentSettings?.auto_check_updates) return;
+                if (update && !isSkippedUpdateVersion(update.version, currentSettings.skipped_update_version)) {
                   updateAvailableRef.current = update;
                   setUpdateAvailable(update);
                   setShowUpdateModal(true);
@@ -473,6 +480,7 @@ function App() {
 
     // Listen for setting changes from the settings window
     const unlisten = listen<Settings>('settings-changed', (event) => {
+      settingsRef.current = event.payload;
       setTheme(event.payload.theme);
       setSettings(event.payload);
       recentSearchesRef.current = event.payload.recent_searches ?? [];
@@ -607,6 +615,9 @@ function App() {
     ]);
 
     return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      clearTimeout(startupUpdateTimer);
       unlisten.then((f) => f());
       unlistenAchievements.then((f) => f());
       unlistenOpenSettings.then((f) => f());
@@ -765,12 +776,14 @@ function App() {
     if (IS_PORTABLE_BUILD) return;
     const unlisten = listen<boolean>('update-available', (event) => {
       if (event.payload) {
-        if (updateAvailableRef.current) return;
+        if (updateAvailableRef.current || !settingsRef.current?.auto_check_updates) return;
         check({ timeout: 15000 })
           .then((update) => {
+            const currentSettings = settingsRef.current;
+            if (!currentSettings?.auto_check_updates) return;
             if (
               update &&
-              !isSkippedUpdateVersion(update.version, settingsRef.current?.skipped_update_version)
+              !isSkippedUpdateVersion(update.version, currentSettings.skipped_update_version)
             ) {
               updateAvailableRef.current = update;
               setUpdateAvailable(update);

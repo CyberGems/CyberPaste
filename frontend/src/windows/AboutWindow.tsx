@@ -111,21 +111,19 @@ export function AboutWindow() {
   }, []);
 
   useEffect(() => {
-    if (IS_PORTABLE_BUILD || !settings) return;
+    if (IS_PORTABLE_BUILD || !settings?.auto_check_updates) return;
     let cancelled = false;
     invoke<any>('get_tray_menu_state')
       .then((state: any) => {
-        if (state?.update_available && !updateAvailable) {
+        if (!cancelled && settingsRef.current?.auto_check_updates && state?.update_available && !updateAvailable) {
           check({ timeout: 15000 })
             .then((u) => {
-              if (
-                !cancelled &&
-                u &&
-                !isSkippedUpdateVersion(u.version, settings.skipped_update_version)
-              ) {
+              const currentSettings = settingsRef.current;
+              if (cancelled || !u || !currentSettings?.auto_check_updates) return;
+              if (!isSkippedUpdateVersion(u.version, currentSettings.skipped_update_version)) {
                 setUpdateAvailable(u);
                 invoke('set_update_available', { available: true }).catch(console.error);
-              } else if (!cancelled && u) {
+              } else {
                 invoke('set_update_available', { available: false }).catch(console.error);
               }
             })
@@ -246,7 +244,8 @@ export function AboutWindow() {
         setCheckStatus('idle');
         setUpdateAvailable(update);
         setShowUpdateModal(true);
-        if (!isSkippedUpdateVersion(update.version, settingsRef.current?.skipped_update_version)) {
+        const currentSettings = settingsRef.current;
+        if (currentSettings?.auto_check_updates && !isSkippedUpdateVersion(update.version, currentSettings.skipped_update_version)) {
           invoke('set_update_available', { available: true }).catch(console.error);
         }
       } else {
