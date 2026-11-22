@@ -7,7 +7,7 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { emit, listen } from '@tauri-apps/api/event';
+import { listen } from '@tauri-apps/api/event';
 import { EditClipModal } from './components/EditClipModal';
 import { MoveToFolderModal } from './components/MoveToFolderModal';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -3749,8 +3749,6 @@ function App() {
 
     try {
       await invoke('save_settings', { settings: newSettings });
-      setSettings(newSettings);
-      await emit('settings-changed', newSettings);
     } catch (error) {
       console.error('Failed to toggle peek:', error);
       toast.error(t('settings.failedToSave'));
@@ -3767,8 +3765,6 @@ function App() {
 
     try {
       await invoke('save_settings', { settings: newSettings });
-      setSettings(newSettings);
-      await emit('settings-changed', newSettings);
     } catch (error) {
       console.error('Failed to toggle compact layout:', error);
       toast.error(t('settings.failedToSave'));

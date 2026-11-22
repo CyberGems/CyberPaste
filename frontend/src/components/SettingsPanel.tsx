@@ -826,8 +826,6 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
       (async () => {
         try {
           await invoke('save_settings', { settings: newSettings });
-          await emit('settings-changed', newSettings);
-
           if ('hotkey' in updates) {
             await invoke('register_global_shortcut', { hotkey: updates.hotkey || '' });
           }
@@ -862,6 +860,16 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
 
   const updateSetting = (key: keyof Settings, value: any) => {
     updateSettings({ [key]: value });
+  };
+
+  const changeUpdateNotifications = async (enabled: boolean) => {
+    try {
+      await invoke('set_update_notifications', { enabled });
+      showSaved();
+    } catch (error) {
+      console.error('Failed to save update notifications:', error);
+      toast.error(t('settings.failedToSave'));
+    }
   };
 
   const handleRunAutomaticBackup = async () => {
@@ -1991,8 +1999,8 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                             <p className="mt-1 text-xs text-secondary-foreground">{t('settings.autoCheckUpdatesDesc')}</p>
                           </div>
                           <Switch
-                            checked={settings.auto_check_updates ?? false}
-                            onChange={(value) => updateSetting('auto_check_updates', value)}
+                            checked={initialSettings.auto_check_updates ?? false}
+                            onChange={changeUpdateNotifications}
                             aria-label={t('settings.autoCheckUpdates')}
                           />
                         </div>

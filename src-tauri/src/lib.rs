@@ -1197,6 +1197,7 @@ pub fn run_app() {
             settings_commands::clear_search_history,
             settings_commands::skip_update_version,
             settings_commands::save_settings,
+            settings_commands::set_update_notifications,
             commands::hide_window,
             commands::set_prevent_hide,
             commands::set_has_pending_undos,

@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
+import { useSettingsSnapshot } from '../hooks/useSettingsSnapshot';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Settings } from '../types';
 import { SettingsPanel } from '../components/SettingsPanel';
@@ -10,7 +10,7 @@ import { useTheme } from '../hooks/useTheme';
 import { Toaster } from 'sonner';
 
 export function SettingsWindow() {
-  const [settings, setSettings] = useState<Settings | null>(null);
+  const settings = useSettingsSnapshot();
   const settingsRef = useRef<Settings | null>(null);
 
   useEffect(() => {
@@ -20,18 +20,9 @@ export function SettingsWindow() {
   useLanguage(settings?.language);
   useTheme(settings?.theme ?? 'cyberpaste');
 
+  const settingsReady = settings !== null;
   useEffect(() => {
-    invoke<Settings>('get_settings').then(setSettings).catch(console.error);
-    const unlisten = listen<Settings>('settings-changed', (event) => {
-      setSettings(event.payload);
-    });
-    return () => {
-      unlisten.then((f) => f());
-    };
-  }, []);
-
-  useEffect(() => {
-    if (settings) {
+    if (settingsReady) {
       // Small timeout to allow the DOM to render with the new theme classes before showing
       const timer = setTimeout(() => {
         const win = getCurrentWindow();
@@ -44,7 +35,7 @@ export function SettingsWindow() {
       }, 50);
       return () => clearTimeout(timer);
     }
-  }, [settings]);
+  }, [settingsReady]);
 
   const handleClose = async () => {
     const win = getCurrentWindow();

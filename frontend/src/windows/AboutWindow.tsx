@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { emit, listen } from '@tauri-apps/api/event';
+import { listen } from '@tauri-apps/api/event';
+import { useSettingsSnapshot } from '../hooks/useSettingsSnapshot';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { getVersion } from '@tauri-apps/api/app';
 import { invoke } from '@tauri-apps/api/core';
@@ -87,7 +88,7 @@ function BugIcon({ size = 15 }: { size?: number }) {
 }
 
 export function AboutWindow() {
-  const [settings, setSettings] = useState<Settings | null>(null);
+  const settings = useSettingsSnapshot();
   const settingsRef = useRef<Settings | null>(null);
   const [appVersion, setAppVersion] = useState('');
   const [updateAvailable, setUpdateAvailable] = useState<UpdateType>(null);
@@ -107,15 +108,6 @@ export function AboutWindow() {
 
   useEffect(() => {
     getVersion().then(setAppVersion).catch(console.error);
-    invoke<Settings>('get_settings').then(setSettings).catch(console.error);
-
-    const unlistenSettings = listen<Settings>('settings-changed', (event) => {
-      setSettings(event.payload);
-    });
-
-    return () => {
-      unlistenSettings.then((unlisten) => unlisten());
-    };
   }, []);
 
   useEffect(() => {
@@ -146,8 +138,9 @@ export function AboutWindow() {
     };
   }, [settings, updateAvailable]);
 
+  const settingsReady = settings !== null;
   useEffect(() => {
-    if (!settings) return;
+    if (!settingsReady) return;
     const timer = setTimeout(() => {
       const win = getCurrentWindow();
       win
@@ -156,7 +149,7 @@ export function AboutWindow() {
         .catch(console.error);
     }, 50);
     return () => clearTimeout(timer);
-  }, [settings]);
+  }, [settingsReady]);
 
   const handleClose = async () => {
     const win = getCurrentWindow();
@@ -229,22 +222,15 @@ export function AboutWindow() {
     }
   };
 
-  const updateAutoCheck = async () => {
+  const updateAutoCheck = async (enabled: boolean) => {
     if (IS_PORTABLE_BUILD) return;
-    if (!settings) return;
-    const next = { ...settings, auto_check_updates: !(settings.auto_check_updates ?? false) };
-    setSettings(next);
     try {
-      await invoke('save_settings', { settings: next });
-      await emit('settings-changed', next);
+      await invoke('set_update_notifications', { enabled });
       toast.success(
-        `${t('settings.autoCheckUpdates')}: ${
-          next.auto_check_updates ? t('common.enabled') : t('common.disabled')
-        }`
+        `${t('settings.autoCheckUpdates')}: ${enabled ? t('common.enabled') : t('common.disabled')}`
       );
     } catch (error) {
       console.error('Failed to save update settings:', error);
-      setSettings(settings);
       toast.error(t('settings.failedToSave'));
     }
   };

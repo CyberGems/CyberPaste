@@ -4,7 +4,7 @@ use crate::secrets;
 use chrono::Utc;
 use parking_lot::RwLock;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tauri::AppHandle;
 use tauri::{Emitter, Manager};
@@ -19,10 +19,7 @@ impl SettingsManager {
         let path = app.path().app_data_dir().unwrap().join("settings.json");
         let mut settings = if path.exists() {
             // Load from file
-            match fs::read_to_string(&path) {
-                Ok(content) => serde_json::from_str(&content).unwrap_or_default(),
-                Err(_) => AppSettings::default(),
-            }
+            Self::load_file(&path).unwrap_or_default()
         } else {
             // Migrate from SQLite or use default
             Self::migrate_from_sqlite(db).await
@@ -247,6 +244,11 @@ impl SettingsManager {
         settings
     }
 
+    fn load_file(path: &Path) -> Option<AppSettings> {
+        let content = fs::read_to_string(path).ok()?;
+        serde_json::from_str(&content).ok()
+    }
+
     pub fn get(&self) -> AppSettings {
         self.settings.read().clone()
     }
@@ -259,32 +261,39 @@ impl SettingsManager {
     where
         F: FnOnce(&mut AppSettings),
     {
-        let mut settings = self.get();
-        f(&mut settings);
-        self.save(settings)
+        let mut current = self.settings.write();
+        let mut next = current.clone();
+        f(&mut next);
+        self.persist(&next)?;
+        *current = next;
+        Ok(())
     }
 
     pub fn save(&self, new_settings: AppSettings) -> Result<(), String> {
-        {
-            let mut lock = self.settings.write();
-            *lock = new_settings.clone();
-        }
-        let json = serde_json::to_string_pretty(&new_settings).map_err(|e| e.to_string())?;
+        self.update_sync(|settings| *settings = new_settings)
+    }
+
+    pub fn save_from_frontend(&self, mut new_settings: AppSettings) -> Result<(), String> {
+        self.update_sync(|current| {
+            // Other windows can send a snapshot from before the switch changed.
+            new_settings.auto_check_updates = current.auto_check_updates;
+            *current = new_settings;
+        })
+    }
+
+    fn persist(&self, settings: &AppSettings) -> Result<(), String> {
+        let json = serde_json::to_string_pretty(settings).map_err(|e| e.to_string())?;
         if let Some(parent) = self.file_path.parent() {
             fs::create_dir_all(parent).map_err(|e| e.to_string())?;
         }
-        fs::write(&self.file_path, json).map_err(|e| e.to_string())?;
-
-        Ok(())
+        fs::write(&self.file_path, json).map_err(|e| e.to_string())
     }
 
     pub async fn update<F>(&self, f: F) -> Result<(), String>
     where
         F: FnOnce(&mut AppSettings),
     {
-        let mut settings = self.get();
-        f(&mut settings);
-        self.save(settings)
+        self.update_sync(f)
     }
 }
 
@@ -301,4 +310,33 @@ pub fn emit_changed(app: &AppHandle) {
     let manager = app.state::<Arc<SettingsManager>>();
     crate::app_lock::sync_options(&manager.get());
     let _ = app.emit("settings-changed", manager.frontend_value());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn update_notifications_survive_a_stale_frontend_save_and_reload() {
+        let dir = std::env::temp_dir().join(format!("cyberpaste-settings-{}", uuid::Uuid::new_v4()));
+        let file_path = dir.join("settings.json");
+        let manager = SettingsManager {
+            file_path: file_path.clone(),
+            settings: RwLock::new(AppSettings::default()),
+        };
+        let mut stale = manager.get();
+
+        manager.update_sync(|settings| settings.auto_check_updates = true).unwrap();
+        stale.language = "es".to_string();
+        manager.save_from_frontend(stale).unwrap();
+        let reloaded = SettingsManager::load_file(&file_path).unwrap();
+        assert!(reloaded.auto_check_updates);
+        assert_eq!(reloaded.language, "es");
+
+        manager.update_sync(|settings| settings.auto_check_updates = false).unwrap();
+        let reloaded = SettingsManager::load_file(&file_path).unwrap();
+        assert!(!reloaded.auto_check_updates);
+        fs::remove_file(file_path).unwrap();
+        fs::remove_dir(dir).unwrap();
+    }
 }

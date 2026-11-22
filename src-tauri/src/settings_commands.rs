@@ -216,7 +216,7 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
         new_settings.max_items,
         new_settings.compact_sidebar_collapsed
     );
-    manager.save(new_settings)?;
+    manager.save_from_frontend(new_settings)?;
     let _ = crate::rebuild_tray_menu(&app);
     crate::settings_manager::emit_changed(&app);
     if let Some(db) = app.try_state::<std::sync::Arc<crate::database::Database>>() {
@@ -227,6 +227,15 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
         )
         .await;
     }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn set_update_notifications(app: AppHandle, enabled: bool) -> Result<(), String> {
+    crate::app_lock::require_unlocked()?;
+    let manager = app.state::<Arc<SettingsManager>>();
+    manager.update_sync(|settings| settings.auto_check_updates = enabled)?;
+    crate::settings_manager::emit_changed(&app);
     Ok(())
 }
 
