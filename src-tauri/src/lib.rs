@@ -395,6 +395,7 @@ mod app_lock;
 mod backup;
 mod clipboard;
 mod commands;
+mod updater;
 mod constants;
 mod content_limits;
 mod database;
@@ -525,6 +526,7 @@ pub fn run_app() {
     }
 
     builder
+        .manage(updater::UpdaterState::default())
         .plugin(log_builder.build())
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             log::info!("Second instance detected. Sending notification and exiting.");
@@ -1262,7 +1264,13 @@ pub fn run_app() {
             commands::is_clipboard_monitoring_paused,
             commands::get_tray_menu_state,
             commands::consume_about_update_check,
-            commands::set_update_available,
+            updater::check_for_updates,
+            updater::get_update_status,
+            updater::open_update_notice,
+            updater::dismiss_update_notice,
+            updater::download_update,
+            updater::cancel_update_download,
+            updater::install_update,
             commands::hide_tray_menu,
             commands::tray_menu_ready,
             commands::tray_menu_action,

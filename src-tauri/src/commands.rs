@@ -16,7 +16,7 @@ use std::path::Path;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::Ordering;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 
 fn duplicate_clip_error(app: &AppHandle) -> String {
@@ -5679,15 +5679,11 @@ static TRAY_MENU_ANCHOR: std::sync::Mutex<Option<(i32, i32)>> = std::sync::Mutex
 static TRAY_MENU_WATCH_GEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 static TRAY_MENU_IGNORE_OUTSIDE_UNTIL_MS: std::sync::atomic::AtomicU64 =
     std::sync::atomic::AtomicU64::new(0);
-static UPDATE_AVAILABLE: AtomicBool = AtomicBool::new(false);
 /// Set when a cold-created window still needs to be positioned+shown by `tray_menu_ready`.
 static TRAY_MENU_PENDING_SHOW: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
-/// Set by the tray's "Check for Update..." when the About window has to be
-/// created fresh: its webview mounts after the action, so the delayed
-/// `about-check-updates` event cannot reach it. The window claims the request
-/// via `consume_about_update_check` once its event listener is live. The value
-/// is the request timestamp in ms; unclaimed entries simply expire.
+/// About claims a tray check by timestamp, even if its webview was still loading
+/// when the event was sent. Unclaimed requests expire.
 static PENDING_ABOUT_UPDATE_CHECK_MS: std::sync::atomic::AtomicU64 =
     std::sync::atomic::AtomicU64::new(0);
 
@@ -5983,7 +5979,11 @@ pub fn collect_tray_menu_state(app: &AppHandle) -> TrayMenuState {
         hotkey: settings.hotkey.clone(),
         is_visible,
         is_paused,
-        update_available: UPDATE_AVAILABLE.load(Ordering::SeqCst),
+        update_available: crate::updater::tray_update_available(
+            app,
+            settings.auto_check_updates,
+            settings.skipped_update_version.as_deref(),
+        ),
         language: settings.language.clone(),
         show_app_recommendations: settings.show_app_recommendations,
         lock_enabled: crate::app_lock::is_enabled(),
@@ -5999,13 +5999,6 @@ pub fn collect_tray_menu_state(app: &AppHandle) -> TrayMenuState {
 #[tauri::command]
 pub fn get_tray_menu_state(app: AppHandle) -> TrayMenuState {
     collect_tray_menu_state(&app)
-}
-
-#[tauri::command]
-pub fn set_update_available(app: AppHandle, available: bool) -> Result<(), String> {
-    UPDATE_AVAILABLE.store(available, Ordering::SeqCst);
-    let _ = app.emit("update-available", available);
-    crate::rebuild_tray_menu(&app).map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -6294,11 +6287,10 @@ pub async fn open_about(app: AppHandle) -> Result<(), String> {
 /// returns whether the caller should start an update check right away.
 #[tauri::command]
 pub fn consume_about_update_check() -> bool {
-    let requested_at = PENDING_ABOUT_UPDATE_CHECK_MS.load(Ordering::SeqCst);
+    let requested_at = PENDING_ABOUT_UPDATE_CHECK_MS.swap(0, Ordering::SeqCst);
     if requested_at == 0 {
         return false;
     }
-    PENDING_ABOUT_UPDATE_CHECK_MS.store(0, Ordering::SeqCst);
     tray_menu_now_ms().saturating_sub(requested_at) < 30_000
 }
 
@@ -6485,25 +6477,9 @@ pub async fn tray_menu_action(
         }
         "about" => open_about_window(&app),
         "check_updates" => {
-            // An already-open About has its event listener live, so the delayed
-            // event below reaches it. A freshly created one mounts later and
-            // would miss it; in that case record the request and let the new
-            // window claim it on mount (`consume_about_update_check`).
-            let about_is_open = app.get_webview_window("about").is_some();
-            if !about_is_open {
-                PENDING_ABOUT_UPDATE_CHECK_MS.store(
-                    tray_menu_now_ms(),
-                    std::sync::atomic::Ordering::SeqCst,
-                );
-            }
+            PENDING_ABOUT_UPDATE_CHECK_MS.store(tray_menu_now_ms(), Ordering::SeqCst);
             open_about_window(&app);
-            if about_is_open {
-                let handle = app.clone();
-                tauri::async_runtime::spawn(async move {
-                    tokio::time::sleep(std::time::Duration::from_millis(400)).await;
-                    let _ = handle.emit("about-check-updates", ());
-                });
-            }
+            let _ = app.emit_to("about", "about-check-updates", ());
         }
         "lock" => {
             crate::app_lock::lock_now(&app);

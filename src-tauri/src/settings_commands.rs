@@ -84,10 +84,10 @@ pub async fn skip_update_version(app: AppHandle, version: String) -> Result<(), 
     }
 
     let manager = app.state::<Arc<SettingsManager>>();
-    let mut current = manager.get();
-    current.skipped_update_version = Some(version);
-    manager.save(current)?;
+    manager.update_sync(|settings| settings.skipped_update_version = Some(version.clone()))?;
+    crate::updater::hide_skipped_version(&app, &version);
     crate::settings_manager::emit_changed(&app);
+    let _ = crate::rebuild_tray_menu(&app);
     Ok(())
 }
 
@@ -236,6 +236,7 @@ pub fn set_update_notifications(app: AppHandle, enabled: bool) -> Result<(), Str
     let manager = app.state::<Arc<SettingsManager>>();
     manager.update_sync(|settings| settings.auto_check_updates = enabled)?;
     crate::settings_manager::emit_changed(&app);
+    let _ = crate::rebuild_tray_menu(&app);
     Ok(())
 }
 

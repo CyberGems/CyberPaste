@@ -62,3 +62,22 @@ export function isSkippedUpdateVersion(
   const normalize = (value: string) => value.trim().replace(/^v/i, '');
   return normalize(version) === normalize(skippedVersion);
 }
+
+export type UpdatePhase = 'available' | 'downloading' | 'downloaded' | 'installing';
+
+export interface UpdateStatus {
+  state: UpdatePhase;
+  version: string;
+  releaseNotes?: string;
+  transferred: number;
+  total?: number;
+  cancelling: boolean;
+  failed: boolean;
+  manual: boolean;
+  dismissed: boolean;
+  openRequest: number;
+}
+
+export interface UpdateCheckResult {
+  available: boolean;
+}

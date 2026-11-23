@@ -1,18 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { listen } from '@tauri-apps/api/event';
 import { useSettingsSnapshot } from '../hooks/useSettingsSnapshot';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { getVersion } from '@tauri-apps/api/app';
 import { invoke } from '@tauri-apps/api/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { check } from '@tauri-apps/plugin-updater';
 import {
-  AlertCircle,
   BookOpen,
-  CheckCircle2,
-  ChevronDown,
   Copy,
-  ExternalLink,
   Github,
   Gem,
   Heart,
@@ -21,7 +15,6 @@ import {
   Minus,
   RotateCcw,
   Tag,
-  WifiOff,
   X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -29,19 +22,14 @@ import { Settings } from '../types';
 import { useLanguage } from '../hooks/useLanguage';
 import { useTheme } from '../hooks/useTheme';
 import { toast } from '../utils/toast';
-import { Switch } from '../components/ui/Switch';
 import { IS_PORTABLE_BUILD } from '../utils/build';
 import {
   formatUpdaterError,
-  isSkippedUpdateVersion,
   isUpdaterNetworkError,
+  type UpdateCheckResult,
 } from '../utils/updater';
-import { UpdateModal } from '../components/UpdateModal';
-import { MOCK_UPDATE_PREVIEW } from '../utils/mockUpdate';
 import Tooltip from '../components/Tooltip';
 import { RECOMMENDED_SUITE_APPS, suiteLanguage } from '../data/suiteApps';
-
-type UpdateType = Awaited<ReturnType<typeof check>>;
 
 const REPO_URL = 'https://github.com/CyberGems/CyberPaste';
 const WEBSITE_URL = 'https://cybergems.org';
@@ -89,19 +77,14 @@ function BugIcon({ size = 15 }: { size?: number }) {
 
 export function AboutWindow() {
   const settings = useSettingsSnapshot();
-  const settingsRef = useRef<Settings | null>(null);
+  const checkInFlight = useRef(false);
+  const handedOffUpdate = useRef(false);
   const [appVersion, setAppVersion] = useState('');
-  const [updateAvailable, setUpdateAvailable] = useState<UpdateType>(null);
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [updateCheckError, setUpdateCheckError] = useState<string | null>(null);
-  const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
-  const [checkStatus, setCheckStatus] = useState<'idle' | 'checking' | 'upToDate'>('idle');
+  const [checkStatus, setCheckStatus] = useState<
+    'idle' | 'checking' | 'available' | 'upToDate' | 'networkError' | 'error'
+  >('idle');
   const [recommendedSuiteApps] = useState(pickRecommendedSuiteApps);
   const { t } = useTranslation();
-
-  useEffect(() => {
-    settingsRef.current = settings;
-  }, [settings]);
 
   useLanguage(settings?.language);
   useTheme(settings?.theme ?? 'cyberpaste');
@@ -110,32 +93,6 @@ export function AboutWindow() {
     getVersion().then(setAppVersion).catch(console.error);
   }, []);
 
-  useEffect(() => {
-    if (IS_PORTABLE_BUILD || !settings?.auto_check_updates) return;
-    let cancelled = false;
-    invoke<any>('get_tray_menu_state')
-      .then((state: any) => {
-        if (!cancelled && settingsRef.current?.auto_check_updates && state?.update_available && !updateAvailable) {
-          check({ timeout: 15000 })
-            .then((u) => {
-              const currentSettings = settingsRef.current;
-              if (cancelled || !u || !currentSettings?.auto_check_updates) return;
-              if (!isSkippedUpdateVersion(u.version, currentSettings.skipped_update_version)) {
-                setUpdateAvailable(u);
-                invoke('set_update_available', { available: true }).catch(console.error);
-              } else {
-                invoke('set_update_available', { available: false }).catch(console.error);
-              }
-            })
-            .catch(() => {});
-        }
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [settings, updateAvailable]);
-
   const settingsReady = settings !== null;
   useEffect(() => {
     if (!settingsReady) return;
@@ -143,7 +100,9 @@ export function AboutWindow() {
       const win = getCurrentWindow();
       win
         .show()
-        .then(() => win.setFocus())
+        .then(() => {
+          if (!handedOffUpdate.current) return win.setFocus();
+        })
         .catch(console.error);
     }, 50);
     return () => clearTimeout(timer);
@@ -172,7 +131,7 @@ export function AboutWindow() {
               },
             });
           } catch {
-            const fallback = settingsRef.current;
+            const fallback = settings;
             if (fallback) {
               await invoke('save_settings', {
                 settings: {
@@ -220,101 +179,47 @@ export function AboutWindow() {
     }
   };
 
-  const updateAutoCheck = async (enabled: boolean) => {
-    if (IS_PORTABLE_BUILD) return;
-    try {
-      await invoke('set_update_notifications', { enabled });
-      toast.success(
-        `${t('settings.autoCheckUpdates')}: ${enabled ? t('common.enabled') : t('common.disabled')}`
-      );
-    } catch (error) {
-      console.error('Failed to save update settings:', error);
-      toast.error(t('settings.failedToSave'));
-    }
-  };
-
   const checkForUpdates = useCallback(async () => {
-    if (IS_PORTABLE_BUILD) return;
+    if (IS_PORTABLE_BUILD || checkInFlight.current) return;
+    checkInFlight.current = true;
     setCheckStatus('checking');
-    setUpdateCheckError(null);
-    setShowTechnicalDetails(false);
     try {
-      const update = await check({ timeout: 15000 });
-      if (update) {
-        setCheckStatus('idle');
-        setUpdateAvailable(update);
-        setShowUpdateModal(true);
-        const currentSettings = settingsRef.current;
-        if (currentSettings?.auto_check_updates && !isSkippedUpdateVersion(update.version, currentSettings.skipped_update_version)) {
-          invoke('set_update_available', { available: true }).catch(console.error);
-        }
-      } else {
-        invoke('set_update_available', { available: false }).catch(console.error);
-        setCheckStatus('upToDate');
+      const { available } = await invoke<UpdateCheckResult>('check_for_updates', {
+        background: false,
+      });
+      setCheckStatus(available ? 'available' : 'upToDate');
+      if (available) {
+        handedOffUpdate.current = true;
+        await getCurrentWindow().show();
+        await invoke('open_update_notice').catch(console.error);
       }
     } catch (error: unknown) {
-      const raw = formatUpdaterError(error);
-      setCheckStatus('idle');
-      setUpdateCheckError(raw);
+      setCheckStatus(isUpdaterNetworkError(formatUpdaterError(error)) ? 'networkError' : 'error');
       console.error('Update check failed:', error);
+    } finally {
+      checkInFlight.current = false;
     }
   }, []);
-
-  const handleSkipUpdateVersion = useCallback(
-    async (version: string) => {
-      if ((updateAvailable as any)?.isMock) {
-        setUpdateAvailable(null);
-        await invoke('set_update_available', { available: false });
-        return;
-      }
-      await invoke('skip_update_version', { version });
-      setUpdateAvailable(null);
-      await invoke('set_update_available', { available: false });
-    },
-    [updateAvailable]
-  );
-
-  const toggleUpdatePreview = useCallback(() => {
-    setUpdateAvailable((prev) => {
-      if ((prev as any)?.isMock) {
-        setShowUpdateModal(false);
-        return null;
-      }
-      setShowUpdateModal(true);
-      return MOCK_UPDATE_PREVIEW as any;
-    });
-  }, []);
-
-  useEffect(() => {
-    const handleToggle = () => toggleUpdatePreview();
-    window.addEventListener('cyberpaste:toggle-update-preview', handleToggle);
-    (window as any).__CYBERPASTE_TOGGLE_UPDATE_PREVIEW__ = toggleUpdatePreview;
-    return () => {
-      window.removeEventListener('cyberpaste:toggle-update-preview', handleToggle);
-      delete (window as any).__CYBERPASTE_TOGGLE_UPDATE_PREVIEW__;
-    };
-  }, [toggleUpdatePreview]);
 
   useEffect(() => {
     let cancelled = false;
     let unlistenFn: (() => void) | null = null;
-    listen('about-check-updates', () => {
-      void checkForUpdates();
-    })
+    const handlePendingCheck = async () => {
+      if ((await invoke<boolean>('consume_about_update_check')) && !cancelled) {
+        await checkForUpdates();
+      }
+    };
+    getCurrentWindow()
+      .listen('about-check-updates', () => {
+        void handlePendingCheck().catch(console.error);
+      })
       .then((unlisten) => {
         if (cancelled) {
           unlisten();
           return;
         }
         unlistenFn = unlisten;
-        // A cold About opened by the tray's "Check for Update..." mounts after
-        // the backend fires its delayed event, so the backend records the
-        // request instead and this fresh window claims it once listening.
-        invoke<boolean>('consume_about_update_check')
-          .then((pending) => {
-            if (!cancelled && pending) void checkForUpdates();
-          })
-          .catch(console.error);
+        return handlePendingCheck();
       })
       .catch(console.error);
     return () => {
@@ -391,175 +296,41 @@ export function AboutWindow() {
 
             {!IS_PORTABLE_BUILD && (
               <section className="mt-5 space-y-2">
-                <h3 className="cursor-default select-none px-0 text-[13px] font-semibold text-primary">
+                <h3 className="cursor-default select-none text-[13px] font-semibold text-primary">
                   {t('settings.aboutUpdatesSection')}
                 </h3>
-                <div className="rounded-[4px] border border-border/80 bg-secondary px-4">
-                  <div className="grid min-h-[60px] grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3">
-                    <RotateCcw size={23} className="text-muted-foreground" />
-                    <div className="min-w-0">
-                      <span className="text-[13px] font-medium">
-                        {t('settings.autoCheckUpdates')}
-                      </span>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {t('settings.autoCheckUpdatesDesc')}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={settings.auto_check_updates ?? false}
-                      onChange={updateAutoCheck}
-                      aria-label={t('settings.autoCheckUpdates')}
-                    />
+                <div className="grid min-h-[60px] grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3 rounded-[4px] border border-border/80 bg-secondary px-4">
+                  <RotateCcw size={23} aria-hidden="true" className="text-muted-foreground" />
+                  <div className="min-w-0">
+                    <span className="text-[13px] font-medium">{t('settings.checkForUpdates')}</span>
+                    <p
+                      role="status"
+                      data-el="update-check-result"
+                      className="mt-0.5 text-xs text-muted-foreground"
+                    >
+                      {
+                        {
+                          idle: t('settings.checkForUpdatesDesc'),
+                          checking: t('settings.checkingUpdates'),
+                          available: t('settings.updatesAvailableTitle'),
+                          upToDate: t('settings.aboutUpdateSuccessDesc'),
+                          networkError: t('settings.updateCheckFailed'),
+                          error: t('settings.updateError'),
+                        }[checkStatus]
+                      }
+                    </p>
                   </div>
-
-                  <div className="h-px bg-border" />
-
-                  <div className="grid min-h-[60px] grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3">
-                    <ExternalLink size={23} className="text-muted-foreground" />
-                    <div className="min-w-0">
-                      <span className="text-[13px] font-medium">
-                        {t('settings.checkForUpdates')}
-                      </span>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {checkStatus === 'checking' ? (
-                          <span className="inline-flex items-center gap-1.5 text-foreground">
-                            <Loader2 size={12} className="animate-spin text-primary" />
-                            {t('settings.checkingUpdates')}
-                          </span>
-                        ) : (
-                          t('settings.checkForUpdatesDesc')
-                        )}
-                      </p>
-                    </div>
-                    {updateAvailable ? (
-                      <button
-                        type="button"
-                        onClick={() => setShowUpdateModal(true)}
-                        className="btn min-w-[108px] rounded-[4px] border border-primary/20 bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
-                      >
-                        {t('settings.updatesUpdateNow')}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={checkForUpdates}
-                        disabled={checkStatus === 'checking'}
-                        className="btn min-w-[108px] rounded-[4px] border border-primary/20 bg-input px-3 py-2 text-xs text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-60"
-                      >
-                        {checkStatus === 'checking' ? (
-                          <span className="inline-flex items-center justify-center gap-1.5">
-                            <Loader2 size={12} className="animate-spin" />
-                            {t('settings.checkNow')}
-                          </span>
-                        ) : (
-                          t('settings.checkNow')
-                        )}
-                      </button>
+                  <button
+                    type="button"
+                    onClick={checkForUpdates}
+                    disabled={checkStatus === 'checking'}
+                    className="btn inline-flex min-w-[108px] items-center justify-center gap-1.5 rounded-[4px] border border-primary/20 bg-input px-3 py-2 text-xs text-foreground hover:bg-accent disabled:opacity-60"
+                  >
+                    {checkStatus === 'checking' && (
+                      <Loader2 size={12} className="animate-spin" aria-hidden="true" />
                     )}
-                  </div>
-
-                  {checkStatus === 'upToDate' && (
-                    <div className="relative mb-3 flex items-center gap-3 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-10 py-2.5 text-emerald-100">
-                      <CheckCircle2 size={20} className="shrink-0 text-emerald-400" />
-                      <div className="min-w-0">
-                        <p className="text-[13px] font-semibold">
-                          {t('settings.aboutUpdateSuccess')}
-                        </p>
-                        <p className="mt-0.5 text-xs text-emerald-100/70">
-                          {t('settings.aboutUpdateSuccessDesc')}
-                        </p>
-                      </div>
-                      <Tooltip label={t('common.close')} placement="top">
-                        <button
-                          type="button"
-                          onClick={() => setCheckStatus('idle')}
-                          aria-label={t('common.close')}
-                          className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-emerald-100/70 transition-colors hover:bg-emerald-400/15 hover:text-emerald-100"
-                        >
-                          <X size={14} />
-                        </button>
-                      </Tooltip>
-                    </div>
-                  )}
-
-                  {updateCheckError && (
-                    <div className="mb-3 space-y-2.5 rounded-[6px] border border-border/80 bg-card p-3.5">
-                      <div className="flex items-start gap-2.5">
-                        <div className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                          {isUpdaterNetworkError(updateCheckError) ? (
-                            <WifiOff size={12} />
-                          ) : (
-                            <AlertCircle size={12} />
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1 space-y-0.5">
-                          <p className="text-[13px] font-medium leading-snug text-foreground">
-                            {isUpdaterNetworkError(updateCheckError)
-                              ? t('settings.updateCheckFailed')
-                              : t('settings.updateError')}
-                          </p>
-                          <p className="text-[12px] text-muted-foreground">
-                            {isUpdaterNetworkError(updateCheckError)
-                              ? t('settings.checkInternetConnection')
-                              : t('settings.updateErrorHint')}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-2 border-t border-border/40 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => setShowTechnicalDetails(!showTechnicalDetails)}
-                          className="flex items-center gap-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                          <ChevronDown
-                            size={13}
-                            className={`transition-transform duration-200 ${
-                              showTechnicalDetails ? 'rotate-180' : ''
-                            }`}
-                          />
-                          <span>
-                            {showTechnicalDetails
-                              ? t('settings.hideTechnicalDetails')
-                              : t('settings.showTechnicalDetails')}
-                          </span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            openUrl(`${REPO_URL}/releases/latest`).catch(console.error)
-                          }
-                          className="btn inline-flex items-center rounded-[4px] border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/20"
-                        >
-                          <ExternalLink size={12} className="mr-1.5" />
-                          {t('settings.updatesOpenReleasePage')}
-                        </button>
-                      </div>
-
-                      {showTechnicalDetails && (
-                        <div className="space-y-2 pt-1">
-                          <pre className="max-h-24 overflow-y-auto whitespace-pre-wrap break-all rounded border border-border/40 bg-black/25 p-2 font-mono text-[10px] leading-relaxed text-muted-foreground/90">
-                            {updateCheckError}
-                          </pre>
-                          <div className="flex justify-end">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                navigator.clipboard
-                                  .writeText(updateCheckError)
-                                  .then(() => toast.success(t('settings.updateErrorCopied')))
-                                  .catch(console.error)
-                              }
-                              className="btn rounded-[4px] border border-border bg-secondary/80 px-2.5 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                            >
-                              {t('settings.updateErrorCopy')}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                    {t('settings.checkNow')}
+                  </button>
                 </div>
               </section>
             )}
@@ -695,13 +466,6 @@ export function AboutWindow() {
           </div>
         </footer>
       </div>
-
-      <UpdateModal
-        isOpen={showUpdateModal}
-        update={updateAvailable}
-        onClose={() => setShowUpdateModal(false)}
-        onSkipVersion={handleSkipUpdateVersion}
-      />
     </div>
   );
 }

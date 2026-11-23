@@ -37,9 +37,8 @@ import type { ContextMenuOption, ContextMenuHeaderAction } from './components/Co
 import { FolderModal } from './components/FolderModal';
 import { AiResultDialog } from './components/AiResultDialog';
 import { OcrResultModal } from './components/OcrResultModal';
-import { check } from '@tauri-apps/plugin-updater';
-import { UpdateModal } from './components/UpdateModal';
-import { MOCK_UPDATE_PREVIEW } from './utils/mockUpdate';
+import { UpdateNotice } from './components/UpdateNotice';
+import { useUpdateNotice } from './hooks/useUpdateNotice';
 import { CloseWindowDialog } from './components/CloseWindowDialog';
 import { UndoWarningDialog } from './components/UndoWarningDialog';
 import { dismissAllTooltips } from './components/Tooltip';
@@ -59,7 +58,6 @@ import { toast } from './utils/toast';
 import { Toaster } from 'sonner';
 import { exportClip, isExportCancelled } from './utils/export';
 import { IS_PORTABLE_BUILD } from './utils/build';
-import { isSkippedUpdateVersion } from './utils/updater';
 import { LAYOUT } from './constants';
 import { generateDemoClips } from './debug/demoData';
 import {
@@ -174,9 +172,17 @@ function App() {
   const [lockEnabled, setLockEnabled] = useState(false);
   const [lockStatus, setLockStatus] = useState<AppLockStatus | null>(null);
   const isLockedRef = useRef(false);
-  const [updateAvailable, setUpdateAvailable] = useState<any>(null);
-  const updateAvailableRef = useRef<any>(null);
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const updateNotice = useUpdateNotice(
+    settings?.auto_check_updates === true,
+    settings?.skipped_update_version
+  );
+  const updateAvailable = updateNotice.pending;
+  const {
+    open: openUpdateNotice,
+    install: installUpdate,
+    isPreview: isUpdatePreview,
+  } = updateNotice;
+  const restartAfterUndoWarning = useRef<string | null>(null);
   const [showCloseWindowDialog, setShowCloseWindowDialog] = useState(false);
   const [deletedStack, setDeletedStack] = useState<{ ids: string[] }[]>([]);
   const [showUndoWarning, setShowUndoWarning] = useState(false);
@@ -452,24 +458,9 @@ function App() {
 
           startupUpdateTimer = setTimeout(() => {
             if (!settingsRef.current?.auto_check_updates) return;
-            check({ timeout: 15000 })
-              .then((update) => {
-                const currentSettings = settingsRef.current;
-                if (cancelled || !currentSettings?.auto_check_updates) return;
-                if (update && !isSkippedUpdateVersion(update.version, currentSettings.skipped_update_version)) {
-                  updateAvailableRef.current = update;
-                  setUpdateAvailable(update);
-                  setShowUpdateModal(true);
-                  invoke('set_update_available', { available: true }).catch(console.error);
-                } else {
-                  updateAvailableRef.current = null;
-                  setUpdateAvailable(null);
-                  invoke('set_update_available', { available: false }).catch(console.error);
-                }
-              })
-              .catch((err) => {
-                console.warn('Auto-update check failed (silent):', err);
-              });
+            void invoke('check_for_updates', { background: true }).catch((error) => {
+              console.warn('Startup update check failed:', error);
+            });
           }, welcomeDelay);
         }
       })
@@ -485,11 +476,6 @@ function App() {
       setSettings(event.payload);
       recentSearchesRef.current = event.payload.recent_searches ?? [];
       setRecentSearches(recentSearchesRef.current);
-      if (!event.payload.auto_check_updates && !updateAvailableRef.current?.isMock) {
-        updateAvailableRef.current = null;
-        setUpdateAvailable(null);
-        invoke('set_update_available', { available: false }).catch(console.error);
-      }
     });
 
     const unlistenAchievements = listen<{ achievement_id: string }[]>(
@@ -629,61 +615,21 @@ function App() {
     };
   }, []);
 
-  const handleShowUpdate = useCallback(async () => {
-    if (IS_PORTABLE_BUILD) return;
-    if (updateAvailableRef.current) {
-      setShowUpdateModal(true);
-      return;
-    }
-    try {
-      const update = await check({ timeout: 15000 });
-      if (update) {
-        updateAvailableRef.current = update;
-        setUpdateAvailable(update);
-        setShowUpdateModal(true);
-        invoke('set_update_available', { available: true }).catch(console.error);
+  const handleShowUpdate = useCallback(() => {
+    void openUpdateNotice().catch(console.error);
+  }, [openUpdateNotice]);
+
+  const handleInstallUpdate = useCallback(
+    async (version: string) => {
+      if (!isUpdatePreview && deletedStack.length > 0) {
+        restartAfterUndoWarning.current = version;
+        setShowUndoWarning(true);
+        return;
       }
-    } catch (err) {
-      console.warn('Update check from title bar failed:', err);
-    }
-  }, []);
-
-  const handleSkipUpdateVersion = useCallback(async (version: string) => {
-    if (updateAvailableRef.current?.isMock) {
-      updateAvailableRef.current = null;
-      setUpdateAvailable(null);
-      await invoke('set_update_available', { available: false });
-      return;
-    }
-    await invoke('skip_update_version', { version });
-    updateAvailableRef.current = null;
-    setUpdateAvailable(null);
-    await invoke('set_update_available', { available: false });
-  }, []);
-
-  const toggleUpdatePreview = useCallback(() => {
-    if (updateAvailableRef.current?.isMock) {
-      updateAvailableRef.current = null;
-      setUpdateAvailable(null);
-      setShowUpdateModal(false);
-      invoke('set_update_available', { available: false }).catch(console.error);
-    } else {
-      updateAvailableRef.current = MOCK_UPDATE_PREVIEW;
-      setUpdateAvailable(MOCK_UPDATE_PREVIEW);
-      setShowUpdateModal(true);
-      invoke('set_update_available', { available: true }).catch(console.error);
-    }
-  }, []);
-
-  useEffect(() => {
-    const handleToggle = () => toggleUpdatePreview();
-    window.addEventListener('cyberpaste:toggle-update-preview', handleToggle);
-    (window as any).__CYBERPASTE_TOGGLE_UPDATE_PREVIEW__ = toggleUpdatePreview;
-    return () => {
-      window.removeEventListener('cyberpaste:toggle-update-preview', handleToggle);
-      delete (window as any).__CYBERPASTE_TOGGLE_UPDATE_PREVIEW__;
-    };
-  }, [toggleUpdatePreview]);
+      await installUpdate(version);
+    },
+    [deletedStack.length, installUpdate, isUpdatePreview]
+  );
 
   const handleCloseChoice = useCallback(async (action: 'minimize' | 'quit', remember: boolean) => {
     try {
@@ -754,12 +700,19 @@ function App() {
   }, [triggerUndoWarningAttention]);
 
   const handleKeepUndoWarningOpen = useCallback(() => {
+    restartAfterUndoWarning.current = null;
     setShowUndoWarning(false);
   }, []);
 
   const handleContinueAfterUndoWarning = useCallback(async () => {
+    const updateVersion = restartAfterUndoWarning.current;
+    restartAfterUndoWarning.current = null;
     setShowUndoWarning(false);
     setDeletedStack([]);
+    if (updateVersion) {
+      await installUpdate(updateVersion).catch(console.error);
+      return;
+    }
     try {
       const action = await invoke<'prompt' | 'minimize' | 'quit'>('request_close');
       if (action === 'prompt') {
@@ -770,41 +723,7 @@ function App() {
     } catch (error) {
       console.error('Failed to apply close choice after discard:', error);
     }
-  }, [handleCloseChoice]);
-
-  useEffect(() => {
-    if (IS_PORTABLE_BUILD) return;
-    const unlisten = listen<boolean>('update-available', (event) => {
-      if (event.payload) {
-        if (updateAvailableRef.current || !settingsRef.current?.auto_check_updates) return;
-        check({ timeout: 15000 })
-          .then((update) => {
-            const currentSettings = settingsRef.current;
-            if (!currentSettings?.auto_check_updates) return;
-            if (
-              update &&
-              !isSkippedUpdateVersion(update.version, currentSettings.skipped_update_version)
-            ) {
-              updateAvailableRef.current = update;
-              setUpdateAvailable(update);
-            } else if (update) {
-              updateAvailableRef.current = null;
-              setUpdateAvailable(null);
-              invoke('set_update_available', { available: false }).catch(console.error);
-            }
-          })
-          .catch((err) => {
-            console.warn('Update payload refresh failed:', err);
-          });
-      } else {
-        updateAvailableRef.current = null;
-        setUpdateAvailable(null);
-      }
-    });
-    return () => {
-      unlisten.then((f) => f());
-    };
-  }, []);
+  }, [handleCloseChoice, installUpdate]);
 
   const handleLockNow = useCallback(() => {
     invoke('lock_app').catch(console.error);
@@ -4293,12 +4212,20 @@ function App() {
           }}
         />
 
-        <UpdateModal
-          isOpen={showUpdateModal}
-          update={updateAvailable}
-          onClose={() => setShowUpdateModal(false)}
-          onSkipVersion={handleSkipUpdateVersion}
-        />
+        {updateAvailable && (
+          <UpdateNotice
+            key={updateAvailable.version}
+            visible={isWindowActive && !isLocked && !updateAvailable.dismissed}
+            status={updateAvailable}
+            compact={settings?.view_mode === 'compact'}
+            preview={updateNotice.isPreview}
+            onDismiss={updateNotice.dismiss}
+            onSkip={updateNotice.skip}
+            onDownload={updateNotice.download}
+            onCancel={updateNotice.cancel}
+            onInstall={handleInstallUpdate}
+          />
+        )}
 
         <UndoWarningDialog
           isOpen={showUndoWarning}

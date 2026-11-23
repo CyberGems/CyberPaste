@@ -12,8 +12,10 @@ function sanitizeNotes(text: string): string {
       .replace(/#{2,4}\s*🔐\s*(?:Checksums|Sumas de verificación)[\s\S]*/i, '')
       // Strip the Before you install block (release-page furniture; the
       // checksums it references are not part of the modal preview)
-      .replace(/^#{2,4}\s*⚠️\s*(?:Before you install|Antes de instalar)[\s\S]*?\n---/gim, '')
-      .replace(/^#{2,4}\s*⚠️\s*(?:Before you install|Antes de instalar)[\s\S]*$/gim, '')
+      .replace(
+        /^#{2,4}\s*[^a-z\r\n]*(?:Before you install|Antes de instalar)[\s\S]*?(?=^#{2,4}\s+|$(?![\s\S]))/gim,
+        ''
+      )
       // Strip footer
       .replace(/\*Crafted with precision[\s\S]*/i, '')
       // Strip introductory blockquotes
@@ -73,4 +75,33 @@ export function extractLocalizedReleaseNotes(
     ''
   );
   return sanitizeNotes(cleaned);
+}
+
+export function peekReleaseNotes(body: string, lang: string): string[] {
+  const text = extractLocalizedReleaseNotes(body, lang).replace(/```[\s\S]*?```/g, '');
+  const highlights: string[] = [];
+  const paragraphs: string[] = [];
+  let inBullet = false;
+  for (const line of text.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || /^#{1,6}\s+|^---+|^[>|<]/.test(trimmed)) {
+      inBullet = false;
+      continue;
+    }
+    const bullet = trimmed.match(/^[-*+]\s+(.*)$/);
+    const content = (bullet?.[1] ?? trimmed)
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+      .replace(/\*\*([^*]+)\*\*|`([^`]+)`/g, '$1$2')
+      .trim();
+    if (!content) continue;
+    if (inBullet && (!bullet || /^\s/.test(line))) {
+      highlights[highlights.length - 1] += ' ' + content;
+    } else if (bullet) {
+      highlights.push(content);
+      inBullet = true;
+    } else {
+      paragraphs.push(content);
+    }
+  }
+  return [...new Set(highlights.length ? highlights : paragraphs)].slice(0, 4);
 }
