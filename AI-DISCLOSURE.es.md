@@ -7,7 +7,15 @@ vanguardia. La arquitectura, las decisiones de diseño, la revisión del código
 las pruebas y los lanzamientos los realiza el mantenedor. La salida de la IA
 se trata como un borrador: cada cambio se lee, se verifica y se commitea de
 forma deliberada. Los mensajes de commit no incluyen firmas automáticas de IA,
-por diseño.
+por diseño. Las comprobaciones automatizadas (compilaciones, pruebas y
+convenciones del repositorio) se ejecutan en CI en cada push; complementan,
+pero no sustituyen, la revisión humana.
+
+Esta declaración trata de cómo se construye el software. CyberPaste incluye
+acciones de IA opcionales (resumir, traducir, explicar código y corregir
+gramática). Son opt-in: la app no hace llamadas a modelos salvo que elijas
+un proveedor y ejecutes una acción. El texto que envías va solo al
+proveedor que hayas configurado.
 
 Esta declaración cubre el código fuente y la documentación de este
 repositorio. Las dependencias de terceros conservan sus propias licencias.
