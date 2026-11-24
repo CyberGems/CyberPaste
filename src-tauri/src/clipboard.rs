@@ -1707,61 +1707,144 @@ fn visual_elements_logo(element: &quick_xml::events::BytesStart) -> Option<Strin
     fallback
 }
 
-fn package_logo_from_manifest(manifest: &str, executable: &str) -> Option<String> {
+#[derive(Default)]
+struct PackageApplicationManifest {
+    executable: String,
+    aliases: Vec<String>,
+    logo: Option<String>,
+}
+
+#[derive(Default)]
+struct PackageManifest {
+    identity_name: Option<String>,
+    display_name: Option<String>,
+    applications: Vec<PackageApplicationManifest>,
+}
+
+fn manifest_attribute(
+    element: &quick_xml::events::BytesStart,
+    name: &str,
+) -> Option<String> {
+    element
+        .attributes()
+        .filter_map(Result::ok)
+        .find(|attribute| attribute.key.local_name().as_ref() == name.as_bytes())
+        .and_then(|attribute| attribute.unescape_value().ok())
+        .map(|value| value.into_owned())
+}
+
+fn push_manifest_application(
+    manifest: &mut PackageManifest,
+    element: &quick_xml::events::BytesStart,
+) -> usize {
+    let executable = manifest_attribute(element, "Executable").unwrap_or_default();
+    let mut aliases = Vec::new();
+    if !executable.is_empty() {
+        aliases.push(executable.clone());
+    }
+    manifest.applications.push(PackageApplicationManifest {
+        executable,
+        aliases,
+        logo: None,
+    });
+    manifest.applications.len() - 1
+}
+
+fn add_visual_elements(
+    manifest: &mut PackageManifest,
+    application: usize,
+    element: &quick_xml::events::BytesStart,
+) {
+    let application = &mut manifest.applications[application];
+    if let Some(display_name) = manifest_attribute(element, "DisplayName") {
+        application.aliases.push(display_name);
+    }
+    application.logo = visual_elements_logo(element);
+}
+
+fn parse_package_manifest(source: &str) -> Option<PackageManifest> {
     use quick_xml::events::Event;
     use quick_xml::Reader;
 
-    let mut reader = Reader::from_str(manifest);
+    let mut reader = Reader::from_str(source);
     let mut buffer = Vec::new();
-    let mut application_executable: Option<String> = None;
+    let mut manifest = PackageManifest::default();
+    let mut application = None;
+    let mut in_properties = false;
+    let mut in_display_name = false;
 
     loop {
         match reader.read_event_into(&mut buffer).ok()? {
             Event::Start(element) => match element.name().local_name().as_ref() {
-                b"Application" => {
-                    application_executable = element
-                        .attributes()
-                        .filter_map(Result::ok)
-                        .find(|attribute| {
-                            attribute.key.local_name().as_ref() == b"Executable"
-                        })
-                        .and_then(|attribute| attribute.unescape_value().ok())
-                        .map(|value| value.into_owned());
+                b"Identity" => {
+                    manifest.identity_name = manifest_attribute(&element, "Name");
                 }
-                b"VisualElements" => {
-                    let matches_application = application_executable
-                        .as_deref()
-                        .is_some_and(|name| name.eq_ignore_ascii_case(executable));
-                    if matches_application {
-                        if let Some(logo) = visual_elements_logo(&element) {
-                            return Some(logo);
-                        }
+                b"Properties" => in_properties = true,
+                b"DisplayName" if in_properties => in_display_name = true,
+                b"Application" => application = Some(push_manifest_application(&mut manifest, &element)),
+                b"VisualElements" if application.is_some() => {
+                    add_visual_elements(&mut manifest, application.unwrap(), &element);
+                }
+                b"DefaultTile" if application.is_some() => {
+                    if let Some(short_name) = manifest_attribute(&element, "ShortName") {
+                        manifest.applications[application.unwrap()]
+                            .aliases
+                            .push(short_name);
                     }
                 }
                 _ => {}
             },
-            Event::Empty(element) => {
-                let matches_application = application_executable
-                    .as_deref()
-                    .is_some_and(|name| name.eq_ignore_ascii_case(executable));
-                if element.name().local_name().as_ref() == b"VisualElements"
-                    && matches_application
-                {
-                    if let Some(logo) = visual_elements_logo(&element) {
-                        return Some(logo);
+            Event::Empty(element) => match element.name().local_name().as_ref() {
+                b"Identity" => {
+                    manifest.identity_name = manifest_attribute(&element, "Name");
+                }
+                b"Application" => {
+                    application = Some(push_manifest_application(&mut manifest, &element));
+                }
+                b"VisualElements" if application.is_some() => {
+                    add_visual_elements(&mut manifest, application.unwrap(), &element);
+                }
+                b"DefaultTile" if application.is_some() => {
+                    if let Some(short_name) = manifest_attribute(&element, "ShortName") {
+                        manifest.applications[application.unwrap()]
+                            .aliases
+                            .push(short_name);
                     }
                 }
+                _ => {}
+            },
+            Event::Text(text) if in_properties && in_display_name => {
+                let value = text.decode().ok()?.into_owned();
+                if !value.trim().is_empty() {
+                    manifest.display_name = Some(value.trim().to_string());
+                }
             }
-            Event::End(element) if element.name().local_name().as_ref() == b"Application" => {
-                application_executable = None;
-            }
+            Event::End(element) => match element.name().local_name().as_ref() {
+                b"Application" => application = None,
+                b"DisplayName" if in_properties => in_display_name = false,
+                b"Properties" => {
+                    in_properties = false;
+                    in_display_name = false;
+                }
+                _ => {}
+            },
             Event::Eof => break,
             _ => {}
         }
         buffer.clear();
     }
 
-    None
+    Some(manifest)
+}
+
+fn package_logo_from_manifest(manifest: &str, executable: &str) -> Option<String> {
+    parse_package_manifest(manifest)?.applications.into_iter().find_map(|application| {
+        application
+            .executable
+            .eq_ignore_ascii_case(executable)
+            .then_some(application.logo)
+            .flatten()
+    })
 }
 
 fn canonical_package_file(
@@ -1852,17 +1935,10 @@ fn resolve_package_asset(
     None
 }
 
-fn extract_package_icon(path: &str) -> Option<String> {
+fn encode_package_logo(package_dir: &std::path::Path, logo: &str) -> Option<String> {
     use image::ImageEncoder;
-    use std::fs;
-    use std::path::Path;
 
-    let executable_path = Path::new(path);
-    let package_dir = executable_path.parent()?;
-    let manifest = fs::read_to_string(package_dir.join("AppxManifest.xml")).ok()?;
-    let executable = executable_path.file_name()?.to_string_lossy();
-    let logo = package_logo_from_manifest(&manifest, &executable)?;
-    let asset = resolve_package_asset(package_dir, &logo)?;
+    let asset = resolve_package_asset(package_dir, logo)?;
     let (width, height) = image::image_dimensions(&asset).ok()?;
     if width == 0 || height == 0 || width > 1024 || height > 1024 {
         return None;
@@ -1877,6 +1953,18 @@ fn extract_package_icon(path: &str) -> Option<String> {
         .write_image(icon.as_raw(), 32, 32, image::ColorType::Rgba8)
         .ok()?;
     Some(BASE64.encode(png_data))
+}
+
+fn extract_package_icon(path: &str) -> Option<String> {
+    use std::fs;
+    use std::path::Path;
+
+    let executable_path = Path::new(path);
+    let package_dir = executable_path.parent()?;
+    let manifest = fs::read_to_string(package_dir.join("AppxManifest.xml")).ok()?;
+    let executable = executable_path.file_name()?.to_string_lossy();
+    let logo = package_logo_from_manifest(&manifest, &executable)?;
+    encode_package_logo(package_dir, &logo)
 }
 
 #[cfg(target_os = "windows")]
@@ -1905,6 +1993,452 @@ fn get_app_icon(path: &str) -> Option<String> {
     cache.lock().insert(key, icon.clone());
     icon
 }
+
+mod source_icon_backfill {
+    use super::*;
+    use std::path::PathBuf;
+    use std::time::Instant;
+
+    const SETTINGS_KEY: &str = "source_icon_backfill_version";
+    const SETTINGS_VALUE: &str = "uwp-package-icons-v1";
+    const MAX_PACKAGES: u32 = 1024;
+    const MAX_MANIFEST_BYTES: u64 = 1024 * 1024;
+
+    struct PackageIconTarget {
+        package_dir: PathBuf,
+        executable: String,
+        package_aliases: Vec<String>,
+        application_aliases: Vec<String>,
+        logo: String,
+    }
+
+    fn normalize_alias(value: &str) -> String {
+        value
+            .chars()
+            .map(|character| {
+                if matches!(character, '\u{2013}' | '\u{2014}') {
+                    '-'
+                } else {
+                    character
+                }
+            })
+            .collect::<String>()
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ")
+            .to_lowercase()
+    }
+
+    fn usable_alias(value: &str) -> Option<String> {
+        let alias = normalize_alias(value);
+        (alias.chars().count() >= 3 && !alias.starts_with("ms-resource:")).then_some(alias)
+    }
+
+    fn targets_from_manifest(
+        package_dir: &std::path::Path,
+        manifest: PackageManifest,
+    ) -> Vec<PackageIconTarget> {
+        let package_aliases: Vec<String> = [manifest.identity_name, manifest.display_name]
+            .into_iter()
+            .flatten()
+            .filter_map(|alias| usable_alias(&alias))
+            .collect();
+        manifest
+            .applications
+            .into_iter()
+            .filter_map(|application| {
+                let logo = application.logo?;
+                let application_aliases = application
+                    .aliases
+                    .iter()
+                    .filter_map(|alias| usable_alias(alias))
+                    .collect();
+                Some(PackageIconTarget {
+                    package_dir: package_dir.to_path_buf(),
+                    executable: application.executable,
+                    package_aliases: package_aliases.clone(),
+                    application_aliases,
+                    logo,
+                })
+            })
+            .collect()
+    }
+
+    fn alias_match_strength(source: &str, aliases: &[String]) -> u8 {
+        if aliases.iter().any(|alias| alias == source) {
+            return 2;
+        }
+        if aliases.iter().any(|alias| {
+            source
+                .strip_prefix(alias)
+                .is_some_and(|suffix| suffix.starts_with(" - "))
+        }) {
+            return 1;
+        }
+        0
+    }
+
+    fn target_match_strength(source: &str, target: &PackageIconTarget) -> u8 {
+        if alias_match_strength(source, &target.application_aliases) == 2 {
+            return 3;
+        }
+        let package_match = alias_match_strength(source, &target.package_aliases);
+        if package_match == 2 {
+            return 2;
+        }
+        u8::from(alias_match_strength(source, &target.application_aliases) == 1)
+    }
+
+    fn select_target<'a>(
+        source: &str,
+        targets: &'a [PackageIconTarget],
+    ) -> Option<&'a PackageIconTarget> {
+        let source = normalize_alias(source);
+        let mut best_strength = 0;
+        let mut best_target = None;
+        let mut ambiguous = false;
+
+        for target in targets {
+            let strength = target_match_strength(&source, target);
+            if strength > best_strength {
+                best_strength = strength;
+                best_target = Some(target);
+                ambiguous = false;
+            } else if strength > 0 && strength == best_strength {
+                ambiguous = true;
+            }
+        }
+
+        (!ambiguous).then_some(best_target).flatten()
+    }
+
+    #[cfg(target_os = "windows")]
+    struct RegistryKey(windows::Win32::System::Registry::HKEY);
+
+    #[cfg(target_os = "windows")]
+    impl Drop for RegistryKey {
+        fn drop(&mut self) {
+            unsafe {
+                let _ = windows::Win32::System::Registry::RegCloseKey(self.0);
+            }
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    fn installed_package_path(full_name: &str) -> Option<PathBuf> {
+        use windows::core::{HSTRING, PWSTR};
+        use windows::Win32::Foundation::{ERROR_INSUFFICIENT_BUFFER, WIN32_ERROR};
+        use windows::Win32::Storage::Packaging::Appx::GetPackagePathByFullName;
+
+        let full_name = HSTRING::from(full_name);
+        let mut length = 0u32;
+        let status = unsafe { GetPackagePathByFullName(&full_name, &mut length, None) };
+        if status.0 != ERROR_INSUFFICIENT_BUFFER.0 || length == 0 || length > 32768 {
+            return None;
+        }
+
+        let mut buffer = vec![0u16; length as usize];
+        let status = unsafe {
+            GetPackagePathByFullName(
+                &full_name,
+                &mut length,
+                Some(PWSTR(buffer.as_mut_ptr())),
+            )
+        };
+        if status != WIN32_ERROR(0) {
+            return None;
+        }
+        let end = buffer
+            .iter()
+            .position(|character| *character == 0)
+            .unwrap_or(buffer.len());
+        let path = String::from_utf16_lossy(&buffer[..end]);
+        std::path::PathBuf::from(path).canonicalize().ok()
+    }
+
+    #[cfg(target_os = "windows")]
+    fn installed_package_targets() -> Option<Vec<PackageIconTarget>> {
+        use std::collections::HashSet;
+        use windows::Win32::Foundation::{ERROR_MORE_DATA, ERROR_NO_MORE_ITEMS};
+        use windows::Win32::System::Registry::{
+            RegEnumKeyW, RegOpenKeyExW, HKEY_CURRENT_USER, KEY_READ,
+        };
+
+        let mut key = windows::Win32::System::Registry::HKEY::default();
+        let status = unsafe {
+            RegOpenKeyExW(
+                HKEY_CURRENT_USER,
+                windows::core::w!("Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages"),
+                None,
+                KEY_READ,
+                &mut key,
+            )
+        };
+        if !status.is_ok() {
+            log::debug!("Source icon backfill: package repository unavailable");
+            return None;
+        }
+        let key = RegistryKey(key);
+        let mut targets = Vec::new();
+        let mut visited = HashSet::new();
+
+        for index in 0..MAX_PACKAGES {
+            let mut name_buffer = [0u16; 1024];
+            let status = unsafe { RegEnumKeyW(key.0, index, Some(&mut name_buffer)) };
+            if status.0 == ERROR_NO_MORE_ITEMS.0 {
+                break;
+            }
+            if status.0 == ERROR_MORE_DATA.0 {
+                log::debug!("Source icon backfill: package name exceeded enumeration buffer");
+                return None;
+            }
+            if !status.is_ok() {
+                log::debug!("Source icon backfill: package enumeration stopped: {:?}", status);
+                return None;
+            }
+            let end = name_buffer
+                .iter()
+                .position(|character| *character == 0)
+                .unwrap_or(name_buffer.len());
+            let full_name = String::from_utf16_lossy(&name_buffer[..end]);
+            let Some(package_dir) = installed_package_path(&full_name) else {
+                continue;
+            };
+            if !visited.insert(package_dir.clone()) {
+                continue;
+            }
+            let manifest_path = package_dir.join("AppxManifest.xml");
+            let Ok(metadata) = std::fs::metadata(&manifest_path) else {
+                continue;
+            };
+            if metadata.len() > MAX_MANIFEST_BYTES {
+                continue;
+            }
+            let Ok(source) = std::fs::read_to_string(&manifest_path) else {
+                continue;
+            };
+            let Some(manifest) = parse_package_manifest(&source) else {
+                continue;
+            };
+            targets.extend(targets_from_manifest(&package_dir, manifest));
+        }
+
+        Some(targets)
+    }
+
+    fn package_icon_replacements(sources: Vec<String>) -> Option<Vec<(String, String)>> {
+        #[cfg(target_os = "windows")]
+        {
+            let targets = installed_package_targets()?;
+            log::debug!(
+                "Source icon backfill: indexed {} package applications",
+                targets.len()
+            );
+            Some(
+                sources
+                    .into_iter()
+                    .filter_map(|source| {
+                        let target = select_target(&source, &targets)?;
+                        let icon = encode_package_logo(&target.package_dir, &target.logo)?;
+                        log::debug!(
+                            "Source icon backfill: matched {} to {}\\{}",
+                            source,
+                            target.package_dir.display(),
+                            target.executable
+                        );
+                        Some((source, icon))
+                    })
+                    .collect(),
+            )
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            let _ = sources;
+            Some(Vec::new())
+        }
+    }
+
+    async fn backfill_completed(pool: &sqlx::SqlitePool) -> Result<bool, sqlx::Error> {
+        let value: Option<String> = sqlx::query_scalar("SELECT value FROM settings WHERE key = ?")
+            .bind(SETTINGS_KEY)
+            .fetch_optional(pool)
+            .await?;
+        Ok(value.as_deref() == Some(SETTINGS_VALUE))
+    }
+
+    async fn apply_backfill(
+        pool: &sqlx::SqlitePool,
+        replacements: Vec<(String, String)>,
+    ) -> Result<u64, sqlx::Error> {
+        if backfill_completed(pool).await? {
+            return Ok(0);
+        }
+
+        let mut transaction = pool.begin().await?;
+        let mut updated = 0u64;
+        for (source_app, icon) in replacements {
+            let result = sqlx::query(
+                "UPDATE clips SET source_icon = ? WHERE source_app = ? AND source_icon IS NOT ?",
+            )
+            .bind(&icon)
+            .bind(&source_app)
+            .bind(&icon)
+            .execute(&mut *transaction)
+            .await?;
+            updated += result.rows_affected();
+        }
+        sqlx::query("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
+            .bind(SETTINGS_KEY)
+            .bind(SETTINGS_VALUE)
+            .execute(&mut *transaction)
+            .await?;
+        transaction.commit().await?;
+        Ok(updated)
+    }
+
+    pub async fn backfill_source_icons(app: AppHandle, database: Arc<Database>) {
+        let started = Instant::now();
+        let result = backfill_source_icons_inner(&database.pool).await;
+        match result {
+            Ok(0) => {
+                log::debug!("Source icon backfill: nothing to update");
+            }
+            Ok(updated) => {
+                log::info!("Source icon backfill: updated {} clips", updated);
+                let _ = app.emit("clipboard-change", ());
+            }
+            Err(error) => {
+                log::warn!("Source icon backfill failed: {}", error);
+            }
+        }
+        log::debug!(
+            "Source icon backfill: finished in {} ms",
+            started.elapsed().as_millis()
+        );
+    }
+
+    async fn backfill_source_icons_inner(pool: &sqlx::SqlitePool) -> Result<u64, sqlx::Error> {
+        if backfill_completed(pool).await? {
+            return Ok(0);
+        }
+
+        let sources: Vec<String> = sqlx::query_scalar(
+            "SELECT DISTINCT source_app FROM clips WHERE source_app IS NOT NULL AND source_icon IS NOT NULL",
+        )
+        .fetch_all(pool)
+        .await?;
+        if sources.is_empty() {
+            return apply_backfill(pool, Vec::new()).await;
+        }
+
+        let replacements = tauri::async_runtime::spawn_blocking(move || {
+            package_icon_replacements(sources)
+        })
+        .await
+        .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        let Some(replacements) = replacements else {
+            return Err(sqlx::Error::Protocol(
+                "Installed package enumeration failed".into(),
+            ));
+        };
+        apply_backfill(pool, replacements).await
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        fn target(package_aliases: &[&str], application_aliases: &[&str]) -> PackageIconTarget {
+            PackageIconTarget {
+                package_dir: PathBuf::from("package"),
+                executable: "App.exe".into(),
+                package_aliases: package_aliases
+                    .iter()
+                    .filter_map(|alias| usable_alias(alias))
+                    .collect(),
+                application_aliases: application_aliases
+                    .iter()
+                    .filter_map(|alias| usable_alias(alias))
+                    .collect(),
+                logo: "Assets\\Logo.png".into(),
+            }
+        }
+
+        #[test]
+        fn package_aliases_match_short_names_with_localized_suffixes() {
+            let manifest = parse_package_manifest(
+                r#"<Package><Identity Name="Publisher.2Fast" /><Properties><DisplayName>2fast – Two Factor Authenticator</DisplayName></Properties><Applications><Application Executable="Project2FA.UWP.exe"><VisualElements DisplayName="ms-resource:ApplicationName" Square44x44Logo="Assets\Logo.png" /><DefaultTile ShortName="2fast" /></Application></Applications></Package>"#,
+            )
+            .unwrap();
+            let targets = targets_from_manifest(std::path::Path::new("package"), manifest);
+            assert_eq!(targets.len(), 1);
+            assert!(select_target("2fast - autenticador de doble factor", &targets).is_some());
+            assert!(select_target("2fast – autenticador de doble factor", &targets).is_some());
+            assert!(select_target("2fastware", &targets).is_none());
+        }
+
+        #[test]
+        fn package_matching_prefers_specific_apps_and_rejects_ambiguity() {
+            let targets = vec![
+                target(&["Example Package"], &["Helper"]),
+                target(&["Example Package"], &["Example App"]),
+            ];
+            assert!(select_target("Example App", &targets).is_some());
+            assert!(select_target("Example Package", &targets).is_none());
+
+            let ambiguous = vec![
+                target(&[], &["Shared App"]),
+                target(&[], &["Shared App"]),
+            ];
+            assert!(select_target("Shared App", &ambiguous).is_none());
+        }
+
+        #[tokio::test]
+        async fn icon_backfill_updates_rows_once_and_records_completion() {
+            let pool = sqlx::sqlite::SqlitePoolOptions::new()
+                .max_connections(1)
+                .connect("sqlite::memory:")
+                .await
+                .unwrap();
+            sqlx::query("CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+                .execute(&pool)
+                .await
+                .unwrap();
+            sqlx::query("CREATE TABLE clips (id INTEGER PRIMARY KEY, source_app TEXT, source_icon TEXT)")
+                .execute(&pool)
+                .await
+                .unwrap();
+            sqlx::query("INSERT INTO clips (source_app, source_icon) VALUES ('2fast', 'generic'), ('2fast', 'generic'), ('2fast', 'package')")
+                .execute(&pool)
+                .await
+                .unwrap();
+
+            let updated = apply_backfill(&pool, vec![("2fast".into(), "package".into())])
+                .await
+                .unwrap();
+            assert_eq!(updated, 2);
+            assert!(backfill_completed(&pool).await.unwrap());
+            let generic: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM clips WHERE source_icon = 'generic'")
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+            assert_eq!(generic, 0);
+
+            let repeated = apply_backfill(&pool, vec![("2fast".into(), "different".into())])
+                .await
+                .unwrap();
+            assert_eq!(repeated, 0);
+            let icons: Vec<String> = sqlx::query_scalar("SELECT source_icon FROM clips")
+                .fetch_all(&pool)
+                .await
+                .unwrap();
+            assert!(icons.iter().all(|icon| icon == "package"));
+            pool.close().await;
+        }
+    }
+}
+
+pub use source_icon_backfill::backfill_source_icons;
 
 #[cfg(target_os = "windows")]
 unsafe fn extract_icon(path: &str) -> Option<String> {

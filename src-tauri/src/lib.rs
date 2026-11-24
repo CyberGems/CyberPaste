@@ -1089,6 +1089,15 @@ pub fn run_app() {
             let db_for_clip = db_for_clipboard.clone();
             clipboard::init(&handle_for_clip, db_for_clip);
 
+            #[cfg(target_os = "windows")]
+            {
+                let handle_for_icons = app_handle.clone();
+                let db_for_icons = db_for_clipboard.clone();
+                tauri::async_runtime::spawn(async move {
+                    clipboard::backfill_source_icons(handle_for_icons, db_for_icons).await;
+                });
+            }
+
             let handle_for_backup = app_handle.clone();
             let db_for_migration = db_for_clipboard.clone();
             tauri::async_runtime::spawn(async move {
