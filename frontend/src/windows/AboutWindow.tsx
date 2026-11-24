@@ -239,7 +239,10 @@ export function AboutWindow() {
   const suiteLang = suiteLanguage(settings.language);
 
   return (
-    <div className="settings-window relative isolate h-screen overflow-hidden bg-background">
+    <div
+      className="settings-window relative isolate h-screen overflow-hidden bg-background"
+      style={{ border: '1px solid var(--window-border-color, rgba(var(--primary-rgb), 0.25))' }}
+    >
       <div className="relative z-10 flex h-full flex-col overflow-hidden bg-background text-foreground">
         <header className="flex cursor-default select-none items-center justify-between border-b border-border bg-transparent px-4 py-3">
           <div data-tauri-drag-region className="flex min-w-0 flex-1 items-center gap-2.5">

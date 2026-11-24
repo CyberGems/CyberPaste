@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useSettingsSnapshot } from '../hooks/useSettingsSnapshot';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -12,10 +12,37 @@ import { Toaster } from 'sonner';
 export function SettingsWindow() {
   const settings = useSettingsSnapshot();
   const settingsRef = useRef<Settings | null>(null);
+  const [isMaximized, setIsMaximized] = useState(false);
 
   useEffect(() => {
     settingsRef.current = settings;
   }, [settings]);
+
+  useEffect(() => {
+    let disposed = false;
+    let unlistenResize: (() => void) | null = null;
+    const win = getCurrentWindow();
+    const updateMaximizedState = () => {
+      win.isMaximized().then(setIsMaximized).catch(console.error);
+    };
+
+    updateMaximizedState();
+    win
+      .onResized(updateMaximizedState)
+      .then((unlisten) => {
+        if (disposed) {
+          unlisten();
+          return;
+        }
+        unlistenResize = unlisten;
+      })
+      .catch(console.error);
+
+    return () => {
+      disposed = true;
+      unlistenResize?.();
+    };
+  }, []);
 
   useLanguage(settings?.language);
   useTheme(settings?.theme ?? 'cyberpaste');
@@ -96,7 +123,14 @@ export function SettingsWindow() {
   }
 
   return (
-    <div className="settings-window h-screen">
+    <div
+      className="settings-window h-screen"
+      style={
+        isMaximized
+          ? undefined
+          : { border: '1px solid var(--window-border-color, rgba(var(--primary-rgb), 0.25))' }
+      }
+    >
       <div className="h-full overflow-hidden bg-background text-foreground">
         <SettingsPanel settings={settings} onClose={handleClose} />
       </div>
