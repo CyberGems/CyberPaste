@@ -6,6 +6,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import {
   BookOpen,
+  CheckCircle2,
   Copy,
   Github,
   Gem,
@@ -237,6 +238,7 @@ export function AboutWindow() {
   }
 
   const suiteLang = suiteLanguage(settings.language);
+  const isUpToDate = checkStatus === 'upToDate';
 
   return (
     <div
@@ -302,14 +304,28 @@ export function AboutWindow() {
                 <h3 className="cursor-default select-none text-[13px] font-semibold text-primary">
                   {t('settings.aboutUpdatesSection')}
                 </h3>
-                <div className="grid min-h-[60px] grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3 rounded-[4px] border border-border/80 bg-secondary px-4">
-                  <RotateCcw size={23} aria-hidden="true" className="text-muted-foreground" />
+                <div
+                  className={`grid min-h-[60px] grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3 rounded-[4px] border px-4 ${
+                    isUpToDate
+                      ? 'border-primary/30 bg-primary/[0.06]'
+                      : 'border-border/80 bg-secondary'
+                  }`}
+                >
+                  {isUpToDate ? (
+                    <CheckCircle2 size={23} aria-hidden="true" className="text-primary" />
+                  ) : (
+                    <RotateCcw size={23} aria-hidden="true" className="text-muted-foreground" />
+                  )}
                   <div className="min-w-0">
-                    <span className="text-[13px] font-medium">{t('settings.checkForUpdates')}</span>
+                    <span className={`text-[13px] font-medium ${isUpToDate ? 'text-primary' : ''}`}>
+                      {isUpToDate
+                        ? t('settings.aboutUpdateSuccess')
+                        : t('settings.checkForUpdates')}
+                    </span>
                     <p
                       role="status"
                       data-el="update-check-result"
-                      className="mt-0.5 text-xs text-muted-foreground"
+                      className={`mt-0.5 text-xs ${isUpToDate ? 'text-foreground/70' : 'text-muted-foreground'}`}
                     >
                       {
                         {
