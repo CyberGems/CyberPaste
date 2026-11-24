@@ -6,6 +6,7 @@ export const TITLEBAR_HOTKEYS = {
   windowPin: 'Ctrl+P',
   peek: 'Ctrl+E',
   resetSize: 'Ctrl+R',
+  about: 'F1',
   settings: 'Ctrl+,',
   more: 'Alt+M',
   // Windows owns Win+↓ / Win+↑; the constants only feed the tooltips.
@@ -71,6 +72,7 @@ interface KeyboardOptions {
   onUndo?: () => void;
   onTogglePeek?: () => void;
   peekHotkey?: string;
+  onOpenAbout?: () => void;
   onOpenSettings?: () => void;
   settingsHotkey?: string;
   onToggleMore?: () => void;
@@ -144,6 +146,13 @@ export function useKeyboard(options: KeyboardOptions) {
           e.metaKey === hasCmd
         );
       };
+
+      if (options.onOpenAbout && !e.repeat && matchesHotkey(TITLEBAR_HOTKEYS.about)) {
+        e.preventDefault();
+        e.stopPropagation();
+        options.onOpenAbout();
+        return;
+      }
 
       if (e.key === 'Escape' && options.onClose) {
         if (isTyping && !isSearchInput) {

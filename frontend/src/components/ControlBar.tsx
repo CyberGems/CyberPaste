@@ -695,11 +695,18 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         )}
 
         <div ref={titleBarLeadingRef} className="z-10 flex shrink-0 items-center gap-2">
-          <Tooltip label={t('common.openAbout')} placement="bottom">
+          <Tooltip
+            label={t('common.tooltipWithHotkey', {
+              label: t('common.openAbout'),
+              hotkey: TITLEBAR_HOTKEYS.about,
+            })}
+            placement="bottom"
+          >
             <button
               type="button"
               className="-ml-1.5 flex items-center gap-2 rounded-md px-1.5 py-1 transition-colors hover:bg-accent/60"
               aria-label={t('common.openAbout')}
+              aria-keyshortcuts={TITLEBAR_HOTKEYS.about}
               onClick={() => invoke('open_about').catch(console.error)}
             >
               <img src="/logo.png" alt="" className="h-5 w-5 object-contain" />

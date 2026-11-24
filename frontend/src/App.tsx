@@ -3763,6 +3763,9 @@ function App() {
     onToggleEmojiMode: handleToggleEmojiMode,
     emojiHotkey: TITLEBAR_HOTKEYS.emoji,
     isEmojiMode,
+    onOpenAbout: () => {
+      void invoke('open_about').catch(console.error);
+    },
     onOpenSettings: () => {
       void openSettings();
     },

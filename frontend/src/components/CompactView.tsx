@@ -1560,11 +1560,18 @@ export const CompactView: React.FC<CompactViewProps> = ({
           data-tauri-drag-region
           className="flex min-w-0 flex-1 cursor-move items-center gap-2 self-stretch"
         >
-          <Tooltip label={t('common.openAbout')} placement="bottom">
+          <Tooltip
+            label={t('common.tooltipWithHotkey', {
+              label: t('common.openAbout'),
+              hotkey: TITLEBAR_HOTKEYS.about,
+            })}
+            placement="bottom"
+          >
             <button
               type="button"
               className="-ml-1.5 flex min-w-0 cursor-pointer select-none items-center gap-2 rounded-md px-1.5 py-1 transition-colors hover:bg-accent/60 active:cursor-grabbing"
               aria-label={t('common.openAbout')}
+              aria-keyshortcuts={TITLEBAR_HOTKEYS.about}
               onPointerDown={handleBrandingPointerDown}
               onPointerMove={handleBrandingPointerMove}
               onPointerUp={handleBrandingPointerUp}
