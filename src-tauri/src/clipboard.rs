@@ -1,7 +1,6 @@
 use tauri::{AppHandle, Emitter, Listener};
 // Import functions directly from the crate root
 use crate::database::Database;
-#[cfg(target_os = "windows")]
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use clipboard_rs::common::RustImage;
 use clipboard_rs::{Clipboard, ClipboardContent, ClipboardContext, ContentFormat};
@@ -1465,7 +1464,7 @@ fn get_process_app_info(process_id: u32) -> Option<ProcessAppInfo> {
             } else {
                 None
             };
-            let icon = extract_icon(&full_path_str);
+            let icon = get_app_icon(&full_path_str);
             (final_name, icon, Some(full_path_str))
         } else if !exe_name.is_empty() {
             (Some(exe_name.clone()), None, None)
@@ -1506,7 +1505,7 @@ fn get_process_app_info(process_id: u32) -> Option<ProcessAppInfo> {
                             } else {
                                 Some(exe_name.clone())
                             };
-                            app_icon = extract_icon(&parent_path_str);
+                            app_icon = get_app_icon(&parent_path_str);
                             full_path = Some(parent_path_str);
                         }
                     }
@@ -1690,6 +1689,221 @@ unsafe fn get_app_description(path: &str) -> Option<String> {
     }
 
     None
+}
+
+fn visual_elements_logo(element: &quick_xml::events::BytesStart) -> Option<String> {
+    let mut fallback = None;
+    for attribute in element.attributes().filter_map(Result::ok) {
+        let key = attribute.key.local_name();
+        if !matches!(key.as_ref(), b"Square44x44Logo" | b"Square150x150Logo") {
+            continue;
+        }
+        let value = attribute.unescape_value().ok()?.into_owned();
+        if key.as_ref() == b"Square44x44Logo" {
+            return Some(value);
+        }
+        fallback.get_or_insert(value);
+    }
+    fallback
+}
+
+fn package_logo_from_manifest(manifest: &str, executable: &str) -> Option<String> {
+    use quick_xml::events::Event;
+    use quick_xml::Reader;
+
+    let mut reader = Reader::from_str(manifest);
+    let mut buffer = Vec::new();
+    let mut application_executable: Option<String> = None;
+
+    loop {
+        match reader.read_event_into(&mut buffer).ok()? {
+            Event::Start(element) => match element.name().local_name().as_ref() {
+                b"Application" => {
+                    application_executable = element
+                        .attributes()
+                        .filter_map(Result::ok)
+                        .find(|attribute| {
+                            attribute.key.local_name().as_ref() == b"Executable"
+                        })
+                        .and_then(|attribute| attribute.unescape_value().ok())
+                        .map(|value| value.into_owned());
+                }
+                b"VisualElements" => {
+                    let matches_application = application_executable
+                        .as_deref()
+                        .is_some_and(|name| name.eq_ignore_ascii_case(executable));
+                    if matches_application {
+                        if let Some(logo) = visual_elements_logo(&element) {
+                            return Some(logo);
+                        }
+                    }
+                }
+                _ => {}
+            },
+            Event::Empty(element) => {
+                let matches_application = application_executable
+                    .as_deref()
+                    .is_some_and(|name| name.eq_ignore_ascii_case(executable));
+                if element.name().local_name().as_ref() == b"VisualElements"
+                    && matches_application
+                {
+                    if let Some(logo) = visual_elements_logo(&element) {
+                        return Some(logo);
+                    }
+                }
+            }
+            Event::End(element) if element.name().local_name().as_ref() == b"Application" => {
+                application_executable = None;
+            }
+            Event::Eof => break,
+            _ => {}
+        }
+        buffer.clear();
+    }
+
+    None
+}
+
+fn canonical_package_file(
+    package_dir: &std::path::Path,
+    candidate: &std::path::Path,
+) -> Option<std::path::PathBuf> {
+    if !candidate.is_file() {
+        return None;
+    }
+    let root = package_dir.canonicalize().ok()?;
+    let resolved = candidate.canonicalize().ok()?;
+    resolved.starts_with(root).then_some(resolved)
+}
+
+fn resolve_package_asset(
+    package_dir: &std::path::Path,
+    logo: &str,
+) -> Option<std::path::PathBuf> {
+    use std::path::{Component, Path};
+
+    let normalized = logo.replace('\\', "/");
+    let relative = Path::new(&normalized);
+    if normalized.contains(':')
+        || relative.is_absolute()
+        || relative
+            .components()
+            .any(|component| {
+                matches!(component, Component::ParentDir | Component::Prefix(_))
+            })
+    {
+        return None;
+    }
+    let base = package_dir.join(relative);
+    if let Some(path) = canonical_package_file(package_dir, &base) {
+        return Some(path);
+    }
+
+    let parent = base.parent()?;
+    let file_name = base.file_name()?.to_string_lossy();
+    let (stem, extension) = file_name.rsplit_once('.')?;
+    let stem = stem.to_ascii_lowercase();
+    let extension = extension.to_ascii_lowercase();
+    let prefix = format!("{stem}.");
+
+    for allow_altform in [false, true] {
+        let mut best: Option<((u64, bool), std::path::PathBuf)> = None;
+        for entry in std::fs::read_dir(parent).ok()?.flatten() {
+            let path = entry.path();
+            if !path.is_file() {
+                continue;
+            }
+            let name = entry.file_name().to_string_lossy().to_ascii_lowercase();
+            if name.contains("contrast-")
+                || name.contains("altform-") != allow_altform
+            {
+                continue;
+            }
+            let Some((candidate_stem, candidate_extension)) = name.rsplit_once('.') else {
+                continue;
+            };
+            if candidate_extension != extension || !candidate_stem.starts_with(&prefix) {
+                continue;
+            }
+            let Ok((width, height)) = image::image_dimensions(&path) else {
+                continue;
+            };
+            if width == 0 || height == 0 || width > 1024 || height > 1024 {
+                continue;
+            }
+            let score = (
+                u64::from(width) * u64::from(height),
+                name.contains("targetsize"),
+            );
+            if best
+                .as_ref()
+                .map_or(true, |(best_score, _)| score > *best_score)
+            {
+                best = Some((score, path));
+            }
+        }
+        if let Some((_, path)) = best {
+            if let Some(resolved) = canonical_package_file(package_dir, &path) {
+                return Some(resolved);
+            }
+        }
+    }
+
+    None
+}
+
+fn extract_package_icon(path: &str) -> Option<String> {
+    use image::ImageEncoder;
+    use std::fs;
+    use std::path::Path;
+
+    let executable_path = Path::new(path);
+    let package_dir = executable_path.parent()?;
+    let manifest = fs::read_to_string(package_dir.join("AppxManifest.xml")).ok()?;
+    let executable = executable_path.file_name()?.to_string_lossy();
+    let logo = package_logo_from_manifest(&manifest, &executable)?;
+    let asset = resolve_package_asset(package_dir, &logo)?;
+    let (width, height) = image::image_dimensions(&asset).ok()?;
+    if width == 0 || height == 0 || width > 1024 || height > 1024 {
+        return None;
+    }
+
+    let icon = image::open(&asset)
+        .ok()?
+        .resize_exact(32, 32, image::imageops::FilterType::Lanczos3)
+        .to_rgba8();
+    let mut png_data = Vec::new();
+    image::codecs::png::PngEncoder::new(&mut png_data)
+        .write_image(icon.as_raw(), 32, 32, image::ColorType::Rgba8)
+        .ok()?;
+    Some(BASE64.encode(png_data))
+}
+
+#[cfg(target_os = "windows")]
+fn get_app_icon(path: &str) -> Option<String> {
+    use std::collections::HashMap;
+    use std::path::PathBuf;
+    use std::sync::OnceLock;
+
+    static ICON_CACHE: OnceLock<parking_lot::Mutex<HashMap<PathBuf, Option<String>>>> =
+        OnceLock::new();
+    let key = PathBuf::from(path);
+    let cache = ICON_CACHE.get_or_init(|| parking_lot::Mutex::new(HashMap::new()));
+    {
+        let cache = cache.lock();
+        if let Some(icon) = cache.get(&key) {
+            return icon.clone();
+        }
+    }
+
+    let package_icon = extract_package_icon(path);
+    let uses_package_icon = package_icon.is_some();
+    let icon = package_icon.or_else(|| unsafe { extract_icon(path) });
+    if uses_package_icon {
+        log::info!("CLIPBOARD: Using packaged app icon for {}", path);
+    }
+    cache.lock().insert(key, icon.clone());
+    icon
 }
 
 #[cfg(target_os = "windows")]
@@ -2623,6 +2837,108 @@ mod tests {
             Some("Project2FA.UWP".into())
         );
         assert_eq!(frame_app_name("", None), None);
+    }
+
+    #[test]
+    fn package_manifest_logo_matches_executable_and_prefers_square44() {
+        let manifest = r#"
+            <Package xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10">
+              <Applications>
+                <Application Executable="Other.exe">
+                  <uap:VisualElements Square44x44Logo="Assets\Other.png" />
+                </Application>
+                <Application Executable="Project2FA.UWP.exe">
+                  <uap:VisualElements
+                    Square150x150Logo="Assets\Large.png"
+                    Square44x44Logo="Assets\App.png" />
+                </Application>
+              </Applications>
+            </Package>
+        "#;
+
+        assert_eq!(
+            package_logo_from_manifest(manifest, "project2fa.uwp.exe"),
+            Some("Assets\\App.png".into())
+        );
+        assert_eq!(package_logo_from_manifest(manifest, "missing.exe"), None);
+    }
+
+    #[test]
+    fn package_manifest_uses_square150_logo_as_fallback() {
+        let manifest = r#"
+            <Package>
+              <Applications>
+                <Application Executable="App.exe">
+                  <VisualElements Square150x150Logo="Assets\Large.png" />
+                </Application>
+              </Applications>
+            </Package>
+        "#;
+
+        assert_eq!(
+            package_logo_from_manifest(manifest, "App.exe"),
+            Some("Assets\\Large.png".into())
+        );
+    }
+
+    fn write_test_logo(path: &std::path::Path, width: u32, height: u32) {
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        image::RgbaImage::from_pixel(width, height, image::Rgba([20, 120, 220, 180]))
+            .save(path)
+            .unwrap();
+    }
+
+    #[test]
+    fn package_asset_resolution_prefers_largest_regular_qualifier() {
+        let dir = std::env::temp_dir().join(format!("cyberpaste-logo-test-{}", Uuid::new_v4()));
+        write_test_logo(&dir.join("Assets/Logo.scale-200.png"), 88, 88);
+        write_test_logo(&dir.join("Assets/Logo.targetsize-256.png"), 256, 256);
+        write_test_logo(
+            &dir.join("Assets/Logo.altform-unplated_targetsize-512.png"),
+            512,
+            512,
+        );
+
+        let resolved = resolve_package_asset(&dir, r"Assets\Logo.png").unwrap();
+        assert_eq!(
+            resolved.file_name().unwrap().to_string_lossy(),
+            "Logo.targetsize-256.png"
+        );
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn package_asset_resolution_rejects_paths_outside_the_package() {
+        let dir = std::env::temp_dir().join(format!("cyberpaste-path-test-{}", Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let outside = std::env::temp_dir().join(format!("cyberpaste-outside-{}.png", Uuid::new_v4()));
+        write_test_logo(&outside, 32, 32);
+
+        assert!(resolve_package_asset(&dir, "../outside.png").is_none());
+        assert!(resolve_package_asset(&dir, &outside.to_string_lossy()).is_none());
+        assert!(resolve_package_asset(&dir, "ms-resource:/Logo.png").is_none());
+
+        std::fs::remove_file(outside).unwrap();
+        std::fs::remove_dir(dir).unwrap();
+    }
+
+    #[test]
+    fn package_icon_extraction_resizes_logo_to_ui_size() {
+        let dir = std::env::temp_dir().join(format!("cyberpaste-icon-test-{}", Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(
+            dir.join("AppxManifest.xml"),
+            r#"<Package><Applications><Application Executable="App.exe"><VisualElements Square44x44Logo="Assets\Logo.png" /></Application></Applications></Package>"#,
+        )
+        .unwrap();
+        write_test_logo(&dir.join("Assets/Logo.png"), 64, 64);
+
+        let icon = extract_package_icon(&dir.join("App.exe").to_string_lossy()).unwrap();
+        let png = BASE64.decode(icon).unwrap();
+        let decoded = image::load_from_memory(&png).unwrap().to_rgba8();
+        assert_eq!(decoded.dimensions(), (32, 32));
+        assert_eq!(decoded.get_pixel(16, 16).0, [20, 120, 220, 180]);
+        std::fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]
