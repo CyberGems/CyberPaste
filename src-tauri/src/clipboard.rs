@@ -214,6 +214,7 @@ pub fn init(app: &AppHandle, db: Arc<Database>) {
 
         // DEBOUNCE LOGIC:
         let current_count = DEBOUNCE_COUNTER.fetch_add(1, Ordering::SeqCst) + 1;
+        let source_snapshot = capture_clipboard_source_snapshot();
 
         tauri::async_runtime::spawn(async move {
             tokio::time::sleep(std::time::Duration::from_millis(150)).await;
@@ -226,12 +227,11 @@ pub fn init(app: &AppHandle, db: Arc<Database>) {
                 return;
             }
 
-            // Capture source app info INSIDE the thread, but still early.
-            // Using spawn_blocking because it involves Win32 API calls that might block.
-            let source_app_info =
-                tauri::async_runtime::spawn_blocking(|| get_clipboard_owner_app_info())
-                    .await
-                    .unwrap_or((None, None, None, None, false));
+            let source_app_info = tauri::async_runtime::spawn_blocking(move || {
+                resolve_clipboard_source_snapshot(&source_snapshot)
+            })
+            .await
+            .unwrap_or((None, None, None, None, false));
 
             process_clipboard_change(app, db, source_app_info, is_cut).await;
         });
@@ -1302,53 +1302,147 @@ unsafe fn get_parent_pid(process_handle: windows::Win32::Foundation::HANDLE) -> 
 }
 
 #[cfg(target_os = "windows")]
-fn get_clipboard_owner_app_info() -> (
-    Option<String>,
-    Option<String>,
-    Option<String>,
-    Option<String>,
-    bool,
-) {
-    use windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow;
-    use windows::Win32::UI::WindowsAndMessaging::GetWindowThreadProcessId;
-    use windows::Win32::Foundation::CloseHandle;
+struct ClipboardSourceSnapshot {
+    owner: Option<WindowSnapshot>,
+    foreground: Option<WindowSnapshot>,
+}
+
+#[cfg(target_os = "windows")]
+struct WindowSnapshot {
+    process_id: u32,
+    title: String,
+    class_name: String,
+    focus_process_id: u32,
+}
+
+#[cfg(target_os = "windows")]
+struct ProcessAppInfo {
+    app_name: Option<String>,
+    app_icon: Option<String>,
+    exe_name: Option<String>,
+    full_path: Option<String>,
+}
+
+#[cfg(target_os = "windows")]
+impl ProcessAppInfo {
+    fn into_source_app_info(self, is_explicit: bool) -> SourceAppInfo {
+        (
+            self.app_name,
+            self.app_icon,
+            self.exe_name,
+            self.full_path,
+            is_explicit,
+        )
+    }
+}
+
+fn is_windows_service_host(exe_name: Option<&str>) -> bool {
+    exe_name.is_some_and(|name| name.eq_ignore_ascii_case("svchost.exe"))
+}
+
+fn is_application_frame_host(exe_name: Option<&str>, class_name: &str) -> bool {
+    exe_name.is_some_and(|name| name.eq_ignore_ascii_case("ApplicationFrameHost.exe"))
+        || class_name.eq_ignore_ascii_case("ApplicationFrameWindow")
+}
+
+fn frame_app_name(title: &str, fallback: Option<String>) -> Option<String> {
+    if title.trim().is_empty() {
+        fallback
+    } else {
+        Some(title.trim().to_owned())
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn snapshot_window(hwnd: windows::Win32::Foundation::HWND) -> Option<WindowSnapshot> {
+    use windows::Win32::UI::WindowsAndMessaging::{
+        GetClassNameW, GetGUIThreadInfo, GetWindowTextW, GetWindowThreadProcessId, GUITHREADINFO,
+    };
 
     unsafe {
-        let (hwnd, is_explicit) = match GetClipboardOwner() {
-            Ok(h) if !h.0.is_null() => (h, true),
-            Err(e) => {
-                log::info!(
-                    "CLIPBOARD: GetClipboardOwner failed: {:?}, falling back to foreground window",
-                    e
-                );
-                (GetForegroundWindow(), false)
-            }
-            Ok(_) => {
-                log::info!(
-                    "CLIPBOARD: GetClipboardOwner returned null, falling back to foreground window"
-                );
-                (GetForegroundWindow(), false)
-            }
-        };
-
-        if hwnd.0.is_null() {
-            return (None, None, None, None, false);
+        if hwnd.is_invalid() {
+            return None;
         }
 
         let mut process_id = 0;
-        GetWindowThreadProcessId(hwnd, Some(&mut process_id));
-
+        let thread_id = GetWindowThreadProcessId(hwnd, Some(&mut process_id));
         if process_id == 0 {
-            return (None, None, None, None, false);
+            return None;
         }
 
+        let mut title_buffer = [0u16; 512];
+        let title_size = GetWindowTextW(hwnd, &mut title_buffer);
+        let title = if title_size > 0 {
+            String::from_utf16_lossy(&title_buffer[..title_size as usize])
+        } else {
+            String::new()
+        };
+
+        let mut class_buffer = [0u16; 256];
+        let class_size = GetClassNameW(hwnd, &mut class_buffer);
+        let class_name = if class_size > 0 {
+            String::from_utf16_lossy(&class_buffer[..class_size as usize])
+        } else {
+            String::new()
+        };
+
+        let mut focus_process_id = 0;
+        if class_name.eq_ignore_ascii_case("ApplicationFrameWindow") && thread_id != 0 {
+            let mut info = GUITHREADINFO {
+                cbSize: std::mem::size_of::<GUITHREADINFO>() as u32,
+                ..Default::default()
+            };
+            if GetGUIThreadInfo(thread_id, &mut info).is_ok() && !info.hwndFocus.is_invalid() {
+                let mut focus_pid = 0;
+                GetWindowThreadProcessId(info.hwndFocus, Some(&mut focus_pid));
+                if focus_pid != 0 && focus_pid != process_id {
+                    focus_process_id = focus_pid;
+                }
+            }
+        }
+
+        Some(WindowSnapshot {
+            process_id,
+            title,
+            class_name,
+            focus_process_id,
+        })
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn capture_clipboard_source_snapshot() -> ClipboardSourceSnapshot {
+    use windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow;
+
+    unsafe {
+        let owner_hwnd = GetClipboardOwner().unwrap_or_default();
+        ClipboardSourceSnapshot {
+            owner: snapshot_window(owner_hwnd),
+            foreground: snapshot_window(GetForegroundWindow()),
+        }
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+struct ClipboardSourceSnapshot;
+
+#[cfg(not(target_os = "windows"))]
+fn capture_clipboard_source_snapshot() -> ClipboardSourceSnapshot {
+    ClipboardSourceSnapshot
+}
+
+#[cfg(target_os = "windows")]
+fn get_process_app_info(process_id: u32) -> Option<ProcessAppInfo> {
+    use windows::Win32::Foundation::CloseHandle;
+
+    unsafe {
         let process_handle = match OpenProcess(
             PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
             false,
             process_id,
         ) {
-            Ok(h) => h,
-            Err(_) => return (None, None, None, None, false),
+            Ok(handle) => handle,
+            Err(_) => return None,
         };
 
         let mut name_buffer = [0u16; MAX_PATH as usize];
@@ -1363,35 +1457,28 @@ fn get_clipboard_owner_app_info() -> (
         let path_size = GetModuleFileNameExW(Some(process_handle), None, &mut path_buffer);
         let (mut app_name, mut app_icon, mut full_path) = if path_size > 0 {
             let full_path_str = String::from_utf16_lossy(&path_buffer[..path_size as usize]);
-
             let desc = get_app_description(&full_path_str);
-            let final_name = if let Some(d) = desc {
-                Some(d)
+            let final_name = if let Some(description) = desc {
+                Some(description)
+            } else if !exe_name.is_empty() {
+                Some(exe_name.clone())
             } else {
-                if !exe_name.is_empty() {
-                    Some(exe_name.clone())
-                } else {
-                    None
-                }
+                None
             };
-
             let icon = extract_icon(&full_path_str);
             (final_name, icon, Some(full_path_str))
+        } else if !exe_name.is_empty() {
+            (Some(exe_name.clone()), None, None)
         } else {
-            (
-                if !exe_name.is_empty() {
-                    Some(exe_name.clone())
-                } else {
-                    None
-                },
-                None,
-                None,
-            )
+            (None, None, None)
         };
 
-        // If the process is Microsoft Edge WebView2, resolve its parent process (the host app) instead
-        let is_webview = exe_name.to_lowercase() == "msedgewebview2.exe"
-            || app_name.as_deref().unwrap_or("").to_lowercase().contains("webview2");
+        let is_webview = exe_name.eq_ignore_ascii_case("msedgewebview2.exe")
+            || app_name
+                .as_deref()
+                .unwrap_or("")
+                .to_lowercase()
+                .contains("webview2");
 
         if is_webview {
             if let Some(parent_pid) = get_parent_pid(process_handle) {
@@ -1400,20 +1487,22 @@ fn get_clipboard_owner_app_info() -> (
                     false,
                     parent_pid,
                 ) {
-                    let mut p_name_buffer = [0u16; MAX_PATH as usize];
-                    let p_name_size = GetModuleBaseNameW(parent_handle, None, &mut p_name_buffer);
-                    if p_name_size > 0 {
-                        let parent_exe = String::from_utf16_lossy(&p_name_buffer[..p_name_size as usize]);
-                        
-                        let mut p_path_buffer = [0u16; MAX_PATH as usize];
-                        let p_path_size = GetModuleFileNameExW(Some(parent_handle), None, &mut p_path_buffer);
-                        if p_path_size > 0 {
-                            let parent_path_str = String::from_utf16_lossy(&p_path_buffer[..p_path_size as usize]);
+                    let mut parent_name_buffer = [0u16; MAX_PATH as usize];
+                    let parent_name_size =
+                        GetModuleBaseNameW(parent_handle, None, &mut parent_name_buffer);
+                    if parent_name_size > 0 {
+                        let parent_exe =
+                            String::from_utf16_lossy(&parent_name_buffer[..parent_name_size as usize]);
+                        let mut parent_path_buffer = [0u16; MAX_PATH as usize];
+                        let parent_path_size =
+                            GetModuleFileNameExW(Some(parent_handle), None, &mut parent_path_buffer);
+                        if parent_path_size > 0 {
+                            let parent_path_str =
+                                String::from_utf16_lossy(&parent_path_buffer[..parent_path_size as usize]);
                             let parent_desc = get_app_description(&parent_path_str);
-                            
                             exe_name = parent_exe;
-                            app_name = if let Some(d) = parent_desc {
-                                Some(d)
+                            app_name = if let Some(description) = parent_desc {
+                                Some(description)
                             } else {
                                 Some(exe_name.clone())
                             };
@@ -1427,14 +1516,77 @@ fn get_clipboard_owner_app_info() -> (
         }
 
         let _ = CloseHandle(process_handle);
-
-        let exe_val = if !exe_name.is_empty() {
-            Some(exe_name)
-        } else {
-            None
-        };
-        (app_name, app_icon, exe_val, full_path, is_explicit)
+        Some(ProcessAppInfo {
+            app_name,
+            app_icon,
+            exe_name: if exe_name.is_empty() {
+                None
+            } else {
+                Some(exe_name)
+            },
+            full_path,
+        })
     }
+}
+
+#[cfg(target_os = "windows")]
+fn get_window_app_info(window: &WindowSnapshot) -> Option<ProcessAppInfo> {
+    let mut process_info = get_process_app_info(window.process_id)?;
+    if is_application_frame_host(process_info.exe_name.as_deref(), &window.class_name) {
+        if window.focus_process_id != 0 {
+            if let Some(mut focused_info) = get_process_app_info(window.focus_process_id) {
+                focused_info.app_name =
+                    frame_app_name(&window.title, focused_info.app_name.take());
+                return Some(focused_info);
+            }
+        }
+        process_info.app_name = frame_app_name(&window.title, process_info.app_name.take());
+    }
+    Some(process_info)
+}
+
+#[cfg(target_os = "windows")]
+fn resolve_clipboard_source_snapshot(snapshot: &ClipboardSourceSnapshot) -> SourceAppInfo {
+    let foreground_info = || snapshot.foreground.as_ref().and_then(get_window_app_info);
+    let Some(owner_window) = snapshot.owner.as_ref() else {
+        return foreground_info()
+            .map(|info| info.into_source_app_info(false))
+            .unwrap_or((None, None, None, None, false));
+    };
+    let Some(owner_info) = get_process_app_info(owner_window.process_id) else {
+        return foreground_info()
+            .map(|info| info.into_source_app_info(false))
+            .unwrap_or((None, None, None, None, false));
+    };
+
+    if is_windows_service_host(owner_info.exe_name.as_deref()) {
+        log::info!(
+            "CLIPBOARD: Owner {:?} is a Windows service host; using foreground {:?}",
+            owner_info.exe_name,
+            snapshot
+                .foreground
+                .as_ref()
+                .map(|window| (&window.title, window.process_id))
+        );
+        return foreground_info()
+            .map(|info| info.into_source_app_info(true))
+            .unwrap_or((None, None, None, None, false));
+    }
+
+    let source_info =
+        if is_application_frame_host(owner_info.exe_name.as_deref(), &owner_window.class_name) {
+            get_window_app_info(owner_window)
+        } else {
+            Some(owner_info)
+        };
+    source_info
+        .map(|info| info.into_source_app_info(true))
+        .unwrap_or((None, None, None, None, false))
+}
+
+#[cfg(not(target_os = "windows"))]
+fn resolve_clipboard_source_snapshot(_snapshot: &ClipboardSourceSnapshot) -> SourceAppInfo {
+    (None, None, None, None, false)
 }
 
 #[cfg(target_os = "windows")]
@@ -2438,6 +2590,40 @@ fn prune_history_image_copies(dir: &std::path::Path) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn windows_service_hosts_are_not_source_apps() {
+        assert!(is_windows_service_host(Some("svchost.exe")));
+        assert!(is_windows_service_host(Some("SVCHOST.EXE")));
+        assert!(!is_windows_service_host(Some("firefox.exe")));
+        assert!(!is_windows_service_host(None));
+    }
+
+    #[test]
+    fn application_frame_hosts_are_detected_by_process_or_window_class() {
+        assert!(is_application_frame_host(
+            Some("ApplicationFrameHost.exe"),
+            ""
+        ));
+        assert!(is_application_frame_host(None, "ApplicationFrameWindow"));
+        assert!(!is_application_frame_host(Some("firefox.exe"), "MozillaWindowClass"));
+    }
+
+    #[test]
+    fn application_frame_title_replaces_generic_process_name() {
+        assert_eq!(
+            frame_app_name(
+                "2fast - autenticador de doble factor",
+                Some("Project2FA.UWP".into())
+            ),
+            Some("2fast - autenticador de doble factor".into())
+        );
+        assert_eq!(
+            frame_app_name("  ", Some("Project2FA.UWP".into())),
+            Some("Project2FA.UWP".into())
+        );
+        assert_eq!(frame_app_name("", None), None);
+    }
 
     #[test]
     fn prefers_image_for_cybersnap_captures_with_a_file() {
