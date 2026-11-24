@@ -6323,6 +6323,7 @@ fn open_about_window(app: &AppHandle) {
     .maximizable(false)
     .decorations(false)
     .transparent(true)
+    .shadow(false)
     .always_on_top(true)
     .visible(false);
 
@@ -6392,6 +6393,7 @@ fn open_settings_window(app: &AppHandle, tab: Option<&str>) {
     .maximizable(true)
     .decorations(false)
     .transparent(true)
+    .shadow(false)
     .visible(false);
 
     if let (Some(x), Some(y)) = (settings.settings_window_x, settings.settings_window_y) {
