@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ClipboardPaste, Copy, Redo2, Scissors, TextSelect, Trash2, Undo2 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import type { ContextMenuOption } from '../components/ContextMenu';
 
@@ -29,7 +30,7 @@ async function clipboardRead(): Promise<string> {
   try {
     return await invoke<string>('read_clipboard_text');
   } catch {
-    return await navigator.clipboard.readText();
+    return navigator.clipboard.readText();
   }
 }
 
@@ -41,7 +42,9 @@ export function useTextFieldContextMenu(
   const { t } = useTranslation();
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
   const [snapshot, setSnapshot] = useState<SelectionSnapshot | null>(null);
+  const [clipboardAvailable, setClipboardAvailable] = useState(false);
   const historyRef = useRef<HistoryState>({ stack: [value], index: 0 });
+  const clipboardTextRef = useRef<string | null>(null);
 
   const resetHistory = useCallback((initial: string) => {
     historyRef.current = { stack: [initial], index: 0 };
@@ -111,7 +114,18 @@ export function useTextFieldContextMenu(
         selected: current.slice(start, end),
         current,
       });
+      clipboardTextRef.current = null;
+      setClipboardAvailable(false);
       setMenuPos({ x: e.clientX, y: e.clientY });
+      void clipboardRead()
+        .then((text) => {
+          clipboardTextRef.current = text;
+          setClipboardAvailable(text.length > 0);
+        })
+        .catch(() => {
+          clipboardTextRef.current = null;
+          setClipboardAvailable(false);
+        });
     },
     [fieldRef, value]
   );
@@ -119,6 +133,8 @@ export function useTextFieldContextMenu(
   const closeMenu = useCallback(() => {
     setMenuPos(null);
     setSnapshot(null);
+    clipboardTextRef.current = null;
+    setClipboardAvailable(false);
   }, []);
 
   const options: ContextMenuOption[] = (() => {
@@ -132,6 +148,7 @@ export function useTextFieldContextMenu(
     return [
       {
         label: t('contextMenu.undo'),
+        icon: <Undo2 size={14} />,
         disabled: !canUndo,
         onClick: () => {
           if (!canUndo) return;
@@ -143,6 +160,7 @@ export function useTextFieldContextMenu(
       },
       {
         label: t('contextMenu.redo'),
+        icon: <Redo2 size={14} />,
         disabled: !canRedo,
         onClick: () => {
           if (!canRedo) return;
@@ -153,19 +171,8 @@ export function useTextFieldContextMenu(
         },
       },
       {
-        label: t('contextMenu.copy'),
-        disabled: !hasSelection,
-        onClick: async () => {
-          if (!hasSelection) return;
-          try {
-            await clipboardWrite(selected);
-          } catch {
-            /* ignore */
-          }
-        },
-      },
-      {
         label: t('contextMenu.cut'),
+        icon: <Scissors size={14} />,
         disabled: !hasSelection,
         onClick: async () => {
           if (!hasSelection) return;
@@ -178,18 +185,31 @@ export function useTextFieldContextMenu(
         },
       },
       {
-        label: t('contextMenu.paste'),
+        label: t('contextMenu.copy'),
+        icon: <Copy size={14} />,
+        disabled: !hasSelection,
         onClick: async () => {
+          if (!hasSelection) return;
           try {
-            const text = await clipboardRead();
-            replaceRange(start, end, text, current);
+            await clipboardWrite(selected);
           } catch {
-            /* clipboard read failed */
+            /* ignore */
           }
         },
       },
       {
+        label: t('contextMenu.paste'),
+        icon: <ClipboardPaste size={14} />,
+        disabled: !clipboardAvailable,
+        onClick: () => {
+          const text = clipboardTextRef.current;
+          if (text === null) return;
+          replaceRange(start, end, text, current);
+        },
+      },
+      {
         label: t('contextMenu.selectAll'),
+        icon: <TextSelect size={14} />,
         disabled: current.length === 0,
         onClick: () => {
           restoreSelection(0, current.length);
@@ -197,6 +217,7 @@ export function useTextFieldContextMenu(
       },
       {
         label: t('contextMenu.delete'),
+        icon: <Trash2 size={14} />,
         danger: true,
         disabled: !hasSelection,
         onClick: () => {

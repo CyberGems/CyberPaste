@@ -4,12 +4,12 @@ import {
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
+  type RefObject,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { History, Search, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Tooltip from './Tooltip';
-import { TITLEBAR_HOTKEYS } from '../hooks/useKeyboard';
 
 export const SEARCH_HISTORY_EVENT = 'cyberpaste:search-history';
 
@@ -18,8 +18,9 @@ interface SearchHistoryMenuProps {
   onSelect: (query: string) => void;
   onClear: () => void;
   toggleToken?: number;
-  /** Sit inside the search field, flush to its right edge. */
-  embedded?: boolean;
+  focusRef: RefObject<HTMLInputElement | null>;
+  anchorRef?: RefObject<HTMLElement | null>;
+  enabled?: boolean;
 }
 
 export function SearchHistoryMenu({
@@ -27,17 +28,19 @@ export function SearchHistoryMenu({
   onSelect,
   onClear,
   toggleToken = 0,
-  embedded = false,
+  focusRef,
+  anchorRef,
+  enabled = true,
 }: SearchHistoryMenuProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const clearButtonRef = useRef<HTMLButtonElement>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const lastToggleTokenRef = useRef(toggleToken);
-  const [menuPosition, setMenuPosition] = useState({ left: 8, top: 8 });
+  const focusMenuOnOpenRef = useRef(false);
+  const suppressFocusOpenRef = useRef(false);
+  const [menuPosition, setMenuPosition] = useState({ left: 8, top: 8, width: 288, maxHeight: 296 });
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [pointerMovedSinceOpen, setPointerMovedSinceOpen] = useState(false);
 
@@ -49,19 +52,75 @@ export function SearchHistoryMenu({
   const closeMenu = (restoreFocus = true) => {
     setOpen(false);
     if (restoreFocus) {
-      window.requestAnimationFrame(() => buttonRef.current?.focus());
+      suppressFocusOpenRef.current = true;
+      window.requestAnimationFrame(() => {
+        focusRef.current?.focus();
+        suppressFocusOpenRef.current = false;
+      });
     }
   };
 
-  const openMenu = () => {
-    setOpen(true);
-  };
+  useEffect(() => {
+    if (!enabled || toggleToken === lastToggleTokenRef.current) return;
+    lastToggleTokenRef.current = toggleToken;
+    setOpen((value) => {
+      if (!value) focusMenuOnOpenRef.current = true;
+      return !value;
+    });
+  }, [toggleToken, enabled]);
 
   useEffect(() => {
-    if (toggleToken === lastToggleTokenRef.current) return;
-    lastToggleTokenRef.current = toggleToken;
-    setOpen((value) => !value);
-  }, [toggleToken]);
+    const input = focusRef.current;
+    if (!enabled || !input) return;
+
+    const handleFocus = () => {
+      if (suppressFocusOpenRef.current) return;
+      focusMenuOnOpenRef.current = false;
+      setOpen(true);
+    };
+
+    input.addEventListener('focus', handleFocus);
+    if (document.activeElement === input) handleFocus();
+
+    return () => input.removeEventListener('focus', handleFocus);
+  }, [enabled, focusRef]);
+
+  useEffect(() => {
+    if (enabled) return;
+    setOpen(false);
+  }, [enabled]);
+
+  useEffect(() => {
+    const input = focusRef.current;
+    if (!enabled || !input) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!open) return;
+
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        closeMenu();
+        return;
+      }
+
+      if (event.key === 'Enter') {
+        closeMenu(false);
+        return;
+      }
+
+      if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && history.length > 0) {
+        event.preventDefault();
+        event.stopPropagation();
+        const nextIndex = event.key === 'ArrowDown' ? 0 : history.length - 1;
+        setActiveIndex(nextIndex);
+        itemRefs.current[nextIndex]?.focus();
+      }
+    };
+
+    input.addEventListener('keydown', handleKeyDown, true);
+    return () => input.removeEventListener('keydown', handleKeyDown, true);
+  }, [enabled, focusRef, open, history.length]);
 
   useLayoutEffect(() => {
     if (!open) {
@@ -69,9 +128,13 @@ export function SearchHistoryMenu({
       return;
     }
     setPointerMovedSinceOpen(false);
-    setActiveIndex(history.length > 0 ? 0 : null);
-    focusFirstItem();
-  }, [open, history.length]);
+    if (focusMenuOnOpenRef.current) {
+      setActiveIndex(history.length > 0 ? 0 : null);
+      focusFirstItem();
+    } else {
+      setActiveIndex(null);
+    }
+  }, [open]);
 
   useEffect(() => {
     document.body.dataset.searchHistoryOpen = open ? 'true' : 'false';
@@ -85,18 +148,14 @@ export function SearchHistoryMenu({
     if (!open) return;
 
     const updatePosition = () => {
-      const button = buttonRef.current;
-      if (!button) return;
-      const rect = button.getBoundingClientRect();
-      const menuWidth = 288;
-      const left = Math.min(Math.max(8, rect.left), Math.max(8, window.innerWidth - menuWidth - 8));
-      const menuHeight = menuRef.current?.offsetHeight ?? 296;
-      const belowTop = rect.bottom + 4;
-      const top =
-        belowTop + menuHeight > window.innerHeight - 8
-          ? Math.max(8, rect.top - menuHeight - 4)
-          : belowTop;
-      setMenuPosition({ left, top });
+      const anchor = anchorRef?.current ?? focusRef.current;
+      if (!anchor) return;
+      const rect = anchor.getBoundingClientRect();
+      const width = Math.min(288, Math.max(0, window.innerWidth - 16));
+      const left = Math.min(Math.max(8, rect.left), Math.max(8, window.innerWidth - width - 8));
+      const top = rect.bottom + 4;
+      const maxHeight = Math.max(0, window.innerHeight - top - 8);
+      setMenuPosition({ left, top, width, maxHeight });
     };
 
     updatePosition();
@@ -106,23 +165,35 @@ export function SearchHistoryMenu({
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition, true);
     };
-  }, [open]);
+  }, [open, anchorRef, focusRef]);
 
   useEffect(() => {
     if (!open) return;
 
+    const isInsideMenu = (target: Node) =>
+      focusRef.current?.contains(target) || menuRef.current?.contains(target);
+
     const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as Node;
-      if (!rootRef.current?.contains(target) && !menuRef.current?.contains(target)) {
-        closeMenu(false);
-      }
+      if (!isInsideMenu(event.target as Node)) closeMenu(false);
+    };
+
+    const handleFocusIn = (event: FocusEvent) => {
+      if (!isInsideMenu(event.target as Node)) closeMenu(false);
+    };
+
+    const handleContextMenu = (event: MouseEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) closeMenu(false);
     };
 
     document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('focusin', handleFocusIn);
+    document.addEventListener('contextmenu', handleContextMenu, true);
     return () => {
       document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('focusin', handleFocusIn);
+      document.removeEventListener('contextmenu', handleContextMenu, true);
     };
-  }, [open]);
+  }, [open, focusRef]);
 
   const handleMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     const items = itemRefs.current.filter((item): item is HTMLButtonElement => item !== null);
@@ -173,114 +244,78 @@ export function SearchHistoryMenu({
     }
   };
 
-  return (
+  if (!open) return null;
+
+  return createPortal(
     <div
-      ref={rootRef}
-      className={embedded ? 'absolute right-1 top-1/2 z-10 -translate-y-1/2' : 'relative shrink-0'}
+      ref={menuRef}
+      style={menuPosition}
+      role="menu"
+      tabIndex={-1}
+      aria-label={t('common.searchHistory')}
+      onKeyDown={handleMenuKeyDown}
+      onPointerMove={() => {
+        if (!pointerMovedSinceOpen) setPointerMovedSinceOpen(true);
+      }}
+      className="fixed z-[240] flex flex-col overflow-hidden rounded-xl border border-border bg-popover/95 shadow-2xl backdrop-blur-xl"
     >
-      <Tooltip
-        label={t('common.tooltipWithHotkey', {
-          label: t('common.searchHistory'),
-          hotkey: TITLEBAR_HOTKEYS.searchHistory,
-        })}
-        placement="bottom"
-      >
-        <button
-          type="button"
-          ref={buttonRef}
-          aria-label={t('common.searchHistory')}
-          aria-expanded={open}
-          aria-haspopup="menu"
-          aria-keyshortcuts="Control+H"
-          onClick={() => (open ? closeMenu() : openMenu())}
-          className={`flex items-center justify-center transition-all ${
-            embedded ? 'h-6 w-6 rounded-md' : 'h-8 w-8 rounded-lg border'
-          } ${
-            open
-              ? 'border-primary/50 bg-primary/10 text-primary'
-              : embedded
-                ? 'text-muted-foreground/80 hover:bg-accent hover:text-foreground'
-                : 'border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground'
-          }`}
-        >
-          <History size={embedded ? 13 : 15} />
-        </button>
-      </Tooltip>
+      <div className="flex shrink-0 items-center justify-between border-b border-border/70 px-3 py-2">
+        <div className="flex items-center gap-2 text-[11px] font-semibold text-foreground">
+          <Search size={13} className="text-primary" />
+          {t('common.searchHistory')}
+        </div>
+        <Tooltip label={t('common.clearSearchHistory')} placement="left">
+          <button
+            type="button"
+            ref={clearButtonRef}
+            onClick={() => {
+              closeMenu();
+              onClear();
+            }}
+            disabled={history.length === 0}
+            aria-label={t('common.clearSearchHistory')}
+            className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-35"
+          >
+            <Trash2 size={13} />
+          </button>
+        </Tooltip>
+      </div>
 
-      {open
-        ? createPortal(
-            <div
-              ref={menuRef}
-              style={{ left: menuPosition.left, top: menuPosition.top }}
-              role="menu"
-              tabIndex={-1}
-              aria-label={t('common.searchHistory')}
-              onKeyDown={handleMenuKeyDown}
-              onPointerMove={() => {
-                if (!pointerMovedSinceOpen) setPointerMovedSinceOpen(true);
+      <div className="min-h-0 flex-1 overflow-y-auto p-1">
+        {history.length > 0 ? (
+          history.map((query, index) => (
+            <button
+              key={`${query}-${index}`}
+              ref={(element) => {
+                itemRefs.current[index] = element;
               }}
-              className="fixed z-[240] w-72 overflow-hidden rounded-xl border border-border bg-popover/95 shadow-2xl backdrop-blur-xl"
+              type="button"
+              role="menuitem"
+              aria-selected={activeIndex === index}
+              onFocus={() => setActiveIndex(index)}
+              onClick={() => {
+                closeMenu();
+                onSelect(query);
+              }}
+              className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs outline-none transition-colors ${
+                activeIndex === index
+                  ? 'bg-accent text-foreground ring-1 ring-primary/50'
+                  : 'text-muted-foreground'
+              } ${
+                pointerMovedSinceOpen ? 'hover:bg-accent hover:text-foreground' : ''
+              } focus-visible:bg-accent focus-visible:text-foreground`}
             >
-              <div className="flex items-center justify-between border-b border-border/70 px-3 py-2">
-                <div className="flex items-center gap-2 text-[11px] font-semibold text-foreground">
-                  <Search size={13} className="text-primary" />
-                  {t('common.searchHistory')}
-                </div>
-                <Tooltip label={t('common.clearSearchHistory')} placement="left">
-                  <button
-                    type="button"
-                    ref={clearButtonRef}
-                    onClick={() => {
-                      closeMenu();
-                      onClear();
-                    }}
-                    disabled={history.length === 0}
-                    aria-label={t('common.clearSearchHistory')}
-                    className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-35"
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </Tooltip>
-              </div>
-
-              <div className="max-h-64 overflow-y-auto p-1">
-                {history.length > 0 ? (
-                  history.map((query, index) => (
-                    <button
-                      key={`${query}-${index}`}
-                      ref={(element) => {
-                        itemRefs.current[index] = element;
-                      }}
-                      type="button"
-                      role="menuitem"
-                      aria-selected={activeIndex === index}
-                      onFocus={() => setActiveIndex(index)}
-                      onClick={() => {
-                        closeMenu();
-                        onSelect(query);
-                      }}
-                      className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs outline-none transition-colors ${
-                        activeIndex === index
-                          ? 'bg-accent text-foreground ring-1 ring-primary/50'
-                          : 'text-muted-foreground'
-                      } ${
-                        pointerMovedSinceOpen ? 'hover:bg-accent hover:text-foreground' : ''
-                      } focus-visible:bg-accent focus-visible:text-foreground`}
-                    >
-                      <History size={12} className="shrink-0 text-primary/70" />
-                      <span className="min-w-0 flex-1 truncate">{query}</span>
-                    </button>
-                  ))
-                ) : (
-                  <p className="px-2.5 py-3 text-center text-[11px] text-muted-foreground">
-                    {t('common.searchHistoryEmpty')}
-                  </p>
-                )}
-              </div>
-            </div>,
-            document.body
-          )
-        : null}
-    </div>
+              <History size={12} className="shrink-0 text-primary/70" />
+              <span className="min-w-0 flex-1 truncate">{query}</span>
+            </button>
+          ))
+        ) : (
+          <p className="px-2.5 py-3 text-center text-[11px] text-muted-foreground">
+            {t('common.searchHistoryEmpty')}
+          </p>
+        )}
+      </div>
+    </div>,
+    document.body
   );
 }

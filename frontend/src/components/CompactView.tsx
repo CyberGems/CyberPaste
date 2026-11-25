@@ -95,7 +95,9 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import Tooltip, { dismissAllTooltips } from './Tooltip';
+import { ContextMenu } from './ContextMenu';
 import { SEARCH_HISTORY_EVENT, SearchHistoryMenu } from './SearchHistoryMenu';
+import { useTextFieldContextMenu } from '../hooks/useTextFieldContextMenu';
 import { TitleBarMenu } from './TitleBarMenu';
 import { TitleBarUpdateButton } from './TitleBarUpdateButton';
 import { UndoButton } from './UndoButton';
@@ -884,6 +886,13 @@ export const CompactView: React.FC<CompactViewProps> = ({
   const isClipboardFlashing = useFolderFlash(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const didFocusRef = useRef(false);
+  const {
+    menuPos: searchMenuPos,
+    options: searchMenuOptions,
+    closeMenu: closeSearchMenu,
+    onContextMenu: onSearchContextMenu,
+    handleChange: handleSearchChange,
+  } = useTextFieldContextMenu(searchInputRef, searchQuery, onSearchChange);
 
   // NUEVO: estado para peek popover
   const [peekClipId, setPeekClipId] = useState<string | null>(null);
@@ -1976,13 +1985,15 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     name="cyberpaste-search"
                     id="search-input"
                     ref={searchInputRef}
+                    aria-haspopup="menu"
                     placeholder={isEmojiMode ? t('emoji.searchPlaceholder') : t('common.search')}
                     autoComplete="off"
                     autoCorrect="off"
                     autoCapitalize="none"
                     spellCheck={false}
                     value={searchQuery}
-                    onChange={(e) => onSearchChange(e.target.value)}
+                    onChange={handleSearchChange}
+                    onContextMenu={onSearchContextMenu}
                     onKeyDown={(e) => {
                       if (e.key === 'ArrowDown') {
                         if (isEmojiMode) {
@@ -2021,21 +2032,21 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     }}
                     className={cn(
                       'w-full rounded-lg border border-border bg-input py-1.5 pl-8 text-sm text-foreground transition-all placeholder:text-muted-foreground/70 focus:border-primary/50 focus:bg-background focus:outline-none',
-                      searchQuery ? 'pr-14' : 'pr-8'
+                      'pr-8'
                     )}
                   />
                   {searchQuery && (
                     <Tooltip label={t('common.clearSearch') || 'Clear search'} placement="bottom">
                       <button
                         onClick={() => onSearchChange('')}
-                        className="absolute right-8 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                       >
                         <X size={14} />
                       </button>
                     </Tooltip>
                   )}
                   <SearchHistoryMenu
-                    embedded
+                    focusRef={searchInputRef}
                     history={recentSearches}
                     toggleToken={searchHistoryToggleToken}
                     onSelect={onSelectSearchHistory}
@@ -2238,13 +2249,15 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   name="cyberpaste-search"
                   id="search-input"
                   ref={searchInputRef}
+                  aria-haspopup="menu"
                   placeholder={isEmojiMode ? t('emoji.searchPlaceholder') : t('common.search')}
                   autoComplete="off"
                   autoCorrect="off"
                   autoCapitalize="none"
                   spellCheck={false}
                   value={searchQuery}
-                  onChange={(e) => onSearchChange(e.target.value)}
+                  onChange={handleSearchChange}
+                  onContextMenu={onSearchContextMenu}
                   onKeyDown={(e) => {
                     if (e.key === 'ArrowDown') {
                       if (isEmojiMode) {
@@ -2283,21 +2296,21 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   }}
                   className={cn(
                     'w-full rounded-lg border border-border bg-input py-1.5 pl-8 text-sm text-foreground transition-all placeholder:text-muted-foreground/70 focus:border-primary/50 focus:bg-background focus:outline-none',
-                    searchQuery ? 'pr-14' : 'pr-8'
+                    'pr-8'
                   )}
                 />
                 {searchQuery && (
                   <Tooltip label={t('common.clearSearch') || 'Clear search'} placement="bottom">
                     <button
                       onClick={() => onSearchChange('')}
-                      className="absolute right-8 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                     >
                       <X size={14} />
                     </button>
                   </Tooltip>
                 )}
                 <SearchHistoryMenu
-                  embedded
+                  focusRef={searchInputRef}
                   history={recentSearches}
                   toggleToken={searchHistoryToggleToken}
                   onSelect={onSelectSearchHistory}
@@ -2654,6 +2667,14 @@ export const CompactView: React.FC<CompactViewProps> = ({
         resolveImageSrc={getClipImageSrc}
         onClose={closePeek}
       />
+      {searchMenuPos && (
+        <ContextMenu
+          x={searchMenuPos.x}
+          y={searchMenuPos.y}
+          options={searchMenuOptions}
+          onClose={closeSearchMenu}
+        />
+      )}
     </div>
   );
 };

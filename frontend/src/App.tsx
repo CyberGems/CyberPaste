@@ -3715,6 +3715,7 @@ function App() {
       }
     },
     onToggleSearchHistory: () => {
+      if (settings?.view_mode !== 'compact') setShowSearch(true);
       setSearchHistoryToggleToken((prev) => prev + 1);
     },
     searchHistoryHotkey: TITLEBAR_HOTKEYS.searchHistory,

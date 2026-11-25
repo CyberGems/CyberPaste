@@ -60,7 +60,9 @@ import { buildShortcutHints, hintWithHotkey, HUD_HINT_ORDER } from '../utils/sho
 import { clsx } from 'clsx';
 import { useTranslation } from 'react-i18next';
 import Tooltip from './Tooltip';
+import { ContextMenu } from './ContextMenu';
 import { SearchHistoryMenu } from './SearchHistoryMenu';
+import { useTextFieldContextMenu } from '../hooks/useTextFieldContextMenu';
 import { TitleBarMenu } from './TitleBarMenu';
 import { TitleBarUpdateButton } from './TitleBarUpdateButton';
 import { useFolderFlash } from '../hooks/useFolderFlash';
@@ -297,8 +299,15 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   isEmojiMode = false,
 }) => {
   const foldersRef = React.useRef<HTMLDivElement>(null);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const searchBarRef = React.useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
   const { isPaused, toggleMonitoring } = useClipboardMonitoring();
+  const { menuPos, options, closeMenu, onContextMenu, handleChange } = useTextFieldContextMenu(
+    searchInputRef,
+    searchQuery,
+    onSearchChange
+  );
 
   const currentFolderName = selectedFolder
     ? folders.find((f) => f.id === selectedFolder)?.name || t('detailPanel.folder')
@@ -904,16 +913,6 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           </button>
         </Tooltip>
 
-        <SearchHistoryMenu
-          history={recentSearches}
-          toggleToken={searchHistoryToggleToken}
-          onSelect={(query) => {
-            onSelectSearchHistory(query);
-            if (!showSearch) onSearchClick();
-          }}
-          onClear={onClearSearchHistory}
-        />
-
         <div className="mx-0.5 h-5 w-px shrink-0 bg-border/50" />
 
         <div className="relative flex h-full min-w-0 flex-1 items-center">
@@ -1070,7 +1069,10 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           {/* Search Bar Overlay */}
           {showSearch && (
             <div className="absolute inset-0 z-10 flex items-center duration-300 animate-in fade-in zoom-in-95">
-              <div className="flex h-8 flex-1 items-center gap-3 rounded-lg border border-primary/30 bg-popover px-4 shadow-[0_0_25px_rgba(var(--primary-rgb),0.15)] backdrop-blur-md">
+              <div
+                ref={searchBarRef}
+                className="flex h-8 flex-1 items-center gap-3 rounded-lg border border-primary/30 bg-popover px-4 shadow-[0_0_25px_rgba(var(--primary-rgb),0.15)] backdrop-blur-md"
+              >
                 <Search className="animate-pulse text-primary" size={18} />
                 <div className="flex flex-1 items-center gap-2 overflow-hidden">
                   <span className="whitespace-nowrap text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
@@ -1082,9 +1084,11 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                   <div className="mx-1 h-4 w-px flex-shrink-0 bg-border" />
                   <input
                     autoFocus
+                    ref={searchInputRef}
                     type="text"
                     name="cyberpaste-search"
                     id="search-input"
+                    aria-haspopup="menu"
                     placeholder={isEmojiMode ? t('emoji.searchPlaceholder') : '...'}
                     autoComplete="off"
                     autoCorrect="off"
@@ -1092,7 +1096,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                     spellCheck={false}
                     className="min-w-0 flex-1 bg-transparent py-1 text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
                     value={searchQuery}
-                    onChange={(e) => onSearchChange(e.target.value)}
+                    onChange={handleChange}
+                    onContextMenu={onContextMenu}
                     onKeyDown={(e) => {
                       if (e.key === 'ArrowDown') {
                         if (isEmojiMode) {
@@ -1139,6 +1144,20 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           )}
         </div>
       </div>
+
+      <SearchHistoryMenu
+        history={recentSearches}
+        toggleToken={searchHistoryToggleToken}
+        focusRef={searchInputRef}
+        anchorRef={searchBarRef}
+        enabled={showSearch}
+        onSelect={(query) => {
+          onSelectSearchHistory(query);
+          if (!showSearch) onSearchClick();
+        }}
+        onClear={onClearSearchHistory}
+      />
+      {menuPos && <ContextMenu x={menuPos.x} y={menuPos.y} options={options} onClose={closeMenu} />}
     </div>
   );
 };
