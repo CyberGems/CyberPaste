@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   MoreHorizontal,
@@ -15,6 +15,8 @@ import {
   FolderPlus,
   Undo2,
   Trophy,
+  HelpCircle,
+  ChevronRight,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { openUrl } from '@tauri-apps/plugin-opener';
@@ -59,11 +61,17 @@ export function TitleBarMenu({
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [menuPointerActive, setMenuPointerActive] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
   const [pos, setPos] = useState({ top: 0, right: 0, maxHeight: 800 });
+  const [helpPos, setHelpPos] = useState({ top: 0, left: 0, maxHeight: 800 });
   const wrapRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const helpTriggerRef = useRef<HTMLButtonElement>(null);
+  const helpMenuRef = useRef<HTMLDivElement>(null);
+  const helpId = useId();
+  const helpMenuId = `${helpId}-menu`;
 
   useLayoutEffect(() => {
     if (!open || !wrapRef.current) return;
@@ -96,6 +104,37 @@ export function TitleBarMenu({
     return () => window.removeEventListener('resize', updatePosition);
   }, [open]);
 
+  useLayoutEffect(() => {
+    if (!open || !helpOpen || !helpTriggerRef.current || !helpMenuRef.current) return;
+    const updateHelpPosition = () => {
+      const triggerRect = helpTriggerRef.current?.getBoundingClientRect();
+      const menuRect = helpMenuRef.current?.getBoundingClientRect();
+      if (!triggerRect || !menuRect) return;
+
+      const padding = 6;
+      const gap = 4;
+      const width = menuRect.width || 224;
+      const height = menuRect.height || 160;
+      let left = triggerRect.right + gap;
+      if (left + width > window.innerWidth - padding) {
+        left = triggerRect.left - width - gap;
+      }
+      left = Math.max(padding, Math.min(left, window.innerWidth - width - padding));
+
+      let top = triggerRect.top - 5;
+      if (top + height > window.innerHeight - padding) {
+        top = window.innerHeight - height - padding;
+      }
+      top = Math.max(padding, Math.min(top, window.innerHeight - height - padding));
+
+      setHelpPos({ top, left, maxHeight: window.innerHeight - padding * 2 });
+    };
+
+    updateHelpPosition();
+    window.addEventListener('resize', updateHelpPosition);
+    return () => window.removeEventListener('resize', updateHelpPosition);
+  }, [helpOpen, open]);
+
   useEffect(() => {
     const onToggleMenu = () => setOpen((value) => !value);
     window.addEventListener(TITLE_BAR_MENU_TOGGLE_EVENT, onToggleMenu);
@@ -104,6 +143,7 @@ export function TitleBarMenu({
 
   useEffect(() => {
     setMenuPointerActive(false);
+    setHelpOpen(false);
     if (!open) {
       if (document.body.dataset.titlebarMenuOpen === 'true') {
         delete document.body.dataset.titlebarMenuOpen;
@@ -146,7 +186,11 @@ export function TitleBarMenu({
 
     const isInside = (target: EventTarget | null) => {
       if (!target || !(target instanceof Node)) return false;
-      return !!(wrapRef.current?.contains(target) || menuRef.current?.contains(target));
+      return !!(
+        wrapRef.current?.contains(target) ||
+        menuRef.current?.contains(target) ||
+        helpMenuRef.current?.contains(target)
+      );
     };
 
     const onPointerDown = (e: PointerEvent) => {
@@ -176,6 +220,11 @@ export function TitleBarMenu({
       if (e.key === 'Escape') {
         e.preventDefault();
         e.stopPropagation();
+        if (helpOpen) {
+          setHelpOpen(false);
+          helpTriggerRef.current?.focus();
+          return;
+        }
         setOpen(false);
       }
     };
@@ -186,9 +235,10 @@ export function TitleBarMenu({
       window.removeEventListener('pointerdown', onPointerDown, true);
       window.removeEventListener('keydown', onKeyDown, true);
     };
-  }, [open]);
+  }, [helpOpen, open]);
 
   const closeAnd = (fn: () => void) => {
+    setHelpOpen(false);
     setOpen(false);
     fn();
   };
@@ -216,6 +266,15 @@ export function TitleBarMenu({
       return;
     }
     invoke('reset_window_size').catch(console.error);
+  };
+
+  const showHelp = (focusFirstItem: boolean) => {
+    setHelpOpen(true);
+    if (focusFirstItem) {
+      requestAnimationFrame(() => {
+        helpMenuRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
+      });
+    }
   };
 
   const itemClass = clsx(
@@ -263,256 +322,345 @@ export function TitleBarMenu({
 
       {open &&
         createPortal(
-          <div
-            ref={menuRef}
-            role="menu"
-            onPointerMove={() => setMenuPointerActive(true)}
-            onKeyDown={(event) => {
-              const items = Array.from(
-                menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []
-              );
-              if (items.length === 0) return;
+          <>
+            <div
+              ref={menuRef}
+              role="menu"
+              onPointerMove={() => setMenuPointerActive(true)}
+              onPointerOver={(event) => {
+                if (!(event.target as Element).closest('[data-titlebar-help]')) setHelpOpen(false);
+              }}
+              onFocusCapture={(event) => {
+                if (!(event.target as Element).closest('[data-titlebar-help]')) setHelpOpen(false);
+              }}
+              onScroll={() => setHelpOpen(false)}
+              onKeyDown={(event) => {
+                if (
+                  event.key === 'ArrowRight' &&
+                  document.activeElement === helpTriggerRef.current
+                ) {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  showHelp(true);
+                  return;
+                }
 
-              if (event.key === 'Escape') {
+                const items = Array.from(
+                  menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []
+                );
+                if (items.length === 0) return;
+
+                if (event.key === 'Escape') {
+                  event.preventDefault();
+                  if (!helpOpen) setOpen(false);
+                  return;
+                }
+
+                if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
                 event.preventDefault();
-                setOpen(false);
-                return;
-              }
-
-              if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
-              event.preventDefault();
-              event.stopPropagation();
-              const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement);
-              const nextIndex =
-                event.key === 'Home'
-                  ? 0
-                  : event.key === 'End'
-                    ? items.length - 1
-                    : (currentIndex + (event.key === 'ArrowDown' ? 1 : -1) + items.length) %
-                      items.length;
-              items[nextIndex]?.focus();
-            }}
-            className="custom-scrollbar fixed z-[300] flex max-h-[calc(100vh-16px)] w-56 flex-col gap-0.5 overflow-y-auto rounded-lg border border-border bg-popover p-[5px] shadow-[0_10px_30px_rgba(0,0,0,0.5),0_1px_3px_rgba(0,0,0,0.3)]"
-            style={{
-              top: pos.top,
-              right: pos.right,
-              maxHeight: pos.maxHeight,
-              animation: 'titlebarMenuFade 0.12s ease-out',
-            }}
-          >
-            <style>{`
+                event.stopPropagation();
+                const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement);
+                const nextIndex =
+                  event.key === 'Home'
+                    ? 0
+                    : event.key === 'End'
+                      ? items.length - 1
+                      : (currentIndex + (event.key === 'ArrowDown' ? 1 : -1) + items.length) %
+                        items.length;
+                items[nextIndex]?.focus();
+              }}
+              className="custom-scrollbar fixed z-[300] flex max-h-[calc(100vh-16px)] w-56 flex-col gap-0.5 overflow-y-auto rounded-lg border border-border bg-popover p-[5px] shadow-[0_10px_30px_rgba(0,0,0,0.5),0_1px_3px_rgba(0,0,0,0.3)]"
+              style={{
+                top: pos.top,
+                right: pos.right,
+                maxHeight: pos.maxHeight,
+                animation: 'titlebarMenuFade 0.12s ease-out',
+              }}
+            >
+              <style>{`
               @keyframes titlebarMenuFade {
                 from { opacity: 0; transform: translateY(-4px); }
                 to { opacity: 1; transform: translateY(0); }
               }
             `}</style>
-            <button
-              type="button"
-              role="menuitem"
-              className={itemClass}
-              onClick={() =>
-                closeAnd(() => {
-                  openUrl(DONATE_URL).catch(console.error);
-                })
-              }
-            >
-              <Heart
-                size={14}
-                className="shrink-0 text-[#00D8F1] group-hover:drop-shadow-[0_0_4px_rgba(0,216,241,0.6)]"
-              />
-              <span>{t('common.donate')}</span>
-            </button>
-
-            {hasMiddleItems && (
-              <div role="separator" className="mx-2 my-1 h-px shrink-0 bg-foreground/15" />
-            )}
-
-            {onAddFolder && (
-              <button
-                type="button"
-                role="menuitem"
-                className={itemClass}
-                onClick={() => closeAnd(onAddFolder)}
-              >
-                <FolderPlus size={14} className={iconClass} />
-                <span>{t('folders.newFolder')}</span>
-              </button>
-            )}
-
-            {variant === 'main' && (
-              <button
-                type="button"
-                role="menuitem"
-                disabled={!canUndo}
-                className={clsx(
-                  itemClass,
-                  !canUndo &&
-                    'cursor-not-allowed opacity-40 hover:bg-transparent hover:text-foreground/90'
-                )}
-                onClick={() => {
-                  if (!canUndo || !onUndo) return;
-                  closeAnd(onUndo);
-                }}
-              >
-                <Undo2 size={14} className={iconClass} />
-                <span className="flex-1">{t('contextMenu.undo')}</span>
-                <span className="text-[11px] text-muted-foreground/70">Ctrl+Z</span>
-              </button>
-            )}
-
-            {showClearHistory && (
-              <button
-                type="button"
-                role="menuitem"
-                className={itemClass}
-                onClick={() => closeAnd(handleResetWindowSize)}
-              >
-                <RotateCcw size={14} className={iconClass} />
-                <span>{t('common.resetWindowSize')}</span>
-              </button>
-            )}
-
-            {showClearHistory && (
-              <button
-                type="button"
-                role="menuitem"
-                className={itemClass}
-                onClick={confirmClearHistory}
-              >
-                <Trash2 size={14} className="shrink-0 text-destructive" />
-                <span>{t('settings.clearHistory')}</span>
-              </button>
-            )}
-
-            {showOpenSettings && (
               <button
                 type="button"
                 role="menuitem"
                 className={itemClass}
                 onClick={() =>
                   closeAnd(() => {
-                    invoke('open_settings').catch(console.error);
+                    openUrl(DONATE_URL).catch(console.error);
                   })
                 }
               >
-                <Settings size={14} className={iconClass} />
-                <span>{t('common.settings')}</span>
+                <Heart
+                  size={14}
+                  className="shrink-0 text-[#00D8F1] group-hover:drop-shadow-[0_0_4px_rgba(0,216,241,0.6)]"
+                />
+                <span>{t('common.donate')}</span>
               </button>
-            )}
 
-            <div role="separator" className="mx-2 my-1 h-px shrink-0 bg-foreground/15" />
+              {hasMiddleItems && (
+                <div role="separator" className="mx-2 my-1 h-px shrink-0 bg-foreground/15" />
+              )}
 
-            <button
-              type="button"
-              role="menuitem"
-              className={itemClass}
-              onClick={() =>
-                closeAnd(() => {
-                  openUrl(WIKI_URL).catch(console.error);
-                })
-              }
-            >
-              <Book size={14} className={iconClass} />
-              <span>{t('titleBar.moreMenu.docs')}</span>
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              className={itemClass}
-              onClick={() =>
-                closeAnd(() => {
-                  openUrl(WEBSITE_URL).catch(console.error);
-                })
-              }
-            >
-              <Gem size={14} className={iconClass} />
-              <span>{t('titleBar.moreMenu.website')}</span>
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              className={itemClass}
-              onClick={() =>
-                closeAnd(() => {
-                  openUrl(CHANGELOG_URL).catch(console.error);
-                })
-              }
-            >
-              <Tag size={14} className={iconClass} />
-              <span>{t('titleBar.moreMenu.changelog')}</span>
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              className={itemClass}
-              onClick={() =>
-                closeAnd(() => {
-                  openUrl(GITHUB_URL).catch(console.error);
-                })
-              }
-            >
-              <Github size={14} className={iconClass} />
-              <span>{t('titleBar.moreMenu.github')}</span>
-            </button>
+              {onAddFolder && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={itemClass}
+                  onClick={() => closeAnd(onAddFolder)}
+                >
+                  <FolderPlus size={14} className={iconClass} />
+                  <span>{t('folders.newFolder')}</span>
+                </button>
+              )}
 
-            <div role="separator" className="mx-2 my-1 h-px shrink-0 bg-foreground/15" />
+              {variant === 'main' && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  disabled={!canUndo}
+                  className={clsx(
+                    itemClass,
+                    !canUndo &&
+                      'cursor-not-allowed opacity-40 hover:bg-transparent hover:text-foreground/90'
+                  )}
+                  onClick={() => {
+                    if (!canUndo || !onUndo) return;
+                    closeAnd(onUndo);
+                  }}
+                >
+                  <Undo2 size={14} className={iconClass} />
+                  <span className="flex-1">{t('contextMenu.undo')}</span>
+                  <span className="text-[11px] text-muted-foreground/70">Ctrl+Z</span>
+                </button>
+              )}
 
-            {variant === 'main' && (
+              {showClearHistory && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={itemClass}
+                  onClick={() => closeAnd(handleResetWindowSize)}
+                >
+                  <RotateCcw size={14} className={iconClass} />
+                  <span>{t('common.resetWindowSize')}</span>
+                </button>
+              )}
+
+              {showClearHistory && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={itemClass}
+                  onClick={confirmClearHistory}
+                >
+                  <Trash2 size={14} className="shrink-0 text-destructive" />
+                  <span>{t('settings.clearHistory')}</span>
+                </button>
+              )}
+
+              {showOpenSettings && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={itemClass}
+                  onClick={() =>
+                    closeAnd(() => {
+                      invoke('open_settings').catch(console.error);
+                    })
+                  }
+                >
+                  <Settings size={14} className={iconClass} />
+                  <span>{t('common.settings')}</span>
+                </button>
+              )}
+
+              <div role="separator" className="mx-2 my-1 h-px shrink-0 bg-foreground/15" />
+
+              <button
+                ref={helpTriggerRef}
+                id={`${helpId}-trigger`}
+                type="button"
+                role="menuitem"
+                aria-haspopup="menu"
+                aria-expanded={helpOpen}
+                aria-controls={helpOpen ? helpMenuId : undefined}
+                data-titlebar-help
+                className={itemClass}
+                onPointerEnter={() => showHelp(false)}
+                onClick={(event) => showHelp(event.detail === 0)}
+              >
+                <HelpCircle size={14} className={iconClass} />
+                <span className="flex-1">{t('common.help')}</span>
+                <ChevronRight
+                  size={14}
+                  className={clsx('shrink-0 transition-transform', helpOpen && 'rotate-90')}
+                />
+              </button>
+
+              {variant === 'main' && (
+                <>
+                  <div role="separator" className="mx-2 my-1 h-px shrink-0 bg-foreground/15" />
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={itemClass}
+                    onClick={() =>
+                      closeAnd(async () => {
+                        try {
+                          await invoke('hide_window', { skipLock: true });
+                        } catch {}
+                        try {
+                          await invoke('open_settings', { tab: 'achievements' });
+                        } catch (e) {
+                          console.error('Failed to open achievements:', e);
+                        }
+                      })
+                    }
+                  >
+                    <Trophy
+                      size={14}
+                      className="shrink-0 text-amber-400 group-hover:drop-shadow-[0_0_4px_rgba(251,191,36,0.6)]"
+                    />
+                    <span>
+                      {t('titleBar.moreMenu.achievements', { defaultValue: 'Logros...' })}
+                    </span>
+                  </button>
+                </>
+              )}
+
+              <div role="separator" className="mx-2 my-1 h-px shrink-0 bg-foreground/15" />
+
               <button
                 type="button"
                 role="menuitem"
                 className={itemClass}
                 onClick={() =>
-                  closeAnd(async () => {
-                    try {
-                      await invoke('hide_window', { skipLock: true });
-                    } catch {}
-                    try {
-                      await invoke('open_settings', { tab: 'achievements' });
-                    } catch (e) {
-                      console.error('Failed to open achievements:', e);
-                    }
+                  closeAnd(() => {
+                    invoke('handle_close_choice', { action: 'quit', remember: false }).catch(
+                      console.error
+                    );
                   })
                 }
               >
-                <Trophy
-                  size={14}
-                  className="shrink-0 text-amber-400 group-hover:drop-shadow-[0_0_4px_rgba(251,191,36,0.6)]"
-                />
-                <span>{t('titleBar.moreMenu.achievements', { defaultValue: 'Logros...' })}</span>
+                <Power size={14} className="shrink-0 text-rose-400" />
+                <span>{t('titleBar.moreMenu.exit')}</span>
               </button>
+            </div>
+
+            {helpOpen && (
+              <div
+                ref={helpMenuRef}
+                id={helpMenuId}
+                role="menu"
+                aria-labelledby={`${helpId}-trigger`}
+                data-titlebar-help
+                onKeyDown={(event) => {
+                  if (event.key === 'ArrowLeft') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setHelpOpen(false);
+                    helpTriggerRef.current?.focus();
+                    return;
+                  }
+
+                  const items = Array.from(
+                    helpMenuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ??
+                      []
+                  );
+                  if (items.length === 0) return;
+                  if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                  const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement);
+                  const nextIndex =
+                    event.key === 'Home'
+                      ? 0
+                      : event.key === 'End'
+                        ? items.length - 1
+                        : (currentIndex + (event.key === 'ArrowDown' ? 1 : -1) + items.length) %
+                          items.length;
+                  items[nextIndex]?.focus();
+                }}
+                className="custom-scrollbar fixed z-[310] flex max-h-[calc(100vh-16px)] w-56 flex-col gap-0.5 overflow-y-auto rounded-lg border border-border bg-popover p-[5px] shadow-[0_10px_30px_rgba(0,0,0,0.5),0_1px_3px_rgba(0,0,0,0.3)]"
+                style={{
+                  top: helpPos.top,
+                  left: helpPos.left,
+                  maxHeight: helpPos.maxHeight,
+                  animation: 'titlebarMenuFade 0.12s ease-out',
+                }}
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={itemClass}
+                  onClick={() =>
+                    closeAnd(() => {
+                      openUrl(WIKI_URL).catch(console.error);
+                    })
+                  }
+                >
+                  <Book size={14} className={iconClass} />
+                  <span>{t('titleBar.moreMenu.docs')}</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={itemClass}
+                  onClick={() =>
+                    closeAnd(() => {
+                      openUrl(WEBSITE_URL).catch(console.error);
+                    })
+                  }
+                >
+                  <Gem size={14} className={iconClass} />
+                  <span>{t('titleBar.moreMenu.website')}</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={itemClass}
+                  onClick={() =>
+                    closeAnd(() => {
+                      openUrl(CHANGELOG_URL).catch(console.error);
+                    })
+                  }
+                >
+                  <Tag size={14} className={iconClass} />
+                  <span>{t('titleBar.moreMenu.changelog')}</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={itemClass}
+                  onClick={() =>
+                    closeAnd(() => {
+                      openUrl(GITHUB_URL).catch(console.error);
+                    })
+                  }
+                >
+                  <Github size={14} className={iconClass} />
+                  <span>{t('titleBar.moreMenu.github')}</span>
+                </button>
+                <div role="separator" className="mx-2 my-1 h-px shrink-0 bg-foreground/15" />
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={itemClass}
+                  onClick={() =>
+                    closeAnd(() => {
+                      invoke('open_about').catch(console.error);
+                    })
+                  }
+                >
+                  <Info size={14} className={iconClass} />
+                  <span>{t('titleBar.moreMenu.about')}</span>
+                </button>
+              </div>
             )}
-
-            <button
-              type="button"
-              role="menuitem"
-              className={itemClass}
-              onClick={() =>
-                closeAnd(() => {
-                  invoke('open_about').catch(console.error);
-                })
-              }
-            >
-              <Info size={14} className={iconClass} />
-              <span>{t('titleBar.moreMenu.about')}</span>
-            </button>
-
-            <div role="separator" className="mx-2 my-1 h-px shrink-0 bg-foreground/15" />
-
-            <button
-              type="button"
-              role="menuitem"
-              className={itemClass}
-              onClick={() =>
-                closeAnd(() => {
-                  invoke('handle_close_choice', { action: 'quit', remember: false }).catch(console.error);
-                })
-              }
-            >
-              <Power size={14} className="shrink-0 text-rose-400" />
-              <span>{t('titleBar.moreMenu.exit')}</span>
-            </button>
-          </div>,
+          </>,
           document.body
         )}
 
