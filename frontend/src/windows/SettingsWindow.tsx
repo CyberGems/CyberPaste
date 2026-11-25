@@ -123,17 +123,19 @@ export function SettingsWindow() {
   }
 
   return (
-    <div
-      className="settings-window h-screen"
-      style={
-        isMaximized
-          ? undefined
-          : { border: '1px solid var(--window-border-color, rgba(var(--primary-rgb), 0.25))' }
-      }
-    >
+    <div className="settings-window relative h-screen">
       <div className="h-full overflow-hidden bg-background text-foreground">
         <SettingsPanel settings={settings} onClose={handleClose} />
       </div>
+      {!isMaximized && (
+        // WebView2 can clip the outer pixel on transparent windows.
+        <div
+          aria-hidden="true"
+          data-el="settings-window-border"
+          className="pointer-events-none absolute inset-px z-30 border"
+          style={{ borderColor: 'var(--window-border-color, rgba(var(--primary-rgb), 0.25))' }}
+        />
+      )}
       <Toaster
         position="bottom-center"
         richColors
