@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://cybergems.org/es/apps/cyberpaste/">
-    <img src="https://cybergems.org/banners/es/cyberpaste.png" alt="Historial del portapapeles, todo local" />
+    <img src="https://cybergems.org/banners/es/cyberpaste.png" alt="Historial local de todo lo que copias" />
   </a>
 </p>
 
@@ -25,7 +25,7 @@
 
 <div align="center">
 
-### Todo lo que copias, guardado en local y a un atajo de distancia: texto, imágenes, archivos y código
+### Recupera todo lo que copias —texto, código, imágenes o archivos— desde un historial 100% local.
 
 </div>
 

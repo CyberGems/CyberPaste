@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://cybergems.org/apps/cyberpaste/">
-    <img src="https://cybergems.org/banners/cyberpaste.png" alt="A local clipboard history for everything you copy" />
+    <img src="https://cybergems.org/banners/cyberpaste.png" alt="A local history of everything you copy" />
   </a>
 </p>
 
@@ -25,7 +25,7 @@
 
 <div align="center">
 
-### Everything you copy, kept locally and one hotkey away — text, images, files and code
+### Recall anything you copy — text, code, images or files — from a fully local clipboard history.
 
 </div>
 
