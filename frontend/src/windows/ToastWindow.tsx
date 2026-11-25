@@ -515,6 +515,9 @@ export function ToastWindow() {
 
     setToast(payload);
     toastRef.current = payload;
+    invoke('set_welcome_toast_active', {
+      active: payload.clip_type === 'welcome',
+    }).catch(console.error);
     setIsClosing(false);
     isClosingRef.current = false;
     isMouseInsideRef.current = false;

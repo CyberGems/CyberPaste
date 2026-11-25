@@ -171,21 +171,27 @@ fn foreground_window_relation(
     let our_hwnd = win.hwnd().ok().map(|handle| HWND(handle.0 as _));
     let foreground = unsafe { GetForegroundWindow() };
     let foreground_root = unsafe { GetAncestor(foreground, GA_ROOT) };
-    let foreground_is_ours = our_hwnd.is_some_and(|hwnd| {
-        hwnd == foreground || hwnd == foreground_root
+    let foreground_is_ours =
+        our_hwnd.is_some_and(|hwnd| hwnd == foreground || hwnd == foreground_root);
+    // Secondary windows are app-owned. Only the welcome toast qualifies;
+    // ordinary toasts and the tray popup must still allow auto-hide.
+    let mut foreground_is_sibling = ["settings", "about", "image_viewer"].iter().any(|label| {
+        app.get_webview_window(label)
+            .and_then(|secondary| secondary.hwnd().ok())
+            .is_some_and(|handle| {
+                let hwnd = HWND(handle.0 as _);
+                hwnd == foreground || hwnd == foreground_root
+            })
     });
-    // Settings, About and the image viewer are real windows the user
-    // switched to. Toasts and the tray popup must not veto hiding.
-    let foreground_is_sibling = ["settings", "about", "image_viewer"]
-        .iter()
-        .any(|label| {
-            app.get_webview_window(label)
-                .and_then(|secondary| secondary.hwnd().ok())
-                .is_some_and(|handle| {
-                    let hwnd = HWND(handle.0 as _);
-                    hwnd == foreground || hwnd == foreground_root
-                })
-        });
+    if !foreground_is_sibling && crate::commands::is_welcome_toast_active() {
+        foreground_is_sibling = app
+            .get_webview_window("toast")
+            .and_then(|toast| toast.hwnd().ok())
+            .is_some_and(|handle| {
+                let hwnd = HWND(handle.0 as _);
+                hwnd == foreground || hwnd == foreground_root
+            });
+    }
     (foreground, foreground_is_ours, foreground_is_sibling)
 }
 
@@ -333,7 +339,13 @@ fn start_main_window_outside_click_watcher(app: tauri::AppHandle) {
                     focus_left_streak = 0;
                     continue;
                 };
-                if !settings.hide_on_blur || settings.pinned || is_window_hide_blocked() || has_pending_undos() || native_dialog_is_open() {
+                if !settings.hide_on_blur
+                    || settings.pinned
+                    || is_window_hide_blocked()
+                    || has_pending_undos()
+                    || native_dialog_is_open()
+                    || commands::is_welcome_toast_active()
+                {
                     focus_left_streak = 0;
                     continue;
                 }
@@ -653,7 +665,11 @@ pub fn run_app() {
                             MAIN_SAW_FOREGROUND.store(true, Ordering::SeqCst);
                         }
                     } else if label == "main" {
-                        if is_window_hide_blocked() || has_pending_undos() || native_dialog_is_open() {
+                        if is_window_hide_blocked()
+                            || has_pending_undos()
+                            || native_dialog_is_open()
+                            || commands::is_welcome_toast_active()
+                        {
                             return;
                         }
 
@@ -707,7 +723,11 @@ pub fn run_app() {
                                     return;
                                 }
 
-                                if is_window_hide_blocked() || has_pending_undos() || native_dialog_is_open() {
+                                if is_window_hide_blocked()
+                                    || has_pending_undos()
+                                    || native_dialog_is_open()
+                                    || commands::is_welcome_toast_active()
+                                {
                                     return;
                                 }
 
@@ -1260,6 +1280,7 @@ pub fn run_app() {
             commands::open_about,
             commands::simulate_ctrl_v,
             commands::show_toast,
+            commands::set_welcome_toast_active,
             commands::hide_toast,
             commands::click_toast,
             commands::set_toast_position,

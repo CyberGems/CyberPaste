@@ -4808,6 +4808,25 @@ pub struct ToastPayload {
 static PENDING_TOAST: Lazy<Mutex<Option<ToastPayload>>> =
     Lazy::new(|| Mutex::new(None));
 static TOAST_ACTIVE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+static WELCOME_TOAST_ACTIVE: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+pub(crate) fn is_welcome_toast_active() -> bool {
+    WELCOME_TOAST_ACTIVE.load(std::sync::atomic::Ordering::SeqCst)
+}
+
+#[tauri::command]
+pub fn set_welcome_toast_active(active: bool) {
+    WELCOME_TOAST_ACTIVE.store(active, std::sync::atomic::Ordering::SeqCst);
+}
+
+fn welcome_toast_active_after_dispatch(
+    current: bool,
+    clip_type: Option<&str>,
+    toast_type: &str,
+) -> bool {
+    clip_type == Some("welcome") || (current && toast_type == "update")
+}
 
 #[tauri::command]
 pub async fn toast_ready(
@@ -5024,6 +5043,11 @@ async fn dispatch_toast(app: AppHandle, payload: ToastPayload) -> Result<(), Str
     }
 
     let window_label = "toast";
+    let welcome_toast_active = welcome_toast_active_after_dispatch(
+        is_welcome_toast_active(),
+        payload.clip_type.as_deref(),
+        &payload.toast_type,
+    );
 
     {
         let mut lock = PENDING_TOAST.lock();
@@ -5080,11 +5104,13 @@ async fn dispatch_toast(app: AppHandle, payload: ToastPayload) -> Result<(), Str
         ensure_toast_noactivate(&toast_win);
     }
 
+    WELCOME_TOAST_ACTIVE.store(welcome_toast_active, std::sync::atomic::Ordering::SeqCst);
     Ok(())
 }
 
 pub fn force_hide_toast(app: &AppHandle) {
     TOAST_ACTIVE.store(false, std::sync::atomic::Ordering::SeqCst);
+    WELCOME_TOAST_ACTIVE.store(false, std::sync::atomic::Ordering::SeqCst);
     *PENDING_TOAST.lock() = None;
     if let Some(win) = app.get_webview_window("toast") {
         hide_toast_window(&win);
@@ -5215,23 +5241,27 @@ pub async fn set_toast_position(app: AppHandle, width: f64, height: f64) -> Resu
     Ok(())
 }
 
-/// Keep non-focusable toast windows flagged `WS_EX_NOACTIVATE` so showing or
-/// clicking them never steals Win32 foreground focus from the main window or active app.
+#[cfg(windows)]
+fn apply_toast_noactivate(hwnd: windows::Win32::Foundation::HWND) {
+    use windows::Win32::UI::WindowsAndMessaging::{
+        GetWindowLongPtrW, SetWindowLongPtrW, GWL_EXSTYLE, WS_EX_NOACTIVATE,
+    };
+    unsafe {
+        let ex_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+        let noactivate = WS_EX_NOACTIVATE.0 as isize;
+        if (ex_style & noactivate) == 0 {
+            let _ = SetWindowLongPtrW(hwnd, GWL_EXSTYLE, ex_style | noactivate);
+        }
+    }
+}
+
 fn ensure_toast_noactivate(win: &tauri::WebviewWindow) {
     #[cfg(windows)]
     if let Ok(handle) = win.hwnd() {
-        use windows::Win32::Foundation::HWND;
-        use windows::Win32::UI::WindowsAndMessaging::{
-            GetWindowLongPtrW, SetWindowLongPtrW, GWL_EXSTYLE, WS_EX_NOACTIVATE,
-        };
-        let hwnd = HWND(handle.0 as _);
-        unsafe {
-            let ex_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
-            let noactivate = WS_EX_NOACTIVATE.0 as isize;
-            if (ex_style & noactivate) == 0 {
-                let _ = SetWindowLongPtrW(hwnd, GWL_EXSTYLE, ex_style | noactivate);
-            }
-        }
+        let hwnd_raw = handle.0 as isize;
+        let _ = win.run_on_main_thread(move || {
+            apply_toast_noactivate(windows::Win32::Foundation::HWND(hwnd_raw as _));
+        });
     }
     #[cfg(not(windows))]
     {
@@ -5272,8 +5302,10 @@ fn show_toast_noactivate(win: &tauri::WebviewWindow) {
         let hwnd_raw = handle.0 as isize;
         let _ = win.run_on_main_thread(move || {
             if TOAST_ACTIVE.load(std::sync::atomic::Ordering::SeqCst) {
+                let hwnd = HWND(hwnd_raw as _);
+                apply_toast_noactivate(hwnd);
                 unsafe {
-                    let _ = ShowWindow(HWND(hwnd_raw as _), SW_SHOWNA);
+                    let _ = ShowWindow(hwnd, SW_SHOWNA);
                 }
             }
         });
@@ -6810,4 +6842,32 @@ mod storage_tests {
     }
 }
 
+#[cfg(test)]
+mod toast_lifecycle_tests {
+    use super::welcome_toast_active_after_dispatch;
 
+    #[test]
+    fn welcome_state_tracks_the_displayed_toast_not_just_the_latest_dispatch() {
+        assert!(welcome_toast_active_after_dispatch(
+            false,
+            Some("welcome"),
+            "info"
+        ));
+        assert!(!welcome_toast_active_after_dispatch(
+            false,
+            Some("text"),
+            "success"
+        ));
+        assert!(welcome_toast_active_after_dispatch(true, None, "update"));
+        assert!(!welcome_toast_active_after_dispatch(
+            true,
+            Some("text"),
+            "success"
+        ));
+        assert!(!welcome_toast_active_after_dispatch(
+            false,
+            Some("update"),
+            "update"
+        ));
+    }
+}
