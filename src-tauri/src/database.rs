@@ -881,20 +881,6 @@ impl Database {
                 "Obsidian.exe",
                 None,
             ),
-            (
-                "code",
-                "{\n  \"app\": \"CyberPaste\",\n  \"version\": \"1.17.0\",\n  \"theme\": \"cyberpaste\",\n  \"storage\": \"sqlite_local\",\n  \"offline_first\": true\n}".to_string(),
-                "{\n  \"app\": \"CyberPaste\",\n  \"version\": \"1.17.0\"...".to_string(),
-                "Code.exe",
-                None,
-            ),
-            (
-                "code",
-                "# CyberPaste: Modern & Lightweight Clipboard Tool\nnpm run dev".to_string(),
-                "# CyberPaste: Modern & Lightweight Clipboard Tool".to_string(),
-                "WindowsTerminal.exe",
-                None,
-            ),
         ];
 
         for (idx, (clip_type, content, preview, source_app, metadata)) in sample_clips.iter().enumerate() {
@@ -966,6 +952,55 @@ mod tests {
             is_pinned,
             pinned_slot: slot,
         }
+    }
+
+    #[tokio::test]
+    async fn fresh_database_seeds_a_concise_clip_set() {
+        let path = std::env::temp_dir().join(format!("cyberpaste-seed-{}.db", uuid::Uuid::new_v4()));
+        let db = Database::new(path.to_str().unwrap()).await;
+        db.migrate().await.unwrap();
+
+        let clip_types: Vec<String> =
+            sqlx::query_scalar("SELECT clip_type FROM clips ORDER BY sort_order")
+                .fetch_all(&db.pool)
+                .await
+                .unwrap();
+        assert_eq!(clip_types, ["text", "image", "code", "url", "text"]);
+
+        let code_sample: String = sqlx::query_scalar(
+            "SELECT CAST(content AS TEXT) FROM clips WHERE clip_type = 'code'",
+        )
+        .fetch_one(&db.pool)
+        .await
+        .unwrap();
+        assert!(code_sample.contains("export interface ClipboardClip"));
+        db.pool.close().await;
+    }
+
+    #[tokio::test]
+    async fn existing_clips_are_not_replaced_by_initial_samples() {
+        let path = std::env::temp_dir().join(format!("cyberpaste-seed-{}.db", uuid::Uuid::new_v4()));
+        let db = Database::new(path.to_str().unwrap()).await;
+        db.migrate().await.unwrap();
+        sqlx::query("DELETE FROM clips").execute(&db.pool).await.unwrap();
+        sqlx::query(
+            "INSERT INTO clips (uuid, clip_type, content, content_hash)
+             VALUES ('user-clip', 'text', 'keep me', 'user-hash')",
+        )
+        .execute(&db.pool)
+        .await
+        .unwrap();
+        db.pool.close().await;
+
+        let reopened = Database::new(path.to_str().unwrap()).await;
+        reopened.migrate().await.unwrap();
+        let clips: Vec<(String, String)> =
+            sqlx::query_as("SELECT uuid, CAST(content AS TEXT) FROM clips")
+                .fetch_all(&reopened.pool)
+                .await
+                .unwrap();
+        assert_eq!(clips, [("user-clip".to_string(), "keep me".to_string())]);
+        reopened.pool.close().await;
     }
 
     #[tokio::test]
