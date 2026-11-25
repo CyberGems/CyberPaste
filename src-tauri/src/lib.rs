@@ -653,6 +653,7 @@ pub fn run_app() {
 
                         if current_theme == "system" {
                             if let Some(webview_win) = app_handle.get_webview_window(&label) {
+                                crate::apply_window_background(&webview_win, &current_theme);
                                 crate::apply_window_effect(&webview_win, &mica_effect, &theme_, round_corners);
                             }
                         }
@@ -1053,6 +1054,7 @@ pub fn run_app() {
             }
 
             let manager = app_handle.state::<Arc<SettingsManager>>();
+            crate::apply_window_background(&win, &manager.get().theme);
             let saved_hotkey = manager.get().hotkey;
             log::info!("Attempting to register hotkey: {}", saved_hotkey);
 
@@ -1649,6 +1651,8 @@ pub fn animate_window_show(window: &tauri::WebviewWindow) {
             )
         };
 
+        crate::apply_window_background(&window, &theme_str);
+
         let (resolved_target, monitor) = {
             #[cfg(target_os = "windows")]
             {
@@ -2060,6 +2064,35 @@ pub fn normalize_theme(theme: &str) -> &str {
     }
 }
 
+pub(crate) fn window_background_color(theme: &str) -> tauri::webview::Color {
+    match normalize_theme(theme) {
+        "light" => tauri::webview::Color(223, 226, 234, 255),
+        "dark" => tauri::webview::Color(20, 22, 25, 255),
+        "system" => {
+            let is_dark = dark_light::detect()
+                .map(|mode| mode == dark_light::Mode::Dark)
+                .unwrap_or(true);
+            if is_dark {
+                tauri::webview::Color(13, 15, 23, 255)
+            } else {
+                tauri::webview::Color(223, 226, 234, 255)
+            }
+        }
+        _ => tauri::webview::Color(13, 15, 23, 255),
+    }
+}
+
+pub(crate) fn apply_window_background(window: &tauri::WebviewWindow, theme: &str) {
+    let native_window = window.as_ref().window();
+    if let Err(error) = native_window.set_background_color(Some(window_background_color(theme))) {
+        log::warn!(
+            "Failed to set native background for {}: {}",
+            window.label(),
+            error
+        );
+    }
+}
+
 /// Window material derived from the theme — no longer user-selectable.
 /// Dark is the only Mica-backed theme; everything else is `clear` (opaque).
 pub fn effect_for_theme(theme: &str) -> &'static str {
@@ -2331,6 +2364,35 @@ pub fn rebuild_tray_menu(app: &tauri::AppHandle) -> Result<(), tauri::Error> {
     }
     let _ = app.emit("tray-menu-state", &state);
     Ok(())
+}
+
+#[cfg(test)]
+mod window_background_tests {
+    use super::*;
+
+    #[test]
+    fn native_background_matches_each_theme() {
+        assert_eq!(
+            window_background_color("cyberpaste"),
+            tauri::webview::Color(13, 15, 23, 255)
+        );
+        assert_eq!(
+            window_background_color("dark"),
+            tauri::webview::Color(20, 22, 25, 255)
+        );
+        assert_eq!(
+            window_background_color("light"),
+            tauri::webview::Color(223, 226, 234, 255)
+        );
+    }
+
+    #[test]
+    fn unknown_theme_uses_the_default_background() {
+        assert_eq!(
+            window_background_color("legacy-theme"),
+            tauri::webview::Color(13, 15, 23, 255)
+        );
+    }
 }
 
 #[cfg(test)]

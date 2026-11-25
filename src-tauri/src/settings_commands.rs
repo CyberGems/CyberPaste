@@ -191,6 +191,7 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
                         _ => tauri::Theme::Light,
                     }
                 };
+                crate::apply_window_background(&win, &theme_str);
                 crate::apply_window_effect(&win, &mica_effect, &current_theme, round_corners);
             }
             None => {
