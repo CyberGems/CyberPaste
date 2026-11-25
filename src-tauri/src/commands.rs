@@ -6198,6 +6198,56 @@ pub async fn hide_tray_menu(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+fn create_tray_menu_window(app: &AppHandle) -> Result<tauri::WebviewWindow, String> {
+    let webview_create_guard = crate::WEBVIEW_CREATE_LOCK
+        .lock()
+        .map_err(|_| "WebView creation lock poisoned".to_string())?;
+    let result = tauri::WebviewWindowBuilder::new(
+        app,
+        "tray_menu",
+        tauri::WebviewUrl::App("index.html?window=tray_menu".into()),
+    )
+    .title("CyberPaste Tray Menu")
+    .inner_size(
+        TRAY_MENU_WIDTH + 2.0 * TRAY_MENU_SHADOW_PAD + TRAY_MENU_FLYOUT_EXTRA_W,
+        TRAY_MENU_CANVAS_EST_HEIGHT,
+    )
+    .decorations(false)
+    .transparent(true)
+    .always_on_top(true)
+    .skip_taskbar(true)
+    .resizable(false)
+    .shadow(false)
+    // Warmup must never enter the foreground chain before the user opens the menu.
+    .focused(false)
+    .focusable(false)
+    .visible(false)
+    .build();
+    drop(webview_create_guard);
+    let win = result.map_err(|e| format!("Failed to create tray menu window: {}", e))?;
+
+    // Native focus-loss dismiss (more reliable than webview blur alone)
+    let win_blur = win.clone();
+    let app_blur = app.clone();
+    win.on_window_event(move |event| {
+        if let tauri::WindowEvent::Focused(false) = event {
+            let win = win_blur.clone();
+            let app = app_blur.clone();
+            // Defer so menu item actions can run first
+            tauri::async_runtime::spawn(async move {
+                tokio::time::sleep(std::time::Duration::from_millis(80)).await;
+                // Only hide if we still don't have focus (action may have focused another window)
+                if !win.is_focused().unwrap_or(false) {
+                    let _ = win.hide();
+                    let _ = app.emit("tray-menu-hide", ());
+                }
+            });
+        }
+    });
+
+    Ok(win)
+}
+
 /// Create (or reuse) the hidden tray-menu window, position it at the estimated size and show it
 /// immediately — before the webview round-trip. `tray_menu_ready` only corrects the size if the
 /// measured height differs meaningfully.
@@ -6205,55 +6255,15 @@ fn show_tray_menu_fast(app: &AppHandle, anchor_x: i32, anchor_y: i32) -> Result<
     let window_label = "tray_menu";
     let est_w = TRAY_MENU_WIDTH + 2.0 * TRAY_MENU_SHADOW_PAD;
     let est_h = TRAY_MENU_EST_HEIGHT + 2.0 * TRAY_MENU_SHADOW_PAD;
-    let est_canvas_w = est_w + TRAY_MENU_FLYOUT_EXTRA_W;
     let est_canvas_h = TRAY_MENU_CANVAS_EST_HEIGHT;
 
     let (created_now, win) = if let Some(win) = app.get_webview_window(window_label) {
         (false, win)
     } else {
-        let webview_create_guard = crate::WEBVIEW_CREATE_LOCK
-            .lock()
-            .map_err(|_| "WebView creation lock poisoned".to_string())?;
-        let result = tauri::WebviewWindowBuilder::new(
-            app,
-            window_label,
-            tauri::WebviewUrl::App("index.html?window=tray_menu".into()),
-        )
-        .title("CyberPaste Tray Menu")
-        .inner_size(est_canvas_w, est_canvas_h)
-        .decorations(false)
-        .transparent(true)
-        .always_on_top(true)
-        .skip_taskbar(true)
-        .resizable(false)
-        .shadow(false) // CSS box-shadow on the menu card (transparent chrome)
-        .focused(true)
-        .visible(false)
-        .build();
-        drop(webview_create_guard);
-        let win = result.map_err(|e| format!("Failed to create tray menu window: {}", e))?;
-
-        // Native focus-loss dismiss (more reliable than webview blur alone)
-        let win_blur = win.clone();
-        let app_blur = app.clone();
-        win.on_window_event(move |event| {
-            if let tauri::WindowEvent::Focused(false) = event {
-                let win = win_blur.clone();
-                let app = app_blur.clone();
-                // Defer so menu item actions can run first
-                tauri::async_runtime::spawn(async move {
-                    tokio::time::sleep(std::time::Duration::from_millis(80)).await;
-                    // Only hide if we still don't have focus (action may have focused another window)
-                    if !win.is_focused().unwrap_or(false) {
-                        let _ = win.hide();
-                        let _ = app.emit("tray-menu-hide", ());
-                    }
-                });
-            }
-        });
-        (true, win)
+        (true, create_tray_menu_window(app)?)
     };
 
+    let _ = win.set_focusable(true);
     crate::disable_window_transitions(&win);
     crate::suppress_window_border(&win);
 
@@ -6314,12 +6324,7 @@ pub async fn show_tray_menu_at(app: AppHandle, anchor_x: i32, anchor_y: i32) -> 
 /// doesn't pay the WebView2 creation cost. Safe after suspend/resume: recreates if destroyed.
 pub async fn warm_tray_menu(app: AppHandle) -> Result<(), String> {
     if app.get_webview_window("tray_menu").is_none() {
-        let (x, y) = TRAY_MENU_ANCHOR.lock().ok().and_then(|g| *g).unwrap_or((100, 100));
-        show_tray_menu_at(app.clone(), x, y).await?;
-        if let Some(win) = app.get_webview_window("tray_menu") {
-            TRAY_MENU_PENDING_SHOW.store(false, std::sync::atomic::Ordering::SeqCst);
-            let _ = win.hide();
-        }
+        create_tray_menu_window(&app)?;
     }
     Ok(())
 }
