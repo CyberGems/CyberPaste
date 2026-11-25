@@ -415,9 +415,10 @@ export const ControlBar: React.FC<ControlBarProps> = ({
 
   const handleWheel = (e: React.WheelEvent) => {
     if (!wheelFolderNavigation) {
-      if (foldersRef.current) {
-        foldersRef.current.scrollLeft += e.deltaY;
-      }
+      foldersRef.current?.scrollBy({
+        left: e.deltaY,
+        behavior: 'smooth',
+      });
       return;
     }
 

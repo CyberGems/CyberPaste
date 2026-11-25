@@ -1072,13 +1072,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
 
   const handleWheel = (e: React.WheelEvent) => {
     if (!wheelFolderNavigation) {
-      if (folderScrollRef.current) {
-        if (isVertical) {
-          folderScrollRef.current.scrollTop += e.deltaY;
-        } else {
-          folderScrollRef.current.scrollLeft += e.deltaY * 1.5;
-        }
-      }
+      folderScrollRef.current?.scrollBy({
+        ...(isVertical ? { top: e.deltaY } : { left: e.deltaY * 1.5 }),
+        behavior: 'smooth',
+      });
       return;
     }
 
