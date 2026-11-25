@@ -889,6 +889,17 @@ export const CompactView: React.FC<CompactViewProps> = ({
   const isClipboardFlashing = useFolderFlash(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const didFocusRef = useRef(false);
+  const clearSearchFocus = useCallback(() => {
+    searchInputRef.current?.blur();
+  }, []);
+  const handleSearchScopePointerDown = useCallback(
+    (event: React.PointerEvent<HTMLLabelElement>) => {
+      if (document.activeElement === searchInputRef.current) {
+        event.stopPropagation();
+      }
+    },
+    []
+  );
   const {
     menuPos: searchMenuPos,
     options: searchMenuOptions,
@@ -964,6 +975,12 @@ export const CompactView: React.FC<CompactViewProps> = ({
       );
     }
   }, [searchFocusToken]);
+
+  useEffect(() => {
+    if (!isWindowActive) {
+      clearSearchFocus();
+    }
+  }, [isWindowActive, clearSearchFocus]);
 
   const filteredClips = useMemo(() => {
     let res =
@@ -1552,7 +1569,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
         }
       `}</style>
       {/* Header */}
-      <div className="relative flex h-12 flex-shrink-0 items-stretch justify-between overflow-hidden border-b border-border bg-card/65 px-3 backdrop-blur-sm">
+      <div
+        onMouseDownCapture={clearSearchFocus}
+        className="relative flex h-12 flex-shrink-0 items-stretch justify-between overflow-hidden border-b border-border bg-card/65 px-3 backdrop-blur-sm"
+      >
         {/* Scan-line sweep (CSS-only, GPU-composited) - 50% opacity of full view */}
         {titleBarAnimationEnabled && (
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -1984,10 +2004,16 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     size={14}
                   />
                   {!isEmojiMode && (
-                    <span className="ml-2 flex min-w-0 max-w-[55%] items-center gap-1 whitespace-nowrap text-[10px] text-muted-foreground/70">
+                    <label
+                      htmlFor="search-input"
+                      onPointerDown={handleSearchScopePointerDown}
+                      className="ml-2 flex min-w-0 max-w-[55%] cursor-text items-center gap-1 whitespace-nowrap text-[10px] text-muted-foreground/70"
+                    >
                       <span className="shrink-0">{t('common.searchIn')}</span>
-                      <span className="min-w-0 truncate text-primary/80">{currentFolderName}</span>
-                    </span>
+                      <span className="min-w-0 truncate transition-colors group-focus-within:text-primary/80">
+                        {currentFolderName}
+                      </span>
+                    </label>
                   )}
                   <input
                     type="text"
@@ -2057,6 +2083,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   )}
                   <SearchHistoryMenu
                     focusRef={searchInputRef}
+                    enabled={isWindowActive}
                     history={recentSearches}
                     toggleToken={searchHistoryToggleToken}
                     onSelect={onSelectSearchHistory}
@@ -2255,10 +2282,16 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   size={14}
                 />
                 {!isEmojiMode && (
-                  <span className="ml-2 flex min-w-0 max-w-[55%] items-center gap-1 whitespace-nowrap text-[10px] text-muted-foreground/70">
+                  <label
+                    htmlFor="search-input"
+                    onPointerDown={handleSearchScopePointerDown}
+                    className="ml-2 flex min-w-0 max-w-[55%] cursor-text items-center gap-1 whitespace-nowrap text-[10px] text-muted-foreground/70"
+                  >
                     <span className="shrink-0">{t('common.searchIn')}</span>
-                    <span className="min-w-0 truncate text-primary/80">{currentFolderName}</span>
-                  </span>
+                    <span className="min-w-0 truncate transition-colors group-focus-within:text-primary/80">
+                      {currentFolderName}
+                    </span>
+                  </label>
                 )}
                 <input
                   type="text"
@@ -2328,6 +2361,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                 )}
                 <SearchHistoryMenu
                   focusRef={searchInputRef}
+                  enabled={isWindowActive}
                   history={recentSearches}
                   toggleToken={searchHistoryToggleToken}
                   onSelect={onSelectSearchHistory}
