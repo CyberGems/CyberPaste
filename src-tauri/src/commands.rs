@@ -4810,14 +4810,46 @@ static PENDING_TOAST: Lazy<Mutex<Option<ToastPayload>>> =
 static TOAST_ACTIVE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 static WELCOME_TOAST_ACTIVE: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
+static WELCOME_TOAST_HANDOFF_ACTIVE: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+#[cfg(windows)]
+static WELCOME_TOAST_PREVIOUS_FOREGROUND: std::sync::atomic::AtomicPtr<()> =
+    std::sync::atomic::AtomicPtr::new(std::ptr::null_mut());
 
-pub(crate) fn is_welcome_toast_active() -> bool {
-    WELCOME_TOAST_ACTIVE.load(std::sync::atomic::Ordering::SeqCst)
+fn welcome_toast_guard_active(active: bool, handoff: bool) -> bool {
+    active || handoff
 }
 
-#[tauri::command]
-pub fn set_welcome_toast_active(active: bool) {
-    WELCOME_TOAST_ACTIVE.store(active, std::sync::atomic::Ordering::SeqCst);
+pub(crate) fn is_welcome_toast_guard_active() -> bool {
+    welcome_toast_guard_active(
+        WELCOME_TOAST_ACTIVE.load(std::sync::atomic::Ordering::SeqCst),
+        WELCOME_TOAST_HANDOFF_ACTIVE.load(std::sync::atomic::Ordering::SeqCst),
+    )
+}
+
+#[cfg(windows)]
+fn remember_welcome_toast_foreground(app: &tauri::AppHandle) {
+    use std::sync::atomic::Ordering;
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow;
+
+    let foreground = unsafe { GetForegroundWindow() };
+    let toast_hwnd = app
+        .get_webview_window("toast")
+        .and_then(|toast| toast.hwnd().ok())
+        .map(|handle| HWND(handle.0 as _));
+    let previous = if toast_hwnd.is_some_and(|toast| toast == foreground) {
+        app.get_webview_window("main")
+            .filter(|main| main.is_visible().unwrap_or(false))
+            .and_then(|main| main.hwnd().ok())
+            .map(|handle| HWND(handle.0 as _))
+    } else {
+        Some(foreground)
+    };
+    WELCOME_TOAST_PREVIOUS_FOREGROUND.store(
+        previous.map_or(std::ptr::null_mut(), |hwnd| hwnd.0 as *mut ()),
+        Ordering::SeqCst,
+    );
 }
 
 fn welcome_toast_active_after_dispatch(
@@ -5044,10 +5076,14 @@ async fn dispatch_toast(app: AppHandle, payload: ToastPayload) -> Result<(), Str
 
     let window_label = "toast";
     let welcome_toast_active = welcome_toast_active_after_dispatch(
-        is_welcome_toast_active(),
+        WELCOME_TOAST_ACTIVE.load(std::sync::atomic::Ordering::SeqCst),
         payload.clip_type.as_deref(),
         &payload.toast_type,
     );
+    if !WELCOME_TOAST_ACTIVE.load(std::sync::atomic::Ordering::SeqCst) && welcome_toast_active {
+        #[cfg(windows)]
+        remember_welcome_toast_foreground(&app);
+    }
 
     {
         let mut lock = PENDING_TOAST.lock();
@@ -5109,12 +5145,107 @@ async fn dispatch_toast(app: AppHandle, payload: ToastPayload) -> Result<(), Str
 }
 
 pub fn force_hide_toast(app: &AppHandle) {
+    let welcome_handoff = WELCOME_TOAST_ACTIVE.swap(false, std::sync::atomic::Ordering::SeqCst);
+    if welcome_handoff {
+        WELCOME_TOAST_HANDOFF_ACTIVE.store(true, std::sync::atomic::Ordering::SeqCst);
+    }
     TOAST_ACTIVE.store(false, std::sync::atomic::Ordering::SeqCst);
-    WELCOME_TOAST_ACTIVE.store(false, std::sync::atomic::Ordering::SeqCst);
     *PENDING_TOAST.lock() = None;
     if let Some(win) = app.get_webview_window("toast") {
-        hide_toast_window(&win);
+        if welcome_handoff {
+            hide_toast_window_with_foreground_restore(app, &win);
+        } else {
+            hide_toast_window(&win);
+        }
+    } else if welcome_handoff {
+        finish_welcome_toast_handoff();
     }
+}
+
+#[cfg(windows)]
+fn finish_welcome_toast_handoff() {
+    use std::sync::atomic::Ordering;
+    WELCOME_TOAST_PREVIOUS_FOREGROUND.store(std::ptr::null_mut(), Ordering::SeqCst);
+    WELCOME_TOAST_HANDOFF_ACTIVE.store(false, Ordering::SeqCst);
+}
+
+#[cfg(not(windows))]
+fn finish_welcome_toast_handoff() {
+    WELCOME_TOAST_HANDOFF_ACTIVE.store(false, std::sync::atomic::Ordering::SeqCst);
+}
+
+#[cfg(windows)]
+fn restore_welcome_toast_foreground(app: &AppHandle, toast: windows::Win32::Foundation::HWND) {
+    use std::sync::atomic::Ordering;
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::{IsWindow, SetForegroundWindow};
+
+    let previous = WELCOME_TOAST_PREVIOUS_FOREGROUND.swap(std::ptr::null_mut(), Ordering::SeqCst);
+    if previous.is_null() {
+        return;
+    }
+    let previous = HWND(previous as _);
+    if previous == toast || !unsafe { IsWindow(Some(previous)) }.as_bool() {
+        return;
+    }
+
+    let owned_window = ["main", "settings", "about", "image_viewer"]
+        .iter()
+        .find_map(|label| {
+            let window = app.get_webview_window(label)?;
+            let hwnd = window.hwnd().ok().map(|handle| HWND(handle.0 as _))?;
+            (hwnd == previous).then_some(window)
+        });
+    if let Some(window) = owned_window {
+        if window.is_visible().unwrap_or(false) {
+            crate::force_window_foreground(&window);
+        }
+    } else {
+        unsafe {
+            let _ = SetForegroundWindow(previous);
+        }
+    }
+}
+
+#[cfg(windows)]
+fn hide_toast_window_with_foreground_restore(app: &AppHandle, win: &tauri::WebviewWindow) {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::{
+        GetAncestor, GetForegroundWindow, ShowWindow, GA_ROOT, SW_HIDE,
+    };
+
+    let Ok(handle) = win.hwnd() else {
+        hide_toast_window(win);
+        finish_welcome_toast_handoff();
+        return;
+    };
+    let hwnd_raw = handle.0 as isize;
+    let app = app.clone();
+    run_toast_on_ui_thread(win, move || {
+        if TOAST_ACTIVE.load(std::sync::atomic::Ordering::SeqCst) {
+            WELCOME_TOAST_HANDOFF_ACTIVE.store(false, std::sync::atomic::Ordering::SeqCst);
+            return;
+        }
+        let toast = HWND(hwnd_raw as _);
+        let foreground = unsafe { GetForegroundWindow() };
+        let foreground_root = unsafe { GetAncestor(foreground, GA_ROOT) };
+        let restore_foreground = foreground == toast || foreground_root == toast;
+
+        unsafe {
+            let _ = ShowWindow(toast, SW_HIDE);
+        }
+        if restore_foreground {
+            restore_welcome_toast_foreground(&app, toast);
+        }
+        finish_welcome_toast_handoff();
+    });
+}
+
+#[cfg(not(windows))]
+fn hide_toast_window_with_foreground_restore(app: &AppHandle, win: &tauri::WebviewWindow) {
+    let _ = app;
+    hide_toast_window(win);
+    finish_welcome_toast_handoff();
 }
 
 #[tauri::command]
@@ -5231,8 +5362,7 @@ pub async fn set_toast_position(app: AppHandle, width: f64, height: f64) -> Resu
                 y: target_y,
             }));
             if TOAST_ACTIVE.load(std::sync::atomic::Ordering::SeqCst) {
-                raise_toast_topmost(&win);
-                show_toast_noactivate(&win);
+                present_toast_noactivate(&win);
             } else {
                 hide_toast_window(&win);
             }
@@ -5242,15 +5372,21 @@ pub async fn set_toast_position(app: AppHandle, width: f64, height: f64) -> Resu
 }
 
 #[cfg(windows)]
-fn apply_toast_noactivate(hwnd: windows::Win32::Foundation::HWND) {
+fn toast_extended_styles(existing: isize) -> isize {
+    use windows::Win32::UI::WindowsAndMessaging::{WS_EX_NOACTIVATE, WS_EX_TOPMOST};
+    existing | WS_EX_NOACTIVATE.0 as isize | WS_EX_TOPMOST.0 as isize
+}
+
+#[cfg(windows)]
+fn apply_toast_window_styles(hwnd: windows::Win32::Foundation::HWND) {
     use windows::Win32::UI::WindowsAndMessaging::{
-        GetWindowLongPtrW, SetWindowLongPtrW, GWL_EXSTYLE, WS_EX_NOACTIVATE,
+        GetWindowLongPtrW, SetWindowLongPtrW, GWL_EXSTYLE,
     };
     unsafe {
         let ex_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
-        let noactivate = WS_EX_NOACTIVATE.0 as isize;
-        if (ex_style & noactivate) == 0 {
-            let _ = SetWindowLongPtrW(hwnd, GWL_EXSTYLE, ex_style | noactivate);
+        let next_style = toast_extended_styles(ex_style);
+        if next_style != ex_style {
+            let _ = SetWindowLongPtrW(hwnd, GWL_EXSTYLE, next_style);
         }
     }
 }
@@ -5260,7 +5396,7 @@ fn ensure_toast_noactivate(win: &tauri::WebviewWindow) {
     if let Ok(handle) = win.hwnd() {
         let hwnd_raw = handle.0 as isize;
         let _ = win.run_on_main_thread(move || {
-            apply_toast_noactivate(windows::Win32::Foundation::HWND(hwnd_raw as _));
+            apply_toast_window_styles(windows::Win32::Foundation::HWND(hwnd_raw as _));
         });
     }
     #[cfg(not(windows))]
@@ -5269,85 +5405,105 @@ fn ensure_toast_noactivate(win: &tauri::WebviewWindow) {
     }
 }
 
-/// Hide the toast window both via Tauri and directly on the Win32 HWND.
-/// `show_toast_noactivate` uses `ShowWindow(SW_SHOWNA)` so `tao`'s cached
-/// `WindowFlags::VISIBLE` can remain `false`, making `win.hide()` alone a no-op.
+#[cfg(windows)]
+fn run_toast_on_ui_thread<F>(win: &tauri::WebviewWindow, apply: F)
+where
+    F: FnOnce() + Send + 'static,
+{
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::System::Threading::GetCurrentThreadId;
+    use windows::Win32::UI::WindowsAndMessaging::GetWindowThreadProcessId;
+
+    let apply = Arc::new(Mutex::new(Some(apply)));
+    let apply_on_ui = Arc::clone(&apply);
+    let owner_thread = win
+        .hwnd()
+        .ok()
+        .map(|handle| unsafe { GetWindowThreadProcessId(HWND(handle.0 as _), None) })
+        .unwrap_or(0);
+    if owner_thread == 0 || owner_thread == unsafe { GetCurrentThreadId() } {
+        if let Some(apply) = apply.lock().take() {
+            apply();
+        }
+        return;
+    }
+
+    let (tx, rx) = std::sync::mpsc::sync_channel(1);
+    if win
+        .run_on_main_thread(move || {
+            if let Some(apply) = apply_on_ui.lock().take() {
+                apply();
+            }
+            let _ = tx.try_send(());
+        })
+        .is_ok()
+    {
+        let _ = rx.recv_timeout(std::time::Duration::from_millis(500));
+    } else if let Some(apply) = apply.lock().take() {
+        apply();
+    }
+}
+
+// SW_SHOWNA leaves tao's cached visibility false, so hiding must use the HWND directly.
 fn hide_toast_window(win: &tauri::WebviewWindow) {
-    let _ = win.hide();
     #[cfg(windows)]
     if let Ok(handle) = win.hwnd() {
         use windows::Win32::Foundation::HWND;
         use windows::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_HIDE};
         let hwnd_raw = handle.0 as isize;
-        unsafe {
-            let _ = ShowWindow(HWND(hwnd_raw as _), SW_HIDE);
-        }
-        let _ = win.run_on_main_thread(move || {
+        run_toast_on_ui_thread(win, move || unsafe {
             if !TOAST_ACTIVE.load(std::sync::atomic::Ordering::SeqCst) {
-                unsafe {
-                    let _ = ShowWindow(HWND(hwnd_raw as _), SW_HIDE);
-                }
-            }
-        });
-    }
-}
-
-/// Show the toast without calling `win.show()` (`SW_SHOW`), which would otherwise
-/// activate a newly initialized WebView2 toast window and steal focus.
-fn show_toast_noactivate(win: &tauri::WebviewWindow) {
-    #[cfg(windows)]
-    if let Ok(handle) = win.hwnd() {
-        use windows::Win32::Foundation::HWND;
-        use windows::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_SHOWNA};
-        let hwnd_raw = handle.0 as isize;
-        let _ = win.run_on_main_thread(move || {
-            if TOAST_ACTIVE.load(std::sync::atomic::Ordering::SeqCst) {
-                let hwnd = HWND(hwnd_raw as _);
-                apply_toast_noactivate(hwnd);
-                unsafe {
-                    let _ = ShowWindow(hwnd, SW_SHOWNA);
-                }
+                let _ = ShowWindow(HWND(hwnd_raw as _), SW_HIDE);
             }
         });
         return;
     }
-    #[cfg(not(windows))]
-    {
-        let _ = win.show();
-    }
+    let _ = win.hide();
 }
 
-/// Hidden toast windows lose WS_EX_TOPMOST after lock screen, fullscreen apps,
-/// or hours of sitting idle. Re-assert it on every show without altering visibility.
-fn raise_toast_topmost(win: &tauri::WebviewWindow) {
-    let _ = win.set_always_on_top(true);
+// Apply topmost and non-activating styles in the same UI-thread operation that shows the toast.
+fn present_toast_noactivate(win: &tauri::WebviewWindow) {
     #[cfg(windows)]
     if let Ok(handle) = win.hwnd() {
         use windows::Win32::Foundation::HWND;
         use windows::Win32::UI::WindowsAndMessaging::{
-            SetWindowPos, HWND_NOTOPMOST, HWND_TOPMOST, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE,
+            SetWindowPos, ShowWindow, HWND_NOTOPMOST, HWND_TOPMOST, SWP_NOACTIVATE, SWP_NOMOVE,
+            SWP_NOSIZE, SW_SHOWNA,
         };
-        let hwnd = HWND(handle.0 as _);
-        unsafe {
-            let _ = SetWindowPos(
-                hwnd,
-                Some(HWND_NOTOPMOST),
-                0,
-                0,
-                0,
-                0,
-                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
-            );
-            let _ = SetWindowPos(
-                hwnd,
-                Some(HWND_TOPMOST),
-                0,
-                0,
-                0,
-                0,
-                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
-            );
-        }
+        let hwnd_raw = handle.0 as isize;
+        let _ = win.run_on_main_thread(move || {
+            if !TOAST_ACTIVE.load(std::sync::atomic::Ordering::SeqCst) {
+                return;
+            }
+            let hwnd = HWND(hwnd_raw as _);
+            apply_toast_window_styles(hwnd);
+            unsafe {
+                let _ = SetWindowPos(
+                    hwnd,
+                    Some(HWND_NOTOPMOST),
+                    0,
+                    0,
+                    0,
+                    0,
+                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
+                );
+                let _ = SetWindowPos(
+                    hwnd,
+                    Some(HWND_TOPMOST),
+                    0,
+                    0,
+                    0,
+                    0,
+                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
+                );
+                let _ = ShowWindow(hwnd, SW_SHOWNA);
+            }
+        });
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = win.set_always_on_top(true);
+        let _ = win.show();
     }
 }
 
@@ -6844,7 +7000,27 @@ mod storage_tests {
 
 #[cfg(test)]
 mod toast_lifecycle_tests {
-    use super::welcome_toast_active_after_dispatch;
+    use super::{welcome_toast_active_after_dispatch, welcome_toast_guard_active};
+
+    #[test]
+    fn welcome_guard_covers_the_foreground_handoff_after_the_toast_is_dismissed() {
+        assert!(welcome_toast_guard_active(true, false));
+        assert!(welcome_toast_guard_active(false, true));
+        assert!(!welcome_toast_guard_active(false, false));
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn toast_styles_keep_existing_flags_and_force_noactivate_and_topmost() {
+        use windows::Win32::UI::WindowsAndMessaging::{
+            WS_EX_APPWINDOW, WS_EX_NOACTIVATE, WS_EX_TOPMOST,
+        };
+        let existing = WS_EX_APPWINDOW.0 as isize;
+        let styled = super::toast_extended_styles(existing);
+        assert_eq!(styled & existing, existing);
+        assert_ne!(styled & WS_EX_NOACTIVATE.0 as isize, 0);
+        assert_ne!(styled & WS_EX_TOPMOST.0 as isize, 0);
+    }
 
     #[test]
     fn welcome_state_tracks_the_displayed_toast_not_just_the_latest_dispatch() {

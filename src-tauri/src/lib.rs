@@ -183,7 +183,7 @@ fn foreground_window_relation(
                 hwnd == foreground || hwnd == foreground_root
             })
     });
-    if !foreground_is_sibling && crate::commands::is_welcome_toast_active() {
+    if !foreground_is_sibling && crate::commands::is_welcome_toast_guard_active() {
         foreground_is_sibling = app
             .get_webview_window("toast")
             .and_then(|toast| toast.hwnd().ok())
@@ -212,7 +212,7 @@ fn describe_hwnd(hwnd: windows::Win32::Foundation::HWND) -> String {
 }
 
 #[cfg(target_os = "windows")]
-fn force_window_foreground(window: &tauri::WebviewWindow) {
+pub(crate) fn force_window_foreground(window: &tauri::WebviewWindow) {
     use windows::Win32::Foundation::HWND;
     use windows::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId};
     use windows::Win32::UI::WindowsAndMessaging::{
@@ -279,7 +279,7 @@ fn force_window_foreground(window: &tauri::WebviewWindow) {
 }
 
 #[cfg(not(target_os = "windows"))]
-fn force_window_foreground(window: &tauri::WebviewWindow) {
+pub(crate) fn force_window_foreground(window: &tauri::WebviewWindow) {
     let _ = window.set_focus();
 }
 
@@ -344,7 +344,7 @@ fn start_main_window_outside_click_watcher(app: tauri::AppHandle) {
                     || is_window_hide_blocked()
                     || has_pending_undos()
                     || native_dialog_is_open()
-                    || commands::is_welcome_toast_active()
+                    || commands::is_welcome_toast_guard_active()
                 {
                     focus_left_streak = 0;
                     continue;
@@ -668,7 +668,7 @@ pub fn run_app() {
                         if is_window_hide_blocked()
                             || has_pending_undos()
                             || native_dialog_is_open()
-                            || commands::is_welcome_toast_active()
+                            || commands::is_welcome_toast_guard_active()
                         {
                             return;
                         }
@@ -726,7 +726,7 @@ pub fn run_app() {
                                 if is_window_hide_blocked()
                                     || has_pending_undos()
                                     || native_dialog_is_open()
-                                    || commands::is_welcome_toast_active()
+                                    || commands::is_welcome_toast_guard_active()
                                 {
                                     return;
                                 }
@@ -1280,7 +1280,6 @@ pub fn run_app() {
             commands::open_about,
             commands::simulate_ctrl_v,
             commands::show_toast,
-            commands::set_welcome_toast_active,
             commands::hide_toast,
             commands::click_toast,
             commands::set_toast_position,

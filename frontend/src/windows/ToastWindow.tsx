@@ -420,7 +420,6 @@ export function ToastWindow() {
     setIsPinned(false);
     setContextMenu(null);
     contextMenuRef.current = null;
-    getCurrentWindow().setFocusable(false).catch(console.error);
     const epochAtClose = toastEpochRef.current;
     closeAnimTimerRef.current = setTimeout(() => {
       closeAnimTimerRef.current = null;
@@ -515,15 +514,11 @@ export function ToastWindow() {
 
     setToast(payload);
     toastRef.current = payload;
-    invoke('set_welcome_toast_active', {
-      active: payload.clip_type === 'welcome',
-    }).catch(console.error);
     setIsClosing(false);
     isClosingRef.current = false;
     isMouseInsideRef.current = false;
     setContextMenu(null);
     contextMenuRef.current = null;
-    getCurrentWindow().setFocusable(false).catch(console.error);
 
     let isClipPinned = false;
     if (payload.clip_uuid) {
@@ -595,7 +590,6 @@ export function ToastWindow() {
     const hadMenu = contextMenuRef.current !== null;
     setContextMenu(null);
     contextMenuRef.current = null;
-    await getCurrentWindow().setFocusable(false).catch(console.error);
 
     if (!toastRef.current) {
       invoke('hide_toast').catch(console.error);
@@ -790,15 +784,11 @@ export function ToastWindow() {
     );
     const menuHeight = hasAiActions ? 420 : 260;
 
-    const toastWindow = getCurrentWindow();
-    await toastWindow.setFocusable(true).catch(console.error);
-
-    // Resize window to allow context menu to render without being cut off
+    // Keep the toast non-activating so menu interactions never steal foreground focus.
     await invoke('set_toast_position', {
       width: normalWidthRef.current + TOAST_BLEED * 2,
       height: normalHeightRef.current + menuHeight,
     }).catch(console.error);
-    await toastWindow.setFocus().catch(console.error);
 
     const adjustedY = e.clientY + (isBottomEdge ? menuHeight : 0);
     setContextMenu({ x: e.clientX, y: adjustedY });
