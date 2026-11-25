@@ -849,6 +849,22 @@ pub fn run_app() {
             }
         })
         .setup(move |app| {
+            // Create main manually so Windows can suppress the transparent-window redirection flash.
+            let main_config = app
+                .config()
+                .app
+                .windows
+                .iter()
+                .find(|window| window.label == "main")
+                .expect("main window config is required");
+            let mut main_builder =
+                tauri::WebviewWindowBuilder::from_config(app.handle(), main_config)?;
+            #[cfg(target_os = "windows")]
+            {
+                main_builder = main_builder.no_redirection_bitmap(true);
+            }
+            main_builder.build()?;
+
             log::info!(
                 "CyberPaste starting... (rich clipboard side channel: enabled)"
             );

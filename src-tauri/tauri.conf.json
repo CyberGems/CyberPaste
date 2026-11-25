@@ -26,7 +26,8 @@
         "visible": false,
         "center": false,
         "skipTaskbar": true,
-        "label": "main"
+        "label": "main",
+        "create": false
       }
     ],
     "security": {
