@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { useTranslation } from 'react-i18next';
-import { ChevronUp, X } from 'lucide-react';
+import { Check, ChevronUp, X } from 'lucide-react';
 import { useLanguage } from '../hooks/useLanguage';
 import { useTheme } from '../hooks/useTheme';
 import type { Settings } from '../types';
@@ -161,13 +161,29 @@ export function TrayPinTipWindow() {
               bodyParts[0]
             )}
           </p>
-          <label className="mt-3 flex cursor-pointer items-center gap-2 text-[12px] text-muted-foreground">
+          <label className="group mt-3 inline-flex cursor-pointer items-center gap-2 text-[12px] text-muted-foreground transition-colors hover:text-foreground">
             <input
               type="checkbox"
               checked={dontShowAgain}
               onChange={(e) => setDontShowAgain(e.target.checked)}
-              className="accent-primary"
+              className="peer sr-only"
             />
+            <span
+              aria-hidden="true"
+              className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px] border transition-colors peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background ${
+                dontShowAgain
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-muted-foreground/50 bg-background group-hover:border-primary/70'
+              }`}
+            >
+              <Check
+                size={12}
+                strokeWidth={3}
+                className={`transition-[opacity,transform] duration-150 ${
+                  dontShowAgain ? 'scale-100 opacity-100' : 'scale-75 opacity-0'
+                }`}
+              />
+            </span>
             {t('trayPinTip.dontShowAgain')}
           </label>
           <div className="mt-3.5 flex justify-end gap-2">
