@@ -161,6 +161,8 @@ function App() {
   const [searchFocusToken, setSearchFocusToken] = useState(0);
   const [previewClip, setPreviewClip] = useState<AppClipboardItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [initialDataReady, setInitialDataReady] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const hasMoreRef = useRef(hasMore);
   hasMoreRef.current = hasMore;
@@ -204,6 +206,7 @@ function App() {
   const [folderToDelete, setFolderToDelete] = useState<FolderItem | null>(null);
   const settingsRef = useRef<Settings | null>(null);
   const recentSearchesRef = useRef<string[]>([]);
+  const mainWindowReadyRef = useRef(false);
   const searchHistoryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTogglingRef = useRef(false);
   const [viewModeFading, setViewModeFading] = useState(false);
@@ -396,6 +399,49 @@ function App() {
   const effectiveTheme = useTheme(theme);
   useLanguage(settings?.language);
   const { t, i18n } = useTranslation();
+
+  useEffect(() => {
+    if (
+      !settingsLoaded ||
+      !lockReady ||
+      isLoading ||
+      (!isLocked && !initialDataReady) ||
+      mainWindowReadyRef.current
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+    let retryTimer: number | undefined;
+    const nextFrame = () =>
+      new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+    const signalReady = async () => {
+      if (!document.documentElement.classList.contains(effectiveTheme)) {
+        retryTimer = window.setTimeout(() => void signalReady(), 50);
+        return;
+      }
+      try {
+        await nextFrame();
+        await nextFrame();
+        await nextFrame();
+        if (cancelled) return;
+        await invoke('main_window_ready');
+        if (!cancelled) mainWindowReadyRef.current = true;
+      } catch (error) {
+        if (cancelled) return;
+        console.error('Failed to reveal the main window:', error);
+        retryTimer = window.setTimeout(() => void signalReady(), 250);
+      }
+    };
+    const timer = window.setTimeout(() => void signalReady(), 50);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      if (retryTimer !== undefined) window.clearTimeout(retryTimer);
+    };
+  }, [settingsLoaded, lockReady, isLoading, isLocked, initialDataReady, effectiveTheme]);
+
   const fullActionTooltip =
     settings?.single_click_paste === false
       ? t('full.actionSelect')
@@ -450,6 +496,7 @@ function App() {
         setFullTypeFilter('all');
         clearTimeout(timer);
         setIsLoading(false);
+        setSettingsLoaded(true);
 
         // Check for updates after the welcome banner completes if auto_check_updates is enabled
         if (!IS_PORTABLE_BUILD && s.auto_check_updates) {
@@ -467,6 +514,7 @@ function App() {
       .catch((err) => {
         console.error('Failed to get settings:', err);
         setIsLoading(false);
+        setSettingsLoaded(true);
       });
 
     // Listen for setting changes from the settings window
@@ -1053,14 +1101,22 @@ function App() {
     if (!lockReady || isLocked) {
       return;
     }
-    loadFolders();
+    let cancelled = false;
     // Load all clips for both compact and full view (virtualized by react-window)
     const clipLimit = 9999;
     const delay = searchQuery.trim() ? 120 : 0;
     const loadTimer = window.setTimeout(() => {
-      loadClips(selectedFolder, false, searchQuery, clipLimit, fullTypeFilter, appFilter);
+      void Promise.all([
+        loadFolders(),
+        loadClips(selectedFolder, false, searchQuery, clipLimit, fullTypeFilter, appFilter),
+      ]).then(() => {
+        if (!cancelled) setInitialDataReady(true);
+      });
     }, delay);
-    return () => window.clearTimeout(loadTimer);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(loadTimer);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedFolder,

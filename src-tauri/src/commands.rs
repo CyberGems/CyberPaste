@@ -3644,6 +3644,10 @@ pub async fn refresh_window(app: AppHandle) -> Result<(), String> {
 #[tauri::command]
 pub async fn focus_window(app: AppHandle, label: String) -> Result<(), String> {
     if let Some(window) = app.get_webview_window(&label) {
+        if label == "main" {
+            crate::position_window_at_bottom(&window);
+            return Ok(());
+        }
         if let Err(e) = window.unminimize() {
             log::warn!("Failed to unminimize window {}: {:?}", label, e);
         }
@@ -3664,6 +3668,11 @@ pub async fn focus_window(app: AppHandle, label: String) -> Result<(), String> {
 pub fn show_window(window: tauri::WebviewWindow) -> Result<(), String> {
     crate::position_window_at_bottom(&window);
     Ok(())
+}
+
+#[tauri::command]
+pub fn main_window_ready(window: tauri::WebviewWindow) {
+    crate::mark_main_window_ready(&window);
 }
 
 #[tauri::command]
@@ -5260,19 +5269,13 @@ pub async fn click_toast(app: AppHandle, clip_uuid: String) -> Result<(), String
 
     if crate::app_lock::is_locked() {
         if let Some(main_win) = app.get_webview_window("main") {
-            let _ = main_win.unminimize();
             crate::position_window_at_bottom(&main_win);
-            let _ = main_win.show();
-            let _ = main_win.set_focus();
         }
         return Ok(());
     }
 
     if let Some(main_win) = app.get_webview_window("main") {
         crate::position_window_at_bottom(&main_win);
-        let _ = main_win.unminimize();
-        let _ = main_win.show();
-        let _ = main_win.set_focus();
         let _ = main_win.emit("select-clip", clip_uuid);
     }
     Ok(())
@@ -6712,10 +6715,7 @@ pub async fn tray_menu_action(
         }
         "unlock" => {
             if let Some(win) = app.get_webview_window("main") {
-                let _ = win.unminimize();
                 crate::position_window_at_bottom(&win);
-                let _ = win.show();
-                let _ = win.set_focus();
             }
         }
         "quit" => {

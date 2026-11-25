@@ -13,6 +13,8 @@ use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 static IS_ANIMATING: AtomicBool = AtomicBool::new(false);
+static MAIN_WINDOW_READY: AtomicBool = AtomicBool::new(false);
+static MAIN_WINDOW_SHOW_PENDING: AtomicBool = AtomicBool::new(false);
 
 // Win+Up / Win+Down and Alt+F4 never reach this window's WebView: it is a
 // layered, borderless panel, so the shell cannot snap it and Windows consumes
@@ -825,8 +827,6 @@ pub fn run_app() {
                                     let is_pinned = manager.get().pinned;
                                     if is_pinned {
                                         position_window_at_bottom(&win_clone);
-                                        let _ = win_clone.show();
-                                        force_window_foreground(&win_clone);
                                     } else {
                                         log::debug!(
                                             "Auto-hide trigger=focused_false moved_screens=true fg={}",
@@ -849,6 +849,9 @@ pub fn run_app() {
             }
         })
         .setup(move |app| {
+            MAIN_WINDOW_READY.store(false, Ordering::SeqCst);
+            MAIN_WINDOW_SHOW_PENDING.store(!launched_from_windows_startup, Ordering::SeqCst);
+
             // Create main manually so Windows can suppress the transparent-window redirection flash.
             let main_config = app
                 .config()
@@ -1196,16 +1199,7 @@ pub fn run_app() {
             });
 
             if !launched_from_windows_startup {
-                let initial_window = win.clone();
-                tauri::async_runtime::spawn(async move {
-                    tokio::time::sleep(std::time::Duration::from_millis(300)).await;
-                    STARTUP_FOCUS_GRACE_UNTIL.store(
-                        chrono::Local::now().timestamp_millis() + 4000,
-                        Ordering::SeqCst,
-                    );
-                    log::info!("Manual launch detected; showing the main window.");
-                    position_window_at_bottom(&initial_window);
-                });
+                log::info!("Manual launch detected; waiting for the main window UI to be ready.");
             } else {
                 log::info!("Windows startup launch detected; keeping the main window hidden.");
             }
@@ -1264,6 +1258,7 @@ pub fn run_app() {
             commands::remove_duplicate_clips,
             commands::register_global_shortcut,
             commands::show_window,
+            commands::main_window_ready,
             settings_commands::add_ignored_app,
             settings_commands::remove_ignored_app,
             settings_commands::get_ignored_apps,
@@ -1341,7 +1336,26 @@ pub fn run_app() {
 }
 
 pub fn position_window_at_bottom(window: &tauri::WebviewWindow) {
+    if window.label() == "main" && !MAIN_WINDOW_READY.load(Ordering::SeqCst) {
+        MAIN_WINDOW_SHOW_PENDING.store(true, Ordering::SeqCst);
+        return;
+    }
     animate_window_show(window);
+}
+
+pub(crate) fn mark_main_window_ready(window: &tauri::WebviewWindow) {
+    if window.label() != "main" {
+        return;
+    }
+    MAIN_WINDOW_READY.store(true, Ordering::SeqCst);
+    if MAIN_WINDOW_SHOW_PENDING.swap(false, Ordering::SeqCst) {
+        STARTUP_FOCUS_GRACE_UNTIL.store(
+            chrono::Local::now().timestamp_millis() + 4000,
+            Ordering::SeqCst,
+        );
+        log::info!("Main window UI ready; showing the window.");
+        position_window_at_bottom(window);
+    }
 }
 
 /// Place a compact window inside the monitor work area (taskbar on any edge)
