@@ -828,6 +828,9 @@ export const CompactView: React.FC<CompactViewProps> = ({
   const [canScrollRight, setCanScrollRight] = useState(false);
 
   const isVertical = compactFolderLayout === 'vertical';
+  const currentFolderName = selectedFolder
+    ? folders.find((folder) => folder.id === selectedFolder)?.name || t('detailPanel.folder')
+    : t('folders.clipboard');
 
   const updateScrollState = useCallback(() => {
     if (isVertical) {
@@ -1975,18 +1978,25 @@ export const CompactView: React.FC<CompactViewProps> = ({
             {/* Search */}
             <div className={cn('flex-shrink-0 p-2', isPeekVisible && 'blur-[3px]')}>
               <div className="flex items-center gap-1.5">
-                <div className="group relative min-w-0 flex-1">
+                <div className="group relative flex min-w-0 flex-1 items-center rounded-lg border border-border bg-input transition-all focus-within:border-primary/50 focus-within:bg-background">
                   <Search
-                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 transition-all group-focus-within:text-primary group-focus-within:opacity-100"
+                    className="ml-2.5 shrink-0 text-muted-foreground/60 transition-all group-focus-within:text-primary group-focus-within:opacity-100"
                     size={14}
                   />
+                  {!isEmojiMode && (
+                    <span className="ml-2 flex min-w-0 max-w-[55%] items-center gap-1 whitespace-nowrap text-[10px] text-muted-foreground/70">
+                      <span className="shrink-0">{t('common.searchIn')}</span>
+                      <span className="min-w-0 truncate text-primary/80">{currentFolderName}</span>
+                    </span>
+                  )}
                   <input
                     type="text"
                     name="cyberpaste-search"
                     id="search-input"
                     ref={searchInputRef}
                     aria-haspopup="menu"
-                    placeholder={isEmojiMode ? t('emoji.searchPlaceholder') : t('common.search')}
+                    aria-label={isEmojiMode ? t('emoji.searchPlaceholder') : t('common.search')}
+                    placeholder={isEmojiMode ? t('emoji.searchPlaceholder') : undefined}
                     autoComplete="off"
                     autoCorrect="off"
                     autoCapitalize="none"
@@ -2031,7 +2041,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                       }
                     }}
                     className={cn(
-                      'w-full rounded-lg border border-border bg-input py-1.5 pl-8 text-sm text-foreground transition-all placeholder:text-muted-foreground/70 focus:border-primary/50 focus:bg-background focus:outline-none',
+                      'min-w-0 flex-1 bg-transparent px-2 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground/70',
                       'pr-8'
                     )}
                   />
@@ -2239,18 +2249,25 @@ export const CompactView: React.FC<CompactViewProps> = ({
         <>
           <div className={cn('flex-shrink-0 space-y-2 p-2', isPeekVisible && 'blur-[3px]')}>
             <div className="flex items-center gap-1.5">
-              <div className="group relative min-w-0 flex-1">
+              <div className="group relative flex min-w-0 flex-1 items-center rounded-lg border border-border bg-input transition-all focus-within:border-primary/50 focus-within:bg-background">
                 <Search
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 transition-all group-focus-within:text-primary group-focus-within:opacity-100"
+                  className="ml-2.5 shrink-0 text-muted-foreground/60 transition-all group-focus-within:text-primary group-focus-within:opacity-100"
                   size={14}
                 />
+                {!isEmojiMode && (
+                  <span className="ml-2 flex min-w-0 max-w-[55%] items-center gap-1 whitespace-nowrap text-[10px] text-muted-foreground/70">
+                    <span className="shrink-0">{t('common.searchIn')}</span>
+                    <span className="min-w-0 truncate text-primary/80">{currentFolderName}</span>
+                  </span>
+                )}
                 <input
                   type="text"
                   name="cyberpaste-search"
                   id="search-input"
                   ref={searchInputRef}
                   aria-haspopup="menu"
-                  placeholder={isEmojiMode ? t('emoji.searchPlaceholder') : t('common.search')}
+                  aria-label={isEmojiMode ? t('emoji.searchPlaceholder') : t('common.search')}
+                  placeholder={isEmojiMode ? t('emoji.searchPlaceholder') : undefined}
                   autoComplete="off"
                   autoCorrect="off"
                   autoCapitalize="none"
@@ -2295,7 +2312,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                     }
                   }}
                   className={cn(
-                    'w-full rounded-lg border border-border bg-input py-1.5 pl-8 text-sm text-foreground transition-all placeholder:text-muted-foreground/70 focus:border-primary/50 focus:bg-background focus:outline-none',
+                    'min-w-0 flex-1 bg-transparent px-2 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground/70',
                     'pr-8'
                   )}
                 />

@@ -1074,8 +1074,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                 className="flex h-8 flex-1 items-center gap-2 rounded-lg border border-primary/30 bg-popover px-4 shadow-[0_0_25px_rgba(var(--primary-rgb),0.15)] backdrop-blur-md"
               >
                 <div className="flex flex-1 items-center gap-2 overflow-hidden">
-                  <span className="whitespace-nowrap text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
-                    {t('common.searchingIn')}{' '}
+                  <span className="whitespace-nowrap text-[10px] font-medium text-muted-foreground/70">
+                    {t('common.searchIn')}{' '}
                     <span className="text-primary/80">
                       {isEmojiMode ? 'Emojis' : currentFolderName}
                     </span>
@@ -1088,7 +1088,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                     name="cyberpaste-search"
                     id="search-input"
                     aria-haspopup="menu"
-                    placeholder={isEmojiMode ? t('emoji.searchPlaceholder') : '...'}
+                    aria-label={isEmojiMode ? t('emoji.searchPlaceholder') : t('common.search')}
+                    placeholder={isEmojiMode ? t('emoji.searchPlaceholder') : undefined}
                     autoComplete="off"
                     autoCorrect="off"
                     autoCapitalize="none"
