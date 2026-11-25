@@ -67,6 +67,7 @@ import { TitleBarMenu } from './TitleBarMenu';
 import { TitleBarUpdateButton } from './TitleBarUpdateButton';
 import { useFolderFlash } from '../hooks/useFolderFlash';
 import { useHoldToScroll } from '../hooks/useHoldToScroll';
+import { useSmoothWheelScroll } from '../hooks/useSmoothWheelScroll';
 import { TITLEBAR_HOTKEYS } from '../hooks/useKeyboard';
 import { useClipboardMonitoring } from '../hooks/useClipboardMonitoring';
 import { useRotatingIndex } from '../hooks/useRotatingIndex';
@@ -190,6 +191,7 @@ interface FolderTabButtonProps {
   onClick: (id: string) => void;
   onContextMenu: (e: React.MouseEvent, id: string) => void;
   onMouseEnter: (id: string) => void;
+  suppressHover: boolean;
 }
 
 const FolderTabButton: React.FC<FolderTabButtonProps> = ({
@@ -205,6 +207,7 @@ const FolderTabButton: React.FC<FolderTabButtonProps> = ({
   onClick,
   onContextMenu,
   onMouseEnter,
+  suppressHover,
 }) => {
   const { t } = useTranslation();
   const isFlashing = useFolderFlash(folder.id);
@@ -215,6 +218,7 @@ const FolderTabButton: React.FC<FolderTabButtonProps> = ({
     <Tooltip
       label={t('common.tooltipWithHotkey', { label: folder.name, hotkey: 'Ctrl+←/→' })}
       placement="bottom"
+      disabled={suppressHover}
     >
       <button
         data-folder-id={folder.id}
@@ -234,7 +238,10 @@ const FolderTabButton: React.FC<FolderTabButtonProps> = ({
               ? 'border-transparent bg-primary/30 text-foreground'
               : isMenuHighlighted
                 ? 'border-transparent bg-accent text-foreground'
-                : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground',
+                : clsx(
+                    'border-transparent text-muted-foreground/80',
+                    !suppressHover && 'hover:bg-accent hover:text-foreground'
+                  ),
           draggingFolderId === folder.id && 'pointer-events-none scale-95 opacity-40'
         )}
       >
@@ -299,6 +306,17 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   isEmojiMode = false,
 }) => {
   const foldersRef = React.useRef<HTMLDivElement>(null);
+  const {
+    handleWheel: handleWheelScroll,
+    isScrolling: isWheelScrolling,
+    reset: resetWheelScroll,
+  } = useSmoothWheelScroll({
+    containerRef: foldersRef,
+    enabled: !wheelFolderNavigation,
+  });
+  useEffect(() => {
+    resetWheelScroll();
+  }, [resetWheelScroll, selectedFolder]);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const searchBarRef = React.useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
@@ -415,10 +433,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
 
   const handleWheel = (e: React.WheelEvent) => {
     if (!wheelFolderNavigation) {
-      foldersRef.current?.scrollBy({
-        left: e.deltaY,
-        behavior: 'smooth',
-      });
+      handleWheelScroll(e);
       return;
     }
 
@@ -954,7 +969,11 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             {(() => {
               const isClipboardFlashing = useFolderFlash(null);
               return (
-                <Tooltip label={t('common.folderNavHintFull')} placement="bottom">
+                <Tooltip
+                  label={t('common.folderNavHintFull')}
+                  placement="bottom"
+                  disabled={isWheelScrolling}
+                >
                   <button
                     onClick={() => onSelectFolder(null)}
                     onMouseEnter={() => isDragging && onDragHover(null)}
@@ -968,7 +987,10 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                         ? 'border-transparent bg-primary/15 font-semibold text-foreground'
                         : dragTargetFolderId === null && isDragging
                           ? 'border-transparent bg-primary/30 text-foreground'
-                          : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
+                          : clsx(
+                              'border-transparent text-muted-foreground/80',
+                              !isWheelScrolling && 'hover:bg-accent hover:text-foreground'
+                            )
                     )}
                   >
                     <Clock size={12} className="flex-shrink-0" />
@@ -1020,6 +1042,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                     }}
                     onContextMenu={onFolderContextMenu}
                     onMouseEnter={(id) => isDragging && onDragHover(id)}
+                    suppressHover={isWheelScrolling}
                   />
                   {folderReorderTargetId === folder.id &&
                     folderReorderTargetPosition === 'after' && (

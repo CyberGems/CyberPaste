@@ -128,6 +128,7 @@ import { CompactPeek } from './CompactPeek';
 import { usePinFlash } from '../hooks/usePinFlash';
 import { useFolderFlash } from '../hooks/useFolderFlash';
 import { useHoldToScroll } from '../hooks/useHoldToScroll';
+import { useSmoothWheelScroll } from '../hooks/useSmoothWheelScroll';
 import { useDeleteFlash } from '../hooks/useDeleteFlash';
 import { useClipboardMonitoring } from '../hooks/useClipboardMonitoring';
 import { usePeekPointerArm } from '../hooks/usePeekPointerArm';
@@ -511,6 +512,7 @@ interface CompactSidebarFolderItemProps {
   onClick: (id: string) => void;
   onContextMenu?: (e: React.MouseEvent, id: string) => void;
   onMouseEnter: (id: string) => void;
+  suppressHover: boolean;
 }
 
 const CompactSidebarFolderItem: React.FC<CompactSidebarFolderItemProps> = ({
@@ -526,6 +528,7 @@ const CompactSidebarFolderItem: React.FC<CompactSidebarFolderItemProps> = ({
   onClick,
   onContextMenu,
   onMouseEnter,
+  suppressHover,
 }) => {
   const { t } = useTranslation();
   const isFlashing = useFolderFlash(folder.id);
@@ -535,6 +538,7 @@ const CompactSidebarFolderItem: React.FC<CompactSidebarFolderItemProps> = ({
     <Tooltip
       label={t('common.tooltipWithHotkey', { label: folder.name, hotkey: '←/→' })}
       placement="right"
+      disabled={suppressHover}
     >
       <button
         data-folder-id={folder.id}
@@ -553,7 +557,10 @@ const CompactSidebarFolderItem: React.FC<CompactSidebarFolderItemProps> = ({
               ? 'border-transparent bg-primary/30 text-foreground'
               : contextMenuFolderId === folder.id
                 ? 'border-transparent bg-accent text-foreground'
-                : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground',
+                : cn(
+                    'border-transparent text-muted-foreground/80',
+                    !suppressHover && 'hover:bg-accent hover:text-foreground'
+                  ),
           draggingFolderId === folder.id && 'pointer-events-none scale-95 opacity-40'
         )}
         onMouseEnter={() => onMouseEnter(folder.id)}
@@ -587,7 +594,8 @@ interface CompactTopFolderItemProps {
     isSelected: boolean,
     isDragTarget: boolean,
     isMenuHighlighted?: boolean,
-    isFlashing?: boolean
+    isFlashing?: boolean,
+    suppressHover?: boolean
   ) => string;
   onMouseDown: (e: React.MouseEvent, id: string) => void;
   onMouseMove: (e: React.MouseEvent, id: string, isSidebar: boolean) => void;
@@ -595,6 +603,7 @@ interface CompactTopFolderItemProps {
   onClick: (id: string) => void;
   onContextMenu?: (e: React.MouseEvent, id: string) => void;
   onMouseEnter: (id: string) => void;
+  suppressHover: boolean;
 }
 
 const CompactTopFolderItem: React.FC<CompactTopFolderItemProps> = ({
@@ -610,6 +619,7 @@ const CompactTopFolderItem: React.FC<CompactTopFolderItemProps> = ({
   onClick,
   onContextMenu,
   onMouseEnter,
+  suppressHover,
 }) => {
   const { t } = useTranslation();
   const isFlashing = useFolderFlash(folder.id);
@@ -619,6 +629,7 @@ const CompactTopFolderItem: React.FC<CompactTopFolderItemProps> = ({
     <Tooltip
       label={t('common.tooltipWithHotkey', { label: folder.name, hotkey: '←/→' })}
       placement="bottom"
+      disabled={suppressHover}
     >
       <button
         data-folder-id={folder.id}
@@ -629,7 +640,13 @@ const CompactTopFolderItem: React.FC<CompactTopFolderItemProps> = ({
         data-selected={isSelected}
         onContextMenu={(e) => onContextMenu?.(e, folder.id)}
         className={cn(
-          folderTabClass(isSelected, isDragTarget, contextMenuFolderId === folder.id, isFlashing),
+          folderTabClass(
+            isSelected,
+            isDragTarget,
+            contextMenuFolderId === folder.id,
+            isFlashing,
+            suppressHover
+          ),
           draggingFolderId === folder.id && 'pointer-events-none scale-95 opacity-40'
         )}
         onMouseEnter={() => onMouseEnter(folder.id)}
@@ -828,6 +845,19 @@ export const CompactView: React.FC<CompactViewProps> = ({
   const [canScrollRight, setCanScrollRight] = useState(false);
 
   const isVertical = compactFolderLayout === 'vertical';
+  const {
+    handleWheel: handleWheelScroll,
+    isScrolling: isWheelScrolling,
+    reset: resetWheelScroll,
+  } = useSmoothWheelScroll({
+    containerRef: folderScrollRef,
+    axis: isVertical ? 'y' : 'x',
+    speed: isVertical ? 1 : 1.5,
+    enabled: !wheelFolderNavigation,
+  });
+  useEffect(() => {
+    resetWheelScroll();
+  }, [resetWheelScroll, selectedFolder]);
   const currentFolderName = selectedFolder
     ? folders.find((folder) => folder.id === selectedFolder)?.name || t('detailPanel.folder')
     : t('folders.clipboard');
@@ -1072,10 +1102,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
 
   const handleWheel = (e: React.WheelEvent) => {
     if (!wheelFolderNavigation) {
-      folderScrollRef.current?.scrollBy({
-        ...(isVertical ? { top: e.deltaY } : { left: e.deltaY * 1.5 }),
-        behavior: 'smooth',
-      });
+      handleWheelScroll(e);
       return;
     }
 
@@ -1480,10 +1507,11 @@ export const CompactView: React.FC<CompactViewProps> = ({
 
   const handleFolderHover = useCallback(
     (folderId: string | null) => {
+      if (isWheelScrolling) return;
       if (peekClipId) closePeek();
       if (isDragging) onDragHover(folderId);
     },
-    [closePeek, isDragging, onDragHover, peekClipId]
+    [closePeek, isDragging, isWheelScrolling, onDragHover, peekClipId]
   );
 
   // Limpiar peek al cambiar isDragging
@@ -1529,7 +1557,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
     isSelected: boolean,
     isDragTarget: boolean,
     isMenuHighlighted = false,
-    isFlashing = false
+    isFlashing = false,
+    suppressHover = false
   ) =>
     cn(
       'flex h-8 items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2 text-[11px] font-medium transition-all focus:outline-none focus-visible:ring-0',
@@ -1540,7 +1569,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
           ? 'border-transparent bg-primary/30 text-foreground'
           : isMenuHighlighted
             ? 'border-transparent bg-accent text-foreground'
-            : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
+            : cn(
+                'border-transparent text-muted-foreground/80',
+                !suppressHover && 'hover:bg-accent hover:text-foreground'
+              )
     );
 
   const SIDEBAR_EXPANDED_W = 148;
@@ -1859,7 +1891,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
                               'mx-1.5 flex flex-row items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2 py-1.5 text-[11px] font-medium transition-all focus:outline-none',
                               isSelected
                                 ? 'border-transparent bg-primary/15 font-semibold text-foreground shadow-[0_0_8px_rgba(var(--primary-rgb),0.15)]'
-                                : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
+                                : cn(
+                                    'border-transparent text-muted-foreground/80',
+                                    !isWheelScrolling && 'hover:bg-accent hover:text-foreground'
+                                  )
                             )}
                           >
                             <Icon
@@ -1878,7 +1913,11 @@ export const CompactView: React.FC<CompactViewProps> = ({
                       })
                     ) : (
                       <>
-                        <Tooltip label={t('common.folderNavHintCompact')} placement="right">
+                        <Tooltip
+                          label={t('common.folderNavHintCompact')}
+                          placement="right"
+                          disabled={isWheelScrolling}
+                        >
                           <button
                             onClick={() => onSelectFolder(null)}
                             data-folder-id="clipboard"
@@ -1890,7 +1929,10 @@ export const CompactView: React.FC<CompactViewProps> = ({
                                 ? 'border-transparent bg-primary/15 font-semibold text-foreground'
                                 : dragTargetFolderId === null && isDragging
                                   ? 'border-transparent bg-primary/30 text-foreground'
-                                  : 'border-transparent text-muted-foreground/80 hover:bg-accent hover:text-foreground'
+                                  : cn(
+                                      'border-transparent text-muted-foreground/80',
+                                      !isWheelScrolling && 'hover:bg-accent hover:text-foreground'
+                                    )
                             )}
                             onMouseEnter={() => handleFolderHover(null)}
                             onMouseLeave={onDragLeave}
@@ -1936,6 +1978,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                                 }}
                                 onContextMenu={onFolderContextMenu}
                                 onMouseEnter={(id) => handleFolderHover(id)}
+                                suppressHover={isWheelScrolling}
                               />
                               {folderReorderTargetId === folder.id &&
                                 folderReorderTargetPosition === 'after' && (
@@ -2469,7 +2512,11 @@ export const CompactView: React.FC<CompactViewProps> = ({
                   onScroll={updateScrollState}
                   className="no-scrollbar flex min-w-0 flex-1 gap-1 overflow-x-auto"
                 >
-                  <Tooltip label={t('common.folderNavHintCompact')} placement="bottom">
+                  <Tooltip
+                    label={t('common.folderNavHintCompact')}
+                    placement="bottom"
+                    disabled={isWheelScrolling}
+                  >
                     <button
                       onClick={() => onSelectFolder(null)}
                       data-folder-id="clipboard"
@@ -2478,7 +2525,8 @@ export const CompactView: React.FC<CompactViewProps> = ({
                         highlightedFolderId === null,
                         dragTargetFolderId === null,
                         false,
-                        isClipboardFlashing
+                        isClipboardFlashing,
+                        isWheelScrolling
                       )}
                       onMouseEnter={() => handleFolderHover(null)}
                       onMouseLeave={onDragLeave}
@@ -2525,6 +2573,7 @@ export const CompactView: React.FC<CompactViewProps> = ({
                           }}
                           onContextMenu={onFolderContextMenu}
                           onMouseEnter={(id) => handleFolderHover(id)}
+                          suppressHover={isWheelScrolling}
                         />
                         {folderReorderTargetId === folder.id &&
                           folderReorderTargetPosition === 'after' && (
