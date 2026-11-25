@@ -342,9 +342,75 @@ pub async fn ai_process_clip(
     Ok(result)
 }
 
+const PNG_SIGNATURE: [u8; 8] = [0x89, b'P', b'N', b'G', b'\r', b'\n', 0x1a, b'\n'];
+
+fn decode_legacy_base64_png(content: &[u8]) -> Option<Vec<u8>> {
+    let text = std::str::from_utf8(content).ok()?.trim();
+    if text.is_empty() {
+        return None;
+    }
+    let decoded = BASE64.decode(text).ok()?;
+    decoded.starts_with(&PNG_SIGNATURE).then_some(decoded)
+}
+
+fn repair_legacy_image_file(path: &str) -> Result<Option<usize>, String> {
+    use std::io::Read;
+
+    let mut file = fs::File::open(path).map_err(|e| e.to_string())?;
+    let mut header = [0u8; 8];
+    match file.read(&mut header) {
+        Ok(8) if header == PNG_SIGNATURE => return Ok(None),
+        Ok(_) => {}
+        Err(e) => return Err(e.to_string()),
+    }
+    drop(file);
+
+    let content = fs::read(path).map_err(|e| e.to_string())?;
+    let Some(decoded) = decode_legacy_base64_png(&content) else {
+        return Ok(None);
+    };
+    fs::write(path, &decoded).map_err(|e| e.to_string())?;
+    Ok(Some(decoded.len()))
+}
+
+pub async fn repair_legacy_image_files(pool: &SqlitePool) -> Result<usize, String> {
+    let images: Vec<(String, String)> = sqlx::query_as(
+        r#"SELECT clip_uuid, file_path FROM clip_images WHERE storage_kind = 'file' AND file_path IS NOT NULL AND file_path != ''"#,
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let mut repaired = 0usize;
+    for (clip_uuid, file_path) in images {
+        match repair_legacy_image_file(&file_path) {
+            Ok(Some(file_size)) => {
+                sqlx::query("UPDATE clip_images SET file_size = ? WHERE clip_uuid = ?")
+                    .bind(file_size as i64)
+                    .bind(&clip_uuid)
+                    .execute(pool)
+                    .await
+                    .map_err(|e| e.to_string())?;
+                repaired += 1;
+                log::info!("Repaired legacy base64 image file for clip {}", clip_uuid);
+            }
+            Ok(None) => {}
+            Err(e) => log::warn!("Failed to inspect image file {}: {}", file_path, e),
+        }
+    }
+    Ok(repaired)
+}
+
 fn clip_to_list_item(clip: &Clip, image_path: Option<&str>, preview_only: bool) -> ClipboardItem {
+    let image_path = image_path.filter(|path| !path.is_empty());
     let content_str = if clip.clip_type == "image" {
-        image_path.unwrap_or_default().to_string()
+        if let Some(path) = image_path {
+            path.to_string()
+        } else if clip.content.starts_with(&PNG_SIGNATURE) {
+            format!("data:image/png;base64,{}", BASE64.encode(&clip.content))
+        } else {
+            String::from_utf8_lossy(&clip.content).to_string()
+        }
     } else if preview_only {
         // Optimization: don't send full content for previews to save IPC/CPU
         String::new()
@@ -365,7 +431,7 @@ fn clip_to_list_item(clip: &Clip, image_path: Option<&str>, preview_only: bool) 
         source_app: clip.source_app.clone(),
         source_icon: clip.source_icon.clone(),
         metadata: clip.metadata.clone(),
-        image_path: image_path.map(|s| s.to_string()),
+        image_path: image_path.map(str::to_string),
         is_pinned: clip.is_pinned,
         pinned_slot: clip.pinned_slot,
     }
@@ -376,8 +442,13 @@ fn clip_to_detail_item(
     full_image_content: Option<&[u8]>,
     image_path: Option<String>,
 ) -> ClipboardItem {
+    let image_content = full_image_content.unwrap_or(&clip.content);
     let content_str = if clip.clip_type == "image" {
-        BASE64.encode(full_image_content.unwrap_or(&clip.content))
+        if image_content.starts_with(&PNG_SIGNATURE) {
+            BASE64.encode(image_content)
+        } else {
+            String::from_utf8_lossy(image_content).to_string()
+        }
     } else {
         String::from_utf8_lossy(&clip.content).to_string()
     };
@@ -864,6 +935,7 @@ pub async fn migrate_images_to_files(pool: &SqlitePool) -> Result<(), String> {
             legacy_clips.len()
         );
         for (uuid, full_bytes) in legacy_clips {
+            let full_bytes = decode_legacy_base64_png(&full_bytes).unwrap_or(full_bytes);
             match crate::clipboard::persist_full_image_file(&uuid, &full_bytes) {
                 Ok(file_path) => {
                     let _ = sqlx::query(
@@ -903,6 +975,7 @@ pub async fn migrate_images_to_files(pool: &SqlitePool) -> Result<(), String> {
     if !db_images.is_empty() {
         log::info!("Migrating {} DB-stored images to files...", db_images.len());
         for (uuid, content) in db_images {
+            let content = decode_legacy_base64_png(&content).unwrap_or(content);
             match crate::clipboard::persist_full_image_file(&uuid, &content) {
                 Ok(file_path) => {
                     let _ = sqlx::query(
@@ -6750,6 +6823,135 @@ pub fn open_text_in_system_viewer(text: String) -> Result<(), String> {
     #[cfg(not(target_os = "windows"))]
     {
         Err("Not supported on this OS".to_string())
+    }
+}
+
+#[cfg(test)]
+mod list_item_tests {
+    use super::*;
+
+    fn test_png() -> Vec<u8> {
+        use image::ImageEncoder;
+
+        let mut bytes = Vec::new();
+        {
+            let mut cursor = std::io::Cursor::new(&mut bytes);
+            image::codecs::png::PngEncoder::new(&mut cursor)
+                .write_image(&[255, 0, 0, 255], 1, 1, image::ColorType::Rgba8)
+                .unwrap();
+        }
+        bytes
+    }
+
+    fn image_clip(content: Vec<u8>) -> Clip {
+        Clip {
+            clip_type: "image".to_string(),
+            content,
+            ..Clip::default()
+        }
+    }
+
+    #[test]
+    fn image_list_items_prefer_nonempty_sidecar_paths() {
+        let clip = image_clip(BASE64.encode(test_png()).into_bytes());
+        let item = clip_to_list_item(&clip, Some("C:\\images\\clip.png"), false);
+
+        assert_eq!(item.content, "C:\\images\\clip.png");
+        assert_eq!(item.image_path.as_deref(), Some("C:\\images\\clip.png"));
+
+        let item = clip_to_list_item(&clip, Some(""), false);
+        assert_eq!(item.content, String::from_utf8_lossy(&clip.content));
+        assert_eq!(item.image_path, None);
+    }
+
+    #[test]
+    fn image_list_items_preserve_legacy_base64_and_encode_raw_png() {
+        let legacy = BASE64.encode(test_png());
+        let item = clip_to_list_item(&image_clip(legacy.as_bytes().to_vec()), None, true);
+        assert_eq!(item.content, legacy);
+
+        let png = test_png();
+        let item = clip_to_list_item(&image_clip(png.clone()), None, true);
+        assert_eq!(
+            item.content,
+            format!("data:image/png;base64,{}", BASE64.encode(png))
+        );
+    }
+
+    #[test]
+    fn image_detail_items_do_not_double_encode_legacy_base64() {
+        let legacy = BASE64.encode(test_png());
+        let clip = image_clip(legacy.as_bytes().to_vec());
+        let item = clip_to_detail_item(&clip, None, None);
+        assert_eq!(item.content, legacy);
+
+        let png = test_png();
+        let item = clip_to_detail_item(&clip, Some(&png), None);
+        assert_eq!(item.content, BASE64.encode(png));
+    }
+
+    #[test]
+    fn legacy_png_decoding_rejects_other_base64_content() {
+        let png = test_png();
+        assert_eq!(decode_legacy_base64_png(&png), None);
+        assert_eq!(
+            decode_legacy_base64_png(BASE64.encode(b"not a PNG").as_bytes()),
+            None
+        );
+        assert_eq!(
+            decode_legacy_base64_png(BASE64.encode(png).as_bytes()),
+            Some(test_png())
+        );
+    }
+
+    #[test]
+    fn legacy_image_repair_leaves_valid_png_files_unchanged() {
+        let path = std::env::temp_dir().join(format!(
+            "cyberpaste-valid-image-{}.png",
+            uuid::Uuid::new_v4()
+        ));
+        let png = test_png();
+        std::fs::write(&path, &png).unwrap();
+
+        let result = repair_legacy_image_file(&path.to_string_lossy());
+        assert_eq!(result.unwrap(), None);
+        assert_eq!(std::fs::read(&path).unwrap(), png);
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[tokio::test]
+    async fn legacy_image_repair_rewrites_base64_and_updates_file_size() {
+        let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
+        sqlx::query(
+            "CREATE TABLE clip_images (clip_uuid TEXT PRIMARY KEY, file_path TEXT, file_size INTEGER, storage_kind TEXT)",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        let png = test_png();
+        let path = std::env::temp_dir().join(format!(
+            "cyberpaste-repair-image-{}.png",
+            uuid::Uuid::new_v4()
+        ));
+        std::fs::write(&path, BASE64.encode(&png).as_bytes()).unwrap();
+        sqlx::query("INSERT INTO clip_images VALUES ('clip', ?, 0, 'file')")
+            .bind(path.to_string_lossy().as_ref())
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        assert_eq!(repair_legacy_image_files(&pool).await.unwrap(), 1);
+        assert_eq!(std::fs::read(&path).unwrap(), png);
+        let size: i64 =
+            sqlx::query_scalar("SELECT file_size FROM clip_images WHERE clip_uuid = 'clip'")
+                .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(size, png.len() as i64);
+        assert_eq!(repair_legacy_image_files(&pool).await.unwrap(), 0);
+
+        std::fs::remove_file(path).unwrap();
     }
 }
 

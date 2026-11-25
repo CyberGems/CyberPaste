@@ -852,6 +852,12 @@ pub fn run_app() {
             MAIN_WINDOW_READY.store(false, Ordering::SeqCst);
             MAIN_WINDOW_SHOW_PENDING.store(!launched_from_windows_startup, Ordering::SeqCst);
 
+            match rt.block_on(commands::repair_legacy_image_files(&db_arc.pool)) {
+                Ok(0) => {}
+                Ok(repaired) => log::info!("Repaired {} legacy image files", repaired),
+                Err(e) => log::error!("Failed to repair legacy image files: {}", e),
+            }
+
             // Create main manually so Windows can suppress the transparent-window redirection flash.
             let main_config = app
                 .config()
