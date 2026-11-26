@@ -563,7 +563,11 @@ export function TrayMenuWindow() {
               className="group flex w-full select-none items-center justify-center gap-1.5 px-3 pb-2.5 pt-3.5 text-[12px] font-medium tracking-wide text-muted-foreground"
             >
               <span className="flex items-center gap-1.5 opacity-60 transition-opacity duration-150 group-hover:opacity-100">
-                <img src="/logo.png" alt="" className="h-3.5 w-3.5 shrink-0 object-contain" />
+                <img
+                  src="/logo.png"
+                  alt=""
+                  className="h-3.5 w-3.5 shrink-0 object-contain transition-transform duration-150 ease-out group-hover:scale-105"
+                />
                 <span>
                   Cyber<span className="text-primary">Paste</span>{' '}
                   <span className="text-[11px] tracking-wide text-muted-foreground">
@@ -930,7 +934,11 @@ function FlyoutHeader({
         >
           <picture className="inline-flex h-3.5 w-3.5">
             <source srcSet="/cybergems-logo.svg" type="image/svg+xml" />
-            <img src="/cybergems-logo.png" alt="" className="h-full w-full object-contain" />
+            <img
+              src="/cybergems-logo.png"
+              alt=""
+              className="h-full w-full object-contain transition-transform duration-150 ease-out group-hover:scale-105"
+            />
           </picture>
           <span>CyberGems</span>
         </button>
