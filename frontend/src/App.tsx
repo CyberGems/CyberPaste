@@ -3867,6 +3867,18 @@ function App() {
         clips.find((clip) => selectedClipIds.has(clip.id))?.id ??
         selectedClipId)
       : selectedClipId;
+  const detailClip = clips.find((clip) => clip.id === detailClipId) || null;
+  const detailClipIndex = clips.findIndex((clip) => clip.id === detailClipId);
+
+  const handleDetailPrevious = useCallback(() => {
+    if (detailClipIndex > 0) updateNavSelection(detailClipIndex - 1);
+  }, [detailClipIndex, updateNavSelection]);
+
+  const handleDetailNext = useCallback(() => {
+    if (detailClipIndex < 0 || detailClipIndex >= clips.length - 1) return;
+    if (hasMore && detailClipIndex >= clips.length - 15) loadMoreRef.current();
+    updateNavSelection(detailClipIndex + 1);
+  }, [detailClipIndex, clips.length, hasMore, updateNavSelection]);
 
   return (
     <div
@@ -4190,12 +4202,16 @@ function App() {
                 )}
                 {detailPanelOpen && (
                   <ClipDetailPanel
-                    clip={clips.find((c) => c.id === detailClipId) || null}
+                    clip={detailClip}
                     folders={folders}
                     selectedCount={selectedClipIds.size || 1}
+                    canNavigatePrevious={detailClipIndex > 0}
+                    canNavigateNext={detailClipIndex >= 0 && detailClipIndex < clips.length - 1}
+                    onPrevious={handleDetailPrevious}
+                    onNext={handleDetailNext}
                     pinDisabled={
                       isLiveMainListClip(detailClipId, clips, selectedFolder) &&
-                      !clips.find((c) => c.id === detailClipId)?.is_pinned
+                      !detailClip?.is_pinned
                     }
                     onClose={() => setDetailPanelOpen(false)}
                     onCopy={handleCopy}

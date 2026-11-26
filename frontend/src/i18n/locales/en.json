@@ -122,6 +122,8 @@
     "preview": "Preview",
     "noPreview": "No preview available",
     "copySingleOnly": "Select a single clip to copy",
+    "previousClip": "Previous clip",
+    "nextClip": "Next clip",
     "collapse": "Collapse detail panel",
     "expand": "Expand detail panel"
   },
