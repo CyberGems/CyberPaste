@@ -551,7 +551,12 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || e.defaultPrevented) return;
       if (recordingTarget) return;
-      if (searchInputRef.current && document.activeElement === searchInputRef.current && settingsQuery) return;
+      if (
+        searchInputRef.current &&
+        document.activeElement === searchInputRef.current &&
+        settingsQuery
+      )
+        return;
       e.preventDefault();
       onClose();
     };
@@ -1472,7 +1477,11 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
             {/* Saved indicator + close — pinned to the bottom of the sidebar */}
             <div className="relative mt-auto border-t border-border/60 pt-2.5">
               {savePulse > 0 && (
-                <span key={savePulse} aria-hidden="true" className="settings-save-separator-pulse" />
+                <span
+                  key={savePulse}
+                  aria-hidden="true"
+                  className="settings-save-separator-pulse"
+                />
               )}
               <div
                 aria-live="polite"
@@ -2019,8 +2028,12 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                       {!IS_PORTABLE_BUILD && (
                         <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">
                           <div className="min-w-0">
-                            <span className="text-sm font-medium">{t('settings.autoCheckUpdates')}</span>
-                            <p className="mt-1 text-xs text-secondary-foreground">{t('settings.autoCheckUpdatesDesc')}</p>
+                            <span className="text-sm font-medium">
+                              {t('settings.autoCheckUpdates')}
+                            </span>
+                            <p className="mt-1 text-xs text-secondary-foreground">
+                              {t('settings.autoCheckUpdatesDesc')}
+                            </p>
                           </div>
                           <Switch
                             checked={initialSettings.auto_check_updates ?? false}

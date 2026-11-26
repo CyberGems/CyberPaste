@@ -111,7 +111,11 @@ export function TrayMenuWindow() {
   const closingRef = useRef(false);
   const openRef = useRef(false);
   const reportSeqRef = useRef(0);
-  const reportTimersRef = useRef<{ raf1: number | null; raf2: number | null; fallback: number | null }>({
+  const reportTimersRef = useRef<{
+    raf1: number | null;
+    raf2: number | null;
+    fallback: number | null;
+  }>({
     raf1: null,
     raf2: null,
     fallback: null,
@@ -696,10 +700,7 @@ export function TrayMenuWindow() {
         </div>
 
         {/* Side-by-side Flyout Slot */}
-        <div
-          className="pointer-events-none relative h-full shrink-0"
-          style={{ width: MENU_WIDTH }}
-        >
+        <div className="pointer-events-none relative h-full shrink-0" style={{ width: MENU_WIDTH }}>
           {/* Pause Notifications Flyout */}
           <div
             ref={pauseFlyoutRef}

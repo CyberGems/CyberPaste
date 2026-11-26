@@ -16,14 +16,14 @@ export function useSettingsSnapshot() {
     });
     void unsubscribe
       .then(() => invoke<Settings>('get_settings'))
-      .then(snapshot => {
+      .then((snapshot) => {
         if (active && !receivedChange) setSettings(snapshot);
       })
       .catch(console.error);
 
     return () => {
       active = false;
-      void unsubscribe.then(stop => stop()).catch(console.error);
+      void unsubscribe.then((stop) => stop()).catch(console.error);
     };
   }, []);
 

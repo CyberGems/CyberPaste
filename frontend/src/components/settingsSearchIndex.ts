@@ -98,12 +98,16 @@ export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
     descKey: 'settings.keepVisibleInTrayDesc',
     sectionKey: 'settings.otherSection',
   },
-  ...(!IS_PORTABLE_BUILD ? [{
-    tab: 'general' as const,
-    labelKey: 'settings.autoCheckUpdates',
-    descKey: 'settings.autoCheckUpdatesDesc',
-    sectionKey: 'settings.otherSection',
-  }] : []),
+  ...(!IS_PORTABLE_BUILD
+    ? [
+        {
+          tab: 'general' as const,
+          labelKey: 'settings.autoCheckUpdates',
+          descKey: 'settings.autoCheckUpdatesDesc',
+          sectionKey: 'settings.otherSection',
+        },
+      ]
+    : []),
   {
     tab: 'general',
     labelKey: 'settings.showAppRecommendations',
