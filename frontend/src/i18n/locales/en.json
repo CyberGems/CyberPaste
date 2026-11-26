@@ -119,6 +119,9 @@
     "size": "Size",
     "pinned": "Pinned",
     "extractedText": "Extracted text",
+    "preview": "Preview",
+    "noPreview": "No preview available",
+    "copySingleOnly": "Select a single clip to copy",
     "collapse": "Collapse detail panel",
     "expand": "Expand detail panel"
   },

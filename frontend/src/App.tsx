@@ -2603,6 +2603,7 @@ function App() {
 
   // Toggle single-clip membership in the bulk selection (Ctrl+Click)
   const handleClipToggleSelect = useCallback((id: string) => {
+    setSelectedClipId(id);
     setSelectedClipIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -2784,6 +2785,7 @@ function App() {
   }, [t]);
 
   const handleToggleClipSelect = useCallback((id: string, multi: boolean) => {
+    setSelectedClipId(id);
     setSelectedClipIds((prev) => {
       const next = new Set(multi ? prev : []);
       if (next.has(id)) next.delete(id);
@@ -3124,6 +3126,13 @@ function App() {
   const handleOpenPreview = useCallback((id: string) => {
     const found = clipsRef.current.find((c) => c.id === id);
     setPreviewClip(found || null);
+    if (!found || found.content) return;
+
+    invoke<AppClipboardItem>('get_clip', { clipId: id })
+      .then((fullClip) => {
+        setPreviewClip((current) => (current?.id === id ? { ...current, ...fullClip } : current));
+      })
+      .catch((error) => console.warn('Full clip preview unavailable:', error));
   }, []);
 
   const handleClosePreview = useCallback(() => setPreviewClip(null), []);
@@ -3852,6 +3861,13 @@ function App() {
     onUndo: handleUndoDelete,
   });
 
+  const detailClipId =
+    selectedClipIds.size > 0
+      ? (clips.find((clip) => clip.id === selectedClipId && selectedClipIds.has(clip.id))?.id ??
+        clips.find((clip) => selectedClipIds.has(clip.id))?.id ??
+        selectedClipId)
+      : selectedClipId;
+
   return (
     <div
       data-el="app-root"
@@ -4174,11 +4190,12 @@ function App() {
                 )}
                 {detailPanelOpen && (
                   <ClipDetailPanel
-                    clip={clips.find((c) => c.id === selectedClipId) || null}
+                    clip={clips.find((c) => c.id === detailClipId) || null}
                     folders={folders}
+                    selectedCount={selectedClipIds.size || 1}
                     pinDisabled={
-                      isLiveMainListClip(selectedClipId, clips, selectedFolder) &&
-                      !clips.find((c) => c.id === selectedClipId)?.is_pinned
+                      isLiveMainListClip(detailClipId, clips, selectedFolder) &&
+                      !clips.find((c) => c.id === detailClipId)?.is_pinned
                     }
                     onClose={() => setDetailPanelOpen(false)}
                     onCopy={handleCopy}

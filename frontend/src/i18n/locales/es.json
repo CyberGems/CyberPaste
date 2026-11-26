@@ -119,6 +119,9 @@
     "size": "Tamaño",
     "pinned": "Fijado",
     "extractedText": "Texto extraído",
+    "preview": "Vista previa",
+    "noPreview": "Sin vista previa disponible",
+    "copySingleOnly": "Selecciona un solo clip para copiar",
     "collapse": "Contraer panel de detalles",
     "expand": "Expandir panel de detalles"
   },
