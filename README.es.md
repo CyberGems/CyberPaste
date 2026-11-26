@@ -64,7 +64,7 @@ Copia algo, copia tres cosas más y la primera ya no está. CyberPaste guarda un
 
 *Gratuito y de código abierto (GPLv3): sin anuncios, sin analíticas de red, sin telemetría y sin recogida en la nube. Los logros y el progreso opcionales se quedan en tu equipo.*
 
-- **Privacidad:** consulta [PRIVACY.es.md](PRIVACY.es.md). CyberPaste no envía tus datos por su cuenta. Las únicas conexiones automáticas están listadas ahí y ninguna contiene datos personales.
+- **Privacidad:** consulta [PRIVACY.es.md](PRIVACY.es.md). CyberPaste mantiene local el contenido del portapapeles, las imágenes y los ajustes. Las comprobaciones opcionales contactan con GitHub y las acciones de IA contactan con tu proveedor solo cuando se ejecutan. Los servidores de internet pueden ver tu dirección IP.
 
 ---
 
@@ -158,11 +158,11 @@ Para continuar:
 
 Windows muestra este aviso para cualquier instalador sin un certificado de firma de código de pago; no significa que el archivo sea inseguro. No hagas clic en "No ejecutar":
 
-1. Ejecuta el instalador `CyberPaste-Setup.exe`. Windows puede mostrar el diálogo azul "Windows protegió tu PC".
+1. Ejecuta el instalador `CyberPaste_<version>_x64-setup.exe`. Windows puede mostrar el diálogo azul "Windows protegió tu PC".
 
 ![Aviso de Windows SmartScreen](https://cybergems.org/branding/smartscreen-warning.svg)
 
-2. Haz clic en el pequeño enlace **Más información**. El diálogo expandido muestra tu instalador: `CyberPaste-Setup.exe`.
+2. Haz clic en el pequeño enlace **Más información**. El diálogo expandido muestra tu instalador: `CyberPaste_<version>_x64-setup.exe`.
 
 ![Diálogo de SmartScreen tras Más información](https://cybergems.org/branding/smartscreen-runanyway.svg)
 
@@ -265,13 +265,23 @@ Este proyecto también se construye sobre componentes de código abierto como Ta
 | `Ctrl+Shift+V` | Alternar la ventana del portapapeles (personalizable) |
 | `Ctrl+M` | Alternar el modo de vista Completo / Compacto (personalizable) |
 
+### Ventana
+
+| Tecla | Acción |
+|---|---|
+| `F1` | Acerca de |
+| `Alt+M` | Más |
+| `Alt+F4` | Salir |
+| `Win+Up` | Maximizar |
+| `Win+Down` | Restaurar o minimizar |
+
 ### Navegación
 
 | Tecla | Acción |
 |---|---|
 | `↑` `↓` | Navegar por los clips (dirección de la lista) |
 | `←` `→` | Moverse entre tarjetas (Modo Pantalla Completa) o cambiar de carpeta (Modo Compacto) |
-| `Ctrl+←` / `Ctrl+→` | Cambiar de carpeta (Modo Pantalla Completa) |
+| `Ctrl+←` / `Ctrl+→` | Cambia de carpeta en ambos modos; en Compacto, Izquierda/Derecha solas también cambian de carpeta. |
 | `Intro` | Pegar el clip seleccionado (con inyección de pegado automático) |
 | `Ctrl+C` | Copiar el clip seleccionado al portapapeles (sin pegar) |
 | `Ctrl+Intro` | Copiar el clip seleccionado como texto plano (sin pegar) |
@@ -290,12 +300,15 @@ Este proyecto también se construye sobre componentes de código abierto como Ta
 | `Ctrl+K` | Pausar / reanudar el monitoreo del portapapeles |
 | `Ctrl+Z` | Deshacer el borrado |
 | `Ctrl+F` | Enfocar el campo de búsqueda |
+| `Ctrl+H` | Completo: muestra la búsqueda y alterna el historial; Compacto: alterna el historial. |
 | `Ctrl+A` | Seleccionar todos los clips visibles (modo por lotes) |
 | `Ctrl+1` … `Ctrl+9` | Pegar directamente el clip n.º N (Modo Compacto) |
 | `Mayús+F10` / tecla Menú contextual | Abrir el menú contextual del clip seleccionado |
 | `Supr` | Eliminar el elemento seleccionado |
 | `Escape` | Limpiar la búsqueda / cerrar la ventana o el modal |
 | `Ctrl+Rueda` | Ajustar el zoom de la cuadrícula en el Modo Pantalla Completa (0,6x – 1,75x) o la densidad de filas en el Modo Compacto (Pequeño / Mediano / Grande) |
+
+> **Historial de búsqueda:** Enfocar la búsqueda en modo Completo o Compacto abre automáticamente las búsquedas recientes debajo del campo.
 
 ### Editor
 

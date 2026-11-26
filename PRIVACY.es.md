@@ -1,16 +1,16 @@
 # Privacidad — CyberPaste
 
-CyberPaste funciona en tu PC y guarda tus datos en tu PC. **No tiene cuenta, telemetría, SDK de analítica ni anuncios.** Nunca envía tu historial del portapapeles, imágenes o ajustes a su autor ni a nadie más.
+CyberPaste funciona en tu PC y guarda tus datos en tu PC. **No tiene cuenta, telemetría, SDK de analítica ni anuncios.** Las acciones de IA envían el clip seleccionado y tu prompt al proveedor configurado solo cuando las ejecutas.
 
-Todo lo que sabe (historial del portapapeles, imágenes o ajustes) se queda en `%APPDATA%\CyberPaste\` (`cyber_paste.db`, `settings.json`, `Backups\` e imágenes guardadas). Las claves de API de IA se protegen con DPAPI de Windows dentro de `settings.json`. El instalador no elimina los datos de la app; la carpeta se conserva.
+El historial y las imágenes están en `%APPDATA%\CyberPaste\`; los ajustes están en `%APPDATA%\me.cybergems.cyberpaste\settings.json`. Las claves de IA están protegidas con DPAPI dentro de ese archivo. El instalador no elimina los datos de la app; la carpeta se conserva.
 
 ## Cuándo CyberPaste se conecta a internet
 
-Estas son todas las conexiones que CyberPaste hace por su cuenta. Ninguna envía tu historial del portapapeles, imágenes o ajustes. Como en cualquier petición de internet, el servidor ve tu dirección IP.
+Estas son todas las conexiones que CyberPaste hace por su cuenta. Como en cualquier petición de internet, el servidor ve tu dirección IP.
 
 | Cuándo | Dónde | Para qué | Cómo desactivarlo |
 |---|---|---|---|
-| Con la comprobación automática activada | `github.com` (latest.json), con notas desde `api.github.com` | Consultar una versión nueva | `auto_check_updates` (desactivado por defecto) |
+| Cuando los avisos de actualización están activados o eliges Acerca de → Buscar ahora. | `github.com` (latest.json), con notas desde `api.github.com` | Consultar una versión nueva | `auto_check_updates` (desactivado por defecto) |
 | Solo cuando ejecutas una acción de IA | el endpoint del proveedor configurado (por defecto `https://api.openai.com/v1`) | Enviar el clip seleccionado y tu prompt a ese proveedor | No ejecutar acciones de IA; se admite un endpoint local como Ollama |
 
 Estas son las únicas conexiones que la app hace por su cuenta.

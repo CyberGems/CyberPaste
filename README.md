@@ -64,7 +64,7 @@ Copy something, copy three more things, and the first one is already gone. Cyber
 
 *Free and open source (GPLv3): no ads, no network analytics, no telemetry, and no cloud collection. Optional achievements and progress stay on your device.*
 
-- **Privacy:** see [PRIVACY.md](PRIVACY.md). CyberPaste does not send your data anywhere by itself. The only automatic connections are listed there, and none of them carries personal data.
+- **Privacy:** see [PRIVACY.md](PRIVACY.md). CyberPaste keeps clipboard content, images and settings local. Optional update checks contact GitHub, and AI actions contact your configured provider only when run. Internet servers can see your IP address.
 
 ---
 
@@ -158,11 +158,11 @@ To continue:
 
 Windows shows this warning for any installer without a paid code-signing certificate; it does not mean the file is unsafe. Do <strong>not</strong> click "Don't run":
 
-1. Run the `CyberPaste-Setup.exe` installer. Windows may show the blue "Windows protected your PC" dialog.
+1. Run the `CyberPaste_<version>_x64-setup.exe` installer. Windows may show the blue "Windows protected your PC" dialog.
 
 ![Windows SmartScreen warning](https://cybergems.org/branding/smartscreen-warning.svg)
 
-2. Click the small **More info** link. The expanded dialog shows your installer: `CyberPaste-Setup.exe`.
+2. Click the small **More info** link. The expanded dialog shows your installer: `CyberPaste_<version>_x64-setup.exe`.
 
 ![SmartScreen dialog after More info](https://cybergems.org/branding/smartscreen-runanyway.svg)
 
@@ -265,13 +265,23 @@ This project also builds on open-source components including Tauri, React, SQLit
 | `Ctrl+Shift+V` | Toggle clipboard window (customizable) |
 | `Ctrl+M` | Toggle Full / Compact view mode (customizable) |
 
+### Window
+
+| Key | Action |
+|---|---|
+| `F1` | About |
+| `Alt+M` | More |
+| `Alt+F4` | Exit |
+| `Win+Up` | Maximize |
+| `Win+Down` | Restore or minimize |
+
 ### Navigation
 
 | Key | Action |
 |---|---|
 | `↑` `↓` | Navigate clips (list direction) |
 | `←` `→` | Move between cards (Full Screen mode) or switch folders (Compact mode) |
-| `Ctrl+←` / `Ctrl+→` | Switch folders (Full Screen mode) |
+| `Ctrl+←` / `Ctrl+→` | Switch folders in both modes; in Compact, Left/Right alone also switch folders. |
 | `Enter` | Paste selected clip (with auto-paste injection) |
 | `Ctrl+C` | Copy selected clip to clipboard (no paste) |
 | `Ctrl+Enter` | Copy selected clip as plain text (no paste) |
@@ -290,12 +300,15 @@ This project also builds on open-source components including Tauri, React, SQLit
 | `Ctrl+K` | Pause / resume clipboard monitoring |
 | `Ctrl+Z` | Undo delete |
 | `Ctrl+F` | Focus search input |
+| `Ctrl+H` | Full: reveal search and toggle history; Compact: toggle history. |
 | `Ctrl+A` | Select all visible clips (bulk mode) |
 | `Ctrl+1` … `Ctrl+9` | Paste clip #N directly (Compact mode) |
 | `Shift+F10` / Context Menu key | Open the selected clip's context menu |
 | `Delete` | Delete selected item |
 | `Escape` | Clear search / close modal or window |
 | `Ctrl+Wheel` | Adjust grid zoom in Full Screen mode (0.6x – 1.75x) or row density in Compact mode (Small / Medium / Large) |
+
+> **Search history:** Focusing search in Full or Compact mode automatically opens recent searches below the field.
 
 ### Editor
 
