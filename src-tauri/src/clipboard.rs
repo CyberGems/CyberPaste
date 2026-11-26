@@ -3302,13 +3302,21 @@ fn history_image_dib_v5(bmp: &[u8]) -> Option<Vec<u8>> {
 
 #[cfg(target_os = "windows")]
 fn save_history_image_png(dir: &std::path::Path, png: &[u8]) -> std::io::Result<std::path::PathBuf> {
-    use std::io::Write;
+    use std::io::{ErrorKind, Write};
 
     std::fs::create_dir_all(dir)?;
-    let timestamp = chrono::Local::now().format("%Y-%m-%d_%H-%M-%S");
-    let id = Uuid::new_v4().simple().to_string();
-    let path = dir.join(format!("CyberPaste-{timestamp}-{}.png", &id[..8]));
-    let mut file = std::fs::File::create_new(&path)?;
+    let mut path = dir.join("Clipboard_image.png");
+    let mut index = 1;
+    let mut file = loop {
+        match std::fs::File::create_new(&path) {
+            Ok(file) => break file,
+            Err(error) if error.kind() == ErrorKind::AlreadyExists => {
+                path = dir.join(format!("Clipboard_image({index:02}).png"));
+                index += 1;
+            }
+            Err(error) => return Err(error),
+        }
+    };
     if let Err(error) = file.write_all(png) {
         drop(file);
         let _ = std::fs::remove_file(&path);
@@ -3318,14 +3326,27 @@ fn save_history_image_png(dir: &std::path::Path, png: &[u8]) -> std::io::Result<
 }
 
 #[cfg(target_os = "windows")]
+fn is_history_image_copy_name(name: &str) -> bool {
+    if name == "Clipboard_image.png" {
+        return true;
+    }
+    if let Some(index) = name
+        .strip_suffix(").png")
+        .and_then(|name| name.strip_prefix("Clipboard_image("))
+    {
+        return !index.is_empty() && index.bytes().all(|byte| byte.is_ascii_digit());
+    }
+    name.starts_with("CyberPaste-") && name.ends_with(".png")
+}
+
+#[cfg(target_os = "windows")]
 fn prune_history_image_copies(dir: &std::path::Path) {
     let Ok(entries) = std::fs::read_dir(dir) else { return; };
     let retention = std::time::Duration::from_secs(24 * 60 * 60);
     for entry in entries.flatten() {
         let name = entry.file_name();
         let name = name.to_string_lossy();
-        if name.starts_with("CyberPaste-")
-            && name.ends_with(".png")
+        if is_history_image_copy_name(&name)
             && entry.file_type().is_ok_and(|kind| kind.is_file())
             && entry.metadata().and_then(|metadata| metadata.modified())
                 .is_ok_and(|modified| modified.elapsed().is_ok_and(|age| age > retention))
@@ -3531,7 +3552,7 @@ mod tests {
 
     #[cfg(target_os = "windows")]
     #[test]
-    fn history_image_file_keeps_pixels_and_uses_a_distinct_png_path() {
+    fn history_image_files_use_sequential_clipboard_names_and_keep_pixels() {
         let dir = std::env::temp_dir().join(format!("cyberpaste-image-test-{}", Uuid::new_v4()));
         let image = image::DynamicImage::ImageRgba8(image::RgbaImage::from_pixel(
             2, 3, image::Rgba([40, 120, 220, 150]),
@@ -3540,13 +3561,39 @@ mod tests {
         image.write_to(&mut png, image::ImageOutputFormat::Png).unwrap();
         let first = save_history_image_png(&dir, png.get_ref()).unwrap();
         let second = save_history_image_png(&dir, png.get_ref()).unwrap();
-        assert_ne!(first, second);
-        assert_eq!(first.extension().unwrap(), "png");
+        let third = save_history_image_png(&dir, png.get_ref()).unwrap();
+        assert_eq!(first.file_name().unwrap(), "Clipboard_image.png");
+        assert_eq!(second.file_name().unwrap(), "Clipboard_image(01).png");
+        assert_eq!(third.file_name().unwrap(), "Clipboard_image(02).png");
         assert_eq!(std::fs::read(&first).unwrap(), *png.get_ref());
         assert_eq!(image::open(&second).unwrap().to_rgba8(), image.to_rgba8());
         std::fs::remove_file(first).unwrap();
         std::fs::remove_file(second).unwrap();
+        std::fs::remove_file(third).unwrap();
         std::fs::remove_dir(dir).unwrap();
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn history_image_cleanup_recognizes_current_and_legacy_copy_names() {
+        for name in [
+            "Clipboard_image.png",
+            "Clipboard_image(01).png",
+            "Clipboard_image(100).png",
+            "CyberPaste-2026-11-25_22-34-39-da56f48a.png",
+        ] {
+            assert!(is_history_image_copy_name(name));
+        }
+        for name in [
+            "Clipboard_image.jpg",
+            "Clipboard_image(1).jpg",
+            "Clipboard_image().png",
+            "Clipboard_image(01a).png",
+            "Clipboard_image_other.png",
+            "CyberPaste-image.jpg",
+        ] {
+            assert!(!is_history_image_copy_name(name));
+        }
     }
 
     #[test]
