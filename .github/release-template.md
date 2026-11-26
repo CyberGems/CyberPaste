@@ -8,7 +8,7 @@
 
 <!-- IMPORTANT FOR AGENTS & MAINTAINERS: Always rewrite this entire section and highlights with the ACTUAL release notes for this specific new version before tagging. NEVER leave or copy previous version notes! Use 25-45 words for the summary, lead with user-facing changes, and do not repeat the app name or version. Keep the Spanish mirror inside the details block in sync: translate the summary and rewrite the highlights. -->
 <!-- changelog-summary:start -->
-Fixes system tray menu positioning, mixed-DPI scaling, vertical taskbar anchoring, and painted reveal across multi-monitor setups so menus open cleanly without jumps or flicker, and adds an Exit option to the titlebar More menu.
+Adds configurable update notices, smoother startup and window handling, focused search history, and native-feeling folder wheel scrolling, while improving clipboard source icons, Help navigation, sample content, and bilingual privacy disclosures.
 <!-- changelog-summary:end -->
 
 > **New to CyberPaste?** A fast, privacy-first Windows clipboard manager with history, folders, OCR, and optional AI actions.
@@ -17,15 +17,18 @@ Fixes system tray menu positioning, mixed-DPI scaling, vertical taskbar anchorin
 
 ### ✨ Key Features & Highlights
 
-- 🪟 **Accurate multi-monitor and mixed-DPI tray placement**: Reworked tray positioning in physical coordinates with per-monitor DPI handling and painted reveal so the menu opens flush beside vertical or horizontal taskbars without jumping or flickering.
-- 🚪 **Exit from the titlebar menu**: Added an `Exit CyberPaste` item to the titlebar More menu for quick full shutdown without using the system tray.
+- **One update experience everywhere**: A shared floating notice brings localized release notes, background downloads, cancellation, version skipping, and restart-to-install controls to both window modes. Automatic notices are opt-in, while manual checks remain in About.
+- **Faster, calmer search and folder navigation**: Search history opens beneath the focused field in Full and Compact, with clearer focus behavior and shared styled field menus. Folder tabs scroll smoothly with normalized wheel distance and no hover churn.
+- **More recognizable clipboard sources**: Windows UWP apps resolve their real source behind service hosts and show packaged logos, with a one-time icon backfill for eligible historical clips. Legacy PNG records are repaired automatically.
+- **Cleaner windows from startup onward**: The main window waits for its UI before appearing, startup flashes are suppressed, and About/Settings borders, native shortcuts, toast focus, and tray warmup are more consistent.
+- **Helpful polish and clearer disclosure**: Help links move into an accessible submenu, tray tooltips and the pin-tip checkbox are refined, starter samples are leaner, and bilingual AI/privacy documentation explains optional processing and update requests.
 
 <details>
 <summary><b>🇪🇸 Ver notas de la versión en Español</b></summary>
 
 ### 🚀 Novedades de esta versión
 
-Corrige el posicionamiento del menú de bandeja, el escalado en monitores con DPI mixto, el anclaje en barras verticales y el revelado pintado para abrir sin saltos ni parpadeos, y añade la opción Salir al menú Más de la barra de título.
+Añade avisos de actualización configurables, un arranque y manejo de ventanas más suaves, historial de búsqueda al enfocar y desplazamiento natural de carpetas con rueda, además de mejorar iconos de origen, navegación de Ayuda, contenido inicial y divulgación bilingüe de privacidad.
 
 > **¿Nuevo en CyberPaste?** Un gestor de portapapeles rápido y privado para Windows, con historial, carpetas, OCR y acciones de IA opcionales.
 
@@ -33,8 +36,11 @@ Corrige el posicionamiento del menú de bandeja, el escalado en monitores con DP
 
 ### ✨ Novedades destacadas
 
-- 🪟 **Posicionamiento preciso en multimonitor y DPI mixto**: Se rehizo el cálculo de la bandeja en píxeles físicos con soporte DPI por monitor y revelado tras pintar, evitando saltos y parpadeos junto a barras verticales u horizontales.
-- 🚪 **Opción Salir en la barra de título**: Se agregó `Salir de CyberPaste` al menú Más de la barra de título para cerrar la aplicación por completo sin pasar por la bandeja del sistema.
+- **Una sola experiencia de actualización**: Un aviso flotante común reúne notas localizadas, descargas en segundo plano, cancelación, omisión de versiones y reinicio para instalar en ambos modos. Los avisos automáticos son opcionales y las comprobaciones manuales siguen en Acerca de.
+- **Búsqueda y navegación más ágiles**: El historial se abre bajo el campo enfocado en Completo y Compacto, con mejor comportamiento del enfoque y menús compartidos. Las pestañas de carpeta se desplazan suavemente con distancia normalizada y sin efectos hover molestos.
+- **Orígenes del portapapeles más reconocibles**: Las apps UWP de Windows resuelven su origen real detrás de servicios y muestran logotipos de paquete, con una migración de iconos para clips históricos elegibles. Los PNG antiguos se reparan automáticamente.
+- **Ventanas más limpias desde el inicio**: La ventana principal espera a renderizar su interfaz, se suprimen los destellos y los bordes de Acerca de/Ajustes, atajos nativos, foco de avisos y precalentamiento de bandeja son más coherentes.
+- **Ayuda, bandeja y divulgación más claras**: Los enlaces de ayuda pasan a un submenú accesible, se refinan los textos del tray y la casilla del aviso, las muestras iniciales son más concisas y la documentación bilingüe explica el procesamiento opcional y las solicitudes de actualización.
 
 ### ℹ️ Antes de instalar
 

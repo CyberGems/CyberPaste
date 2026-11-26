@@ -2,6 +2,46 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.32.0] - 2026-11-25
+
+### 🇺🇸 English
+
+- **Unified update notices**: Add a shared floating panel in Full Screen and Compact with localized release highlights, download progress, background downloading, cancellation, version skipping, and restart-to-install actions.
+- **Optional automatic checks**: Make update notices opt-in in Settings, keep manual checks in About, and disable in-app update installation in portable and app-store editions.
+- **Refined secondary windows**: Highlight the up-to-date state in About, match About and Settings borders to Compact across themes, remove native shadow artifacts, and prevent WebView2 border clipping.
+- **Settings feedback**: Add Escape-to-close and longer save feedback with a sidebar pulse.
+- **Consistent window shortcuts**: `Alt+M` opens More, `F1` opens About in both modes, `Alt+F4` always exits, and `Win+↑`/`Win+↓` maximize, restore, or minimize the focused main panel.
+- **Calmer startup and focus**: Wait for settings, theme, data, and rendered UI before showing the main window, suppress white or transparent startup flashes, and keep welcome toasts and tray-menu warmup from stealing or losing foreground focus.
+- **Recognizable clipboard sources**: Resolve UWP apps hosted by Windows services through the foreground or focused application, with validated package-logo selection.
+- **Historical source icons**: Backfill icons for existing UWP clips when attribution is unambiguous.
+- **Image-history repair**: Convert legacy base64-text PNG records to binary storage with corrected file sizes.
+- **Concise starter content**: Seed fresh profiles with five mixed clips and one Code example while preserving existing user clips.
+- **Redesigned search history**: Open history beneath the focused search field in both modes, with viewport-aware sizing, automatic opening, clear-history support, keyboard navigation, outside-click dismissal, and Escape focus restoration.
+- **Complete text-field menus**: Add icons and accurate enabled states to the shared context menu, including disabled Paste when clipboard text is unavailable.
+- **Consistent search behavior**: Unify Full and Compact scope labels, remove the duplicate Full-search magnifier and stray ellipsis, and refine Compact focus, titlebar blur, and hide/reopen behavior.
+- **Smooth folder scrolling**: Increase wheel travel, normalize line/page deltas, clamp at boundaries, and suppress hover effects and tooltips during movement and settling.
+- **Help and tray polish**: Group Documentation, Website, Changelog, GitHub, and About in a keyboard-accessible Help submenu, truncate long tray tooltips to 63 characters, and restyle the tray pin-tip checkbox to match the suite.
+- **Clearer AI and privacy disclosure**: Add bilingual documents covering maintainer review, CI checks, optional AI providers, GitHub update requests, encrypted local API keys, and server-visible IP addresses; refresh README taglines, AI achievement wording, and donation presentation.
+
+### 🇪🇸 Español
+
+- **Avisos de actualización unificados**: Añade un panel flotante común en Pantalla Completa y Compacto con novedades localizadas, progreso de descarga, descarga en segundo plano, cancelación, omisión de versiones y reinicio para instalar.
+- **Comprobaciones automáticas opcionales**: Hace que los avisos sean opcionales en Ajustes, mantiene las comprobaciones manuales en Acerca de y desactiva la instalación interna de actualizaciones en ediciones portátil y de tienda.
+- **Ventanas secundarias refinadas**: Resalta el estado actualizado en Acerca de, iguala los bordes de Acerca de y Ajustes con Compacto en todos los temas, elimina artefactos de sombras nativas y evita el recorte del borde de WebView2.
+- **Respuesta de Ajustes**: Añade cierre con Escape y una confirmación de guardado más duradera con pulso en la barra lateral.
+- **Atajos de ventana coherentes**: `Alt+M` abre Más, `F1` abre Acerca de en ambos modos, `Alt+F4` siempre sale y `Win+↑`/`Win+↓` maximizan, restauran o minimizan el panel principal enfocado.
+- **Inicio y enfoque más calmados**: Espera a tener listos configuración, tema, datos e interfaz renderizada antes de mostrar la ventana principal, suprime destellos blancos o transparentes y evita que el aviso de bienvenida y el precalentamiento de bandeja roben o pierdan el foco.
+- **Orígenes del portapapeles reconocibles**: Resuelve apps UWP alojadas por servicios de Windows mediante la aplicación en primer plano o enfocada, con selección validada de logotipos de paquete.
+- **Iconos de origen históricos**: Completa los iconos de clips UWP existentes cuando la atribución no es ambigua.
+- **Reparación de imágenes del historial**: Convierte los PNG antiguos guardados como texto base64 a almacenamiento binario con tamaños corregidos.
+- **Contenido inicial conciso**: Crea perfiles nuevos con cinco clips variados y un solo ejemplo de Código, sin modificar los clips existentes del usuario.
+- **Historial de búsqueda rediseñado**: Se abre bajo el campo enfocado en ambos modos, con tamaño adaptado, apertura automática, borrado del historial, navegación por teclado, cierre al pulsar fuera y restauración del enfoque con Escape.
+- **Menús completos para campos de texto**: Añade iconos y estados habilitados precisos al menú contextual compartido, incluido Pegar deshabilitado cuando no hay texto disponible en el portapapeles.
+- **Búsqueda más coherente**: Unifica las etiquetas de alcance de Completo y Compacto, quita la lupa duplicada y los puntos suspensivos espurios, y ajusta el enfoque, el desenfoque al pulsar la cabecera y el comportamiento al ocultar y reabrir Compacto.
+- **Desplazamiento suave de carpetas**: Aumenta el recorrido de la rueda, normaliza deltas de línea/página, limita los extremos y suprime efectos hover y sugerencias durante el movimiento y la estabilización.
+- **Ayuda y bandeja pulidas**: Agrupa Documentación, Sitio web, Registro de cambios, GitHub y Acerca de en un submenú Ayuda accesible por teclado, trunca los textos largos del tray a 63 caracteres y adapta la casilla del aviso de fijación al estilo de la suite.
+- **Divulgación clara de IA y privacidad**: Añade documentos bilingües sobre revisión humana, comprobaciones de CI, proveedores de IA opcionales, solicitudes de actualización a GitHub, claves API locales cifradas e IP visibles para los servidores; actualiza descripciones, logro de IA y presentación de donaciones del README.
+
 ## [1.31.4] - 2026-11-19
 
 ### 🇺🇸 English
