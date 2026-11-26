@@ -223,6 +223,12 @@ export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
   },
   {
     tab: 'full',
+    labelKey: 'settings.fullScrollDirection',
+    descKey: 'settings.fullScrollDirectionDesc',
+    sectionKey: 'settings.fullLayout',
+  },
+  {
+    tab: 'full',
     labelKey: 'settings.fullPeekEnabled',
     descKey: 'settings.fullPeekEnabledDesc',
     sectionKey: 'settings.fullVisibility',

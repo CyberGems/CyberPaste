@@ -490,15 +490,18 @@ export const ClipList: React.FC<ClipListProps> = ({
         closePeek();
       }
 
-      const left = Math.min(state.startX, e.clientX);
-      const top = Math.min(state.startY, e.clientY);
-      const width = Math.abs(dx);
-      const height = Math.abs(dy);
-
-      setMarqueeBox({ left, top, width, height });
-
       const container = containerRef.current;
       if (!container) return;
+
+      const containerRect = container.getBoundingClientRect();
+      const endX = Math.min(containerRect.right, Math.max(containerRect.left, e.clientX));
+      const endY = Math.min(containerRect.bottom, Math.max(containerRect.top, e.clientY));
+      const left = Math.min(state.startX, endX);
+      const top = Math.min(state.startY, endY);
+      const width = Math.abs(endX - state.startX);
+      const height = Math.abs(endY - state.startY);
+
+      setMarqueeBox({ left, top, width, height });
 
       const boxRect = {
         left,
@@ -531,14 +534,19 @@ export const ClipList: React.FC<ClipListProps> = ({
 
       onBulkSelectChangeRef.current?.(nextSelected);
 
-      // Auto-scroll when dragging near top/bottom edges of the grid
+      // Auto-scroll when dragging near the visible edges of the grid
       const scrollable = container.querySelector<HTMLElement>('.no-scrollbar');
       if (scrollable) {
         const cRect = container.getBoundingClientRect();
-        if (e.clientY > cRect.bottom - 20) {
+        if (endY > cRect.bottom - 20) {
           scrollable.scrollTop += 10;
-        } else if (e.clientY < cRect.top + 20) {
+        } else if (endY < cRect.top + 20) {
           scrollable.scrollTop -= 10;
+        }
+        if (endX > cRect.right - 20) {
+          scrollable.scrollLeft += 10;
+        } else if (endX < cRect.left + 20) {
+          scrollable.scrollLeft -= 10;
         }
       }
     };
@@ -664,16 +672,12 @@ export const ClipList: React.FC<ClipListProps> = ({
   const isPanoramic = cardFormat === 'panoramic';
   const effectiveCardWidth =
     (isPanoramic ? BASE_CARD_WIDTH_PANORAMIC : BASE_CARD_WIDTH) * gridScale;
+  const usableWidth = Math.max(0, containerWidth - SIDE_PADDING);
   const columnCount = isVertical
     ? gridColumns > 0
       ? Math.min(MAX_COLUMNS, Math.max(MIN_COLUMNS, gridColumns))
-      : Math.min(
-          MAX_COLUMNS,
-          Math.max(MIN_COLUMNS, Math.floor(containerWidth / effectiveCardWidth))
-        )
+      : Math.min(MAX_COLUMNS, Math.max(1, Math.floor(usableWidth / effectiveCardWidth)))
     : clips.length;
-
-  const usableWidth = containerWidth - SIDE_PADDING;
 
   const rowCount = isVertical ? Math.ceil(clips.length / columnCount) : 1;
   const calculatedColumnWidth = isVertical ? usableWidth / columnCount : effectiveCardWidth;
@@ -706,7 +710,7 @@ export const ClipList: React.FC<ClipListProps> = ({
         });
       }
     }
-  }, [selectedClipIndex, isVertical, columnCount]);
+  }, [selectedClipIndex, isVertical, columnCount, containerWidth, containerHeight]);
 
   // Reset scroll position on view change or data refresh
   useEffect(() => {
@@ -719,7 +723,7 @@ export const ClipList: React.FC<ClipListProps> = ({
     if (gridRef.current?.element) {
       gridRef.current.element.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     }
-  }, [resetToken, isVertical, cardFormat]);
+  }, [resetToken, cardFormat]);
 
   const handleCellsRendered = (visibleCells: any) => {
     if (!hasMore) return;

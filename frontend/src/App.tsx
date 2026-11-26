@@ -1169,13 +1169,12 @@ function App() {
         return;
       }
 
-      // Check if mouse is within the clip list area (with margin)
       const listRect = clipList.getBoundingClientRect();
       const isOverList =
-        clientX >= listRect.left - 40 &&
-        clientX <= listRect.right + 40 &&
-        clientY >= listRect.top - 40 &&
-        clientY <= listRect.bottom + 40;
+        clientX >= listRect.left &&
+        clientX <= listRect.right &&
+        clientY >= listRect.top &&
+        clientY <= listRect.bottom;
 
       if (!isOverList) {
         if (dragStateRef.current.reorderTargetClipId !== null) {
@@ -1190,8 +1189,7 @@ function App() {
       const currentClipId = dragStateRef.current.clipId;
       const isFullMode = settingsRef.current?.view_mode === 'full';
 
-      // Find all clip elements with data-clip-id in DOM
-      const cardElems = document.querySelectorAll('[data-clip-id]');
+      const cardElems = clipList.querySelectorAll('[data-clip-id]');
       let closestId: string | null = null;
       let closestDist = Infinity;
       let closestCenterX = 0;
@@ -1617,31 +1615,31 @@ function App() {
           let vy = 0;
           let vx = 0;
 
-          const isInsideHorizontal = e.clientX >= rect.left - 20 && e.clientX <= rect.right + 20;
-          const isInsideVertical = e.clientY >= rect.top - 20 && e.clientY <= rect.bottom + 20;
+          const isInsideHorizontal = e.clientX >= rect.left && e.clientX <= rect.right;
+          const isInsideVertical = e.clientY >= rect.top && e.clientY <= rect.bottom;
 
           if (isInsideHorizontal && isInsideVertical) {
             // Top edge scroll zone
-            if (e.clientY <= rect.top + EDGE_THRESHOLD && e.clientY >= rect.top - 15) {
+            if (e.clientY <= rect.top + EDGE_THRESHOLD) {
               const dist = Math.max(0, e.clientY - rect.top);
               const factor = (EDGE_THRESHOLD - dist) / EDGE_THRESHOLD;
               vy = -Math.max(3, Math.round(MAX_SPEED * factor));
             }
             // Bottom edge scroll zone
-            else if (e.clientY >= rect.bottom - EDGE_THRESHOLD && e.clientY <= rect.bottom + 15) {
+            else if (e.clientY >= rect.bottom - EDGE_THRESHOLD) {
               const dist = Math.max(0, rect.bottom - e.clientY);
               const factor = (EDGE_THRESHOLD - dist) / EDGE_THRESHOLD;
               vy = Math.max(3, Math.round(MAX_SPEED * factor));
             }
 
             // Left edge horizontal scroll zone
-            if (e.clientX <= rect.left + EDGE_THRESHOLD && e.clientX >= rect.left - 15) {
+            if (e.clientX <= rect.left + EDGE_THRESHOLD) {
               const dist = Math.max(0, e.clientX - rect.left);
               const factor = (EDGE_THRESHOLD - dist) / EDGE_THRESHOLD;
               vx = -Math.max(3, Math.round(MAX_SPEED * factor));
             }
             // Right edge horizontal scroll zone
-            else if (e.clientX >= rect.right - EDGE_THRESHOLD && e.clientX <= rect.right + 15) {
+            else if (e.clientX >= rect.right - EDGE_THRESHOLD) {
               const dist = Math.max(0, rect.right - e.clientX);
               const factor = (EDGE_THRESHOLD - dist) / EDGE_THRESHOLD;
               vx = Math.max(3, Math.round(MAX_SPEED * factor));
@@ -2281,7 +2279,7 @@ function App() {
       if (!e.ctrlKey && !e.metaKey) return;
       if (settingsRef.current?.view_mode !== 'full') return;
       const target = e.target as HTMLElement;
-      if (!target.closest('[data-el="clip-list-area"]')) return;
+      if (!target.closest('[data-clip-list="true"]')) return;
       e.preventDefault();
       const current = settingsRef.current?.full_grid_scale ?? 1;
       const direction = e.deltaY < 0 ? 1 : -1;
@@ -4118,17 +4116,22 @@ function App() {
 
               <main
                 data-el="clip-list-area"
-                className="no-scrollbar relative flex-1 overflow-hidden"
+                className="no-scrollbar relative flex min-h-0 flex-1 gap-2 overflow-hidden"
               >
                 {isEmojiMode ? (
-                  <EmojiPickerView
-                    mode="full"
-                    searchQuery={searchQuery}
-                    onPasteEmoji={handlePasteEmoji}
-                    showCategoryTabs={true}
-                  />
+                  <div className="min-w-0 flex-1 overflow-hidden">
+                    <EmojiPickerView
+                      mode="full"
+                      searchQuery={searchQuery}
+                      onPasteEmoji={handlePasteEmoji}
+                      showCategoryTabs={true}
+                    />
+                  </div>
                 ) : (
-                  <>
+                  <div
+                    data-el="clip-list-region"
+                    className="relative min-w-0 flex-1 overflow-hidden"
+                  >
                     <ClipList
                       clips={clips}
                       isLoading={isLoading}
@@ -4146,7 +4149,7 @@ function App() {
                         setFullTypeFilter(next);
                       }}
                       typeFilter={fullTypeFilter}
-                      scrollDirection="vertical"
+                      scrollDirection={settings?.full_scroll_direction ?? 'vertical'}
                       reorderTargetClipId={reorderTargetClipId}
                       reorderTargetPosition={reorderTargetPosition}
                       reorderEnabled={true}
@@ -4180,25 +4183,25 @@ function App() {
                       onMoveToFolder={handleBulkMove}
                       onClear={handleClearBulkSelection}
                     />
-                  </>
-                )}
-                {/* Zoom indicator + keyframes injected once */}
-                {zoomIndicator && (
-                  <>
-                    <style>{`
-                      @keyframes zoom-fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-                      @keyframes zoom-fade-out { from { opacity: 1; } to { opacity: 0; transform: translateY(-4px); } }
-                    `}</style>
-                    <div
-                      className="pointer-events-none absolute bottom-4 left-4 z-40 rounded-md border border-cyan-500/30 bg-black/85 px-2.5 py-1 font-mono text-xs font-bold text-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.3)]"
-                      style={{
-                        animation:
-                          'zoom-fade-in 120ms ease-out, zoom-fade-out 300ms ease-in 900ms forwards',
-                      }}
-                    >
-                      {zoomIndicator}
-                    </div>
-                  </>
+                    {/* Zoom indicator + keyframes injected once */}
+                    {zoomIndicator && (
+                      <>
+                        <style>{`
+                          @keyframes zoom-fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+                          @keyframes zoom-fade-out { from { opacity: 1; } to { opacity: 0; transform: translateY(-4px); } }
+                        `}</style>
+                        <div
+                          className="pointer-events-none absolute bottom-4 left-4 z-40 rounded-md border border-cyan-500/30 bg-black/85 px-2.5 py-1 font-mono text-xs font-bold text-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.3)]"
+                          style={{
+                            animation:
+                              'zoom-fade-in 120ms ease-out, zoom-fade-out 300ms ease-in 900ms forwards',
+                          }}
+                        >
+                          {zoomIndicator}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 )}
                 {detailPanelOpen && (
                   <ClipDetailPanel

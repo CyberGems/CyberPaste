@@ -2930,6 +2930,24 @@ export function SettingsPanel({ settings: initialSettings, onClose }: SettingsPa
                           ]}
                         />
                       </div>
+                      <div className="space-y-3">
+                        <label className="block">
+                          <span className="text-sm font-medium">
+                            {t('settings.fullScrollDirection')}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settings.fullScrollDirectionDesc')}
+                          </p>
+                        </label>
+                        <Select
+                          value={settings.full_scroll_direction ?? 'vertical'}
+                          onChange={(value) => updateSetting('full_scroll_direction', value)}
+                          options={[
+                            { value: 'vertical', label: t('settings.scrollVertical') },
+                            { value: 'horizontal', label: t('settings.scrollHorizontal') },
+                          ]}
+                        />
+                      </div>
                     </div>
                   </section>
 

@@ -150,11 +150,11 @@ export const ClipDetailPanel: React.FC<ClipDetailPanelProps> = ({
       data-el="clip-detail-panel"
       data-detail-clip-id={clip.id}
       data-selected-count={selectedCount}
-      initial={{ x: 280, opacity: 0 }}
+      initial={{ x: 16, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 320, damping: 28 }}
       onDragStartCapture={(event) => event.preventDefault()}
-      className="absolute right-2 top-16 z-30 flex h-[calc(100%-4.5rem)] w-72 select-none flex-col overflow-hidden rounded-xl border border-border/80 bg-card/95 text-foreground shadow-2xl backdrop-blur-md dark:border-white/10"
+      className="my-2 mr-2 flex min-h-0 w-72 shrink-0 select-none flex-col overflow-hidden rounded-xl border border-border/80 bg-card/95 text-foreground shadow-2xl backdrop-blur-md dark:border-white/10"
     >
       {/* Header */}
       <div className="flex items-center gap-1 border-b border-border/60 bg-muted/40 px-2 py-2 dark:border-white/5 dark:bg-black/25">
