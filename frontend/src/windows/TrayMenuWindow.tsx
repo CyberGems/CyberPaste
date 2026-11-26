@@ -560,17 +560,15 @@ export function TrayMenuWindow() {
                 runAction('about');
               }}
               aria-label={t('tray.about', { defaultValue: 'About...' })}
-              className="group flex w-full select-none items-center justify-center gap-1.5 px-3 pb-2.5 pt-3.5 text-[12px] font-medium tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+              className="group flex w-full select-none items-center justify-center gap-1.5 px-3 pb-2.5 pt-3.5 text-[12px] font-medium tracking-wide text-muted-foreground"
             >
-              <img
-                src="/logo.png"
-                alt=""
-                className="h-3.5 w-3.5 shrink-0 object-contain saturate-[.4] transition-[filter] duration-150 group-hover:saturate-100"
-              />
-              <span>
-                Cyber<span className="text-primary">Paste</span>{' '}
-                <span className="text-[11px] tracking-wide text-muted-foreground/70 group-hover:text-muted-foreground">
-                  v{state?.version ?? '…'}
+              <span className="flex items-center gap-1.5 opacity-60 transition-opacity duration-150 group-hover:opacity-100">
+                <img src="/logo.png" alt="" className="h-3.5 w-3.5 shrink-0 object-contain" />
+                <span>
+                  Cyber<span className="text-primary">Paste</span>{' '}
+                  <span className="text-[11px] tracking-wide text-muted-foreground">
+                    v{state?.version ?? '…'}
+                  </span>
                 </span>
               </span>
               {state?.update_available ? (
