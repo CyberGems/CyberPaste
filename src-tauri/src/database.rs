@@ -848,7 +848,7 @@ impl Database {
         let sample_clips: Vec<(&str, String, String, &str, Option<String>)> = vec![
             (
                 "text",
-                "✨ Welcome to CyberPaste! / ¡Bienvenido a CyberPaste!\n\nEssential shortcuts / Atajos esenciales:\n• Ctrl+Shift+V : Toggle window / Alternar ventana\n• Ctrl+M       : Full & Compact modes / Vista Completa / Compacta\n• Type...      : Instant search / Búsqueda instantánea\n• Enter        : Paste selected clip / Pegar clip seleccionado\n• Ctrl+Enter   : Copy as plain text / Copiar como texto plano\n• P            : Pin or unpin clip / Fijar o desfijar clip\n• Del          : Delete clip / Eliminar clip".to_string(),
+                "✨ Welcome to CyberPaste! / ¡Bienvenido a CyberPaste!\n\nEssential shortcuts / Atajos esenciales:\n• Ctrl+Shift+V : Toggle window / Alternar ventana\n• Ctrl+M       : Full & Compact modes / Vista Completa / Compacta\n• Type...      : Instant search / Búsqueda instantánea\n• Enter        : Paste selected clip / Pegar clip seleccionado\n• Ctrl+Enter   : Copy as plain text / Copiar como texto plano\n• Alt+P        : Pin or unpin clip / Fijar o desfijar clip\n• Del          : Delete clip / Eliminar clip".to_string(),
                 "✨ Welcome to CyberPaste! / ¡Bienvenido a CyberPaste!".to_string(),
                 "CyberPaste.exe",
                 None,
@@ -876,8 +876,8 @@ impl Database {
             ),
             (
                 "text",
-                "# 💎 CyberPaste — Limitless Productivity\n\n- ⚡ **Ultra-fast**: Native Rust engine + local SQLite\n- 🔒 **100% Private**: Your data never leaves your device\n- 📁 **Folders**: Organize clips via drag & drop or menus\n- 👁️ **Peek Popover**: Hover in compact mode to preview\n- 🤖 **AI Actions**: Summarize, translate or analyze code locally".to_string(),
-                "# 💎 CyberPaste — Limitless Productivity".to_string(),
+                "# 💎 CyberPaste: Limitless Productivity\n\n- ⚡ **Ultra-fast**: Native Rust engine + local SQLite\n- 🔒 **Local history**: Clipboard content, images and settings stay on this device\n- 📁 **Folders**: Organize clips via drag & drop or menus\n- 👁️ **Peek Popover**: Hover in compact mode to preview\n- 🤖 **AI Actions**: Summarize, translate or analyze code with your configured provider only when you run an action".to_string(),
+                "# 💎 CyberPaste: Limitless Productivity".to_string(),
                 "Obsidian.exe",
                 None,
             ),
@@ -974,6 +974,21 @@ mod tests {
         .await
         .unwrap();
         assert!(code_sample.contains("export interface ClipboardClip"));
+
+        let seeded_content: Vec<String> =
+            sqlx::query_scalar("SELECT CAST(content AS TEXT) FROM clips")
+                .fetch_all(&db.pool)
+                .await
+                .unwrap();
+        assert!(seeded_content
+            .iter()
+            .any(|content| content.contains("Alt+P")));
+        assert!(seeded_content
+            .iter()
+            .all(|content| !content.contains("Your data never leaves your device")));
+        assert!(seeded_content
+            .iter()
+            .all(|content| !content.contains("analyze code locally")));
         db.pool.close().await;
     }
 
