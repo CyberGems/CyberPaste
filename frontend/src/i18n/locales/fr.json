@@ -38,6 +38,8 @@
   },
   "detailPanel": {
     "title": "Détails du clip",
+    "noClipSelected": "Aucun clip sélectionné",
+    "resetZoom": "Réinitialiser le zoom de l’aperçu",
     "type": "Type",
     "sourceApp": "Application source",
     "created": "Créé",

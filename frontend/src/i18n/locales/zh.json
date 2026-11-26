@@ -38,6 +38,8 @@
   },
   "detailPanel": {
     "title": "剪辑详情",
+    "noClipSelected": "未选择剪辑",
+    "resetZoom": "重置预览缩放",
     "type": "类型",
     "sourceApp": "来源应用",
     "created": "创建时间",

@@ -112,6 +112,8 @@
   },
   "detailPanel": {
     "title": "Detalles del clip",
+    "noClipSelected": "Ningún clip seleccionado",
+    "resetZoom": "Restablecer zoom de la vista previa",
     "type": "Tipo",
     "sourceApp": "App de origen",
     "created": "Creado",

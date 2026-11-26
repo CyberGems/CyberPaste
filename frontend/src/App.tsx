@@ -259,6 +259,7 @@ function App() {
         setShowAddFolderModal(false);
       } else if (wasLocked) {
         setClipListResetToken((prev) => prev + 1);
+        setDetailPanelOpen(settingsRef.current?.full_detail_panel_open ?? false);
       }
     });
 
@@ -489,6 +490,7 @@ function App() {
         settingsRef.current = s;
         setTheme(s.theme);
         setSettings(s);
+        setDetailPanelOpen(s.full_detail_panel_open ?? false);
         recentSearchesRef.current = s.recent_searches ?? [];
         setRecentSearches(recentSearchesRef.current);
         // Type filters always initialize clean ('all') on startup
@@ -522,6 +524,9 @@ function App() {
       settingsRef.current = event.payload;
       setTheme(event.payload.theme);
       setSettings(event.payload);
+      if (!isLockedRef.current) {
+        setDetailPanelOpen(event.payload.full_detail_panel_open ?? false);
+      }
       recentSearchesRef.current = event.payload.recent_searches ?? [];
       setRecentSearches(recentSearchesRef.current);
     });
@@ -2034,7 +2039,6 @@ function App() {
     forceSelectFirstRef.current = true;
     setSelectedClipId(null);
     setSelectedClipIds(new Set());
-    setDetailPanelOpen(false);
     setIsEmojiMode(false);
     setClipListResetToken((prev) => prev + 1);
     window.dispatchEvent(new CustomEvent('cyberpaste-reset-view'));
@@ -2977,9 +2981,27 @@ function App() {
   // Toggle the HUD strip (persisted so it survives restarts)
   // Removed: HUD toggle is now controlled only from the Settings panel.
 
-  // Toggle the right-side detail panel (state only, not persisted)
+  const updateDetailPanelOpen = useCallback((open: boolean) => {
+    setDetailPanelOpen(open);
+    const current = settingsRef.current;
+    if (!current || current.full_detail_panel_open === open) return;
+    const newSettings = { ...current, full_detail_panel_open: open };
+    settingsRef.current = newSettings;
+    setSettings(newSettings);
+    invoke('save_settings', { settings: newSettings }).catch(console.error);
+  }, []);
+
   const handleToggleDetailPanel = useCallback(() => {
-    setDetailPanelOpen((prev) => !prev);
+    updateDetailPanelOpen(!detailPanelOpen);
+  }, [detailPanelOpen, updateDetailPanelOpen]);
+
+  const handleDetailTextZoomChange = useCallback((zoom: number) => {
+    const current = settingsRef.current;
+    if (!current || current.full_detail_preview_text_zoom === zoom) return;
+    const newSettings = { ...current, full_detail_preview_text_zoom: zoom };
+    settingsRef.current = newSettings;
+    setSettings(newSettings);
+    invoke('save_settings', { settings: newSettings }).catch(console.error);
   }, []);
 
   const handleMoveClip = async (clipId: string, folderId: string | null) => {
@@ -3521,7 +3543,7 @@ function App() {
             icon: detailPanelOpen ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />,
             shortcut: 'I',
             keyHint: 'I',
-            onClick: () => setDetailPanelOpen((prev) => !prev),
+            onClick: handleToggleDetailPanel,
           });
         }
 
@@ -3614,6 +3636,7 @@ function App() {
       handleDelete,
       handleBulkDelete,
       handleDeleteFolder,
+      handleToggleDetailPanel,
       detailPanelOpen,
     ]
   );
@@ -4103,7 +4126,7 @@ function App() {
                 cardFormat={settings?.full_card_format ?? 'square'}
                 onToggleCardFormat={handleToggleCardFormat}
                 detailPanelOpen={detailPanelOpen}
-                onToggleDetailPanel={() => setDetailPanelOpen((prev) => !prev)}
+                onToggleDetailPanel={handleToggleDetailPanel}
                 fullPeekEnabled={settings?.full_peek_enabled ?? true}
                 onTogglePeek={handleTogglePeek}
                 peekHotkey={TITLEBAR_HOTKEYS.peek}
@@ -4206,8 +4229,11 @@ function App() {
                 {detailPanelOpen && (
                   <ClipDetailPanel
                     clip={detailClip}
+                    slotNumber={detailClipIndex >= 0 ? detailClipIndex + 1 : undefined}
                     folders={folders}
                     selectedCount={selectedClipIds.size || 1}
+                    textZoom={settings?.full_detail_preview_text_zoom ?? 1}
+                    onTextZoomChange={handleDetailTextZoomChange}
                     canNavigatePrevious={detailClipIndex > 0}
                     canNavigateNext={detailClipIndex >= 0 && detailClipIndex < clips.length - 1}
                     onPrevious={handleDetailPrevious}
@@ -4216,7 +4242,7 @@ function App() {
                       isLiveMainListClip(detailClipId, clips, selectedFolder) &&
                       !detailClip?.is_pinned
                     }
-                    onClose={() => setDetailPanelOpen(false)}
+                    onClose={() => updateDetailPanelOpen(false)}
                     onCopy={handleCopy}
                     onPin={handleToggleClipPin}
                     onDelete={handleDelete}

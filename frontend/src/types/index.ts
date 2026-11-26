@@ -101,6 +101,8 @@ export interface Settings {
   auto_check_updates?: boolean;
   show_app_recommendations?: boolean;
   full_show_hud?: boolean;
+  full_detail_panel_open?: boolean;
+  full_detail_preview_text_zoom?: number;
   full_grid_scale?: number;
   full_grid_columns?: number; // 0 = automatic
   full_scroll_direction?: 'horizontal' | 'vertical';

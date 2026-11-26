@@ -38,6 +38,8 @@
   },
   "detailPanel": {
     "title": "Clip-Details",
+    "noClipSelected": "Kein Clip ausgewählt",
+    "resetZoom": "Zoom der Vorschau zurücksetzen",
     "type": "Typ",
     "sourceApp": "Quell-App",
     "created": "Erstellt",

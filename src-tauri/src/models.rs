@@ -121,6 +121,8 @@ pub struct AppSettings {
     #[serde(default = "default_true")]
     pub show_app_recommendations: bool,
     pub full_show_hud: bool,
+    pub full_detail_panel_open: bool,
+    pub full_detail_preview_text_zoom: f64,
     pub full_grid_scale: f64,
     pub full_grid_columns: i64,
     pub full_scroll_direction: String,
@@ -294,6 +296,8 @@ impl Default for AppSettings {
             auto_check_updates: false,
             show_app_recommendations: true,
             full_show_hud: true,
+            full_detail_panel_open: false,
+            full_detail_preview_text_zoom: 1.0,
             full_grid_scale: 1.0,
             full_grid_columns: 0,
             full_scroll_direction: "vertical".to_string(),
@@ -477,7 +481,6 @@ pub struct SourceAppItem {
     pub count: i64,
 }
 
-
 impl AppSettings {
     /// True while toasts are paused from the tray menu, either permanently or
     /// until the stored expiry timestamp. Evaluated dynamically, so a timed
@@ -492,5 +495,24 @@ impl AppSettings {
                 .unwrap_or(false),
             None => false,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::AppSettings;
+
+    #[test]
+    fn detail_panel_preferences_round_trip_with_defaults() {
+        let mut settings: AppSettings = serde_json::from_str("{}").expect("default settings");
+        assert!(!settings.full_detail_panel_open);
+        assert_eq!(settings.full_detail_preview_text_zoom, 1.0);
+
+        settings.full_detail_panel_open = true;
+        settings.full_detail_preview_text_zoom = 1.25;
+        let json = serde_json::to_value(&settings).expect("serialize settings");
+        let restored: AppSettings = serde_json::from_value(json).expect("deserialize settings");
+        assert!(restored.full_detail_panel_open);
+        assert_eq!(restored.full_detail_preview_text_zoom, 1.25);
     }
 }

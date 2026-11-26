@@ -38,6 +38,8 @@
   },
   "detailPanel": {
     "title": "クリップ詳細",
+    "noClipSelected": "クリップが選択されていません",
+    "resetZoom": "プレビューのズームをリセット",
     "type": "種類",
     "sourceApp": "ソースアプリ",
     "created": "作成日時",
