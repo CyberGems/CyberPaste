@@ -160,6 +160,10 @@ La mayoría de los gestores de portapapeles envían tus datos a la nube o son de
 
 El ZIP portable no necesita instalador. Guarda el historial del portapapeles, los ajustes, las imágenes y las copias de seguridad en una carpeta `data` junto a `CyberPaste.exe`, así que todo el perfil viaja en un USB. Para llevar tu historial actual, copia el contenido de `%APPDATA%\CyberPaste` en esa carpeta `data` antes del primer inicio. La versión portable no registra el inicio con Windows ni instala actualizaciones dentro de la app.
 
+### 🏢 Instalador MSI
+
+Se publica un paquete MSI para despliegues gestionados con Windows Installer (directivas de grupo, Intune o `msiexec /i`). Instala la misma app de 64 bits que el instalador NSIS; los usuarios ocasionales deben seguir usando el instalador recomendado. Las actualizaciones dentro de la app descargan el instalador NSIS, así que quienes usen MSI actualizan a mano desde [Releases](https://github.com/CyberGems/CyberPaste/releases/latest).
+
 ### 🛡️ Windows SmartScreen
 
 Windows puede mostrar un aviso de SmartScreen la primera vez que ejecutas el instalador de CyberPaste: esta es una app de hobby sin firmar, así que Windows aún no ha construido reputación para el archivo. Esto es esperado; el código fuente es público para que puedas inspeccionar exactamente qué hace. Lo mismo puede ocurrir al lanzar la versión portable.

@@ -69,6 +69,7 @@ Añade un panel de detalles reactivo e integrado en Pantalla Completa, con ajust
 | :--- | :--- | :--- |
 | **[`CyberPaste_{{VERSION_NUM}}_x64-setup.exe`](https://github.com/CyberGems/CyberPaste/releases/download/{{VERSION}}/CyberPaste_{{VERSION_NUM}}_x64-setup.exe)** | 🚀 **Recommended Installer** (NSIS Setup with Start Menu, Desktop & Startup options) | Windows 10 / 11 (x64) |
 | **[`CyberPaste_{{VERSION_NUM}}_x64-portable.zip`](https://github.com/CyberGems/CyberPaste/releases/download/{{VERSION}}/CyberPaste_{{VERSION_NUM}}_x64-portable.zip)** | 💼 **Portable Build** (no installation; keeps its data in a `data` folder beside the executable) | Windows 10 / 11 (x64) |
+| **[`CyberPaste_{{VERSION_NUM}}_x64_en-US.msi`](https://github.com/CyberGems/CyberPaste/releases/download/{{VERSION}}/CyberPaste_{{VERSION_NUM}}_x64_en-US.msi)** | 🏢 **MSI Installer** (Windows Installer package for managed deployment) | Windows 10 / 11 (x64) |
 
 ---
 

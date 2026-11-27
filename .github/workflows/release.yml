@@ -234,6 +234,7 @@ jobs:
             try {
               Upload-VirusTotal $installer.FullName $env:VIRUSTOTAL_API_KEY
               Upload-VirusTotal $portableZip $env:VIRUSTOTAL_API_KEY
+              if ($msi) { Upload-VirusTotal $msi.FullName $env:VIRUSTOTAL_API_KEY }
             } catch {
               Write-Warning "VirusTotal upload warning: $_"
             }
@@ -299,8 +300,8 @@ jobs:
           $assetNames = @(gh release view $tag --json assets --jq '.assets[].name')
           if ($LASTEXITCODE -ne 0) { throw "Could not list release assets for $tag." }
           $portable = $assetNames | Where-Object { $_ -match 'portable' } | Select-Object -First 1
-          $installer = $assetNames | Where-Object { $_ -match '\.(exe|msi)$' -and $_ -notmatch 'portable' } | Select-Object -First 1
-          $wanted = @($installer, $portable) | Where-Object { $_ }
+          $installers = @($assetNames | Where-Object { $_ -match '\.(exe|msi)$' -and $_ -notmatch 'portable' })
+          $wanted = @($installers + $portable) | Where-Object { $_ }
           if (-not $wanted) { throw "No installer or portable asset found for $tag." }
 
           gh release download $tag --dir $dir --clobber $(foreach ($name in $wanted) { "--pattern=$name" })

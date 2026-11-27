@@ -160,6 +160,10 @@ Most clipboard managers either send your data to the cloud or are too basic to b
 
 The portable ZIP needs no installer. It keeps clipboard history, settings, images and backups in a `data` folder beside `CyberPaste.exe`, so the whole profile travels on a USB stick. To bring your existing history along, copy the contents of `%APPDATA%\CyberPaste` into that `data` folder before the first launch. Portable builds do not register Windows startup or install updates in-app.
 
+### 🏢 MSI Installer
+
+An MSI package is published for managed deployment with Windows Installer (Group Policy, Intune or `msiexec /i`). It installs the same 64-bit app as the NSIS setup; casual users should keep using the recommended installer. In-app updates download the NSIS setup, so MSI users update manually from [Releases](https://github.com/CyberGems/CyberPaste/releases/latest).
+
 ### 🛡️ Windows SmartScreen
 
 Windows may show a SmartScreen warning the first time you run the CyberPaste installer: this is an unsigned hobby app, so Windows hasn't built reputation for the file yet. This is expected; the source is public so you can inspect exactly what it does. The same can appear when launching the portable build.
