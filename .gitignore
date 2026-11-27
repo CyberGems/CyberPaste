@@ -11,3 +11,7 @@ Thumbs.db
 
 # Local scratch
 nul
+
+# Frontend build output
+dist/
+build/
