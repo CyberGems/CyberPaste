@@ -159,6 +159,7 @@ jobs:
               Replace("{{INSTALLER_HASH}}", $installerHash).
               Replace("{{PORTABLE_HASH}}", "pending").
               Replace("{{MSI_BLOCK}}", $msiBlock)
+            $notes = [regex]::Replace($notes, '(?s)<!--.*?-->', '').Trim()
             [System.IO.File]::WriteAllText("FINAL_RELEASE_NOTES.md", $notes, [System.Text.Encoding]::UTF8)
 
             try {
@@ -247,6 +248,7 @@ jobs:
             Replace("{{INSTALLER_HASH}}", $installerHash).
             Replace("{{PORTABLE_HASH}}", $portableHash).
             Replace("{{MSI_BLOCK}}", $msiBlock)
+          $notes = [regex]::Replace($notes, '(?s)<!--.*?-->', '').Trim()
           [System.IO.File]::WriteAllText("FINAL_RELEASE_NOTES.md", $notes, [System.Text.Encoding]::UTF8)
           gh release edit $tag --notes-file "FINAL_RELEASE_NOTES.md"
 
