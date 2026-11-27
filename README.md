@@ -76,9 +76,10 @@ Copy something, copy three more things, and the first one is already gone. Cyber
 <p align="center"><em>Full mode with searchable clipboard grid, folders, filter chips, image previews and the integrated Details panel.</em></p>
 
 <p align="center">
-  <img src="./docs/screenshots/compact-en.png" alt="CyberPaste Compact mode showing high-density clipboard list and folder pills" width="600" />
+  <img src="./docs/screenshots/compact-en.png" alt="CyberPaste Compact mode showing high-density clipboard list and folder pills" width="620" />
 </p>
 <p align="center"><em>Compact mode (<code>Ctrl+M</code>) with a focused high-density list, inline thumbnails and folder navigation.</em></p>
+
 ---
 
 ## 📋 Why CyberPaste?

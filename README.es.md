@@ -76,9 +76,10 @@ Copia algo, copia tres cosas más y la primera ya no está. CyberPaste guarda un
 <p align="center"><em>Modo Pantalla Completa con historial buscable, carpetas, filtros por tipo, miniaturas e inspector de detalles integrado.</em></p>
 
 <p align="center">
-  <img src="./docs/screenshots/compact-es.png" alt="Modo Compacto de CyberPaste con lista de alta densidad y pestañas de carpetas" width="600" />
+  <img src="./docs/screenshots/compact-es.png" alt="Modo Compacto de CyberPaste con lista de alta densidad y pestañas de carpetas" width="620" />
 </p>
 <p align="center"><em>Modo Compacto (<code>Ctrl+M</code>) con lista de alta densidad, miniaturas en línea y navegación entre carpetas.</em></p>
+
 ---
 
 ## 📋 ¿Por qué CyberPaste?
