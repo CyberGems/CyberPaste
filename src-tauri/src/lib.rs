@@ -1995,11 +1995,26 @@ fn quote_windows_run_command() {
     }
 }
 
+/// Profile directory for this build. Portable builds keep the whole profile in
+/// a `data` folder beside the executable so the ZIP can travel on a USB stick;
+/// installed builds keep the roaming application-data folder they always used.
 pub fn get_data_dir() -> std::path::PathBuf {
-    let current_dir = std::env::current_dir().unwrap_or(std::path::PathBuf::from("."));
-    match dirs::data_dir() {
-        Some(path) => path.join("CyberPaste"),
-        None => current_dir.join("CyberPaste"),
+    #[cfg(feature = "portable")]
+    {
+        let fallback = std::env::current_dir().unwrap_or(std::path::PathBuf::from("."));
+        return std::env::current_exe()
+            .ok()
+            .and_then(|path| path.parent().map(|parent| parent.join("data")))
+            .unwrap_or_else(|| fallback.join("data"));
+    }
+
+    #[cfg(not(feature = "portable"))]
+    {
+        let current_dir = std::env::current_dir().unwrap_or(std::path::PathBuf::from("."));
+        match dirs::data_dir() {
+            Some(path) => path.join("CyberPaste"),
+            None => current_dir.join("CyberPaste"),
+        }
     }
 }
 
@@ -2456,5 +2471,19 @@ mod tray_tooltip_tests {
         assert_eq!(tooltip.chars().count(), 63);
         assert!(tooltip.ends_with('…'));
         assert!(tooltip.starts_with("CyberPaste · "));
+    }
+}
+
+#[cfg(test)]
+mod data_dir_tests {
+    use super::get_data_dir;
+
+    #[test]
+    fn profile_directory_matches_the_build() {
+        let dir = get_data_dir();
+        #[cfg(feature = "portable")]
+        assert_eq!(dir.file_name().and_then(|name| name.to_str()), Some("data"));
+        #[cfg(not(feature = "portable"))]
+        assert_eq!(dir.file_name().and_then(|name| name.to_str()), Some("CyberPaste"));
     }
 }

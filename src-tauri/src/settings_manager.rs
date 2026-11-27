@@ -15,8 +15,8 @@ pub struct SettingsManager {
 }
 
 impl SettingsManager {
-    pub async fn new(app: &AppHandle, db: &Database) -> Self {
-        let path = app.path().app_data_dir().unwrap().join("settings.json");
+    pub async fn new(_app: &AppHandle, db: &Database) -> Self {
+        let path = crate::get_data_dir().join("settings.json");
         let mut settings = if path.exists() {
             // Load from file
             Self::load_file(&path).unwrap_or_default()

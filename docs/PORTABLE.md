@@ -4,22 +4,24 @@
 
 The portable package runs without an installer. Extract the ZIP to a writable folder and launch `CyberPaste.exe`.
 
-This build intentionally shares the same user data and settings as the regular CyberPaste installation. Removing the portable folder does not remove your clipboard history.
+This build keeps its own profile in a `data` folder beside the executable: clipboard history, settings, images, sounds and backups. Deleting the portable folder removes that profile. The installed build keeps using `%APPDATA%\CyberPaste` and is unaffected.
 
-- Do not run the portable and installed builds at the same time. They use the same clipboard monitor, global shortcut, tray integration, and profile.
+To keep your existing history in the portable build, close CyberPaste, copy the contents of `%APPDATA%\CyberPaste` into the `data` folder beside `CyberPaste.exe`, and then start the portable build.
+
+- Do not run the portable and installed builds at the same time. They use the same clipboard monitor, global shortcut and tray integration.
 - Portable builds do not enable Windows startup and do not install updates automatically.
-- Achievements, progress, and the original profile date follow the shared profile between portable and installed builds.
-- To update, download the next portable ZIP, close CyberPaste, and replace the executable.
+- To update, close CyberPaste, download the next portable ZIP and replace the executable. The `data` folder stays where it is.
 - Windows WebView2 must already be available on the system.
 
 ## Español
 
 El paquete portable funciona sin instalador. Extrae el ZIP en una carpeta con permisos de escritura y ejecuta `CyberPaste.exe`.
 
-Esta versión comparte intencionalmente los mismos datos y configuraciones que la instalación normal de CyberPaste. Eliminar la carpeta portable no elimina tu historial del portapapeles.
+Esta versión guarda su propio perfil en una carpeta `data` junto al ejecutable: historial del portapapeles, ajustes, imágenes, sonidos y copias de seguridad. Si borras la carpeta portable, borras ese perfil. La versión instalada sigue usando `%APPDATA%\CyberPaste` y no se ve afectada.
 
-- No ejecutes al mismo tiempo la versión portable y la instalada. Ambas utilizan el mismo monitor del portapapeles, atajo global, bandeja del sistema y perfil.
+Para llevar tu historial actual a la versión portable, cierra CyberPaste, copia el contenido de `%APPDATA%\CyberPaste` en la carpeta `data` junto a `CyberPaste.exe` y abre después la versión portable.
+
+- No ejecutes al mismo tiempo la versión portable y la instalada. Ambas utilizan el mismo monitor del portapapeles, atajo global e integración con la bandeja.
 - La versión portable no activa el inicio con Windows ni instala actualizaciones automáticamente.
-- Los logros, el progreso y la fecha original del perfil siguen al perfil compartido entre las versiones portable e instalada.
-- Para actualizar, descarga el siguiente ZIP portable, cierra CyberPaste y reemplaza el ejecutable.
+- Para actualizar, cierra CyberPaste, descarga el siguiente ZIP portable y sustituye el ejecutable. La carpeta `data` se queda donde está.
 - WebView2 de Windows debe estar disponible en el equipo.

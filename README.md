@@ -150,6 +150,10 @@ Most clipboard managers either send your data to the cloud or are too basic to b
 
 > **WinGet:** Support is planned, but `CyberGems.CyberPaste` has not yet been published in the official WinGet community source. The `winget install CyberGems.CyberPaste` command is not available yet.
 
+### 💼 Portable Edition
+
+The portable ZIP needs no installer. It keeps clipboard history, settings, images and backups in a `data` folder beside `CyberPaste.exe`, so the whole profile travels on a USB stick. To bring your existing history along, copy the contents of `%APPDATA%\CyberPaste` into that `data` folder before the first launch. Portable builds do not register Windows startup or install updates in-app.
+
 ### 🛡️ Windows SmartScreen
 
 Windows may show a SmartScreen warning the first time you run the CyberPaste installer: this is an unsigned hobby app, so Windows hasn't built reputation for the file yet. This is expected; the source is public so you can inspect exactly what it does. The same can appear when launching the portable build.

@@ -4578,11 +4578,7 @@ pub fn open_devtools(window: tauri::WebviewWindow) {
 
 #[tauri::command]
 pub fn get_data_dir_path() -> Result<String, String> {
-    let current_dir = std::env::current_dir().unwrap_or(std::path::PathBuf::from("."));
-    match dirs::data_dir() {
-        Some(path) => Ok(path.join("CyberPaste").to_string_lossy().to_string()),
-        None => Ok(current_dir.join("CyberPaste").to_string_lossy().to_string()),
-    }
+    Ok(crate::get_data_dir().to_string_lossy().to_string())
 }
 
 #[tauri::command]

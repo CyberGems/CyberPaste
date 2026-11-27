@@ -121,8 +121,8 @@ pub async fn save_settings(app: AppHandle, settings: serde_json::Value) -> Resul
     new_settings.ignored_apps = current.ignored_apps;
     #[cfg(feature = "portable")]
     {
-        // Portable builds share the profile with the installed build, but must
-        // never change the installed build's Windows autostart preference.
+        // Portable builds never change the Windows autostart preference: the
+        // setting belongs to the installed build even when both are present.
         new_settings.startup_with_windows = current.startup_with_windows;
     }
     if !incoming_has_tray_pin_tip {

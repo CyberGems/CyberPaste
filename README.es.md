@@ -150,6 +150,10 @@ La mayoría de los gestores de portapapeles envían tus datos a la nube o son de
 
 > **WinGet:** se tiene previsto darle soporte, pero `CyberGems.CyberPaste` aún no se ha publicado en la fuente comunitaria oficial de WinGet. El comando `winget install CyberGems.CyberPaste` aún no está disponible.
 
+### 💼 Edición portable
+
+El ZIP portable no necesita instalador. Guarda el historial del portapapeles, los ajustes, las imágenes y las copias de seguridad en una carpeta `data` junto a `CyberPaste.exe`, así que todo el perfil viaja en un USB. Para llevar tu historial actual, copia el contenido de `%APPDATA%\CyberPaste` en esa carpeta `data` antes del primer inicio. La versión portable no registra el inicio con Windows ni instala actualizaciones dentro de la app.
+
 ### 🛡️ Windows SmartScreen
 
 Windows puede mostrar un aviso de SmartScreen la primera vez que ejecutas el instalador de CyberPaste: esta es una app de hobby sin firmar, así que Windows aún no ha construido reputación para el archivo. Esto es esperado; el código fuente es público para que puedas inspeccionar exactamente qué hace. Lo mismo puede ocurrir al lanzar la versión portable.
