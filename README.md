@@ -68,12 +68,17 @@ Copy something, copy three more things, and the first one is already gone. Cyber
 
 ---
 
-<!-- Screenshots: pending the bilingual EN/ES gallery in the capture plan at https://github.com/CyberGems/CyberGems.github.io/blob/main/docs/screenshots.md — replace the blockquote, keep this heading and the TOC entry. -->
-
 ## 🖼️ Screenshots
 
-> Coming soon...
+<p align="center">
+  <img src="./docs/screenshots/main-en.png" alt="CyberPaste Full mode with clip grid, folder tabs, type filter counts and Details column" />
+</p>
+<p align="center"><em>Full mode with searchable clipboard grid, folders, filter chips, image previews and the integrated Details panel.</em></p>
 
+<p align="center">
+  <img src="./docs/screenshots/compact-en.png" alt="CyberPaste Compact mode showing high-density clipboard list and folder pills" width="600" />
+</p>
+<p align="center"><em>Compact mode (<code>Ctrl+M</code>) with a focused high-density list, inline thumbnails and folder navigation.</em></p>
 ---
 
 ## 📋 Why CyberPaste?
