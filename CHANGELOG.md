@@ -2,6 +2,30 @@
 
 All notable changes to CyberPaste are documented here.
 
+## [1.33.0] - 2026-11-26
+
+### 🇺🇸 English
+
+- **Reactive Full-mode details**: Preview the active clip, show the selected count, disable Copy for multiple clips, and replace single-clip content with a stacked-card indicator during bulk selection.
+- **Integrated details layout**: Give the panel its own column without covering clips, add previous/next navigation, simplify its toggle, and prevent drag selection inside the panel.
+- **Persistent preview preferences**: Remember panel visibility and text zoom, show the clip slot in the title, use larger text by default, provide independent image zoom, and keep the panel open after deletions.
+- **Centered image zoom and pan**: Scale images around the viewport center from 100% to 300% and drag to pan with grab/grabbing cursors when zoomed in.
+- **Clearer bulk highlighting**: During marquee selection, highlight only clips inside the selected set instead of keeping an excluded active clip highlighted.
+- **Predictable Explorer filenames**: Save pasted history images as `Clipboard_image.png`, then `Clipboard_image(01).png`, `Clipboard_image(02).png`, and so on.
+- **Livelier tray branding**: Brighten the CyberPaste and CyberGems brand marks together on hover, with a subtle zoom on their icons.
+- **Clearer privacy guidance**: Refresh bilingual documentation for local storage paths, optional AI and update connections, installer naming, and keyboard shortcuts.
+
+### 🇪🇸 Español
+
+- **Detalles reactivos en Pantalla Completa**: Muestra la vista previa del clip activo, indica cuántos clips hay seleccionados, desactiva Copiar en selecciones múltiples y sustituye el contenido individual por un indicador de tarjetas apiladas.
+- **Diseño integrado del panel**: Otorga al panel su propia columna sin tapar clips, añade navegación anterior/siguiente, simplifica su botón e impide seleccionar mediante arrastre dentro del panel.
+- **Preferencias persistentes**: Recuerda la visibilidad del panel y el zoom del texto, muestra la ranura en el título, usa texto más grande por defecto, ofrece zoom independiente para imágenes y mantiene el panel abierto tras borrar clips.
+- **Zoom centrado y paneo de imágenes**: Escala las imágenes desde el centro del visor entre 100% y 300% y permite arrastrarlas con cursores de agarre cuando están ampliadas.
+- **Resaltado múltiple más claro**: Durante la selección por arrastre, resalta solo los clips del conjunto elegido y no un clip activo que haya quedado fuera.
+- **Nombres predecibles en el Explorador**: Guarda las imágenes pegadas desde el historial como `Clipboard_image.png`, después `Clipboard_image(01).png`, `Clipboard_image(02).png`, etc.
+- **Marca del tray más viva**: Ilumina a la vez las marcas CyberPaste y CyberGems al pasar el cursor, con un zoom sutil en sus iconos.
+- **Privacidad mejor documentada**: Actualiza la documentación bilingüe sobre rutas locales, conexiones opcionales de IA y actualizaciones, nombres del instalador y atajos de teclado.
+
 ## [1.32.0] - 2026-11-25
 
 ### 🇺🇸 English

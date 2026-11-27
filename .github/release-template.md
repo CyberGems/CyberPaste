@@ -9,7 +9,7 @@
 <!-- IMPORTANT FOR AGENTS & MAINTAINERS: Always rewrite this entire section and highlights with the ACTUAL release notes for this specific new version before tagging. NEVER leave or copy previous version notes! Use 25-45 words for the summary, lead with user-facing changes, and do not repeat the app name or version. Keep the Spanish mirror inside the details block in sync: translate the summary and rewrite the highlights. -->
 <!-- COVERAGE: list every commit since the previous tag before drafting. Give every user-facing change at least one highlight and group related commits into one. Skip internal refactors, CI, tests and dependency bumps with no visible effect; keep small visible fixes such as copy, tooltips, shortcuts, themes, icons, spacing, stability and perceptible performance. Review the draft if 15+ user-facing commits produce fewer than 6 highlights, or 40+ total commits fewer than 8. Patch releases may have 1-3 highlights or a plain maintenance-only note. -->
 <!-- changelog-summary:start -->
-Adds configurable update notices, smoother startup and window handling, focused search history, and native-feeling folder wheel scrolling, while improving clipboard source icons, Help navigation, sample content, and bilingual privacy disclosures.
+Adds a reactive, layout-integrated Full-mode details panel with persistent preview settings, centered image zoom and pan, clearer bulk selection, predictable Explorer filenames, and polished tray branding, alongside refreshed bilingual privacy guidance.
 <!-- changelog-summary:end -->
 
 > **New to CyberPaste?** A fast, privacy-first Windows clipboard manager with history, folders, OCR, and optional AI actions.
@@ -18,18 +18,20 @@ Adds configurable update notices, smoother startup and window handling, focused 
 
 ### ✨ Key Features & Highlights
 
-- **One update experience everywhere**: A shared floating notice brings localized release notes, background downloads, cancellation, version skipping, and restart-to-install controls to both window modes. Automatic notices are opt-in, while manual checks remain in About.
-- **Faster, calmer search and folder navigation**: Search history opens beneath the focused field in Full and Compact, with clearer focus behavior and shared styled field menus. Folder tabs scroll smoothly with normalized wheel distance and no hover churn.
-- **More recognizable clipboard sources**: Windows UWP apps resolve their real source behind service hosts and show packaged logos, with a one-time icon backfill for eligible historical clips. Legacy PNG records are repaired automatically.
-- **Cleaner windows from startup onward**: The main window waits for its UI before appearing, startup flashes are suppressed, and About/Settings borders, native shortcuts, toast focus, and tray warmup are more consistent.
-- **Helpful polish and clearer disclosure**: Help links move into an accessible submenu, tray tooltips and the pin-tip checkbox are refined, starter samples are leaner, and bilingual AI/privacy documentation explains optional processing and update requests.
+- **Reactive details in their own space**: Full mode gains a live clip preview, selected count, stacked-card bulk indicator, disabled Copy for multiple clips, previous/next navigation, and a dedicated layout column that never covers cards.
+- **Persistent, flexible previews**: Panel visibility and text zoom survive restarts, titles show the clip slot, text starts larger, images zoom independently, and deleting clips leaves the panel open.
+- **Centered image zoom and pan**: Scale images from 100% to 300% around the viewport center, then drag with grab/grabbing cursors to inspect any area.
+- **Clearer bulk selection**: Marquee drags highlight only the selected cards, even when the previously active clip is outside the selection.
+- **Predictable Explorer filenames**: Pasted history images use `Clipboard_image.png`, followed by `Clipboard_image(01).png`, `Clipboard_image(02).png`, and so on.
+- **More lively tray branding**: CyberPaste and CyberGems brand marks brighten together on hover, with a subtle zoom on both icons.
+- **Refreshed privacy guidance**: Bilingual documentation clarifies local storage paths, optional AI and update connections, installer names, and keyboard shortcuts.
 
 <details>
 <summary><b>🇪🇸 Ver notas de la versión en Español</b></summary>
 
 ### 🚀 Novedades de esta versión
 
-Añade avisos de actualización configurables, un arranque y manejo de ventanas más suaves, historial de búsqueda al enfocar y desplazamiento natural de carpetas con rueda, además de mejorar iconos de origen, navegación de Ayuda, contenido inicial y divulgación bilingüe de privacidad.
+Añade un panel de detalles reactivo e integrado en Pantalla Completa, con ajustes persistentes, zoom centrado y paneo de imágenes, selección múltiple más clara, nombres predecibles en el Explorador y marca del tray pulida, además de documentación de privacidad bilingüe actualizada.
 
 > **¿Nuevo en CyberPaste?** Un gestor de portapapeles rápido y privado para Windows, con historial, carpetas, OCR y acciones de IA opcionales.
 
@@ -37,11 +39,13 @@ Añade avisos de actualización configurables, un arranque y manejo de ventanas 
 
 ### ✨ Novedades destacadas
 
-- **Una sola experiencia de actualización**: Un aviso flotante común reúne notas localizadas, descargas en segundo plano, cancelación, omisión de versiones y reinicio para instalar en ambos modos. Los avisos automáticos son opcionales y las comprobaciones manuales siguen en Acerca de.
-- **Búsqueda y navegación más ágiles**: El historial se abre bajo el campo enfocado en Completo y Compacto, con mejor comportamiento del enfoque y menús compartidos. Las pestañas de carpeta se desplazan suavemente con distancia normalizada y sin efectos hover molestos.
-- **Orígenes del portapapeles más reconocibles**: Las apps UWP de Windows resuelven su origen real detrás de servicios y muestran logotipos de paquete, con una migración de iconos para clips históricos elegibles. Los PNG antiguos se reparan automáticamente.
-- **Ventanas más limpias desde el inicio**: La ventana principal espera a renderizar su interfaz, se suprimen los destellos y los bordes de Acerca de/Ajustes, atajos nativos, foco de avisos y precalentamiento de bandeja son más coherentes.
-- **Ayuda, bandeja y divulgación más claras**: Los enlaces de ayuda pasan a un submenú accesible, se refinan los textos del tray y la casilla del aviso, las muestras iniciales son más concisas y la documentación bilingüe explica el procesamiento opcional y las solicitudes de actualización.
+- **Detalles reactivos en su propio espacio**: Pantalla Completa gana vista previa en vivo, contador de selección, indicador de tarjetas apiladas, Copiar desactivado para varios clips, navegación anterior/siguiente y una columna propia que nunca tapa las tarjetas.
+- **Vistas previas persistentes y flexibles**: La visibilidad del panel y el zoom del texto sobreviven a los reinicios, el título muestra la ranura, el texto empieza más grande, las imágenes tienen zoom independiente y borrar clips deja el panel abierto.
+- **Zoom centrado y paneo de imágenes**: Escala imágenes entre 100% y 300% desde el centro del visor y arrástralas con cursores de agarre para inspeccionar cualquier zona.
+- **Selección múltiple más clara**: El arrastre resalta solo las tarjetas elegidas, aunque el clip activo anterior quede fuera de la selección.
+- **Nombres predecibles en el Explorador**: Las imágenes pegadas desde el historial usan `Clipboard_image.png`, después `Clipboard_image(01).png`, `Clipboard_image(02).png`, etc.
+- **Marca del tray más viva**: Las marcas CyberPaste y CyberGems se iluminan juntas al pasar el cursor, con un zoom sutil en ambos iconos.
+- **Privacidad mejor documentada**: La documentación bilingüe aclara rutas locales, conexiones opcionales de IA y actualizaciones, nombres del instalador y atajos de teclado.
 
 ### ℹ️ Antes de instalar
 
