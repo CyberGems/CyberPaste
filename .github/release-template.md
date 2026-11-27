@@ -89,6 +89,8 @@ Añade un panel de detalles reactivo e integrado en Pantalla Completa, con ajust
 {{PORTABLE_HASH}}
 ```
 {{MSI_BLOCK}}
+The checksums are also available as a downloadable [SHA256SUMS.txt](https://github.com/CyberGems/CyberPaste/releases/download/{{VERSION}}/SHA256SUMS.txt).
+
 ---
 
 📜 **Full changelog:** browse every version in [CHANGELOG.md](https://github.com/CyberGems/CyberPaste/blob/main/CHANGELOG.md).
