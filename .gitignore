@@ -15,3 +15,6 @@ nul
 # Frontend build output
 dist/
 build/
+
+# Native build output
+target/
