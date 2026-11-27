@@ -13,6 +13,7 @@ import {
   Loader2,
   Maximize2,
   Minus,
+  Layers,
   Plus,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -327,7 +328,7 @@ export const ClipDetailPanel: React.FC<ClipDetailPanelProps> = ({
                   {t('detailPanel.preview')}
                 </span>
                 <div className="flex items-center gap-1">
-                  {canZoom && (
+                  {!isMultiSelect && canZoom && (
                     <div
                       data-el="clip-detail-zoom-controls"
                       className="flex items-center rounded-md border border-border/50 bg-card/60 dark:border-white/5 dark:bg-black/20"
@@ -382,20 +383,38 @@ export const ClipDetailPanel: React.FC<ClipDetailPanelProps> = ({
                       </Tooltip>
                     </div>
                   )}
-                  <Tooltip label={t('contextMenu.view')} placement="left">
-                    <button
-                      type="button"
-                      onClick={() => onPreview(clip.id)}
-                      className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground dark:text-white/40 dark:hover:bg-white/10 dark:hover:text-white"
-                      aria-label={t('contextMenu.view')}
-                    >
-                      <Maximize2 size={12} />
-                    </button>
-                  </Tooltip>
+                  {!isMultiSelect && (
+                    <Tooltip label={t('contextMenu.view')} placement="left">
+                      <button
+                        type="button"
+                        onClick={() => onPreview(clip.id)}
+                        className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground dark:text-white/40 dark:hover:bg-white/10 dark:hover:text-white"
+                        aria-label={t('contextMenu.view')}
+                      >
+                        <Maximize2 size={12} />
+                      </button>
+                    </Tooltip>
+                  )}
                 </div>
               </div>
               <div className="relative h-40 overflow-hidden">
-                {clip.clip_type === 'image' ? (
+                {isMultiSelect ? (
+                  <div
+                    data-el="clip-detail-multi-preview"
+                    className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center"
+                  >
+                    <div className="relative h-12 w-14" aria-hidden="true">
+                      <div className="absolute left-0 top-2 h-9 w-12 -rotate-6 rounded-lg border border-border/70 bg-muted/40 dark:border-white/10 dark:bg-white/5" />
+                      <div className="absolute right-0 top-2 h-9 w-12 rotate-6 rounded-lg border border-border/70 bg-muted/40 dark:border-white/10 dark:bg-white/5" />
+                      <div className="absolute left-1 top-0 flex h-10 w-12 items-center justify-center rounded-lg border border-primary/30 bg-card text-primary shadow-sm dark:border-cyan-300/30 dark:text-cyan-300">
+                        <Layers size={20} />
+                      </div>
+                    </div>
+                    <span className="text-xs font-medium text-muted-foreground dark:text-white/55">
+                      {t('compact.bulkCountPlural', { count: selectedCount })}
+                    </span>
+                  </div>
+                ) : clip.clip_type === 'image' ? (
                   <div
                     ref={imageViewportRef}
                     data-el="clip-detail-image-viewport"
@@ -464,7 +483,7 @@ export const ClipDetailPanel: React.FC<ClipDetailPanelProps> = ({
                     )}
                   </div>
                 )}
-                {isPreviewLoading && (
+                {!isMultiSelect && isPreviewLoading && (
                   <span className="absolute right-2 top-2 rounded bg-card/90 p-1 text-primary shadow-sm">
                     <Loader2 size={12} className="animate-spin" />
                     <span className="sr-only">{t('common.loading')}</span>
@@ -472,97 +491,101 @@ export const ClipDetailPanel: React.FC<ClipDetailPanelProps> = ({
                 )}
               </div>
             </div>
-            {/* Type */}
-            <DetailRow
-              label={t('detailPanel.type')}
-              value={
-                <span className="inline-flex items-center gap-1.5 rounded bg-muted/80 px-1.5 py-0.5 text-[10px] font-semibold text-foreground/90 dark:bg-white/10 dark:text-white/80">
-                  {clipTypeLabel}
-                </span>
-              }
-            />
-            {/* Source App */}
-            {clip.source_app && (
-              <DetailRow
-                label={t('detailPanel.sourceApp')}
-                value={
-                  <span className="flex items-center gap-1.5">
-                    {clip.source_icon && (
-                      <img
-                        src={`data:image/png;base64,${clip.source_icon}`}
-                        alt=""
-                        className="h-3.5 w-3.5 rounded-sm object-contain"
-                      />
-                    )}
-                    <span className="text-xs font-medium text-foreground dark:text-white/90">
-                      {clip.source_app}
+            {!isMultiSelect && (
+              <>
+                {/* Type */}
+                <DetailRow
+                  label={t('detailPanel.type')}
+                  value={
+                    <span className="inline-flex items-center gap-1.5 rounded bg-muted/80 px-1.5 py-0.5 text-[10px] font-semibold text-foreground/90 dark:bg-white/10 dark:text-white/80">
+                      {clipTypeLabel}
                     </span>
-                  </span>
-                }
-              />
+                  }
+                />
+                {/* Source App */}
+                {clip.source_app && (
+                  <DetailRow
+                    label={t('detailPanel.sourceApp')}
+                    value={
+                      <span className="flex items-center gap-1.5">
+                        {clip.source_icon && (
+                          <img
+                            src={`data:image/png;base64,${clip.source_icon}`}
+                            alt=""
+                            className="h-3.5 w-3.5 rounded-sm object-contain"
+                          />
+                        )}
+                        <span className="text-xs font-medium text-foreground dark:text-white/90">
+                          {clip.source_app}
+                        </span>
+                      </span>
+                    }
+                  />
+                )}
+                {/* Created */}
+                <DetailRow
+                  label={t('detailPanel.created')}
+                  value={
+                    <span className="text-xs text-foreground/90 dark:text-white/90">
+                      {format(new Date(clip.created_at), 'PPpp', { locale })}
+                    </span>
+                  }
+                />
+                {/* Folder */}
+                <DetailRow
+                  label={t('detailPanel.folder')}
+                  value={
+                    <span className="text-xs text-foreground/90 dark:text-white/90">
+                      {clip.folder_id
+                        ? folders.find((f) => f.id === clip.folder_id)?.name || clip.folder_id
+                        : t('folders.mainClipboard')}
+                    </span>
+                  }
+                />
+                {/* Size */}
+                <DetailRow
+                  label={t('detailPanel.size')}
+                  value={
+                    <span className="font-mono text-xs text-foreground/90 dark:text-white/90">
+                      {formatBytes(clip.content_length)}
+                    </span>
+                  }
+                />
+                {/* Pinned */}
+                {clip.is_pinned && (
+                  <DetailRow
+                    label={t('detailPanel.pinned')}
+                    value={
+                      <span className="text-xs font-semibold text-primary dark:text-cyan-300">
+                        {t('common.yes')}
+                      </span>
+                    }
+                  />
+                )}
+                {/* OCR preview for images */}
+                {clip.clip_type === 'image' &&
+                  clip.metadata &&
+                  (() => {
+                    try {
+                      const p = JSON.parse(clip.metadata) as { ocr_text?: string };
+                      if (!p?.ocr_text) return null;
+                      return (
+                        <div>
+                          <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/80 dark:text-white/40">
+                            {t('detailPanel.extractedText')}
+                          </div>
+                          <div className="max-h-24 overflow-y-auto whitespace-pre-wrap rounded border border-border/60 bg-muted/40 p-2 text-[10px] leading-snug text-foreground/80 dark:border-white/5 dark:bg-black/30 dark:text-white/70">
+                            {p.ocr_text.substring(0, 250)}
+                            {p.ocr_text.length > 250 && '…'}
+                          </div>
+                        </div>
+                      );
+                    } catch {
+                      return null;
+                    }
+                  })()}
+              </>
             )}
-            {/* Created */}
-            <DetailRow
-              label={t('detailPanel.created')}
-              value={
-                <span className="text-xs text-foreground/90 dark:text-white/90">
-                  {format(new Date(clip.created_at), 'PPpp', { locale })}
-                </span>
-              }
-            />
-            {/* Folder */}
-            <DetailRow
-              label={t('detailPanel.folder')}
-              value={
-                <span className="text-xs text-foreground/90 dark:text-white/90">
-                  {clip.folder_id
-                    ? folders.find((f) => f.id === clip.folder_id)?.name || clip.folder_id
-                    : t('folders.mainClipboard')}
-                </span>
-              }
-            />
-            {/* Size */}
-            <DetailRow
-              label={t('detailPanel.size')}
-              value={
-                <span className="font-mono text-xs text-foreground/90 dark:text-white/90">
-                  {formatBytes(clip.content_length)}
-                </span>
-              }
-            />
-            {/* Pinned */}
-            {clip.is_pinned && (
-              <DetailRow
-                label={t('detailPanel.pinned')}
-                value={
-                  <span className="text-xs font-semibold text-primary dark:text-cyan-300">
-                    {t('common.yes')}
-                  </span>
-                }
-              />
-            )}
-            {/* OCR preview for images */}
-            {clip.clip_type === 'image' &&
-              clip.metadata &&
-              (() => {
-                try {
-                  const p = JSON.parse(clip.metadata) as { ocr_text?: string };
-                  if (!p?.ocr_text) return null;
-                  return (
-                    <div>
-                      <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/80 dark:text-white/40">
-                        {t('detailPanel.extractedText')}
-                      </div>
-                      <div className="max-h-24 overflow-y-auto whitespace-pre-wrap rounded border border-border/60 bg-muted/40 p-2 text-[10px] leading-snug text-foreground/80 dark:border-white/5 dark:bg-black/30 dark:text-white/70">
-                        {p.ocr_text.substring(0, 250)}
-                        {p.ocr_text.length > 250 && '…'}
-                      </div>
-                    </div>
-                  );
-                } catch {
-                  return null;
-                }
-              })()}
           </div>
         </>
       ) : (

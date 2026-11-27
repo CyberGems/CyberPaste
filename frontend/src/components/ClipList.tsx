@@ -159,7 +159,7 @@ function ClipGridCell({
         clip={clip}
         cardFormat={cardFormat}
         clipIndex={clipNumbering === 'positional' ? index + 1 : clips.length - index}
-        isSelected={selectedClipId === clip.id}
+        isSelected={selectedClipId === clip.id && !bulkSelectedIds?.size}
         isBulkSelected={bulkSelectedIds?.has(clip.id)}
         onToggleBulkSelect={onToggleBulkSelect}
         onCardClick={onClipClick}
