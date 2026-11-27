@@ -96,14 +96,16 @@ La mayoría de los gestores de portapapeles envían tus datos a la nube o son de
 
 ### 📋 Motor del portapapeles
 - **Soporte de contenido enriquecido**: captura automáticamente texto con formato, código (con resaltado de sintaxis, insignias de lenguaje y manejo nativo de HTML), texto enriquecido RTF, imágenes (con visor universal de inspección y extracción de texto por OCR), URLs y archivos
+- **Archivos de imagen predecibles**: al pegar una imagen del historial en el Explorador crea `Clipboard_image.png`, después `Clipboard_image(01).png`, `Clipboard_image(02).png`, etc.
 - **Monitorización inteligente**: detecta las operaciones de cortar (Ctrl+X, Mayús+Supr) mediante ganchos globales de teclado, suprime los eventos duplicados e incluye botón de alternancia en la barra de título
 - **Búsqueda instantánea y filtros por app**: búsqueda de texto completo en tiempo real con filtros rápidos (Texto, Código, Imágenes, Enlaces, Archivos), filtrado por aplicación de origen y contadores en vivo
 
 ### 🗂️ Organización
 - **Carpetas**: organiza los clips en carpetas personalizadas con arrastrar y soltar, flechas de navegación horizontal y confirmación de eliminación segura
 - **Favoritos y anclaje**: fija los clips de uso frecuente para que permanezcan arriba
-- **Gestión por lotes**: `Ctrl+Clic` / `Mayús+Clic` para selección múltiple, selección por arrastre (marquesina) y `Ctrl+A` para seleccionar todos los clips visibles
+- **Gestión por lotes**: `Ctrl+Clic` / `Mayús+Clic` para selección múltiple, selección por arrastre (marquesina) y `Ctrl+A` para seleccionar todos los clips visibles; el resaltado sigue solo al conjunto elegido
 - **Dos modos de vista**: Modo Pantalla Completa (cuadrícula multicolumna que llena el área de trabajo respetando la barra de tareas, formato panorámico, selección múltiple) o Modo Compacto (lista de alta densidad con vista previa y navegación horizontal de carpetas)
+- **Panel de detalles reactivo**: pulsa `I` para abrir una columna integrada en Pantalla Completa con vista previa, ranura, metadatos, navegación anterior/siguiente, zoom de texto persistente, zoom centrado y paneo de imágenes, además del recuento de clips en selecciones múltiples
 - **Modo Emojis y pegado instantáneo**: panel de emojis dedicado con búsqueda bilingüe (inglés/español), pestañas de categoría, historial de búsqueda independiente y multi-inyección al estar anclado
 - **Retención automática del historial**: política configurable de borrado automático en segundo plano para limpiar clips antiguos
 
@@ -128,6 +130,7 @@ La mayoría de los gestores de portapapeles envían tus datos a la nube o son de
 - **Atajo global**: alterna la ventana del portapapeles (predeterminado: `Ctrl+Shift+V`)
 - **Consciente de múltiples pantallas**: se abre automáticamente en el monitor activo según la posición del cursor
 - **Ecosistema de ventanas modulares**: ventanas optimizadas y separadas para el Portapapeles principal, el menú de la bandeja del sistema, Configuración con varias pestañas, el Visor de imágenes y OCR, y las notificaciones emergentes
+- **Marca animada en la bandeja**: las marcas CyberPaste y CyberGems se iluminan juntas al pasar el cursor, con un zoom sutil en ambos iconos
 - **Inyección de pegado automático**: pega los clips seleccionados directamente en la aplicación activa
 
 ### 🎨 Personalización
@@ -182,7 +185,7 @@ CyberPaste guarda todo lo que copias y lo conserva en tu PC: sin cuenta y sin nu
 2. Pulsa `Ctrl+Shift+V` para abrir tu historial del portapapeles.
 3. Búscalo o desplázate y haz clic para volver a pegarlo.
 
-Usa `Ctrl+M` para alternar entre la vista completa y la compacta, y organiza los clips en carpetas y favoritos. Ambos atajos globales son personalizables.
+Usa `Ctrl+M` para alternar entre la vista completa y la compacta, y organiza los clips en carpetas y favoritos. Ambos atajos globales son personalizables. En Pantalla Completa, pulsa `I` para abrir la columna de detalles integrada; permanece abierta al borrar y recuerda su visibilidad y el zoom del texto.
 
 Consulta [¿Cómo se usa CyberPaste?](https://github.com/CyberGems/CyberPaste/wiki/How-Do-You-Use-es) para ver ejemplos cotidianos y las guías completas.
 
@@ -293,7 +296,7 @@ Este proyecto también se construye sobre componentes de código abierto como Ta
 | Tecla | Acción |
 |---|---|
 | `Espacio` | Abrir el menú de acciones del clip seleccionado (flechas + Intro para elegir) |
-| `I` | Alternar el panel de detalle del clip |
+| `I` | Alternar el panel de detalles integrado de Pantalla Completa |
 | `Alt+P` | Fijar / desfijar el clip seleccionado |
 | `Ctrl+P` | Fijar / desfijar la ventana (mantenerla abierta) |
 | `Alt+L` | Bloquear la app ahora (con App Lock activado) |
@@ -306,7 +309,7 @@ Este proyecto también se construye sobre componentes de código abierto como Ta
 | `Mayús+F10` / tecla Menú contextual | Abrir el menú contextual del clip seleccionado |
 | `Supr` | Eliminar el elemento seleccionado |
 | `Escape` | Limpiar la búsqueda / cerrar la ventana o el modal |
-| `Ctrl+Rueda` | Ajustar el zoom de la cuadrícula en el Modo Pantalla Completa (0,6x – 1,75x) o la densidad de filas en el Modo Compacto (Pequeño / Mediano / Grande) |
+| `Ctrl+Rueda` | Ajustar el zoom de la cuadrícula en el Modo Pantalla Completa (0,6x – 1,75x) o la densidad de filas en el Modo Compacto (Pequeño / Mediano / Grande); las vistas previas del panel usan sus propios controles |
 
 > **Historial de búsqueda:** Enfocar la búsqueda en modo Completo o Compacto abre automáticamente las búsquedas recientes debajo del campo.
 

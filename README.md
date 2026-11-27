@@ -96,14 +96,16 @@ Most clipboard managers either send your data to the cloud or are too basic to b
 
 ### 📋 Clipboard Engine
 - **Rich Content Support** — Automatically captures formatted Text, Code (with syntax highlighting, language badges and native HTML handling), Rich Text (RTF), Images (with universal Visor inspection & OCR text extraction), URLs, and Files
+- **Predictable Image Files** — Pasting a history image into Explorer creates `Clipboard_image.png`, then `Clipboard_image(01).png`, `Clipboard_image(02).png`, and so on
 - **Smart Monitoring** — Detects cut operations (Ctrl+X, Shift+Delete) via global keyboard hooks, suppresses duplicate events, and includes a titlebar monitoring toggle
 - **Instant Search & App Filters** — Real-time full-text search with quick filter chips (Text, Code, Images, Links, Files) and source application filtering with live database counters
 
 ### 🗂️ Organization
 - **Folders** — Organize clips into custom folders with drag & drop, horizontal navigation chevrons, and safe deletion confirmation
 - **Favorites & Pinning** — Pin frequently used clips that stay at the top
-- **Bulk Management** — `Ctrl+Click` / `Shift+Click` for multi-select, marquee drag selection, and `Ctrl+A` to select all visible clips
+- **Bulk Management** — `Ctrl+Click` / `Shift+Click` for multi-select, marquee drag selection, and `Ctrl+A` to select all visible clips; marquee highlighting follows only the selected set
 - **Dual View Modes** — Full Screen Mode (screen-filling multi-column grid that respects the taskbar, panoramic cards, marquee selection) or Compact Mode (high-density list with hover peek and horizontal folder navigation)
+- **Reactive Details Panel** — Press `I` for a Full-mode layout column with live preview, clip slot, metadata, previous/next navigation, persistent text zoom, centered image zoom and pan, plus a selected-count preview for bulk selections
 - **Emoji Mode & Instant Paste** — Dedicated emoji picker with bilingual search (English/Spanish), category tabs, isolated search history, and multi-paste when pinned
 - **Automatic History Retention** — Configurable background auto-deletion to automatically clean up older clips
 
@@ -128,6 +130,7 @@ Most clipboard managers either send your data to the cloud or are too basic to b
 - **Global Hotkey** — Toggle the clipboard window (default: `Ctrl+Shift+V`)
 - **Multi-Display Aware** — Automatically presents on the active monitor based on cursor position
 - **Modular Window Ecosystem** — Separate optimized windows for Main Clipboard, System Tray Menu, Multi-tab Settings, Image Viewer & OCR, and Toast Notifications
+- **Animated Tray Branding** — CyberPaste and CyberGems marks brighten together on hover, with a subtle zoom on both icons
 - **Auto-Paste Injection** — Paste selected clips directly into the active application
 
 ### 🎨 Customization
@@ -182,7 +185,7 @@ CyberPaste records everything you copy and keeps it on your PC: no account, no c
 2. Press `Ctrl+Shift+V` to open your clipboard history.
 3. Search or scroll to the clip you need, then click to paste it back.
 
-Use `Ctrl+M` to switch between Full and Compact view, and organise clips into folders and favourites. Both global hotkeys are customizable.
+Use `Ctrl+M` to switch between Full and Compact view, and organise clips into folders and favourites. Both global hotkeys are customizable. In Full mode, press `I` to open the integrated details column; it stays open after deletion and remembers its visibility and text zoom.
 
 See [How Do You Use CyberPaste?](https://github.com/CyberGems/CyberPaste/wiki/How-Do-You-Use) for everyday examples and the full guides.
 
@@ -293,7 +296,7 @@ This project also builds on open-source components including Tauri, React, SQLit
 | Key | Action |
 |---|---|
 | `Space` | Open the selected clip's action menu (arrows + Enter to choose) |
-| `I` | Toggle the clip detail panel |
+| `I` | Toggle the integrated Full-mode clip details panel |
 | `Alt+P` | Pin / unpin selected clip |
 | `Ctrl+P` | Pin / unpin the window (keep it open) |
 | `Alt+L` | Lock the app now (when App Lock is enabled) |
@@ -306,7 +309,7 @@ This project also builds on open-source components including Tauri, React, SQLit
 | `Shift+F10` / Context Menu key | Open the selected clip's context menu |
 | `Delete` | Delete selected item |
 | `Escape` | Clear search / close modal or window |
-| `Ctrl+Wheel` | Adjust grid zoom in Full Screen mode (0.6x – 1.75x) or row density in Compact mode (Small / Medium / Large) |
+| `Ctrl+Wheel` | Adjust grid zoom in Full Screen mode (0.6x – 1.75x) or row density in Compact mode (Small / Medium / Large); details previews use their own zoom controls |
 
 > **Search history:** Focusing search in Full or Compact mode automatically opens recent searches below the field.
 
