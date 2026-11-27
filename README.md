@@ -80,6 +80,11 @@ Copy something, copy three more things, and the first one is already gone. Cyber
 </p>
 <p align="center"><em>Compact mode (<code>Ctrl+M</code>) with a focused high-density list, inline thumbnails and folder navigation.</em></p>
 
+<p align="center">
+  <img src="./docs/screenshots/clip-detail-en.png" alt="CyberPaste clip viewer showing the Project Orion diagram and the extracted OCR text drawer" />
+</p>
+<p align="center"><em>Dedicated clip viewer with zoom controls, image metadata footer and the integrated OCR text extraction drawer.</em></p>
+
 ---
 
 ## 📋 Why CyberPaste?

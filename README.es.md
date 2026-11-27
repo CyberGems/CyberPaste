@@ -80,6 +80,11 @@ Copia algo, copia tres cosas más y la primera ya no está. CyberPaste guarda un
 </p>
 <p align="center"><em>Modo Compacto (<code>Ctrl+M</code>) con lista de alta densidad, miniaturas en línea y navegación entre carpetas.</em></p>
 
+<p align="center">
+  <img src="./docs/screenshots/clip-detail-es.png" alt="Visor de clips de CyberPaste mostrando el diagrama del Proyecto Orión y el cajón con el texto OCR extraído" />
+</p>
+<p align="center"><em>Visor de clips dedicado con controles de zoom, pie con metadatos de imagen y el cajón integrado de extracción OCR.</em></p>
+
 ---
 
 ## 📋 ¿Por qué CyberPaste?
