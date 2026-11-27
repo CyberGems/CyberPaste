@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import {
   X,
@@ -104,6 +104,15 @@ export const ClipDetailPanel: React.FC<ClipDetailPanelProps> = ({
   const [loadedClip, setLoadedClip] = useState<ClipboardItem | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [imageZoom, setImageZoom] = useState(1);
+  const [isImagePanning, setIsImagePanning] = useState(false);
+  const imageViewportRef = useRef<HTMLDivElement>(null);
+  const imagePanRef = useRef<{
+    pointerId: number;
+    clientX: number;
+    clientY: number;
+    scrollLeft: number;
+    scrollTop: number;
+  } | null>(null);
   const locale = localeMap[(i18n.language || 'en').substring(0, 2)] || enUS;
   const isMultiSelect = selectedCount > 1;
   const isImagePreview = clip?.clip_type === 'image';
@@ -111,9 +120,12 @@ export const ClipDetailPanel: React.FC<ClipDetailPanelProps> = ({
   const previewZoom = isImagePreview ? imageZoom : normalizedTextZoom;
   const previewZoomMin = isImagePreview ? 1 : PREVIEW_TEXT_MIN_ZOOM;
   const canZoom = Boolean(clip && clip.clip_type !== 'file');
+  const canPanImage = isImagePreview && imageZoom > 1;
 
   useEffect(() => {
     setImageZoom(1);
+    setIsImagePanning(false);
+    imagePanRef.current = null;
   }, [clip?.id, clip?.clip_type]);
 
   const changePreviewZoom = (direction: number) => {
@@ -130,6 +142,38 @@ export const ClipDetailPanel: React.FC<ClipDetailPanelProps> = ({
     if (previewZoom === 1) return;
     if (isImagePreview) setImageZoom(1);
     else onTextZoomChange?.(1);
+  };
+
+  const handleImagePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!canPanImage || event.button !== 0) return;
+    const viewport = event.currentTarget;
+    event.preventDefault();
+    imagePanRef.current = {
+      pointerId: event.pointerId,
+      clientX: event.clientX,
+      clientY: event.clientY,
+      scrollLeft: viewport.scrollLeft,
+      scrollTop: viewport.scrollTop,
+    };
+    viewport.setPointerCapture(event.pointerId);
+    setIsImagePanning(true);
+  };
+
+  const handleImagePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const pan = imagePanRef.current;
+    if (!pan || pan.pointerId !== event.pointerId) return;
+    const viewport = event.currentTarget;
+    viewport.scrollLeft = pan.scrollLeft - (event.clientX - pan.clientX);
+    viewport.scrollTop = pan.scrollTop - (event.clientY - pan.clientY);
+  };
+
+  const finishImagePan = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (imagePanRef.current?.pointerId !== event.pointerId) return;
+    imagePanRef.current = null;
+    setIsImagePanning(false);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
   };
 
   useEffect(() => {
@@ -164,6 +208,15 @@ export const ClipDetailPanel: React.FC<ClipDetailPanelProps> = ({
     previewClip?.clip_type === 'image'
       ? resolveImageSrc(previewClip.content || previewClip.image_path || '')
       : '';
+
+  useLayoutEffect(() => {
+    if (!isImagePreview) return;
+    const viewport = imageViewportRef.current;
+    if (!viewport) return;
+    viewport.scrollLeft = (viewport.scrollWidth - viewport.clientWidth) / 2;
+    viewport.scrollTop = (viewport.scrollHeight - viewport.clientHeight) / 2;
+  }, [imageSrc, imageZoom, isImagePreview]);
+
   const filePaths = (() => {
     if (previewClip?.clip_type !== 'file') return [] as string[];
     if (previewClip.content) {
@@ -343,7 +396,21 @@ export const ClipDetailPanel: React.FC<ClipDetailPanelProps> = ({
               </div>
               <div className="relative h-40 overflow-hidden">
                 {clip.clip_type === 'image' ? (
-                  <div className="scrollbar-thin h-full w-full overflow-auto">
+                  <div
+                    ref={imageViewportRef}
+                    data-el="clip-detail-image-viewport"
+                    data-image-panning={isImagePanning}
+                    className="scrollbar-thin h-full w-full overflow-auto"
+                    style={{
+                      cursor: canPanImage ? (isImagePanning ? 'grabbing' : 'grab') : 'default',
+                      touchAction: canPanImage ? 'none' : 'auto',
+                    }}
+                    onPointerDown={handleImagePointerDown}
+                    onPointerMove={handleImagePointerMove}
+                    onPointerUp={finishImagePan}
+                    onPointerCancel={finishImagePan}
+                    onLostPointerCapture={finishImagePan}
+                  >
                     <div
                       className="flex items-center justify-center p-2"
                       style={{ width: `${imageZoom * 100}%`, height: `${imageZoom * 100}%` }}
