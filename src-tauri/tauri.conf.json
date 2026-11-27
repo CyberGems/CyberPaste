@@ -50,8 +50,7 @@
   "bundle": {
     "active": true,
     "targets": [
-      "nsis",
-      "msi"
+      "nsis"
     ],
     "publisher": "CyberGems",
     "homepage": "https://cybergems.org",

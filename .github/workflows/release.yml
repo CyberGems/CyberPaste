@@ -132,33 +132,16 @@ jobs:
           $installer = Get-ChildItem -Path "src-tauri/target" -Recurse -Filter "*-setup.exe" |
             Where-Object { $_.FullName -match '\\bundle\\nsis\\' } |
             Select-Object -First 1
-          $msi = Get-ChildItem -Path "src-tauri/target" -Recurse -Filter "*.msi" |
-            Where-Object { $_.FullName -match '\\bundle\\msi\\' -and $_.Name -notlike "*.zip*" } |
-            Select-Object -First 1
-
           $installerHash = if ($installer) { (Get-FileHash $installer.FullName -Algorithm SHA256).Hash.ToLower() } else { "pending" }
-          $msiHash = if ($msi) { (Get-FileHash $msi.FullName -Algorithm SHA256).Hash.ToLower() } else { $null }
 
           Write-Host "Setup Installer: $($installer.FullName) [SHA256: $installerHash]"
-          if ($msi) {
-            Write-Host "MSI Package: $($msi.FullName) [SHA256: $msiHash]"
-          } else {
-            Write-Host "MSI Package: not built (bundle targets do not include msi)"
-          }
-
           if (Test-Path ".github/release-template.md") {
-            $msiBlock = ""
-            if ($msiHash) {
-              $msiBlock = "`r`n- **CyberPaste_${versionNum}_x64_en-US.msi** — SHA256:`r`n  ``````text`r`n  $msiHash`r`n  ```````r`n"
-            }
-
             $template = [System.IO.File]::ReadAllText(".github/release-template.md", [System.Text.Encoding]::UTF8)
             $notes = $template.
               Replace("{{VERSION_NUM}}", $versionNum).
               Replace("{{VERSION}}", $tag).
               Replace("{{INSTALLER_HASH}}", $installerHash).
               Replace("{{PORTABLE_HASH}}", "pending").
-              Replace("{{MSI_BLOCK}}", $msiBlock)
             $notes = [regex]::Replace($notes, '(?s)<!--.*?-->', '').Trim()
             [System.IO.File]::WriteAllText("FINAL_RELEASE_NOTES.md", $notes, [System.Text.Encoding]::UTF8)
 
@@ -200,16 +183,7 @@ jobs:
           $installer = Get-ChildItem -Path "src-tauri/target" -Recurse -Filter "*-setup.exe" |
             Where-Object { $_.FullName -match '\\bundle\\nsis\\' } |
             Select-Object -First 1
-          $msi = Get-ChildItem -Path "src-tauri/target" -Recurse -Filter "*.msi" |
-            Where-Object { $_.FullName -match '\\bundle\\msi\\' -and $_.Name -notlike "*.zip*" } |
-            Select-Object -First 1
           $installerHash = if ($installer) { (Get-FileHash $installer.FullName -Algorithm SHA256).Hash.ToLower() } else { "pending" }
-          $msiHash = if ($msi) { (Get-FileHash $msi.FullName -Algorithm SHA256).Hash.ToLower() } else { $null }
-          $msiBlock = ""
-          if ($msiHash) {
-            $msiBlock = "`r`n- **CyberPaste_${versionNum}_x64_en-US.msi** — SHA256:`r`n  ``````text`r`n  $msiHash`r`n  ```````r`n"
-          }
-
           # Submit both artifacts to VirusTotal so the report links in the
           # release notes resolve immediately after publishing.
           if ($env:VIRUSTOTAL_API_KEY) {
@@ -234,7 +208,6 @@ jobs:
             try {
               Upload-VirusTotal $installer.FullName $env:VIRUSTOTAL_API_KEY
               Upload-VirusTotal $portableZip $env:VIRUSTOTAL_API_KEY
-              if ($msi) { Upload-VirusTotal $msi.FullName $env:VIRUSTOTAL_API_KEY }
             } catch {
               Write-Warning "VirusTotal upload warning: $_"
             }
@@ -248,7 +221,6 @@ jobs:
             Replace("{{VERSION}}", $tag).
             Replace("{{INSTALLER_HASH}}", $installerHash).
             Replace("{{PORTABLE_HASH}}", $portableHash).
-            Replace("{{MSI_BLOCK}}", $msiBlock)
           $notes = [regex]::Replace($notes, '(?s)<!--.*?-->', '').Trim()
           [System.IO.File]::WriteAllText("FINAL_RELEASE_NOTES.md", $notes, [System.Text.Encoding]::UTF8)
           gh release edit $tag --notes-file "FINAL_RELEASE_NOTES.md"
@@ -300,8 +272,8 @@ jobs:
           $assetNames = @(gh release view $tag --json assets --jq '.assets[].name')
           if ($LASTEXITCODE -ne 0) { throw "Could not list release assets for $tag." }
           $portable = $assetNames | Where-Object { $_ -match 'portable' } | Select-Object -First 1
-          $installers = @($assetNames | Where-Object { $_ -match '\.(exe|msi)$' -and $_ -notmatch 'portable' })
-          $wanted = @($installers + $portable) | Where-Object { $_ }
+          $installer = $assetNames | Where-Object { $_ -match '\.exe$' -and $_ -notmatch 'portable' } | Select-Object -First 1
+          $wanted = @($installer, $portable) | Where-Object { $_ }
           if (-not $wanted) { throw "No installer or portable asset found for $tag." }
 
           gh release download $tag --dir $dir --clobber $(foreach ($name in $wanted) { "--pattern=$name" })
