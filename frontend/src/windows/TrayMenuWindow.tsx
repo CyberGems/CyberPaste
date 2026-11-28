@@ -1,3 +1,4 @@
+import { githubStarLabels } from '../useGitHubStar';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
@@ -11,6 +12,7 @@ import {
   ChevronRight,
   Clock,
   Heart,
+  Star,
   HelpCircle,
   Info,
   Infinity as InfinityIcon,
@@ -778,6 +780,10 @@ export function TrayMenuWindow() {
             />
             <TrayDivider />
             <div className="tray-scrollbar flex max-h-[360px] flex-col gap-0.5 overflow-y-auto px-1.5 py-1">
+              <TrayItem compact icon={<Star size={14} strokeWidth={1.75} />}
+                label={githubStarLabels[i18n.language.startsWith('es') ? 'es' : 'en'].idle}
+                onClick={() => { void invoke('hide_tray_menu').then(() => invoke('star_repository')).catch(console.error); }} />
+              <div role="separator" className="mx-2 my-1 h-px bg-border/70" />
               <TrayItem
                 compact
                 icon={<Pin size={14} strokeWidth={1.75} />}

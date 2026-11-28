@@ -1,3 +1,4 @@
+import { useGitHubStar } from '../useGitHubStar';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSettingsSnapshot } from '../hooks/useSettingsSnapshot';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -11,6 +12,7 @@ import {
   Github,
   Gem,
   Heart,
+  Star,
   Info,
   Loader2,
   Minus,
@@ -85,7 +87,8 @@ export function AboutWindow() {
     'idle' | 'checking' | 'available' | 'upToDate' | 'networkError' | 'error'
   >('idle');
   const [recommendedSuiteApps] = useState(pickRecommendedSuiteApps);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { giveStar, starState, starLabel } = useGitHubStar(() => invoke<string>('star_repository'), i18n.language.startsWith('es'));
 
   useLanguage(settings?.language);
   useTheme(settings?.theme ?? 'cyberpaste');
@@ -470,6 +473,17 @@ export function AboutWindow() {
                 className="flex h-[30px] w-[30px] items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 <Tag size={15} strokeWidth={1.5} />
+              </button>
+            </Tooltip>
+            <Tooltip label={starLabel} placement="top">
+              <button
+                type="button"
+                aria-label={starLabel}
+                onClick={() => void giveStar()}
+                disabled={starState === 'busy' || starState === 'starred'} aria-busy={starState === 'busy'}
+                className="flex h-[30px] w-[30px] items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent"
+              >
+                <Star size={15} strokeWidth={1.5} fill={starState === 'starred' ? 'currentColor' : 'none'} />
               </button>
             </Tooltip>
             <Tooltip label={t('common.donate')} placement="top">

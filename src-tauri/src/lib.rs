@@ -1,4 +1,7 @@
 #![allow(non_snake_case)] // crate name CyberPaste is intentional
+
+mod github_star;
+mod github_star_cli;
 use std::fs;
 use std::str::FromStr;
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicUsize, Ordering};
@@ -1213,6 +1216,7 @@ pub fn run_app() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            github_star::star_repository,
             commands::ping,
             commands::get_clips,
             commands::get_clip,

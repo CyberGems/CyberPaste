@@ -1,8 +1,10 @@
+import { githubStarLabels } from '../useGitHubStar';
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   MoreHorizontal,
   Heart,
+  Star,
   Gem,
   Tag,
   Github,
@@ -59,7 +61,7 @@ export function TitleBarMenu({
   onUndo?: () => void;
   canUndo?: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [menuPointerActive, setMenuPointerActive] = useState(false);
@@ -592,6 +594,20 @@ export function TitleBarMenu({
                   animation: 'titlebarMenuFade 0.12s ease-out',
                 }}
               >
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={itemClass}
+                  onClick={() =>
+                    closeAnd(() => {
+                      invoke('star_repository').catch(console.error);
+                    })
+                  }
+                >
+                  <Star size={14} className={iconClass} />
+                  <span>{githubStarLabels[i18n.language.startsWith('es') ? 'es' : 'en'].idle}</span>
+                </button>
+                <div role="separator" className="my-1 border-t border-border" />
                 <button
                   type="button"
                   role="menuitem"
