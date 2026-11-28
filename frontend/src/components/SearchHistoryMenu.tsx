@@ -79,10 +79,19 @@ export function SearchHistoryMenu({
       setOpen(true);
     };
 
+    const handleInput = () => {
+      focusMenuOnOpenRef.current = false;
+      setOpen(false);
+    };
+
     input.addEventListener('focus', handleFocus);
+    input.addEventListener('input', handleInput);
     if (document.activeElement === input) handleFocus();
 
-    return () => input.removeEventListener('focus', handleFocus);
+    return () => {
+      input.removeEventListener('focus', handleFocus);
+      input.removeEventListener('input', handleInput);
+    };
   }, [enabled, focusRef]);
 
   useEffect(() => {
